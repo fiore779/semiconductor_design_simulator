@@ -8,12 +8,12 @@
 
   const need = ['sim', 'model', 'history', 'ui'];
   const missing = need.filter((k) => !S || !S[k]);
-  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan) {
+  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan) {
     document.body.insertBefore(Object.assign(document.createElement('p'), { className: 'fatal', textContent: '✗ 必要なスクリプトが読み込まれていません(コンソールを確認してください)。このページは動きません。' }), document.body.firstChild);
     return;
   }
   const { h, clear } = S.ui.dom;
-  const DS = S.model.design; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan;
+  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan;
 
   let ctx;
   try { ctx = EV.makeContext(); } catch (e) {
@@ -24,7 +24,7 @@
   let design = null;
   const history = S.history.createHistory({ limit: 200 }) /* まとめるかどうかは commitplan が決める(時間の窓は使わない。ドラッグ中に止めても 1 手) */;
   let selection = []; let viewMode = 'place'; let view = null; let propMsg = ''; let ignoreUntil = 0; let saveTimer = null; let noticeTimer = null;
-  let lastEval = null;
+  let lastEval = null; let paramMsgs = {};
 
   // ---- 通知 ----
   function notify(text, kind) {
@@ -32,6 +32,8 @@
     clearTimeout(noticeTimer);
     if (kind !== 'err') noticeTimer = setTimeout(() => { n.textContent = ''; n.className = ''; }, 8000);
   }
+
+  function notifyRelaid() { notify('ブロックを模式図として再配置しました(手で動かした位置は失われます)。', 'info'); }
 
   // ---- ダイビュー ----
   function setViewMsg(text) { const m = $('viewmsg'); clear(m); if (text) m.appendChild(typeof text === 'string' ? document.createTextNode(text) : text); m.hidden = !text; }
@@ -76,17 +78,31 @@
   function renderButtons() {
     $('m-undo').disabled = !history.canUndo(); $('m-redo').disabled = !history.canRedo(); $('m-save').disabled = !design;
     $('designname').textContent = design ? `設計: ${design.name}` : '';
+    const mi = PF.modeInfo(design); const mb = $('modebadge');
+    mb.textContent = mi ? `${mi.symbol} ${mi.text}${mi.locked ? '(ロック中)' : ''}` : '';
+    mb.className = 'badge modebadge' + (mi ? ` mode-${mi.code}` : ''); mb.hidden = !mi;
+  }
+  function renderParamsPanel() {
+    PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onUnlock }, paramMsgs);
+  }
+  function renderDiffPanel() {
+    DP.renderDiff($('diff'), design, ctx, lastEval, {
+      onRevert: (id, label) => { const r = DF.revertParam(design, id); if (commit(r.design, label, false) && r.relaid) notifyRelaid(); },
+      onRevertAll: () => { const r = DF.revertAll(design); if (commit(r.design, 'すべて元に戻す(パラメータ)', false) && r.relaid) notifyRelaid(); },
+    });
   }
   function renderAll(opts) {
     const o = opts || {};
     renderButtons();
     if (!design) {
       clear($('results')).appendChild(h('p', { class: 'note', text: '設計を読み込むと、ここに結果が出ます。' }));
-      clear($('repro')); clear($('validation')); renderProps(); renderHistory(); renderEmptyOrFallback();
+      clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderParamsPanel(); renderProps(); renderHistory(); renderEmptyOrFallback();
       return;
     }
     lastEval = EV.evaluate(design, ctx);
-    RS.renderResults($('results'), lastEval); RS.renderRepro($('repro'), lastEval);
+    RS.renderResults($('results'), lastEval);
+    if (PF.showRepro(design)) RS.renderRepro($('repro'), lastEval); else clear($('repro')); // B では差分ビューに置き換え
+    renderDiffPanel(); renderParamsPanel();
     PN.renderValidation($('validation'), lastEval.warnings, (id) => selectBlocks([id]));
     if (!o.skipProps) renderProps();
     renderHistory();
@@ -115,9 +131,11 @@
 
   // ---- 設計の読み込み・変更 ----
   // 設計を丸ごと差し替える(履歴は作り直す)。評価に失敗したら元の設計に戻す。
+  // M2 で保存した古い設計(cfg なし)は、プリセットから編集用パラメータを補う
+  function ensure(d) { return DS.ensureCfg(d, ctx.presets.find((p) => p.id === d.presetId) || null); }
   function loadDesign(d, how) {
     const prev = design;
-    dragRun = false; design = d; selection = []; propMsg = '';
+    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {};
     try { renderAll(); } catch (e) {
       design = prev; try { renderAll(); } catch (e2) { /* 元の設計も描けないときは諦める */ }
       notify(`✗ この設計を表示できませんでした: ${e.message}`, 'err'); return false;
@@ -142,7 +160,7 @@
     history.push(design, next, label, { coalesce });
     design = next;
     if (!fromView && view) view.setDesign(design);
-    propMsg = '';
+    propMsg = ''; paramMsgs = {};
     renderAll({ skipProps: !!fromProps });
     scheduleSave();
     return true;
@@ -150,7 +168,7 @@
   function undo() { dragRun = false; const d = history.undo(); if (d) applyHistory(d); }
   function redo() { dragRun = false; const d = history.redo(); if (d) applyHistory(d); }
   function jumpTo(i) { dragRun = false; const d = history.jumpTo(i); if (d) applyHistory(d); }
-  function applyHistory(d) { design = d; propMsg = ''; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
+  function applyHistory(d) { design = d; propMsg = ''; paramMsgs = {}; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
 
   // プロパティ欄の数値編集
   function onPropEdit(blockId, field, value, input, oldStr) {
@@ -162,6 +180,30 @@
     const next = DS.clone(design);
     PN.findBlock(next, blockId).block[field] = value;
     commit(next, `${hit.block.label}(${blockId}) の ${field} を変更`, false, false, true);
+  }
+
+  // パラメータ欄の編集(コア数・クロック・L3)。検証は paramform と design.js の両方。失敗は入力欄の下に出して値を戻す
+  function onParamEdit(field, type, str, input) {
+    const rows = PF.paramRows(design);
+    if (!rows) return;
+    const key = field === 'l3' ? 'l3' : `${field}:${type}`;
+    const fail = (reason) => { paramMsgs = { [key]: reason }; renderParamsPanel(); };
+    const g = type != null ? rows.cores.find((c) => c.type === type) : null;
+    const cur = field === 'count' ? g.count : field === 'clock' ? g.clock : rows.l3MB;
+    if (field === 'clock' && cur == null && String(str).trim() === '') { paramMsgs = {}; renderParamsPanel(); return; } // 未取得のまま空欄
+    const parsed = field === 'count' ? PF.parseCount(str) : field === 'clock' ? PF.parseClock(str) : PF.parseL3(str);
+    if (!parsed.ok) { fail(parsed.reason); return; }
+    if (cur != null && Math.abs(parsed.value - cur) < 1e-9) { paramMsgs = {}; renderParamsPanel(); return; } // 変更なし(表記ゆれは整える)
+    const res = field === 'count' ? DS.setCoreCount(design, type, parsed.value) : field === 'clock' ? DS.setClock(design, type, parsed.value) : DS.setL3(design, parsed.value);
+    if (!res.ok) { fail(res.reason); return; }
+    const label = PF.editLabel(field, type, cur, parsed.value);
+    if (commit(res.design, label, false)) {
+      if (res.relaid) notifyRelaid();
+    } else renderParamsPanel();
+  }
+  function onUnlock() {
+    if (!design || !window.confirm('ロックを解除して改良モードにします。パラメータ(コア数・クロック・L3)を編集できるようになります。再現モードの検証(公開値との比較)は、差分ビューに置き換わります。よろしいですか?')) return;
+    if (commit(DS.unlock(design), 'ロックを解除して改良モードにする', false)) notify('改良モードにしました。パラメータを編集できます。', 'info');
   }
 
   // ---- 保存・開く ----
@@ -191,13 +233,18 @@
   }
 
   // ---- ダイアログ ----
-  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A') openPresets(); } }); }
+  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A' || key === 'B') openPresets(); } }); }
   function openPresets() {
     DG.openPresets(ctx, {
       onReproduce(preset) {
         if (!confirmDiscard()) return;
         DG.close();
         if (loadDesign(DS.fromPreset(preset, { mode: 'reproduce' }), 'preset')) notify(`「${preset.name}」を再現モードで読み込みました。`, 'info');
+      },
+      onImprove(preset) {
+        if (!confirmDiscard()) return;
+        DG.close();
+        if (loadDesign(DS.fromPreset(preset, { mode: 'improve' }), 'preset')) notify(`「${preset.name}」を改良モードで読み込みました。パラメータ欄で編集できます。`, 'info');
       },
     });
   }

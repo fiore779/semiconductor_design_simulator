@@ -103,8 +103,71 @@
     return w;
   }
 
+  // ---- 編集(§3.3 B): design.cfg で置き換えた「実効プリセット」で性能を計算する ----
+  const CLOCK_TOL = 0.25; // 校正範囲: クロックは元の ±25%
+  const clockOf = (g) => g.boostGHz || g.maxGHz || g.baseGHz || 0;
+  const isEdited = (design) => !!(design.cfg && design.baseCfg) && JSON.stringify(design.cfg) !== JSON.stringify(design.baseCfg);
+
+  function effectivePreset(preset, cfg) {
+    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB: cfg.l3MB }) });
+  }
+
+  const EPS = 1e-9; // 境界(ちょうど ±25% / 2 倍 / 半分)を範囲内にするための浮動小数の余裕
+  const MAX_CLOCK_MARGIN = 1.05; // 収録チップの最大クロックの 1.05 倍まで
+
+  // 同じ命令セットの収録プリセットの最大クロック(boost/max。無ければ base)。無ければ null
+  function maxClockOf(presets, isa) {
+    let m = 0;
+    (presets || []).forEach((p) => { if (p.isa === isa && p.cfg) (p.cfg.cores || []).forEach((g) => { m = Math.max(m, clockOf(g)); }); });
+    return m > 0 ? m : null;
+  }
+
+  // 校正した範囲の外か。クロックが元の ±25% 超、コア数が元の 2 倍超または半分未満、L3 が元の 0.5〜2 倍の外、
+  // 同じ命令セットの収録チップの最大クロックの 1.05 倍超、元のクロックが未取得なのに入力した場合。
+  // opts: { maxClockGHz }(省略可。同じ命令セットの収録プリセットの最大クロック)
+  function outOfCalibration(cfg, baseCfg, opts) {
+    const out = [];
+    const maxClk = opts && opts.maxClockGHz > 0 ? opts.maxClockGHz : null;
+    cfg.cores.forEach((g) => {
+      const b = baseCfg.cores.find((c) => c.type === g.type);
+      if (!b) return;
+      const f0 = clockOf(b); const f1 = clockOf(g);
+      const field = `core:${g.type}:clock`;
+      if (f0 <= 0 && f1 > 0) out.push({ field, reason: `${g.type} コアは元のクロックが未取得のため、入力したクロック ${f1} GHz には根拠がなく、校正した範囲の外です` });
+      else if (f0 > 0 && Math.abs(f1 / f0 - 1) > CLOCK_TOL + EPS) out.push({ field, reason: `${g.type} コアのクロック ${f1} GHz は元(${f0} GHz)の ±25% を超えており、校正した範囲の外です` });
+      else if (f1 > 0 && Math.abs(f1 - f0) > EPS && maxClk && f1 > maxClk * MAX_CLOCK_MARGIN + EPS) out.push({ field, reason: `${g.type} コアのクロック ${f1} GHz は、収録しているチップの最大クロック(${maxClk} GHz)を超えています` });
+      if (b.count > 0 && (g.count > b.count * 2 + EPS || g.count < b.count / 2 - EPS)) out.push({ field: `core:${g.type}:count`, reason: `${g.type} コア数 ${g.count} は元(${b.count})の 2 倍超または半分未満で、校正した範囲の外です` });
+    });
+    const l0 = baseCfg.l3MB || 0; const l1 = cfg.l3MB || 0;
+    if (l0 !== l1) {
+      if (l0 === 0) out.push({ field: 'l3', reason: `元は L3 がないのに ${l1} MB に増やしており、校正した範囲の外です` });
+      else if (l1 === 0) out.push({ field: 'l3', reason: `元は L3 が ${l0} MB あるのに 0 にしており、校正した範囲の外です` });
+      else if (l1 > l0 * 2 + EPS || l1 < l0 / 2 - EPS) out.push({ field: 'l3', reason: `L3 ${l1} MB は元(${l0} MB)の 0.5〜2 倍の外で、校正した範囲の外です` });
+    }
+    return out;
+  }
+
+  // 楽観側に偏る編集か(電力・温度の制限を計算しないので、クロック・コア数・L3 を元より上げた予測は上振れ側)。
+  // clockUp: クロックを上げたか(ST に効く)
+  function optimisticInfo(cfg, baseCfg) {
+    const reasons = []; let clockUp = false;
+    cfg.cores.forEach((g) => {
+      const b = baseCfg.cores.find((c) => c.type === g.type);
+      if (!b) return;
+      if (clockOf(g) > clockOf(b) + EPS) { clockUp = true; reasons.push(`${g.type} コアのクロックを元より上げています`); }
+      if (g.count > b.count) reasons.push(`${g.type} コア数を元より増やしています`);
+    });
+    if ((cfg.l3MB || 0) > (baseCfg.l3MB || 0)) reasons.push('L3 容量を元より増やしています');
+    return { optimistic: reasons.length > 0, reasons, clockUp };
+  }
+
+  const OPTIMISTIC_NOTE = '電力・温度の制限を計算していないため、上げた分がそのまま性能に出ます。実機では電力制限でこの値に届かない可能性が高い(上振れ側の予測)';
+
   function evaluate(design, ctx) {
-    const preset = ctx.presets.find((p) => p.id === design.presetId) || null;
+    const preset0 = ctx.presets.find((p) => p.id === design.presetId) || null;
+    const hasCfg = !!(preset0 && design.cfg && Array.isArray(design.cfg.cores));
+    const edited = hasCfg && isEdited(design);
+    const preset = hasCfg ? effectivePreset(preset0, design.cfg) : preset0;
     const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
     const area = evalArea(design, ctx);
     const warnings = V ? V.validate(design).map((w) => Object.assign({}, w)) : [];
@@ -117,10 +180,37 @@
     const gb7 = preset.gb7 ? ctx.gb7ByName[preset.gb7] || null : null;
     const st = evalPerf('st', preset, ctx, gb7);
     const mt = evalPerf('mt', preset, ctx, gb7);
-    return { st, mt, area, power: evalPower(preset), warnings: warnings.concat(calibrationWarnings(st, mt)), preset, tolerance: TOLERANCE };
+    const result = { st, mt, area, power: evalPower(preset0), warnings: warnings.concat(calibrationWarnings(st, mt)), preset: preset0, tolerance: TOLERANCE, edited: false, outOfCalibration: [], optimistic: false, optimisticReasons: [] };
+    if (hasCfg) {
+      [st, mt].forEach((r) => { r.edited = edited; r.basePublished = r.published; });
+      area.recomputed = false;
+    }
+    if (edited) {
+      result.edited = true;
+      // 編集後の設計に公開値は無い: 公開値との差は出さず、元のチップの値は basePublished に残す
+      [st, mt].forEach((r) => { r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
+      area.recomputedReason = 'コア別面積は未取得のため編集では再計算しない';
+      result.power.recomputed = false;
+      result.warnings.push({ level: 'warn', text: '編集後の数値は予測です。公開値ではありません' });
+      result.warnings.push({ level: 'info', text: '編集で変わるのは性能のみです。面積・公表電力・歩留まりは再計算していません(コア別面積が未取得のため)' });
+      const ooc = outOfCalibration(design.cfg, design.baseCfg, { maxClockGHz: maxClockOf(ctx.presets, preset0.isa) });
+      result.outOfCalibration = ooc;
+      if (ooc.length) {
+        [st, mt].forEach((r) => { if (r.ok) r.confidence = 'low'; });
+        ooc.forEach((o) => result.warnings.push({ level: 'warn', text: `校正した範囲の外: ${o.reason}(確度は低)` }));
+      }
+      const opt = optimisticInfo(design.cfg, design.baseCfg);
+      result.optimistic = opt.optimistic; result.optimisticReasons = opt.reasons;
+      if (opt.optimistic) {
+        mt.confidence = mt.ok ? 'low' : mt.confidence;
+        if (opt.clockUp && st.ok) st.confidence = 'low';
+        result.warnings.push({ level: 'warn', text: `楽観側の予測: ${OPTIMISTIC_NOTE}` });
+      }
+    }
+    return result;
   }
 
-  const api = { TOLERANCE, makeContext, evaluate };
+  const api = { TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

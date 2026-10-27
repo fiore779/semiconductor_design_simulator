@@ -1,5 +1,5 @@
 // 新規作成画面(設計書 §8.3)とプリセット選択画面(§8.4)。ブラウザ専用。
-// M2 では A 再現だけ有効。B/C/D は「未実装」と明示して無効にする。
+// A 再現・B 改良が有効。C/D は「未実装」と明示して無効にする。
 (function (root) {
   'use strict';
   const { h, clear, num } = root.SDS.ui.dom;
@@ -33,7 +33,7 @@
     }, h('b', { text: `${key} ${title}` }), h('span', { text: desc }), enabled ? h('em', { text: '選べます' }) : h('em', { class: 'unimpl', text: '未実装(今回は選べません)' }));
     open('どう始めますか?', h('div', { class: 'modes' },
       card('A', '再現', '実在チップを忠実に再現し、公開値と比べる', true),
-      card('B', '改良', '実在チップを土台に自分用に改造する', false),
+      card('B', '改良', '実在チップを土台に、コア数・クロック・L3 を変えて自分用に改造する', true),
       card('C', '混合', '複数チップの部品を組み合わせる', false),
       card('D', '新規', '目標を決めてゼロから設計する', false)));
   }
@@ -47,12 +47,12 @@
     const detailEl = h('div', { class: 'preset-detail', 'aria-live': 'polite' });
     const countEl = h('p', { class: 'small', role: 'status' });
     const goBtn = h('button', { type: 'button', class: 'btn primary', disabled: true, onclick: () => { if (selected) cb.onReproduce(selected); } }, '再現する');
-    const impBtn = h('button', { type: 'button', class: 'btn', disabled: true, title: '未実装' }, '改良する(未実装)');
+    const impBtn = h('button', { type: 'button', class: 'btn', disabled: true, onclick: () => { if (selected && cb.onImprove) cb.onImprove(selected); } }, '改良する');
 
     function detail(p) {
       clear(detailEl);
-      if (!p) { detailEl.appendChild(h('p', { class: 'note', text: '左の一覧からチップを選んでください。' })); goBtn.disabled = true; return; }
-      goBtn.disabled = false;
+      if (!p) { detailEl.appendChild(h('p', { class: 'note', text: '左の一覧からチップを選んでください。' })); goBtn.disabled = true; impBtn.disabled = true; return; }
+      goBtn.disabled = false; impBtn.disabled = !cb.onImprove;
       const c = PL.completeness(p, g);
       const gb = g[p.gb7];
       const pw = p.power || {};
@@ -102,7 +102,7 @@
         [['name:1', '名前'], ['year:-1', '新しい順'], ['year:1', '古い順'], ['area:-1', '面積が大きい順'], ['gb7:-1', 'GB7 ST が高い順']].map(([v, t]) => h('option', { value: v, text: t })))));
 
     detail(null); refresh();
-    open('プリセットを選ぶ(A 再現)', h('div', { class: 'preset-dialog' },
+    open('プリセットを選ぶ(A 再現 / B 改良)', h('div', { class: 'preset-dialog' },
       filters, h('div', { class: 'list-col' }, countEl, listEl), h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn))));
   }
 

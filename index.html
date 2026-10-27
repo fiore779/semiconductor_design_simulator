@@ -23,6 +23,7 @@
     <button type="button" class="btn" disabled title="未実装">比較(未実装)</button>
     <button type="button" class="btn" disabled title="未実装">設定(未実装)</button>
     <button type="button" class="btn" id="m-help" aria-expanded="false" aria-controls="help">ヘルプ</button>
+    <span id="modebadge" class="badge modebadge" hidden></span>
     <span id="designname" class="designname"></span>
     <input type="file" id="fileinput" accept=".json,application/json" hidden>
   </header>
@@ -35,18 +36,21 @@
       <li>ダイビュー: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
-    <p class="small">この版(M2)でできること: 実在チップを「再現」で読み込み、公開値と比べる。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
-    できないこと: 改良・混合・新規設計、モデル電力の計算、発熱の計算。</p>
+    <p class="small">できること: 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
+    できないこと: 混合・新規設計、面積・電力・歩留まりの再計算、モデル電力、発熱の計算。</p>
   </div>
   <div id="notice" role="status" aria-live="polite"></div>
   <main id="workarea">
-    <aside id="parts" aria-label="パーツ">
+    <aside id="parts" aria-label="パーツとパラメータ">
+      <div class="partslist">
       <h2>パーツ</h2>
       <p class="note">M2 では部品の追加はできません(簡易表示)。</p>
       <ul class="small">
         <li>コア</li><li>キャッシュ</li><li>SoC</li><li>I/O</li>
       </ul>
       <p class="note">ブロックの大きさと配置は<b>模式図</b>です。実チップのフロアプランではありません。</p>
+      </div>
+      <section id="params" aria-label="パラメータ"></section>
     </aside>
     <section id="center" aria-label="ダイビュー">
       <div id="viewbar" role="group" aria-label="表示切替">
@@ -62,6 +66,7 @@
       </div>
     </section>
     <aside id="right" aria-label="結果">
+      <div id="diff" aria-label="元のチップとの差分" hidden></div>
       <div id="results"></div>
       <div id="repro"></div>
     </aside>
@@ -88,6 +93,7 @@
 <script src="js/sim/thermal.js"></script>
 <script src="js/model/design.js"></script>
 <script src="js/model/evaluate.js"></script>
+<script src="js/model/diff.js"></script>
 <script src="js/history/history.js"></script>
 <!-- ダイビュー(無くても画面は動く。main.js が有無を調べる) -->
 <script src="js/render/geom.js"></script>
@@ -96,10 +102,13 @@
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/presetlist.js"></script>
 <script src="js/ui/reproduce.js"></script>
+<script src="js/ui/paramform.js"></script>
 <script src="js/ui/commitplan.js"></script>
 <script src="js/ui/warnings.js"></script>
 <script src="js/ui/results.js"></script>
 <script src="js/ui/presetdialog.js"></script>
+<script src="js/ui/params.js"></script>
+<script src="js/ui/diffpanel.js"></script>
 <script src="js/ui/panels.js"></script>
 <script src="js/main.js"></script>
 </body>

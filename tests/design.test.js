@@ -92,3 +92,142 @@ test('parse: 面積・寸法・文字列項目の追加検証', () => {
   bad((d) => { d.dies[0].widthMm = 1e6; }, /大きすぎ/);
   bad((d) => { d.dies[0].blocks[0].kind = { toString: 1 }; }, /kind が文字列/);
 });
+
+// ---- M3a: 編集用パラメータ ----
+const imp = (id) => design.fromPreset(preset(id), { mode: 'improve' });
+const totalCores = (d) => d.cfg.cores.reduce((s, c) => s + c.count, 0);
+const coreBlocks = (d) => d.dies.reduce((s, x) => s + x.blocks.filter((b) => b.kind === 'core').length, 0);
+
+test('cfg: fromPreset は cfg と baseCfg(同内容)を持ち、モードと locks が対応する', () => {
+  const a = design.fromPreset(preset('intel-arl-285k'));
+  assert.strictEqual(a.origin.mode, 'reproduce'); assert.deepStrictEqual(a.locks, { params: true });
+  assert.deepStrictEqual(a.cfg, a.baseCfg); assert.notStrictEqual(a.cfg, a.baseCfg);
+  assert.strictEqual(a.cfg.cores[0].type, preset('intel-arl-285k').cfg.cores[0].type);
+  const b = imp('intel-arl-285k');
+  assert.strictEqual(b.origin.mode, 'improve'); assert.deepStrictEqual(b.locks, { params: false });
+});
+
+test('setCoreCount: 正常系。元を壊さず、ブロック数がコア総数に一致して validate が空', () => {
+  const d = imp('intel-arl-285k'); const before = JSON.stringify(d);
+  const t = d.cfg.cores[0].type;
+  const r = design.setCoreCount(d, t, 12);
+  assert.ok(r.ok); assert.strictEqual(r.relaid, true);
+  assert.strictEqual(JSON.stringify(d), before);
+  assert.strictEqual(r.design.cfg.cores[0].count, 12);
+  assert.strictEqual(coreBlocks(r.design), totalCores(r.design));
+  assert.deepStrictEqual(design.validate(r.design), []);
+  assert.strictEqual(design.setCoreCount(d, t, d.cfg.cores[0].count).relaid, false);
+});
+
+test('setCoreCount: 異常系(日本語の理由)', () => {
+  const d = imp('intel-arl-285k'); const t = d.cfg.cores[0].type;
+  [0, 65, 2.5, NaN, '8'].forEach((c) => { const r = design.setCoreCount(d, t, c); assert.strictEqual(r.ok, false); assert.ok(r.reason.includes('コア数')); });
+  const r = design.setCoreCount(d, 'ZZ', 4); assert.strictEqual(r.ok, false); assert.ok(r.reason.includes('ZZ'));
+});
+
+test('setClock: boost を更新し base は変えない。範囲外は不可', () => {
+  const d = imp('amd-zen5-9950x'); const g = d.cfg.cores[0];
+  const r = design.setClock(d, g.type, 5.5);
+  assert.ok(r.ok); assert.strictEqual(r.relaid, false);
+  assert.strictEqual(r.design.cfg.cores[0].boostGHz, 5.5); assert.strictEqual(r.design.cfg.cores[0].baseGHz, g.baseGHz);
+  assert.deepStrictEqual(r.design.dies, d.dies);
+  [0.4, 8.1, Infinity, NaN].forEach((x) => { const e = design.setClock(d, g.type, x); assert.strictEqual(e.ok, false); assert.ok(e.reason.includes('GHz')); });
+  // boost が無く max だけのコアは max を更新
+  const m = JSON.parse(JSON.stringify(d)); delete m.cfg.cores[0].boostGHz; m.cfg.cores[0].maxGHz = 4;
+  assert.strictEqual(design.setClock(m, g.type, 4.5).design.cfg.cores[0].maxGHz, 4.5);
+});
+
+test('setL3: 正常系と異常系。帯の高さが変わるときだけ再配置', () => {
+  const d = imp('amd-zen5-9950x');
+  const r = design.setL3(d, 64);
+  assert.ok(r.ok); assert.strictEqual(r.design.cfg.l3MB, 64);
+  assert.deepStrictEqual(design.validate(r.design), []);
+  const r0 = design.setL3(d, 0); assert.ok(r0.ok); assert.strictEqual(r0.relaid, true);
+  assert.ok(!r0.design.dies.some((x) => x.blocks.some((b) => b.kind === 'l3')));
+  const r2 = design.setL3(design.setL3(d, 100).design, 110); assert.strictEqual(r2.relaid, false);
+  assert.ok(r2.design.dies.some((x) => x.blocks.some((b) => b.label === "L3 110MB")));
+  [-1, 513, NaN, Infinity].forEach((x) => { const e = design.setL3(d, x); assert.strictEqual(e.ok, false); assert.ok(e.reason.includes('L3')); });
+});
+
+test('ロック: 再現モードでは編集できず、unlock で改良モードになる', () => {
+  const a = design.fromPreset(preset('amd-zen5-9950x')); const t = a.cfg.cores[0].type;
+  const msg = '再現モードではパラメータはロックされています';
+  assert.deepStrictEqual(design.setCoreCount(a, t, 4), { ok: false, reason: msg });
+  assert.deepStrictEqual(design.setClock(a, t, 4), { ok: false, reason: msg });
+  assert.deepStrictEqual(design.setL3(a, 8), { ok: false, reason: msg });
+  const b = design.unlock(a);
+  assert.strictEqual(b.origin.mode, 'improve'); assert.strictEqual(b.origin.unlockedFrom, 'reproduce'); assert.strictEqual(b.locks.params, false);
+  assert.strictEqual(a.origin.mode, 'reproduce');
+  assert.ok(design.setCoreCount(b, t, 4).ok);
+});
+
+test('parse: cfg が往復で保たれる。壊れた cfg は拒否。cfg 無しの古い設計は読めて ensureCfg で補える', () => {
+  const r = design.setClock(imp('amd-zen5-9950x'), 'P', 5.0);
+  const t = design.parse(design.serialize(r.design));
+  assert.ok(t.ok); assert.deepStrictEqual(t.design.cfg, r.design.cfg); assert.deepStrictEqual(t.design.baseCfg, r.design.baseCfg);
+  const bad = JSON.parse(design.serialize(r.design)); bad.cfg.cores[0].count = 1.5;
+  assert.strictEqual(design.parse(JSON.stringify(bad)).ok, false);
+  const bad2 = JSON.parse(design.serialize(r.design)); bad2.baseCfg.l3MB = null;
+  assert.strictEqual(design.parse(JSON.stringify(bad2)).ok, false);
+  const old = JSON.parse(design.serialize(r.design)); delete old.cfg; delete old.baseCfg; delete old.locks;
+  const p = design.parse(JSON.stringify(old)); assert.ok(p.ok);
+  const fixed = design.ensureCfg(p.design, preset('amd-zen5-9950x'));
+  assert.deepStrictEqual(fixed.cfg, fixed.baseCfg); assert.ok(fixed.cfg.cores.length > 0); assert.ok(fixed.locks);
+});
+
+test('parse: cfg の検証はエディタの範囲に揃っている(コア数 1〜64・クロック 0.5〜8・L3 0〜512・種別重複)', () => {
+  const base = () => design.fromPreset(preset('amd-zen5-9950x'), { mode: 'improve' });
+  const bad = (mut, re) => { const d = base(); mut(d); const r = design.parse(JSON.stringify(d)); assert.strictEqual(r.ok, false); assert.ok(re.test(r.reason), r.reason); };
+  ['cfg', 'baseCfg'].forEach((k) => {
+    bad((d) => { d[k].cores[0].count = 0; }, /1〜64/);
+    bad((d) => { d[k].cores[0].count = 65; }, /1〜64/);
+    bad((d) => { d[k].cores[0].boostGHz = 0.4; }, /0.5〜8/);
+    bad((d) => { d[k].cores[0].boostGHz = 9; }, /0.5〜8/);
+    bad((d) => { d[k].cores[0].baseGHz = 'x'; }, /baseGHz/);
+    bad((d) => { d[k].l3MB = 513; }, /0〜512/);
+    bad((d) => { d[k].l3MB = -1; }, /l3MB/);
+    bad((d) => { d[k].cores.push(Object.assign({}, d[k].cores[0])); }, /重複/);
+  });
+  // コア構成が未取得のプリセット(cores 空)の設計は開ける
+  const empty = base(); empty.cfg.cores = []; empty.baseCfg.cores = [];
+  assert.strictEqual(design.parse(JSON.stringify(empty)).ok, true);
+  // 境界値は通る
+  const ok = base(); ok.cfg.cores[0].count = 64; ok.cfg.cores[0].boostGHz = 8; ok.cfg.cores[0].baseGHz = 0.5; ok.cfg.l3MB = 512; ok.baseCfg.l3MB = 0;
+  assert.strictEqual(design.parse(JSON.stringify(ok)).ok, true);
+  const noClock = base(); delete noClock.cfg.cores[0].boostGHz; delete noClock.cfg.cores[0].baseGHz;
+  assert.strictEqual(design.parse(JSON.stringify(noClock)).ok, true); // クロック未取得は許す
+});
+
+test('parse: locks の検証(オブジェクトで params は真偽値)', () => {
+  const base = () => design.fromPreset(preset('apple-m1'));
+  const bad = (locks) => { const d = base(); d.locks = locks; const r = design.parse(JSON.stringify(d)); assert.strictEqual(r.ok, false); assert.ok(/locks/.test(r.reason), r.reason); };
+  bad('yes'); bad([]); bad(5); bad({}); bad({ params: 'true' }); bad({ params: 1 }); bad({ params: null });
+  [true, false].forEach((v) => { const d = base(); d.locks = { params: v }; assert.strictEqual(design.parse(JSON.stringify(d)).ok, true); });
+  const none = JSON.parse(design.serialize(base())); delete none.locks; assert.strictEqual(design.parse(JSON.stringify(none)).ok, true); // 古い設計
+});
+
+test('ensureCfg: プリセットが無い(null)ときは cfg を補えないが、locks は補い、元を壊さない', () => {
+  const d = design.fromPreset(preset('apple-m1'), { mode: 'improve' });
+  delete d.cfg; delete d.baseCfg; delete d.locks; const before = JSON.stringify(d);
+  const r = design.ensureCfg(d, null);
+  assert.strictEqual(r.cfg, undefined); assert.strictEqual(r.baseCfg, undefined); assert.deepStrictEqual(r.locks, { params: false });
+  assert.strictEqual(JSON.stringify(d), before);
+  const a = design.fromPreset(preset('apple-m1')); delete a.locks;
+  assert.deepStrictEqual(design.ensureCfg(a, null).locks, { params: true }); // 再現モードはロック
+});
+
+test('保存→開くの往復: 編集した設計の locks・origin・cfg・baseCfg・ブロックが保たれる', () => {
+  let d = design.unlock(design.fromPreset(preset('amd-zen5-9950x')));
+  d = design.setClock(design.setCoreCount(d, 'P', 24).design, 'P', 5.9).design;
+  d = design.setL3(d, 96).design;
+  const r = design.parse(design.serialize(d));
+  assert.ok(r.ok);
+  assert.deepStrictEqual(r.design.locks, { params: false });
+  assert.deepStrictEqual(r.design.origin, d.origin); assert.strictEqual(r.design.origin.unlockedFrom, 'reproduce');
+  assert.deepStrictEqual(r.design.cfg, d.cfg); assert.deepStrictEqual(r.design.baseCfg, d.baseCfg);
+  assert.deepStrictEqual(r.design.dies, d.dies);
+  assert.deepStrictEqual(design.ensureCfg(r.design, preset('amd-zen5-9950x')), d);
+  // ロック中の設計もロックのまま戻る
+  const a = design.parse(design.serialize(design.fromPreset(preset('amd-zen5-9950x')))).design;
+  assert.deepStrictEqual(a.locks, { params: true });
+});

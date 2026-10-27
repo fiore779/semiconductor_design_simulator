@@ -14,15 +14,19 @@
   function srcBadge(s) { return h('span', { class: `badge src-${s || 'none'}`, title: '値の区分' }, `[${PL.sourceLabel(s)}]`); }
   function note(text, cls) { return h('p', { class: 'note' + (cls ? ' ' + cls : '') }, text); }
 
-  function perfCard(title, r, extra) {
+  function perfCard(title, r, extra, edited) {
     const body = [];
     if (r.ok) {
-      body.push(h('div', { class: 'big' }, h('span', { class: 'val', text: Math.round(r.score).toLocaleString('ja-JP') }), h('span', { class: 'unit', text: ' pt(シミュレーション)' })));
+      body.push(h('div', { class: 'big' }, h('span', { class: 'val', text: Math.round(r.score).toLocaleString('ja-JP') }), h('span', { class: 'unit', text: edited ? ' pt(予測・編集後)' : ' pt(シミュレーション)' })));
     } else {
       body.push(h('div', { class: 'big' }, h('span', { class: 'val na', text: '—' }), h('span', { class: 'unit', text: ' 計算できません' })));
       body.push(note(`理由: ${r.reason}`));
     }
-    if (r.published != null) {
+    if (edited) {
+      // 編集後の設計に公開値は無い。元のチップの公開値は参考として別に示す(差は出さない)
+      body.push(h('div', { class: 'row' }, h('span', { text: '元のチップの公開値(参考) ' }), h('b', { text: r.basePublished != null ? r.basePublished.toLocaleString('ja-JP') : '未取得' })));
+      body.push(note('編集後の数値は予測で、公開値ではありません。公開値との差は出しません。'));
+    } else if (r.published != null) {
       body.push(h('div', { class: 'row' }, h('span', { text: '公開値 ' }), h('b', { text: r.published.toLocaleString('ja-JP') }), ' ', h('span', { class: 'badge', text: r.publishedKind || '' })));
       if (r.ok) body.push(h('div', { class: 'row' }, h('span', { text: '公開値との差 ' }), h('b', { text: diff(r.errPct) })));
     } else body.push(h('div', { class: 'row' }, '公開値: ', h('b', { text: '未取得' }), '(比較しません)'));
@@ -33,23 +37,29 @@
       h('header', {}, h('h3', { text: title }), r.ok ? confBadge(r.confidence) : confBadge(null)), body);
   }
 
+  const optBand = () => h('p', { class: 'low-banner', role: 'note' }, `⚠ ${root.SDS.ui.paramform.OPTIMISTIC_NOTE}`);
+
   function renderResults(el, ev) {
     clear(el);
-    el.appendChild(h('p', { class: 'caution' }, '概算です。ブロックの配置を動かしても、下の数値は変わりません(今回の編集は配置のみで、評価は元のチップの構成から計算しています)。'));
+    const edited = !!ev.edited;
+    el.appendChild(h('p', { class: 'caution' }, '概算です。配置の編集では数値は変わりません。パラメータ(コア数・クロック・L3)の編集では性能だけ再計算します(面積・電力は再計算しません)。'));
+    if (edited) el.appendChild(h('p', { class: 'low-banner' }, '予測(編集後): 下の性能は編集したパラメータでの予測です。公開値ではありません。'));
     // ST
     const stExtra = [];
     if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note'));
-    el.appendChild(perfCard('シングル性能 (GB7 ST)', ev.st, stExtra));
+    if (ev.optimistic) stExtra.push(optBand());
+    el.appendChild(perfCard(edited ? 'シングル性能 (GB7 ST) 予測(編集後)' : 'シングル性能 (GB7 ST)', ev.st, stExtra, edited));
     // MT
     const mtExtra = [];
+    if (ev.optimistic) mtExtra.push(optBand());
     if (ev.mt.ok) {
       mtExtra.push(h('p', { class: 'low-banner' }, '▼ マルチ性能の確度は「低」です。この数値を精密な予測として扱わないでください。'));
       mtExtra.push(note('並列効率 σ は AMD の代表 3 件だけで合わせ、SMT 効果 γ は未校正、メモリ帯域の頭打ちは未実装です。'));
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
     }
-    el.appendChild(perfCard('マルチ性能 (GB7 MT)', ev.mt, mtExtra));
+    el.appendChild(perfCard(edited ? 'マルチ性能 (GB7 MT) 予測(編集後)' : 'マルチ性能 (GB7 MT)', ev.mt, mtExtra, edited));
     // 面積
     const a = ev.area;
     const aBody = [h('div', { class: 'big' }, h('span', { class: a.totalMm2 == null ? 'val na' : 'val', text: a.totalMm2 == null ? '未取得' : a.totalMm2.toFixed(1) }), h('span', { class: 'unit', text: a.totalMm2 == null ? '' : ' mm²' + (a.totalIsPartial ? '(一部のダイのみ)' : '') }))];
@@ -64,6 +74,7 @@
     aBody.push(h('div', { class: 'row' }, '全体の歩留まり: ', h('b', { text: a.yield != null ? (a.yield * 100).toFixed(1) + '%' : '未取得' }), a.yield == null && a.yieldReason ? ` (${a.yieldReason})` : ''));
     if (a.yield != null) aBody.push(note('歩留まりは Poisson モデルと欠陥密度の二次推定値による概算です。'));
     aBody.push(note('ブロックの大きさと配置は模式図です。実チップのフロアプランではありません。'));
+    if (edited) aBody.push(note('編集後も面積・歩留まりは再計算していません(元のチップの値のまま。コア別面積が未取得のため)。', 'warn-note'));
     el.appendChild(h('section', { class: 'card', 'aria-label': 'ダイ面積' }, h('header', {}, h('h3', { text: 'ダイ面積' })), aBody));
     // 電力
     const pw = ev.power.published;
@@ -72,6 +83,7 @@
     prow('基準(TDP/PBP)', pw.base); prow('ピーク', pw.peak);
     if (pw.range) pBody.push(h('div', { class: 'row' }, '設定範囲: ', h('b', { text: `${pw.range.minW}〜${pw.range.maxW} W` })));
     if (ev.power.reason) pBody.push(h('div', { class: 'row' }, '公表値: ', h('b', { text: '未取得' }), ` (${ev.power.reason})`));
+    if (edited) pBody.push(note('公表電力は編集では再計算していません(元のチップの公表値)。', 'warn-note'));
     el.appendChild(h('section', { class: 'card', 'aria-label': '消費電力(公表値)' }, h('header', {}, h('h3', { text: '消費電力(公表値のみ)' }), h('span', { class: 'badge conf-none', text: 'モデル未校正' })), pBody));
   }
 

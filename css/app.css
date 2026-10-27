@@ -123,3 +123,35 @@ li.w-error { color: var(--ng); } li.w-warn { color: var(--warn); }
   .preset-dialog { grid-template-columns: 1fr; height: auto; overflow: auto; }
   .modes { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* パラメータ欄・差分ビュー・モードバッジ(M3a) */
+#workarea { grid-template-columns: 230px minmax(280px, 1fr) 400px; }
+.modebadge { font-weight: bold; border-width: 2px; padding: 1px 9px; }
+.modebadge[hidden] { display: none; }
+.modebadge.mode-A { border-color: var(--muted); }
+.modebadge.mode-B { border-color: var(--accent); color: var(--accent); }
+#params { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
+.pgroup { border: 1px solid var(--border); border-radius: 4px; margin: 6px 0; padding: 4px 8px; }
+.pgroup legend { font-weight: bold; padding: 0 4px; }
+.pfield { margin: 4px 0; }
+.pfield label { display: block; font-size: 0.9em; color: var(--muted); }
+.pinput { display: flex; align-items: center; gap: 6px; }
+.pinput input { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
+.pinput input[readonly] { background: var(--gray-bg); border-style: dashed; }
+.pinput input[aria-invalid="true"] { border: 2px solid var(--ng); }
+.pmsg { margin: 2px 0; font-size: 0.9em; }
+.lockbox { background: var(--gray-bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; margin: 6px 0; }
+.lockbox p { margin: 0.2em 0; }
+#diff { border: 2px solid var(--accent); border-radius: 6px; padding: 4px 10px 8px; margin-bottom: 10px; }
+#diff[hidden] { display: none; }
+.verdict { border: 1px solid var(--border); border-left-width: 6px; border-radius: 4px; padding: 4px 8px; margin: 6px 0; background: var(--bg); }
+.verdict p { margin: 0.2em 0; }
+.verdict.d-up { border-left-color: var(--ok); } .verdict.d-down { border-left-color: var(--ng); } .verdict.d-mixed { border-left-color: var(--warn); }
+td.d-up { color: var(--ok); background: var(--ok-bg); } td.d-down { color: var(--ng); background: var(--low-bg); } td.d-same, td.d-none { color: var(--muted); }
+.small-btn { padding: 1px 6px; font-size: 0.9em; white-space: nowrap; }
+#diff .low-banner ul { margin: 2px 0; padding-left: 1.2em; font-weight: normal; }
+@media (max-width: 1000px) {
+  #workarea { grid-template-columns: 210px minmax(200px, 1fr) 360px; }
+  #parts { display: block; }
+  #parts .partslist { display: none; }
+}

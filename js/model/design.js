@@ -74,14 +74,108 @@
       else die.blocks = oneBlock(die, 'uncore', 'SoC / I/O');
       dies.push(die);
     });
+    const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
+    const cfg = cfgFromPreset(preset);
     return {
       schema: SCHEMA, name: o.name || preset.name,
-      origin: { mode: o.mode || 'reproduce', base: preset.id, parts: [] },
+      origin: { mode, base: preset.id, parts: [] },
+      locks: { params: mode === 'reproduce' },
       presetId: preset.id, substrate: o.substrate || 'organic', cooling: o.cooling || null, dies,
+      cfg, baseCfg: clone(cfg),
     };
   }
 
-  const clone = (d) => JSON.parse(JSON.stringify(d));
+  function clone(d) { return JSON.parse(JSON.stringify(d)); }
+
+  // 編集用パラメータ(§3.3)。プリセットの cfg から性能に効く項目だけをコピーする(値のないキーは作らない)
+  function cfgFromPreset(preset) {
+    const c = preset.cfg || {};
+    const keys = ['type', 'uarch', 'count', 'smt', 'baseGHz', 'boostGHz', 'maxGHz'];
+    const cores = (c.cores || []).map((g) => { const r = {}; keys.forEach((k) => { if (g[k] != null) r[k] = g[k]; }); return r; });
+    return { cores, l3MB: typeof c.l3MB === 'number' ? c.l3MB : 0 };
+  }
+
+  // 古い設計(cfg なし。M2 で保存したもの)に cfg/baseCfg/locks を補った新しい設計を返す。cfg があればそのまま(複製)返す。
+  function ensureCfg(design, preset) {
+    const d = clone(design);
+    if (!d.cfg || !d.baseCfg) {
+      const cfg = preset ? cfgFromPreset(preset) : null;
+      if (cfg) { if (!d.cfg) d.cfg = cfg; if (!d.baseCfg) d.baseCfg = clone(cfg); }
+    }
+    if (!d.locks) d.locks = { params: !!(d.origin && d.origin.mode === 'reproduce') };
+    return d;
+  }
+
+  // ---- パラメータ編集(新しい設計を返す。元は壊さない) ----
+  const LOCKED = '再現モードではパラメータはロックされています';
+  const fail = (reason) => ({ ok: false, reason });
+  const clockOf = (g) => g.boostGHz || g.maxGHz || g.baseGHz || 0;
+
+  function l3Frac(mb) { return mb ? Math.min(0.3, 0.1 + mb / 400) : 0; }
+
+  // cfg に合わせてコアのブロックを**模式図として再配置**する(手で動かした位置は失われる)。
+  // コアまたは L3 のブロックを持つダイ(最初の1つ)だけを作り直す。戻り値は新しい設計。
+  function relayoutCompute(design) {
+    const d = clone(design);
+    const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3'));
+    if (die) die.blocks = layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
+    return d;
+  }
+
+  // cfg を差し替えた設計を返す(ロックは見ない=差分の「元に戻す」用)。relayout=true ならブロックを再配置。
+  function withCfg(design, cfg, relayout) {
+    const d = clone(design); d.cfg = clone(cfg);
+    return relayout ? relayoutCompute(d) : d;
+  }
+
+  function setCoreCount(design, type, count) {
+    if (design.locks && design.locks.params) return fail(LOCKED);
+    if (!design.cfg) return fail('編集用のパラメータがありません');
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 1 || count > 64) return fail('コア数は 1〜64 の整数にしてください');
+    const g = design.cfg.cores.find((c) => c.type === type);
+    if (!g) return fail(`コア種別「${type}」はこの設計にありません`);
+    const d = clone(design);
+    d.cfg.cores.find((c) => c.type === type).count = count;
+    if (g.count === count) return { ok: true, design: d, relaid: false };
+    // コア数が変わるとブロック数が変わるので、模式図として再配置する(手で動かした位置はリセットされる)
+    return { ok: true, design: relayoutCompute(d), relaid: true };
+  }
+
+  function setClock(design, type, ghz) {
+    if (design.locks && design.locks.params) return fail(LOCKED);
+    if (!design.cfg) return fail('編集用のパラメータがありません');
+    if (typeof ghz !== 'number' || !isFinite(ghz) || ghz < 0.5 || ghz > 8) return fail('クロックは 0.5〜8.0 GHz の数にしてください');
+    if (!design.cfg.cores.some((c) => c.type === type)) return fail(`コア種別「${type}」はこの設計にありません`);
+    const d = clone(design);
+    const g = d.cfg.cores.find((c) => c.type === type);
+    // boost を更新(boost がなく max があれば max。どちらも無ければ boost を新設)。base は変えない
+    if (g.boostGHz == null && g.maxGHz != null) g.maxGHz = ghz; else g.boostGHz = ghz;
+    return { ok: true, design: d, relaid: false };
+  }
+
+  function setL3(design, mb) {
+    if (design.locks && design.locks.params) return fail(LOCKED);
+    if (!design.cfg) return fail('編集用のパラメータがありません');
+    if (typeof mb !== 'number' || !isFinite(mb) || mb < 0 || mb > 512) return fail('L3 は 0〜512 MB の数にしてください');
+    const d = clone(design);
+    const old = d.cfg.l3MB || 0;
+    d.cfg.l3MB = mb;
+    if (old === mb) return { ok: true, design: d, relaid: false };
+    // 帯の高さ(割合)が同じなら位置は動かさず、ラベルだけ更新。違えば再配置
+    if (old > 0 && mb > 0 && l3Frac(old) === l3Frac(mb)) {
+      d.dies.forEach((die) => die.blocks.forEach((b) => { if (b.kind === 'l3') b.label = `L3 ${mb}MB`; }));
+      return { ok: true, design: d, relaid: false };
+    }
+    return { ok: true, design: relayoutCompute(d), relaid: true };
+  }
+
+  // 再現(A)→改良(B)。パラメータのロックを外す
+  function unlock(design) {
+    const d = clone(design);
+    d.origin = Object.assign({}, d.origin, { mode: 'improve', unlockedFrom: 'reproduce' });
+    d.locks = Object.assign({}, d.locks, { params: false });
+    return d;
+  }
 
   // 検証: ブロックのダイ外はみ出し・重なり(§9 の DRC 風)。戻り値は警告の配列。
   function validate(design) {
@@ -142,10 +236,38 @@
         for (const k of ['kind', 'coreType', 'uarch']) if (b[k] != null && typeof b[k] !== 'string') return `${u}: ${k} が文字列ではありません`;
       }
     }
+    for (const k of ['cfg', 'baseCfg']) if (d[k] != null) { const r = checkCfg(d[k], k); if (r) return r; }
+    if (d.locks != null) {
+      if (typeof d.locks !== 'object' || Array.isArray(d.locks)) return 'locks: 形式が違います(オブジェクトではありません)';
+      if (typeof d.locks.params !== 'boolean') return 'locks.params は true か false にしてください';
+    }
     return null;
   }
 
-  const api = { SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse };
+  // 編集用パラメータの検証(cfg / baseCfg)。範囲はパラメータ編集(setCoreCount / setClock / setL3)と同じ
+  function checkCfg(c, name) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return `${name}: 形式が違います`;
+    if (!Array.isArray(c.cores)) return `${name}: cores が配列ではありません`;
+    if (c.cores.length > MAX_DIES) return `${name}: コア種別が多すぎます`;
+    // 注意: コア種別が空でも通す(apple-m3pro / m3max はコア構成が未取得で cores が空。拒否すると保存した設計が開けなくなる)
+    if (!isNum(c.l3MB) || c.l3MB < 0 || c.l3MB > 512) return `${name}: l3MB は 0〜512 MB の有限の数にしてください`;
+    const types = new Set();
+    for (let i = 0; i < c.cores.length; i++) {
+      const g = c.cores[i]; const t = `${name} のコア ${i + 1}`;
+      if (!g || typeof g !== 'object' || Array.isArray(g)) return `${t}: 形式が違います`;
+      if (typeof g.type !== 'string') return `${t}: type が文字列ではありません`;
+      if (types.has(g.type)) return `${t}: コア種別「${g.type}」が重複しています`;
+      types.add(g.type);
+      if (!Number.isInteger(g.count) || g.count < 1 || g.count > 64) return `${t}: count は 1〜64 の整数にしてください`;
+      for (const k of ['baseGHz', 'boostGHz', 'maxGHz']) if (g[k] != null && !(isNum(g[k]) && g[k] >= 0.5 && g[k] <= 8)) return `${t}: ${k} は 0.5〜8 GHz の有限の数にしてください`;
+    }
+    return null;
+  }
+
+  const api = {
+    SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse,
+    cfgFromPreset, ensureCfg, setCoreCount, setClock, setL3, unlock, withCfg, clockOf, relayoutCompute,
+  };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
