@@ -130,7 +130,10 @@
     let sum = 0; let threads = 0; const detail = [];
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false;
     for (const c of cores) {
-      const f = (fByType && fByType[c.type]) || c.baseGHz || c.boostGHz || c.maxGHz;
+      // 既定は最大クロック(boost)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
+      const given = fByType && fByType[c.type];
+      const f = given || c.boostGHz || c.maxGHz || c.baseGHz;
+      const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
       const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads });
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
@@ -138,16 +141,19 @@
       if (st.fallback) anyFallback = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, corrSource: st.corrSource, confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockSource, corrSource: st.corrSource, confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // sigma・gammaSmt は未校正(既定値のまま)なので、呼び出し側が確度を過大評価しないよう明示する
+    // 種別によってクロックの出所が違う(例: P は boost、E は boost 未取得で base)と、種別間の比が歪む。呼び出し側に知らせる
+    const sources = new Set(detail.map((d) => d.clockSource));
+    const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, threads, detail, uncalibrated, confidence: uncalibrated.length ? 'low' : worst, fallback: anyFallback };
+    return { ok: true, score: sum * eta, eta, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。
-  // 全コア負荷時のクロックは、電力モデル未接続のため baseGHz(なければ maxGHz)を使う。fByTypeOf(preset) で差し替え可能。
+  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
   // 対数誤差の二乗和を最小化する σ を、区間 [0, 0.2] の黄金分割探索で求める。
   function calibrateMt(presets, gb7ByName, uarchDb, cal, fByTypeOf) {
     // 代表のうち、全コアが uarch 専用の補正を持ち、仮の IPC を含まないものだけを使う(ISA 平均の代用は σ を歪める)

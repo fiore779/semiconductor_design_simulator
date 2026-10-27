@@ -146,3 +146,49 @@ test('幅が未取得のコアは decodeWidth を IPC の上限に使う(ROB 由
   assert.ok(g.ok);
   assert.strictEqual(g.parts.base, 1 / D.uarch['Gracemont'].decodeWidth); // 修正前は ROB 由来の上限(約 1/8.8)になっていた
 });
+
+// MT の検証(σ を AMD の代表 3 件で合わせた状態で、代表以外を ±10% で予測できるか)。通るのは一部だけ(設計書 §5.3.0)。
+['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x', 'amd-strix-hx370', 'nv-orin-agx'].forEach((id) => {
+  test(`検証 MT(±10%): ${id}`, () => {
+    const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+    const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
+    assert.ok(r.ok && !r.fallback, id);
+    const err = r.score / gb7ByName[p.gb7].multi - 1;
+    assert.ok(Math.abs(err) <= 0.10, `${id}: ${(err * 100).toFixed(1)}%`);
+  });
+});
+
+test('MT の既知の外れ値(Oryon の E コアは ISA 平均補正で過大、13900K・185H は予測が外れる)', () => {
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  ['qc-8elite-gen5', 'intel-rpl-13900k', 'intel-mtl-185h'].forEach((id) => {
+    const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
+    assert.ok(r.ok, id);
+    assert.ok(Math.abs(r.score / gb7ByName[p.gb7].multi - 1) > 0.10, `${id} は外れなくなった。リストを更新すること`);
+  });
+});
+
+test('mtScore: fByType 省略時は最大クロック(boost)を使う', () => {
+  const c = cal(); const p = preset('amd-zen5-9700x');
+  const a = F.mtScore(p, c, D.uarch, null);
+  const b = F.mtScore(p, c, D.uarch, { P: p.cfg.cores[0].boostGHz });
+  assert.strictEqual(a.score, b.score);
+});
+
+test('mtScore: boost が無い E コアは base に落ち、mixedClock で知らせる(13900K の E は boost 未取得)', () => {
+  const r = F.mtScore(preset('intel-rpl-13900k'), cal(), D.uarch, null);
+  assert.ok(r.ok);
+  assert.strictEqual(r.mixedClock, true);
+  assert.deepStrictEqual(r.detail.map((d) => d.clockSource), ['boost', 'base']);
+  assert.strictEqual(F.mtScore(preset('amd-zen5-9700x'), cal(), D.uarch, null).mixedClock, false);
+});
+
+test('mtScore: maxGHz だけのコア(Arm)は max を使い、fByType の部分指定は指定した種別だけ上書き', () => {
+  const c = cal();
+  const orin = F.mtScore(preset('nv-orin-agx'), c, D.uarch, null);
+  assert.ok(orin.ok);
+  assert.strictEqual(orin.detail[0].clockSource, 'max');
+  const p = preset('intel-arl-285k');
+  const part = F.mtScore(p, c, D.uarch, { P: 3.0 });
+  assert.deepStrictEqual(part.detail.map((d) => d.clockSource), ['given', 'boost']);
+  assert.ok(part.score < F.mtScore(p, c, D.uarch, null).score);
+});
