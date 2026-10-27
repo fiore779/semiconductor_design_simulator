@@ -11,10 +11,11 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   const add = (o) => P.push(Object.assign({ calib: false, power: noPower }, o));
 
   // ---- Apple A シリーズ(2P + 4E) ----
+  const aCores = { 'apple-a12': ['Vortex', 'Tempest'], 'apple-a13': ['Lightning', 'Thunder'], 'apple-a14': ['Firestorm', 'Icestorm'], 'apple-a15': ['Avalanche', 'Blizzard'], 'apple-a16': ['Everest', 'Sawtooth'] };
   const a = (id, name, year, gb7, mm2, nodeId, pClk, eClk, l2, extra) => add(Object.assign({
     id, name, vendor: 'Apple', family: 'A シリーズ', isa: 'arm', kind: 'mobile', year, gb7,
     dies: [die(name, mm2, 'meas', nodeId)],
-    cfg: { cores: [{ type: 'P', count: 2, maxGHz: pClk }, { type: 'E', count: 4, maxGHz: eClk }], l2: l2 || null, memory: null },
+    cfg: { cores: [{ type: 'P', uarch: (aCores[id] || [])[0], count: 2, maxGHz: pClk }, { type: 'E', uarch: (aCores[id] || [])[1], count: 4, maxGHz: eClk }], l2: l2 || null, memory: null },
   }, extra || {}));
   a('apple-a12', 'A12', 2018, 'A12', 85.2, 'tsmc-n7', 2.49, 1.59, 'P 8MB / E 2MB', { power: { base: null, peak: pw(3.64, 'meas', 'SPECint2006 平均(AnandTech 引用)'), range: null } });
   a('apple-a13', 'A13', 2019, 'A13', 101.1, 'tsmc-n7', 2.66, 1.72, 'P 8MB / E 4MB');
@@ -42,7 +43,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   m('apple-m1ultra', 'M1 Ultra', 2022, 'M1 Ultra', [die('M1 Max ×2 (UltraFusion)', 864, 'sec', 'tsmc-n5', 'M1 Max の推定値 ×2')],
     [{ type: 'P', uarch: 'Firestorm', count: 16 }, { type: 'E', uarch: 'Icestorm', count: 4 }]);
   m('apple-m2', 'M2', 2022, 'M2', [die('M2', 153.2, 'meas', 'tsmc-n5')],
-    [{ type: 'P', count: 4, maxGHz: 3.49 }, { type: 'E', count: 4, maxGHz: 2.42 }],
+    [{ type: 'P', uarch: 'Avalanche', count: 4, maxGHz: 3.49 }, { type: 'E', uarch: 'Blizzard', count: 4, maxGHz: 2.42 }],
     { power: { base: null, peak: pw(20, 'meas', 'CPU 負荷時 約20W(Notebookcheck)'), range: null } });
   m('apple-m2pro', 'M2 Pro', 2023, 'M2 Pro', [die('M2 Pro', 294.7, 'meas', 'tsmc-n5')], [{ type: 'P', count: 8 }, { type: 'E', count: 4 }]);
   m('apple-m2max', 'M2 Max', 2023, 'M2 Max', [die('M2 Max', 485.6, 'sec', 'tsmc-n5', 'NamuWiki のみ')],
@@ -132,4 +133,18 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     power: { base: pw(19, 'pub', 'TV モードのゲーム時(本体)。ホーム画面 8W'), peak: null, range: null },
     cfg: { cores: [c('P', 'Cortex-A78C', 8, 1.1)], l3MB: 4, memory: 'LPDDR5X, 128bit' },
   });
+
+  // 校正の代表 SKU(§5.3.1)。同じ P コアを使う他のチップは検証用(代表の補正係数で予測して誤差を見る)。
+  // 条件: GB7 が機種中央値で n が比較的多い([中央値])、コア構成が単純、電力モードの影響が小さい。
+  const reps = {
+    'apple-m1': 'Firestorm の代表(M1。A14・M1 Pro/Max が検証用)。機種中央値 n=6',
+    'apple-m2': 'Avalanche の代表(M2。A15 が検証用)。機種中央値 n=4',
+    'apple-a16': 'Everest の代表(A16)。機種中央値 n=4',
+    'qc-8gen1': 'Cortex-X2 の代表(8 Gen 1。8+ Gen 1・Dimensity 9000 が検証用)。機種中央値 n=7',
+    'qc-8gen2': 'Cortex-X3 の代表(8 Gen 2。Dimensity 9200 が検証用)。機種中央値 n=21',
+    'qc-8gen3': 'Cortex-X4 の代表(8 Gen 3。8s Gen 3・7+ Gen 3・Dimensity 9300 が検証用)。機種中央値 n=13',
+    'qc-8elite': 'Oryon(8 Elite)の代表。8 Elite Gen 5 が検証用。機種中央値 n=17',
+    'mt-9400': 'Cortex-X925 の代表(Dimensity 9400)。機種中央値 n=4',
+  };
+  P.forEach((p) => { if (reps[p.id]) { p.calib = true; p.calibNote = reps[p.id]; } });
 })();
