@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>半導体設計シミュレーター</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<a class="skip" href="#dieview">ダイビューへ移動</a>
+<div id="app">
+  <header id="menubar" role="toolbar" aria-label="メニュー">
+    <strong class="appname">半導体設計シミュレーター</strong>
+    <button type="button" class="btn" id="m-new" title="新規(4 つの始め方)">新規</button>
+    <button type="button" class="btn" id="m-open" title="保存した設計 (JSON) を開く (Ctrl+O)">開く</button>
+    <button type="button" class="btn" id="m-save" title="設計を JSON でダウンロード (Ctrl+S)">保存</button>
+    <button type="button" class="btn" id="m-preset" title="実在チップのプリセットを選ぶ">プリセット</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="btn" id="m-undo" title="元に戻す (Ctrl+Z)">↶ 元に戻す</button>
+    <button type="button" class="btn" id="m-redo" title="やり直す (Ctrl+Y)">↷ やり直す</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="btn" disabled title="未実装">比較(未実装)</button>
+    <button type="button" class="btn" disabled title="未実装">設定(未実装)</button>
+    <button type="button" class="btn" id="m-help" aria-expanded="false" aria-controls="help">ヘルプ</button>
+    <span id="designname" class="designname"></span>
+    <input type="file" id="fileinput" accept=".json,application/json" hidden>
+  </header>
+  <div id="help" hidden>
+    <h2>ショートカット</h2>
+    <ul>
+      <li>Ctrl+Z: 元に戻す / Ctrl+Y(または Ctrl+Shift+Z): やり直す</li>
+      <li>Ctrl+S: 保存 / Ctrl+O: 開く</li>
+      <li>Esc: ダイアログを閉じる(ダイビューでは選択解除)</li>
+      <li>ダイビュー: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
+      <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
+    </ul>
+    <p class="small">この版(M2)でできること: 実在チップを「再現」で読み込み、公開値と比べる。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
+    できないこと: 改良・混合・新規設計、モデル電力の計算、発熱の計算。</p>
+  </div>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <main id="workarea">
+    <aside id="parts" aria-label="パーツ">
+      <h2>パーツ</h2>
+      <p class="note">M2 では部品の追加はできません(簡易表示)。</p>
+      <ul class="small">
+        <li>コア</li><li>キャッシュ</li><li>SoC</li><li>I/O</li>
+      </ul>
+      <p class="note">ブロックの大きさと配置は<b>模式図</b>です。実チップのフロアプランではありません。</p>
+    </aside>
+    <section id="center" aria-label="ダイビュー">
+      <div id="viewbar" role="group" aria-label="表示切替">
+        <button type="button" class="btn vm" data-mode="place" aria-pressed="true">配置</button>
+        <button type="button" class="btn vm" data-mode="power" aria-pressed="false">電力密度</button>
+        <button type="button" class="btn vm" data-mode="temp" aria-pressed="false">温度</button>
+        <button type="button" class="btn" id="v-fit">全体表示</button>
+        <span id="viewhint" class="small"></span>
+      </div>
+      <div id="viewwrap">
+        <div id="dieview" tabindex="-1"></div>
+        <div id="viewmsg" class="viewmsg"></div>
+      </div>
+    </section>
+    <aside id="right" aria-label="結果">
+      <div id="results"></div>
+      <div id="repro"></div>
+    </aside>
+  </main>
+  <footer id="bottom">
+    <section id="props" aria-label="プロパティ"></section>
+    <section id="history" aria-label="履歴"></section>
+    <section id="validation" aria-label="検証"></section>
+  </footer>
+</div>
+
+<!-- データ -->
+<script src="data/benchmarks/gb7-scores.js"></script>
+<script src="data/nodes.js"></script>
+<script src="data/substrates.js"></script>
+<script src="data/cooling.js"></script>
+<script src="data/uarch.js"></script>
+<script src="data/presets/chips-pc.js"></script>
+<script src="data/presets/chips-soc.js"></script>
+<!-- 計算 -->
+<script src="js/sim/area.js"></script>
+<script src="js/sim/perf.js"></script>
+<script src="js/sim/power.js"></script>
+<script src="js/sim/thermal.js"></script>
+<script src="js/model/design.js"></script>
+<script src="js/model/evaluate.js"></script>
+<script src="js/history/history.js"></script>
+<!-- ダイビュー(無くても画面は動く。main.js が有無を調べる) -->
+<script src="js/render/geom.js"></script>
+<script src="js/render/dieview.js"></script>
+<!-- UI -->
+<script src="js/ui/dom.js"></script>
+<script src="js/ui/presetlist.js"></script>
+<script src="js/ui/reproduce.js"></script>
+<script src="js/ui/commitplan.js"></script>
+<script src="js/ui/warnings.js"></script>
+<script src="js/ui/results.js"></script>
+<script src="js/ui/presetdialog.js"></script>
+<script src="js/ui/panels.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
