@@ -145,7 +145,26 @@
     return n * p;
   }
 
+  // 画面座標(sx, sy)がダイ内のどのセルか(nx×ny、行優先、y=0 がダイ上端)。ダイ外は null。
+  function cellAt(view, die, nx, ny, sx, sy) {
+    if (!(nx >= 1) || !(ny >= 1)) return null;
+    const r = screenRect(view, dieWorldRect(die));
+    if (!(r.w > 0) || !(r.h > 0)) return null;
+    if (sx < r.x || sx > r.x + r.w || sy < r.y || sy > r.y + r.h) return null;
+    const ix = Math.min(nx - 1, Math.floor((sx - r.x) / r.w * nx));
+    const iy = Math.min(ny - 1, Math.floor((sy - r.y) / r.h * ny));
+    return { ix, iy, index: iy * nx + ix };
+  }
+
+  // 値配列の最大セルの index(NaN は無視)。全部 NaN・空なら -1。同値は最初のもの。
+  function maxCellIndex(values) {
+    let mi = -1; let mv = -Infinity;
+    for (let k = 0; k < values.length; k++) { const v = values[k]; if (v === v && v > mv) { mv = v; mi = k; } }
+    return mi;
+  }
+
   const api = {
+    cellAt, maxCellIndex,
     MIN_SIZE_MM, DEFAULT_GRID_MM, HANDLE_PX, MIN_ZOOM, MAX_ZOOM, HANDLES,
     worldToScreen, screenToWorld, zoomAt, panBy, blockWorldRect, dieWorldRect, handlePoints, screenRect,
     hitTest, snap, moveBlock, resizeBlock, fit, niceLength,

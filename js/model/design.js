@@ -80,9 +80,46 @@
       schema: SCHEMA, name: o.name || preset.name,
       origin: { mode, base: preset.id, parts: [] },
       locks: { params: mode === 'reproduce' },
-      presetId: preset.id, substrate: o.substrate || 'organic', cooling: o.cooling || null, dies,
-      cfg, baseCfg: clone(cfg),
+      presetId: preset.id, dies,
+      cfg, baseCfg: clone(cfg), package: defaultPackage(preset),
     };
+  }
+
+  // ---- パッケージ設定(冷却・基板・電力制限)。環境の設定でチップの設計ではないので、ロック(A 再現)の対象外 ----
+  const DEFAULT_COOLING = { pc: 'air-tower', 'mobile-pc': 'thin-laptop', mobile: 'passive-phone', embedded: 'small-fan' };
+  // 電力制限の初期値(設計書 §6.1): プリセットの公表ピーク電力(MTP など)があればそれ、なければ公表の基本電力、どちらも無ければ制限なし(null)。
+  // 出所は powerLimitSource('peak'|'base'|null。ユーザーが変えたら 'user')
+  function defaultPowerLimit(preset) {
+    const p = (preset && preset.power) || {};
+    const ok = (x) => !!x && typeof x.w === 'number' && isFinite(x.w) && x.w >= 1 && x.w <= 1000;
+    if (ok(p.peak)) return { powerLimitW: p.peak.w, powerLimitSource: 'peak' };
+    if (ok(p.base)) return { powerLimitW: p.base.w, powerLimitSource: 'base' };
+    return { powerLimitW: null, powerLimitSource: null };
+  }
+  function defaultPackage(preset) {
+    return Object.assign({ coolingId: DEFAULT_COOLING[preset && preset.kind] || 'air-tower', substrateId: 'organic' }, defaultPowerLimit(preset));
+  }
+  // package が無い古い設計に既定のパッケージを補った新しい設計を返す(あれば複製のみ)
+  function ensurePackage(design, preset) {
+    const d = clone(design);
+    if (!d.package) d.package = defaultPackage(preset);
+    return d;
+  }
+  const dataIds = (key) => { const a = (root.SDS_DATA || {})[key]; return Array.isArray(a) ? a.map((x) => x.id) : null; };
+  function setPackageField(design, field, value, key, label) {
+    const ids = dataIds(key);
+    if (typeof value !== 'string' || !value || (ids && !ids.includes(value))) return fail(`${label}「${value}」は選べません`);
+    const d = clone(design);
+    d.package = Object.assign(defaultPackage(null), d.package || {}, { [field]: value });
+    return { ok: true, design: d };
+  }
+  function setCooling(design, id) { return setPackageField(design, 'coolingId', id, 'cooling', '冷却'); }
+  function setSubstrate(design, id) { return setPackageField(design, 'substrateId', id, 'substrates', '基板'); }
+  function setPowerLimit(design, w) {
+    if (w !== null && !(typeof w === 'number' && isFinite(w) && w >= 1 && w <= 1000)) return fail('電力制限は 1〜1000 W の数か、制限なし(null)にしてください');
+    const d = clone(design);
+    d.package = Object.assign(defaultPackage(null), d.package || {}, { powerLimitW: w, powerLimitSource: w === null ? null : 'user' });
+    return { ok: true, design: d };
   }
 
   function clone(d) { return JSON.parse(JSON.stringify(d)); }
@@ -241,6 +278,15 @@
       if (typeof d.locks !== 'object' || Array.isArray(d.locks)) return 'locks: 形式が違います(オブジェクトではありません)';
       if (typeof d.locks.params !== 'boolean') return 'locks.params は true か false にしてください';
     }
+    if (d.package != null) {
+      const k = d.package;
+      if (typeof k !== 'object' || Array.isArray(k)) return 'package: 形式が違います';
+      if (typeof k.coolingId !== 'string') return 'package.coolingId が文字列ではありません';
+      if (typeof k.substrateId !== 'string') return 'package.substrateId が文字列ではありません';
+      if (k.powerLimitW === undefined) k.powerLimitW = null; // 欠落は制限なしとして受ける
+      if (k.powerLimitSource != null && typeof k.powerLimitSource !== 'string') return 'package.powerLimitSource が文字列ではありません';
+      if (k.powerLimitW !== null && !(isNum(k.powerLimitW) && k.powerLimitW >= 1 && k.powerLimitW <= 1000)) return 'package.powerLimitW は null か 1〜1000 の数にしてください';
+    }
     return null;
   }
 
@@ -266,7 +312,7 @@
 
   const api = {
     SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse,
-    cfgFromPreset, ensureCfg, setCoreCount, setClock, setL3, unlock, withCfg, clockOf, relayoutCompute,
+    cfgFromPreset, ensureCfg, defaultPackage, ensurePackage, setCooling, setSubstrate, setPowerLimit, setCoreCount, setClock, setL3, unlock, withCfg, clockOf, relayoutCompute,
   };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

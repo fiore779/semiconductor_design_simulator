@@ -8,12 +8,12 @@
 
   const need = ['sim', 'model', 'history', 'ui'];
   const missing = need.filter((k) => !S || !S[k]);
-  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan) {
+  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata) {
     document.body.insertBefore(Object.assign(document.createElement('p'), { className: 'fatal', textContent: '✗ 必要なスクリプトが読み込まれていません(コンソールを確認してください)。このページは動きません。' }), document.body.firstChild);
     return;
   }
   const { h, clear } = S.ui.dom;
-  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan;
+  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan; const PK = S.ui.packageform; const PP = S.ui.packagepanel; const HD = S.ui.heatdata;
 
   let ctx;
   try { ctx = EV.makeContext(); } catch (e) {
@@ -24,7 +24,7 @@
   let design = null;
   const history = S.history.createHistory({ limit: 200 }) /* まとめるかどうかは commitplan が決める(時間の窓は使わない。ドラッグ中に止めても 1 手) */;
   let selection = []; let viewMode = 'place'; let view = null; let propMsg = ''; let ignoreUntil = 0; let saveTimer = null; let noticeTimer = null;
-  let lastEval = null; let paramMsgs = {};
+  let lastEval = null; let paramMsgs = {}; let pkgMsgs = {};
 
   // ---- 通知 ----
   function notify(text, kind) {
@@ -85,6 +85,20 @@
   function renderParamsPanel() {
     PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onUnlock }, paramMsgs);
   }
+  function renderPackagePanel() {
+    PP.renderPackage($('package'), design, { onCooling: (id) => onPackageEdit('cooling', id), onSubstrate: (id) => onPackageEdit('substrate', id), onPowerLimit: (s) => onPackageEdit('limit', s) }, pkgMsgs);
+  }
+  // ヒートマップのデータ接続。電力密度・温度のモードのときだけ計算する。ダイビューに setHeatmap が無ければ何もしない
+  function updateHeat() {
+    const note = $('heatnote');
+    const canSet = !!(view && typeof view.setHeatmap === 'function');
+    if (viewMode === 'place' || !design || !lastEval) { if (canSet) view.setHeatmap(null); note.hidden = true; note.textContent = ''; return; }
+    const r = HD.buildHeatmap(design, lastEval, viewMode, null);
+    if (canSet) view.setHeatmap(r.ok ? r.data : null);
+    note.hidden = false; note.className = r.ok ? 'small' : 'small err';
+    note.removeAttribute('role'); // 編集のたびに読み上げない(index.html の role=status を外す代わり)
+    note.textContent = r.ok ? (r.longNote || r.data.note) + (canSet ? '' : '(ダイビューがヒートマップ表示に未対応のため、色は表示されません)') : `✗ ${r.reason}`;
+  }
   function renderDiffPanel() {
     DP.renderDiff($('diff'), design, ctx, lastEval, {
       onRevert: (id, label) => { const r = DF.revertParam(design, id); if (commit(r.design, label, false) && r.relaid) notifyRelaid(); },
@@ -96,13 +110,13 @@
     renderButtons();
     if (!design) {
       clear($('results')).appendChild(h('p', { class: 'note', text: '設計を読み込むと、ここに結果が出ます。' }));
-      clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderParamsPanel(); renderProps(); renderHistory(); renderEmptyOrFallback();
+      clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderParamsPanel(); renderPackagePanel(); updateHeat(); renderProps(); renderHistory(); renderEmptyOrFallback();
       return;
     }
     lastEval = EV.evaluate(design, ctx);
-    RS.renderResults($('results'), lastEval);
+    RS.renderResults($('results'), lastEval, design);
     if (PF.showRepro(design)) RS.renderRepro($('repro'), lastEval); else clear($('repro')); // B では差分ビューに置き換え
-    renderDiffPanel(); renderParamsPanel();
+    renderDiffPanel(); renderParamsPanel(); renderPackagePanel(); updateHeat();
     PN.renderValidation($('validation'), lastEval.warnings, (id) => selectBlocks([id]));
     if (!o.skipProps) renderProps();
     renderHistory();
@@ -132,16 +146,16 @@
   // ---- 設計の読み込み・変更 ----
   // 設計を丸ごと差し替える(履歴は作り直す)。評価に失敗したら元の設計に戻す。
   // M2 で保存した古い設計(cfg なし)は、プリセットから編集用パラメータを補う
-  function ensure(d) { return DS.ensureCfg(d, ctx.presets.find((p) => p.id === d.presetId) || null); }
+  function ensure(d) { const p = ctx.presets.find((q) => q.id === d.presetId) || null; return DS.ensurePackage(DS.ensureCfg(d, p), p); }
   function loadDesign(d, how) {
     const prev = design;
-    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {};
+    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {}; pkgMsgs = {};
     try { renderAll(); } catch (e) {
       design = prev; try { renderAll(); } catch (e2) { /* 元の設計も描けないときは諦める */ }
       notify(`✗ この設計を表示できませんでした: ${e.message}`, 'err'); return false;
     }
     history.clear(); renderHistory(); renderButtons();
-    if (view) { view.setDesign(design); view.setSelection([]); view.setViewMode(viewMode); if (view.fit) view.fit(); }
+    if (view) { view.setDesign(design); view.setSelection([]); view.setViewMode(viewMode); if (view.fit) view.fit(); updateHeat(); }
     scheduleSave();
     return true;
   }
@@ -160,7 +174,7 @@
     history.push(design, next, label, { coalesce });
     design = next;
     if (!fromView && view) view.setDesign(design);
-    propMsg = ''; paramMsgs = {};
+    propMsg = ''; paramMsgs = {}; pkgMsgs = {};
     renderAll({ skipProps: !!fromProps });
     scheduleSave();
     return true;
@@ -168,7 +182,7 @@
   function undo() { dragRun = false; const d = history.undo(); if (d) applyHistory(d); }
   function redo() { dragRun = false; const d = history.redo(); if (d) applyHistory(d); }
   function jumpTo(i) { dragRun = false; const d = history.jumpTo(i); if (d) applyHistory(d); }
-  function applyHistory(d) { design = d; propMsg = ''; paramMsgs = {}; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
+  function applyHistory(d) { design = d; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
 
   // プロパティ欄の数値編集
   function onPropEdit(blockId, field, value, input, oldStr) {
@@ -200,6 +214,27 @@
     if (commit(res.design, label, false)) {
       if (res.relaid) notifyRelaid();
     } else renderParamsPanel();
+  }
+  // パッケージ設定の編集(冷却・基板・電力制限)。ロックの対象外なので A 再現でも可。失敗は入力欄の下に出して元に戻す
+  function onPackageEdit(kind, value) {
+    if (!design) return;
+    const pkg = design.package || DS.defaultPackage(null);
+    const fail = (reason) => { pkgMsgs = { [kind]: reason }; renderPackagePanel(); };
+    let res; let label;
+    if (kind === 'cooling') {
+      if (value === pkg.coolingId) { pkgMsgs = {}; renderPackagePanel(); return; }
+      res = DS.setCooling(design, value); label = PK.packageLabel('cooling', (window.SDS_DATA || {}).cooling, pkg.coolingId, value);
+    } else if (kind === 'substrate') {
+      if (value === pkg.substrateId) { pkgMsgs = {}; renderPackagePanel(); return; }
+      res = DS.setSubstrate(design, value); label = PK.packageLabel('substrate', (window.SDS_DATA || {}).substrates, pkg.substrateId, value);
+    } else {
+      const p = PK.parsePowerLimit(value);
+      if (!p.ok) { fail(p.reason); return; }
+      if (p.value === (pkg.powerLimitW == null ? null : pkg.powerLimitW)) { pkgMsgs = {}; renderPackagePanel(); return; }
+      res = DS.setPowerLimit(design, p.value); label = PK.powerLimitLabel(pkg.powerLimitW, p.value);
+    }
+    if (!res.ok) { fail(res.reason); return; }
+    if (!commit(res.design, label, false)) renderPackagePanel();
   }
   function onUnlock() {
     if (!design || !window.confirm('ロックを解除して改良モードにします。パラメータ(コア数・クロック・L3)を編集できるようになります。再現モードの検証(公開値との比較)は、差分ビューに置き換わります。よろしいですか?')) return;
@@ -254,7 +289,9 @@
     viewMode = m;
     document.querySelectorAll('.vm').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'));
     if (view) view.setViewMode(m);
-    $('viewhint').textContent = m === 'place' ? '' : '電力モデルは未校正のため、この表示は模式的な目安です(実測や正確な予測ではありません)。';
+    $('viewhint').textContent = m === 'place' ? '' : HD.SCHEMATIC;
+    if (m === 'place' && view && typeof view.setHeatmap === 'function') view.setHeatmap(null);
+    updateHeat();
   }
 
   // ---- イベント ----

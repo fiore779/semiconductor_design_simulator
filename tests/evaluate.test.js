@@ -210,7 +210,7 @@ test('楽観: クロック・コア数・L3 を上げた編集は optimistic。�
   [design.setClock(d0, 'P', 6.0), design.setCoreCount(d0, 'P', 20), design.setL3(d0, 96)].forEach((r) => {
     const e = E.evaluate(r.design, ctx);
     assert.strictEqual(e.optimistic, true); assert.ok(e.optimisticReasons.length >= 1);
-    assert.ok(e.warnings.some((w) => w.text.includes('上振れ側の予測')));
+    assert.ok(e.warnings.some((w) => w.text.includes('楽観側の予測')));
   });
   [design.setClock(d0, 'P', 5.0), design.setCoreCount(d0, 'P', 12), design.setL3(d0, 48)].forEach((r) => {
     const e = E.evaluate(r.design, ctx);

@@ -231,3 +231,75 @@ test('保存→開くの往復: 編集した設計の locks・origin・cfg・bas
   const a = design.parse(design.serialize(design.fromPreset(preset('amd-zen5-9950x')))).design;
   assert.deepStrictEqual(a.locks, { params: true });
 });
+
+// ---- パッケージ設定 ----
+test('fromPreset: kind ごとの既定のパッケージ', () => {
+  const byKind = (kind) => D.presets.find((p) => p.kind === kind);
+  const pk = design.fromPreset(byKind('pc')).package;
+  assert.strictEqual(pk.coolingId, 'air-tower'); assert.strictEqual(pk.substrateId, 'organic');
+  assert.strictEqual(design.fromPreset(byKind('mobile-pc')).package.coolingId, 'thin-laptop');
+  assert.strictEqual(design.fromPreset(byKind('mobile')).package.coolingId, 'passive-phone');
+  assert.strictEqual(design.fromPreset(byKind('embedded')).package.coolingId, 'small-fan');
+});
+
+test('電力制限の初期値: ピーク→基本→null、変更で user、空欄で null', () => {
+  const pre = (id) => D.presets.find((p) => p.id === id);
+  const pk = (id) => design.fromPreset(pre(id)).package;
+  assert.deepStrictEqual([pk('intel-adl-12900k').powerLimitW, pk('intel-adl-12900k').powerLimitSource], [258.6, 'peak']);
+  assert.deepStrictEqual([pk('amd-zen5-9700x').powerLimitW, pk('amd-zen5-9700x').powerLimitSource], [65, 'base']);
+  assert.deepStrictEqual([pk('amd-zen3-5800x').powerLimitW, pk('amd-zen3-5800x').powerLimitSource], [null, null]);
+  const d = design.fromPreset(pre('intel-adl-12900k'));
+  const a = design.setPowerLimit(d, 100).design.package; assert.deepStrictEqual([a.powerLimitW, a.powerLimitSource], [100, 'user']);
+  const b = design.setPowerLimit(d, null).design.package; assert.deepStrictEqual([b.powerLimitW, b.powerLimitSource], [null, null]);
+  // package が無い古い設計も同じ規則で補う。冷却の変更は電力制限を変えない
+  const old = design.fromPreset(pre('amd-zen5-9700x')); delete old.package;
+  assert.strictEqual(design.ensurePackage(old, pre('amd-zen5-9700x')).package.powerLimitSource, 'base');
+  assert.strictEqual(design.setCooling(d, 'aio-360').design.package.powerLimitSource, 'peak');
+  // 旧フィールド substrate / cooling は書かない
+  assert.ok(!('substrate' in d) && !('cooling' in d));
+});
+
+test('parse: powerLimitW の欠落は null、powerLimitSource は文字列か null', () => {
+  const d = design.fromPreset(D.presets[0]);
+  const withPk = (pk) => design.parse(JSON.stringify(Object.assign({}, d, { package: pk })));
+  const r = withPk({ coolingId: 'a', substrateId: 'organic' });
+  assert.ok(r.ok); assert.strictEqual(r.design.package.powerLimitW, null);
+  assert.ok(withPk({ coolingId: 'a', substrateId: 'organic', powerLimitW: 65, powerLimitSource: 'user' }).ok);
+  assert.ok(withPk({ coolingId: 'a', substrateId: 'organic', powerLimitW: null, powerLimitSource: null }).ok);
+  assert.strictEqual(withPk({ coolingId: 'a', substrateId: 'organic', powerLimitW: 65, powerLimitSource: 5 }).ok, false);
+});
+
+test('setCooling/setSubstrate/setPowerLimit: 正常・ロック中でも変更可・元を壊さない', () => {
+  const d = design.fromPreset(D.presets[0], { mode: 'reproduce' });
+  assert.ok(d.locks.params);
+  const before = JSON.stringify(d);
+  const a = design.setCooling(d, 'aio-360'); assert.ok(a.ok); assert.strictEqual(a.design.package.coolingId, 'aio-360');
+  const b = design.setSubstrate(a.design, 'glass'); assert.ok(b.ok); assert.strictEqual(b.design.package.substrateId, 'glass');
+  const c = design.setPowerLimit(b.design, 65); assert.ok(c.ok); assert.strictEqual(c.design.package.powerLimitW, 65);
+  assert.strictEqual(design.setPowerLimit(c.design, null).design.package.powerLimitW, null);
+  assert.strictEqual(JSON.stringify(d), before);
+});
+
+test('setCooling/setSubstrate/setPowerLimit: 不正は日本語の理由', () => {
+  const d = design.fromPreset(D.presets[0]);
+  for (const r of [design.setCooling(d, 'nope'), design.setSubstrate(d, 5), design.setPowerLimit(d, 0), design.setPowerLimit(d, 1001), design.setPowerLimit(d, NaN), design.setPowerLimit(d, '65')]) {
+    assert.strictEqual(r.ok, false); assert.ok(/選べません|ください/.test(r.reason));
+  }
+});
+
+test('ensurePackage: 無ければ補い、あれば保つ', () => {
+  const p = D.presets[0];
+  const d = design.fromPreset(p); delete d.package;
+  const e = design.ensurePackage(d, p); assert.ok(e.package.coolingId); assert.strictEqual(d.package, undefined);
+  const f = design.setCooling(e, 'aio-360').design;
+  assert.strictEqual(design.ensurePackage(f, p).package.coolingId, 'aio-360');
+});
+
+test('parse: package の検証', () => {
+  const d = design.fromPreset(D.presets[0]);
+  assert.ok(design.parse(design.serialize(d)).ok);
+  const ok = (pk) => design.parse(JSON.stringify(Object.assign({}, d, { package: pk }))).ok;
+  assert.strictEqual(ok({ coolingId: 1, substrateId: 'organic', powerLimitW: null }), false);
+  assert.strictEqual(ok({ coolingId: 'a', substrateId: 'organic', powerLimitW: 0 }), false);
+  assert.strictEqual(ok({ coolingId: 'a', substrateId: 'organic', powerLimitW: 65 }), true);
+});

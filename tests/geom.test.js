@@ -123,3 +123,22 @@ test('dieview: WebGL 不可でも例外を投げず、空の API を返し日本
   api.setDesign({ dies: [] }); api.destroy();
   assert.ok(container.children.some((c) => /WebGL が使えません/.test(c.textContent)));
 });
+
+test('cellAt: ダイ内のカーソル位置 → セル index', () => {
+  const d = die('d', 2, 3, 10, 5, []);
+  const v = { x: 0, y: 0, zoom: 10 }; // ダイは画面 (20,30)-(120,80)
+  assert.deepStrictEqual(g.cellAt(v, d, 4, 2, 21, 31), { ix: 0, iy: 0, index: 0 });
+  assert.deepStrictEqual(g.cellAt(v, d, 4, 2, 119, 79), { ix: 3, iy: 1, index: 7 });
+  assert.deepStrictEqual(g.cellAt(v, d, 4, 2, 120, 80), { ix: 3, iy: 1, index: 7 }); // 右下の端はクランプ
+  assert.deepStrictEqual(g.cellAt(v, d, 4, 2, 50, 60), { ix: 1, iy: 1, index: 5 });
+  assert.strictEqual(g.cellAt(v, d, 4, 2, 19, 31), null);
+  assert.strictEqual(g.cellAt(v, d, 4, 2, 50, 81), null);
+  assert.strictEqual(g.cellAt(v, d, 0, 2, 50, 50), null);
+});
+
+test('maxCellIndex: 最大セル(NaN 無視、同値は最初)', () => {
+  assert.strictEqual(g.maxCellIndex([0.1, 0.9, 0.3, 0.9]), 1);
+  assert.strictEqual(g.maxCellIndex(new Float32Array([NaN, 0.2, NaN])), 1);
+  assert.strictEqual(g.maxCellIndex([]), -1);
+  assert.strictEqual(g.maxCellIndex([NaN]), -1);
+});

@@ -114,3 +114,24 @@ test('commitplan + history: ドラッグ中に 2 秒止めて離しても 1 手(
   t += 2000; change({ coalesce: false }); // 止めたまま離す
   assert.strictEqual(h.list().length, 2); // 最初の状態 + 1 手
 });
+
+test('再現度: 電力の行(モデル推定 vs 公表ピーク)。±15% で ✓/✗、公表ピーク無し・校正不可は判定しない、注記は必ず付く', () => {
+  const rows = R.reproductionRows(ev('intel-adl-12900k'));
+  const r = rows[rows.length - 1];
+  assert.ok(/電力制限なし/.test(r.label) && /公表ピーク/.test(r.label));
+  assert.strictEqual(r.published, 258.6); assert.ok(r.sim > 0);
+  assert.strictEqual(r.verdict, Math.abs(r.diffPct) <= 15 ? 'ok' : 'ng');
+  assert.ok(r.note.includes(R.POWER_CAVEAT) && /電力制限下/.test(r.note) && /未校正/.test(r.note));
+  const mkEv = (pm) => ({ tolerance: 0.1, st: { ok: false, reason: 'x', published: null }, mt: { ok: false, reason: 'x', published: null }, area: { totalMm2: null, reason: 'r' }, power: { published: {}, reason: null }, powerModel: pm });
+  const last = (pm) => { const x = R.reproductionRows(mkEv(pm)); return x[x.length - 1]; };
+  const inTol = last({ ok: true, estW: 110, vsPublishedPeak: { publishedW: 100, estW: 110, errPct: 10 } });
+  assert.strictEqual(inTol.verdict, 'ok'); assert.strictEqual(inTol.diffPct, 10);
+  assert.strictEqual(last({ ok: true, estW: 115, vsPublishedPeak: { publishedW: 100, estW: 115, errPct: 15 } }).verdict, 'ok');
+  assert.strictEqual(last({ ok: true, estW: 116, vsPublishedPeak: { publishedW: 100, estW: 116, errPct: 16 } }).verdict, 'ng');
+  assert.strictEqual(last({ ok: true, estW: 80, vsPublishedPeak: { publishedW: 100, estW: 80, errPct: -20 } }).verdict, 'ng');
+  const noPeak = last({ ok: true, estW: 80 });
+  assert.strictEqual(noPeak.verdict, 'na'); assert.ok(/判定しない/.test(noPeak.note) && /未取得/.test(noPeak.note) && noPeak.note.includes(R.POWER_CAVEAT));
+  const bad = last({ ok: false, reason: '基本電力が未取得' });
+  assert.strictEqual(bad.verdict, 'na'); assert.ok(/基本電力が未取得/.test(bad.note));
+  assert.strictEqual(last(undefined).verdict, 'na');
+});

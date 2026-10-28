@@ -155,3 +155,15 @@ td.d-up { color: var(--ok); background: var(--ok-bg); } td.d-down { color: var(-
   #parts { display: block; }
   #parts .partslist { display: none; }
 }
+
+/* パッケージ設定・電力/温度カード・ヒートマップの注記(M4) */
+#package { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
+#package select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
+#package select[aria-invalid="true"] { border: 2px solid var(--ng); }
+.subprops { margin: 4px 0; font-size: 0.9em; }
+.subprops dt { color: var(--muted); }
+.subprops dd { margin: 0 0 2px 0.8em; }
+.src-tmp { border-color: var(--warn); border-style: dashed; color: var(--warn); font-weight: bold; }
+.modebox, .modelbox { margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--border); }
+#heatnote { margin: 0 10px 6px; }
+#heatnote[hidden] { display: none; }

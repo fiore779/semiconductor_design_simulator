@@ -140,7 +140,7 @@
     return Object.assign({ line: `${v.symbol} ${v.text}` }, v);
   }
 
-  const OPTIMISTIC_NOTE = '電力・温度の制限を計算していないため、上げた分がそのまま性能に出ます。実機では電力制限でこの値に届かない可能性が高い(上振れ側の予測)';
+  const OPTIMISTIC_NOTE = '電力・温度は推定として別カードに載せているが、性能の数値には反映していない(電力制限でこの値に届かない可能性が高い)';
   const MT_ALWAYS_LOW = 'MT は常に確度が低い';
   const NOT_RECOMPUTED = '面積・公表電力・歩留まりは編集では再計算されません(コア別面積が未取得のため)。';
 

@@ -26,6 +26,25 @@
     return row;
   }
 
+  // 電力の判定(A 再現のみ)。モデル推定(全コア・最大クロック・電力制限なし)と公表ピークの差が ±15% 以内なら ok。
+  // 条件が揃っていない(推定は制限なし、公表ピークは制限下)うえ、モデルは未校正なので、必ず注記を付ける
+  const POWER_TOL = 0.15;
+  const POWER_LABEL = '電力: モデル推定(全コア・最大クロック・電力制限なし)vs 公表ピーク';
+  const POWER_CAVEAT = '推定は電力制限なしの値、公表ピークは電力制限下の値で条件が揃っていない。モデルは根拠のない仮の既定値で未校正';
+  function powerRow(ev) {
+    const pm = ev.powerModel;
+    const row = { label: POWER_LABEL, published: null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: '' };
+    const fin = (head) => { row.note = `${head}。${POWER_CAVEAT}`; return row; };
+    if (!pm || !pm.ok) return fin(`判定しない: ${(pm && pm.reason) || '電力モデルを校正できない'}`);
+    row.sim = pm.estW;
+    const v = pm.vsPublishedPeak;
+    if (!v) return fin(`判定しない: ${pm.vsPublishedPeakReason || '公表ピーク電力が未取得'}`);
+    row.published = v.publishedW; row.diffPct = v.errPct;
+    const ok = Math.abs(v.errPct) <= POWER_TOL * 100;
+    row.verdict = ok ? 'ok' : 'ng';
+    return fin(`許容 ±${POWER_TOL * 100}%`);
+  }
+
   function reproductionRows(ev) {
     const tol = ev.tolerance;
     const rows = [perfRow('シングル性能(GB7)', ev.st, tol), perfRow('マルチ性能(GB7)', ev.mt, tol, true)];
@@ -37,11 +56,12 @@
     });
     const pw = ev.power.published;
     const pubTxt = [pw.base && `基準 ${pw.base.w} W`, pw.peak && `ピーク ${pw.peak.w} W`, pw.range && `${pw.range.minW}〜${pw.range.maxW} W`].filter(Boolean).join(' / ');
-    rows.push({ label: '消費電力', published: pubTxt || null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: pubTxt ? '電力モデルは未校正のため、計算値は出さず公表値だけ表示' : (ev.power.reason || '公表値が未取得') });
+    rows.push({ label: '消費電力', published: pubTxt || null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: pubTxt ? '公表値の一覧(モデル推定との比較は次の行)' : (ev.power.reason || '公表値が未取得') });
+    rows.push(powerRow(ev));
     return rows;
   }
 
-  const api = { VERDICT_TEXT, reproductionRows };
+  const api = { VERDICT_TEXT, POWER_TOL, POWER_LABEL, POWER_CAVEAT, reproductionRows };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.reproduce = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

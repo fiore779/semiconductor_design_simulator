@@ -1,7 +1,8 @@
 // 設計の評価(結果パネル用)。UI に依存しない純関数。Node でテストする。
-// 方針: 取れない値は null と理由で返す(推測で埋めない)。電力モデルは根拠のない仮の既定値で校正が弱い
-// (設計書 §5.3.0)ので、**モデル電力は出さず**プリセットの公表値だけを返す。
-// M2 の注意: 編集は配置のみなので、ブロックを動かしても ST/MT/面積/電力は変わらない(再計算しても同じ値)。
+// 方針: 取れない値は null と理由で返す(推測で埋めない)。電力・温度のモデルは根拠のない仮の既定値で校正が弱い
+// (設計書 §5.3.0・§6)ので、powerModel / thermal に**推定(確度:低)として別に**載せ、性能の数値には反映しない。
+// 編集後(design.cfg が baseCfg と違う)は性能・電力とも公表値との差を出さない(元の構成に対する相対変化だけ)。
+// 配置の編集(ブロックを動かす)では ST/MT/面積/電力は変わらない(再計算しても同じ値)。
 (function (root) {
   'use strict';
 
@@ -84,7 +85,7 @@
     const any = pub.base || pub.peak || pub.range;
     return {
       published: pub, reason: any ? null : '消費電力の公表値が未取得',
-      model: null, modelReason: '電力モデルは未校正(C_eff・リーク・冷却の既定値に根拠がない)のため、モデル電力は表示しない',
+      model: null, modelReason: '電力モデルは未校正(C_eff・リーク・冷却の既定値に根拠がない)。推定は powerModel(別カード)に載せ、確度は低',
     };
   }
 
@@ -161,7 +162,58 @@
     return { optimistic: reasons.length > 0, reasons, clockUp };
   }
 
-  const OPTIMISTIC_NOTE = '電力・温度の制限を計算していないため、上げた分がそのまま性能に出ます。実機では電力制限でこの値に届かない可能性が高い(上振れ側の予測)';
+  const OPTIMISTIC_NOTE = '電力・温度は推定として別カードに載せているが、性能の数値には反映していない(電力制限でこの値に届かない可能性が高い)';
+
+  // ---- 電力・温度の推定(設計書 §6)。精度は低い: 電力モデルは根拠のない仮の既定値で、公表の基本電力に合わせただけ ----
+  const POWER_NOTE = '電力モデルは根拠のない仮の既定値で、公表の基本電力に合わせただけ。コア種別間の電力比・V-f 曲線は未校正';
+  const THERMAL_NOTE = '冷却の熱抵抗は根拠のない仮置き';
+  const maxClockMap = (preset) => { const m = {}; ((preset.cfg && preset.cfg.cores) || []).forEach((g) => { m[g.type] = g.boostGHz || g.maxGHz || g.baseGHz; }); return m; };
+
+  // 校正の powerK は元のプリセット(未編集の構成)の公表基本電力で決め、編集後の構成にも同じ powerK を使う
+  // (編集後の構成で合わせ直すと、コア数・クロックの変化が基本電力に吸収されて相対変化が消えるため)
+  function evalPowerModel(preset0, preset, edited) {
+    const S = sims();
+    const mk = (r) => Object.assign({ confidence: 'low', notes: [POWER_NOTE] }, r);
+    const cal = S.power.calibratePower(preset0);
+    if (!cal.ok) return mk({ ok: false, reason: cal.reason, powerK: null });
+    const estAt = (pr) => S.power.chipPower(pr, { powerK: cal.powerK }, maxClockMap(pr), 'all', S.power.CAL_TJ_C);
+    const est = estAt(preset);
+    if (!est.ok) return mk({ ok: false, reason: est.reason, powerK: cal.powerK });
+    const out = mk({ ok: true, estW: est.w, powerK: cal.powerK, calibratedToW: cal.baseW, tjC: S.power.CAL_TJ_C, load: 'all' });
+    const peak = preset0.power && preset0.power.peak;
+    if (edited) {
+      // 編集後の設計に公表値は無い: 公表ピークとの差は出さない(性能側と同じ)
+      out.vsPublishedPeak = null; out.vsPublishedPeakReason = '編集後のため公表値とは比べない';
+      const b = estAt(preset0);
+      if (b.ok && b.w > 0) { out.baseEstW = b.w; out.deltaPct = (est.w / b.w - 1) * 100; }
+    } else if (peak && typeof peak.w === 'number' && peak.w > 0) out.vsPublishedPeak = { publishedW: peak.w, estW: est.w, errPct: (est.w / peak.w - 1) * 100 };
+    return out;
+  }
+
+  function evalThermal(design, preset0, preset, pm) {
+    const S = sims();
+    const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
+    const pkg = design.package || (V ? V.defaultPackage(preset0) : { coolingId: 'air-tower', substrateId: 'organic', powerLimitW: null });
+    const base = { tentative: true, coolingId: pkg.coolingId, substrateId: pkg.substrateId, powerLimitW: pkg.powerLimitW != null ? pkg.powerLimitW : null };
+    if (!pm.ok) return Object.assign(base, { ok: false, reason: `電力モデルを校正できないため温度は推定できません: ${pm.reason}`, notes: [THERMAL_NOTE] });
+    const r = S.thermal.solveThrottle({ preset, cal: { powerK: pm.powerK }, coolingId: pkg.coolingId, substrateId: pkg.substrateId, powerLimitW: base.powerLimitW });
+    if (!r.ok) return Object.assign(base, { ok: false, reason: r.reason, notes: [THERMAL_NOTE] });
+    const target = maxClockMap(preset);
+    const throttled = Object.keys(r.fByType).some((k) => target[k] > 0 && r.fByType[k] < target[k] * 0.999);
+    return Object.assign(base, {
+      ok: true, limitedBy: r.limitedBy, tjC: r.tjC, tjLastC: r.tjLastC, sustainedGHz: r.fByType, powerW: r.powerW, rTotal: r.rTotal,
+      converged: r.converged, feasible: r.feasible, throttled, notes: [THERMAL_NOTE].concat(r.notes || []),
+    });
+  }
+
+  function addPowerThermal(result, design, preset0, preset, edited) {
+    const pm = evalPowerModel(preset0, preset, edited);
+    const th = evalThermal(design, preset0, preset, pm);
+    result.powerModel = pm; result.thermal = th;
+    result.throttled = !!th.throttled;
+    result.warnings.push({ level: 'warn', text: '電力・温度は推定(確度:低)' });
+    if (th.throttled) result.warnings.push({ level: 'warn', text: 'この設計は電力・温度の制限で持続クロックが下がる見込み(性能の数値には反映していない)' });
+  }
 
   function evaluate(design, ctx) {
     const preset0 = ctx.presets.find((p) => p.id === design.presetId) || null;
@@ -175,7 +227,7 @@
       const none = (r) => ({ ok: false, score: null, confidence: null, corrSource: null, fallback: false, reason: r, published: null, publishedKind: null, errPct: null });
       const reason = '元のプリセットが見つかりません(性能・電力は評価しません)';
       warnings.push({ level: 'info', text: reason });
-      return { st: none(reason), mt: Object.assign(none(reason), { mixedClock: false, uncalibrated: [] }), area, power: { published: { base: null, peak: null, range: null }, reason, model: null, modelReason: '電力モデルは未校正' }, warnings, preset: null, tolerance: TOLERANCE };
+      return { st: none(reason), mt: Object.assign(none(reason), { mixedClock: false, uncalibrated: [] }), area, power: { published: { base: null, peak: null, range: null }, reason, model: null, modelReason: '電力モデルは未校正' }, warnings, preset: null, tolerance: TOLERANCE, throttled: false, powerModel: { ok: false, reason, confidence: 'low', notes: [POWER_NOTE] }, thermal: { ok: false, reason, tentative: true, notes: [THERMAL_NOTE] } };
     }
     const gb7 = preset.gb7 ? ctx.gb7ByName[preset.gb7] || null : null;
     const st = evalPerf('st', preset, ctx, gb7);
@@ -207,6 +259,7 @@
         result.warnings.push({ level: 'warn', text: `楽観側の予測: ${OPTIMISTIC_NOTE}` });
       }
     }
+    addPowerThermal(result, design, preset0, preset, edited);
     return result;
   }
 
