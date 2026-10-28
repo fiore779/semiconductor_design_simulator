@@ -227,7 +227,7 @@
     return null;
   }
 
-  // 空のダイ 1 個の混合設計。opts: { name, widthMm, heightMm, nodeId }。寸法が範囲外なら RangeError(UI は checkDieSize で先に確かめる)
+  // 空のダイ 1 個の混合設計。opts: { name, widthMm, heightMm, nodeId, entry('new' ならモード D の入口 = origin.entry:'new') }。寸法が範囲外なら RangeError(UI は checkDieSize で先に確かめる)
   function fromScratch(opts) {
     const o = opts || {};
     const w = o.widthMm == null ? 10 : o.widthMm; const h = o.heightMm == null ? 10 : o.heightMm;
@@ -237,7 +237,7 @@
     const name = typeof o.name === 'string' && o.name ? o.name : '混合チップ';
     return {
       schema: SCHEMA, name,
-      origin: { mode: 'mix', base: null, parts: [] },
+      origin: Object.assign({ mode: 'mix', base: null, parts: [] }, o.entry === 'new' ? { entry: 'new' } : {}),
       locks: { params: false },
       presetId: null,
       dies: [{ id: 'die0', name: 'ダイ', nodeId, areaMm2: w * h, areaSource: null, areaKnown: true, areaNote: '設計者が指定したダイ寸法', x: 0, y: 0, widthMm: w, heightMm: h, blocks: [] }],
@@ -279,10 +279,11 @@
     design.dies.forEach((d) => d.blocks.forEach((b) => {
       if (b.kind === 'l3') { l3 += isNum(b.capacityMB) ? b.capacityMB : 0; return; }
       if (b.kind !== 'core') return;
-      const key = `${b.sourcePresetId || ''}\u0000${b.coreType}\u0000${b.uarch || ''}`;
+      const key = `${b.sourcePresetId || ''}\u0000${b.coreType}\u0000${b.uarch || ''}\u0000${b.coreDefId || ''}`;
       let g = idx.get(key);
       if (!g) {
         g = { id: groupIdOf(b), type: b.coreType, coreType: b.coreType, uarch: b.uarch || undefined, isa: b.isa || undefined, sourcePresetId: b.sourcePresetId || undefined, label: b.label, count: 0, smt: b.smt || 1, _clk: b.clockGHz };
+        if (b.coreDefId) { g.coreDefId = b.coreDefId; const def = (design.coreDefs || []).find((x) => x.id === b.coreDefId); const CD = coredefApi(); if (def && CD) g.uRecord = CD.uRecordOf(def); }
         idx.set(key, g); groups.push(g);
       }
       g.count++;
@@ -296,6 +297,12 @@
       return r;
     });
     return { cores, l3MB: l3 };
+  }
+
+  function coredefApi() {
+    if (root.SDS && root.SDS.model && root.SDS.model.coredef) return root.SDS.model.coredef;
+    if (typeof require === 'function') return require('./coredef.js');
+    return null;
   }
 
   const withDerivedCfg = (d) => { d.cfg = deriveCfg(d); return d; };
@@ -312,7 +319,20 @@
     const d = clone(design);
     const die = o.dieId ? d.dies.find((x) => x.id === o.dieId) : d.dies[0];
     if (!die) return fail(`ダイ「${o.dieId}」がありません`);
-    const manual = o.x != null || o.y != null;
+    // 自作コア(part.coreDef): 定義を設計の coreDefs に取り込む(同じ id で中身が違うものは拒否)
+    let cdef = null;
+    if (part.coreDef != null) {
+      const CD = coredefApi();
+      if (part.kind !== 'core' || !CD) return fail('自作コアの部品が不正です');
+      const bad = CD.validateDef(part.coreDef);
+      if (bad) return fail(bad);
+      cdef = part.coreDef;
+      d.coreDefs = Array.isArray(d.coreDefs) ? d.coreDefs : [];
+      const have = d.coreDefs.find((x) => x.id === cdef.id);
+      if (have && JSON.stringify(have) !== JSON.stringify(cdef)) return fail(`コア定義の id「${cdef.id}」が、設計内の別の定義と衝突しています`);
+      if (!have) { if (d.coreDefs.length >= CD.MAX_DEFS) return fail(`コア定義が多すぎます(上限 ${CD.MAX_DEFS})`); d.coreDefs.push(clone(cdef)); }
+    }
+    const manual =o.x != null || o.y != null;
     if (manual && !(isNum(o.x) && isNum(o.y))) return fail('配置位置 x, y は有限の数にしてください');
     const n = part.kind === 'core' ? (o.count == null ? 1 : o.count) : 1;
     if (!Number.isInteger(n) || n < 1 || n > 64) return fail('個数は 1〜64 の整数にしてください');
@@ -343,8 +363,14 @@
     const toNode = (d.mix && d.mix.nodeId) || die.nodeId || null;
     const fromNode = part.nodeId || null;
     const ported = !!(fromNode && toNode && fromNode !== toNode);
-    let areaMm2 = base; let portConverted = false; let portNote = null; let portInfo = null;
-    if (ported && base != null) {
+    let areaMm2 = base; let portConverted = false; let portNote = null; let portInfo = null; let derivedAr = null;
+    if (cdef) { const ar = coredefApi().deriveArea(cdef, { toNodeId: toNode, nodes: o.nodes || (root.SDS_DATA && root.SDS_DATA.nodes) || [] }); if (ar.derived) derivedAr = ar; }
+    if (derivedAr) {
+      // 導出した範囲(設計書 §3.7.3)。配置には範囲の大きい側。移植(ノード違い)は coredef 側で ratioRange を掛け済み
+      areaMm2 = derivedAr.placeMm2; portConverted = derivedAr.portConverted; portNote = derivedAr.portNote;
+      portInfo = { areaRangeMm2: derivedAr.rangeMm2.slice() };
+      if (derivedAr.portConverted) Object.assign(portInfo, { areaFromMm2: derivedAr.baseRangeMm2[1], portRatio: derivedAr.ratio });
+    } else if (ported && base != null) {
       const C = root.SDS && root.SDS.model && root.SDS.model.compat;
       const nodes = o.nodes || (root.SDS_DATA && root.SDS_DATA.nodes) || [];
       const r = C ? C.portArea(base, fromNode, toNode, nodes) : { ok: false, reason: '換算モジュールがありません' };
@@ -365,13 +391,14 @@
       if (!r) return fail(`ダイに入りません(空き領域が足りない: ${Math.round(dim * 100) / 100} mm² の部品 ${n - i} 個)`);
       const b = {
         id: `${die.id}-p${seq++}`, kind: part.kind, partId: part.id,
-        label: part.kind === 'l3' ? `L3 ${cap}MB` : (part.kind === 'core' ? `${part.uarch} (${part.coreType})` : part.label),
+        label: part.kind === 'l3' ? `L3 ${cap}MB` : (cdef ? part.label : part.kind === 'core' ? `${part.uarch} (${part.coreType})` : part.label),
         sourceChip: part.sourceChip || null, sourcePresetId: part.sourcePresetId || null, isa: part.isa || null, sourceMemory: part.sourceMemory || null, fromNodeId: fromNode,
-        ported, portConverted, areaMm2, areaOrigin: (part.area && part.area.origin) || 'unknown', x: r.x, y: r.y, w: r.w, h: r.h, schematic: true,
+        ported, portConverted, areaMm2, areaOrigin: derivedAr ? 'derived' : ((part.area && part.area.origin) || 'unknown'), x: r.x, y: r.y, w: r.w, h: r.h, schematic: true,
       };
       if (portNote) b.portNote = portNote;
       if (portInfo) Object.assign(b, portInfo);
       if (part.kind === 'core') { b.coreType = part.coreType; b.uarch = part.uarch; b.smt = part.smt || 1; b.clockGHz = isNum(part.defaultClockGHz) ? part.defaultClockGHz : null; }
+      if (cdef) b.coreDefId = cdef.id;
       if (part.kind === 'l3') b.capacityMB = cap;
       die.blocks.push(b); placed.push(b);
       d.origin.parts.push({ blockId: b.id, partId: part.id, from: part.sourcePresetId || null, ported });
@@ -383,6 +410,31 @@
     return { ok: true, design: d, blockIds: placed.map((b) => b.id) };
   }
 
+  // 自作コア(コア定義)を置く。def を design.coreDefs に取り込み、addPart と同じ経路でブロックを置く(opts は addPart と同じ。count 1〜64)。
+  // 戻り値は addPart と同じ { ok, design, blockIds } か { ok:false, reason }
+  function addCoreDef(design, def, opts) {
+    const CD = coredefApi();
+    if (!CD) return fail('コア定義のモジュールがありません');
+    const bad = CD.validateDef(def);
+    if (bad) return fail(bad);
+    return addPart(design, CD.toPart(def), opts);
+  }
+
+  // ダイの寸法を、配置済みブロックの外接矩形(0.1 mm 単位で切り上げ。下限 1 mm)に合わせる(設計書 §3.7.6)。
+  // ブロックが 0 個なら何もしない({ ok:true, design(複製), changed:false })。戻り値は { ok, design, changed, widthMm, heightMm } か { ok:false, reason }
+  function fitDieToBlocks(design, dieId) {
+    if (!isMix(design)) return fail('混合モードの設計だけで使えます');
+    const die = dieId ? design.dies.find((x) => x.id === dieId) : design.dies[0];
+    if (!die) return fail(`ダイ「${dieId}」がありません`);
+    if (!die.blocks.length) return { ok: true, design: clone(design), changed: false, widthMm: die.widthMm, heightMm: die.heightMm };
+    const up = (v) => Math.max(1, Math.round(Math.ceil(v * 10 - 1e-6)) / 10);
+    const w = up(Math.max.apply(null, die.blocks.map((b) => b.x + b.w)));
+    const h = up(Math.max.apply(null, die.blocks.map((b) => b.y + b.h)));
+    const r = setDieSize(design, die.id, w, h);
+    if (!r.ok) return r;
+    return { ok: true, design: r.design, changed: w !== die.widthMm || h !== die.heightMm, widthMm: w, heightMm: h };
+  }
+
   function removeBlock(design, blockId) {
     if (!isMix(design)) return fail('混合モードの設計だけで使えます');
     const d = clone(design);
@@ -390,6 +442,11 @@
     d.dies.forEach((die) => { const n = die.blocks.length; die.blocks = die.blocks.filter((b) => b.id !== blockId); if (die.blocks.length !== n) found = true; });
     if (!found) return fail(`ブロック「${blockId}」がありません`);
     d.origin.parts = d.origin.parts.filter((p) => p.blockId !== blockId);
+    // どのブロックからも参照されなくなったコア定義を削除する
+    if (Array.isArray(d.coreDefs)) {
+      const used = new Set(); d.dies.forEach((die) => die.blocks.forEach((b) => { if (b.coreDefId) used.add(b.coreDefId); }));
+      d.coreDefs = d.coreDefs.filter((x) => used.has(x.id));
+    }
     withDerivedCfg(d);
     return { ok: true, design: d };
   }
@@ -517,6 +574,12 @@
         }
       }
     }
+    if (o && o.entry != null && o.entry !== 'new') return 'origin.entry は new か未指定にしてください';
+    if (d.coreDefs != null) {
+      const CD = coredefApi();
+      const bad = CD ? CD.validateDefs(d.coreDefs) : 'コア定義を検証できません';
+      if (bad) return bad;
+    }
     if (o && o.mode === 'mix') {
       if (d.presetId != null) return '混合設計の presetId は null にしてください';
       if (!d.mix || typeof d.mix !== 'object' || Array.isArray(d.mix)) return 'mix がありません(混合設計に必要です)';
@@ -545,6 +608,13 @@
         if (b.areaMm2 != null && !(isNum(b.areaMm2) && b.areaMm2 > 0 && b.areaMm2 <= 1e4)) return `${u}: areaMm2 は null か 0 より大きく 10000 mm² 以下の数にしてください`;
         if (b.capacityMB != null && !(isNum(b.capacityMB) && b.capacityMB > 0 && b.capacityMB <= 512)) return `${u}: capacityMB は 0 より大きく 512 MB 以下の数にしてください`;
         if (b.smt != null && b.smt !== 1 && b.smt !== 2) return `${u}: smt は 1 か 2 にしてください`;
+        if (b.coreDefId != null) {
+          const def = typeof b.coreDefId === 'string' ? (d.coreDefs || []).find((x) => x.id === b.coreDefId) : null;
+          if (!def) return `${u}: coreDefId「${b.coreDefId}」に対応するコア定義がありません`;
+          if (b.kind !== 'core') return `${u}: coreDefId はコアのブロックにだけ付けられます`;
+          if (b.isa !== def.base.isa || b.uarch !== def.base.uarch) return `${u}: 命令セット・マイクロアーキがコア定義と一致しません`;
+        }
+        if (b.areaOrigin === 'derived' && !(b.kind === 'core' && b.coreDefId)) return `${u}: areaOrigin が derived なのはコア定義のコアだけです`;
         for (const k of ['isa', 'sourcePresetId', 'sourceChip', 'partId']) if (!strOrNull(b[k])) return `${u}: ${k} が文字列でも null でもありません`;
         for (const k of ['ported', 'portConverted']) if (b[k] != null && typeof b[k] !== 'boolean') return `${u}: ${k} は true か false にしてください`;
         if (b.areaFromMm2 != null && !(isNum(b.areaFromMm2) && b.areaFromMm2 > 0 && b.areaFromMm2 <= 1e4)) return `${u}: areaFromMm2 が不正です`;
@@ -586,7 +656,7 @@
   }
 
   const api = {
-    SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse,
+    SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse, addCoreDef, fitDieToBlocks,
     cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setCoreCount, setClock, setL3, unlock, withCfg, clockOf, relayoutCompute,
   };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;

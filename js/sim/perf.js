@@ -79,7 +79,9 @@
     if (!core) return { ok: false, reason: 'コアなし' };
     const f = (opts && opts.fGHz) || core.boostGHz || core.maxGHz || core.baseGHz;
     if (!f) return { ok: false, reason: 'クロック未取得' };
-    const u = uarchDb[core.uarch];
+    // 自作コア(設計書 §3.7.3)は複製時の uarch 記録を core.uRecord に持つ。無ければ従来どおり uarchDb を引く
+    const isClone = !!core.uRecord;
+    const u = core.uRecord || uarchDb[core.uarch];
     // ST は 1 スレッドが L3 を使う想定(全量)。MT のときだけ呼び出し側が threads=総スレッド数を渡して C_L3/N にする(§5.2.2)
     const threads = (opts && opts.threads) || 1;
     // l3MB が明示的に 0 なら「L3 なし」。null/undefined(未取得)は従来どおり参照値で計算する
@@ -90,10 +92,12 @@
     let corr = cal && cal.u && cal.u[core.uarch];
     let corrSource = 'uarch';
     if (corr == null) { corr = cal && cal.uIsa && cal.uIsa[core.isa || preset.isa]; /* 混合設計ではコアごとの isa(core.isa)を優先。通常のプリセットのコアには isa が無い */ corrSource = 'isa'; }
+    const corrFrom = corrSource; // 補正の借り先('uarch' か 'isa')。自作コアでは corrSource を 'clone' にするので別に残す
+    if (isClone) corrSource = 'clone';
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     return {
-      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, core, noL3, l3Floor: !!r.l3Floor,
-      confidence: corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
+      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor,
+      confidence: isClone || corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
   }
@@ -151,7 +155,7 @@
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockSource, corrSource: st.corrSource, confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockSource, corrSource: st.corrSource, ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // sigma・gammaSmt は未校正(既定値のまま)なので、呼び出し側が確度を過大評価しないよう明示する

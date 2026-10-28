@@ -7,8 +7,9 @@
   const PF = root.SDS.ui.paramform;
 
   let keepFocusId = null;
+  const RETICLE_MM2 = (root.SDS.model && root.SDS.model.compat && root.SDS.model.compat.RETICLE_MM2) || 858;
 
-  // cb: { onDieSize(wStr, hStr), onClock(groupId, str, input) }。msgs: { die, ['clock:'+groupId] }。nodes: プロセス一覧
+  // cb: { onDieSize(wStr, hStr), onClock(groupId, str, input), onFitDie()(中身に合わせて最小ダイ。無ければボタンを出さない) }。msgs: { die, ['clock:'+groupId] }。nodes: プロセス一覧
   function renderMix(el, design, ev, cb, msgs, nodes) {
     clear(el);
     el.appendChild(h('h2', { text: '混合設計' }));
@@ -29,7 +30,10 @@
       el.appendChild(h('fieldset', { class: 'pgroup' }, h('legend', { text: 'ダイ寸法' }),
         h('div', { class: 'pinput' }, h('label', { for: 'mx-w', class: 'small', text: '幅' }), wI, h('span', { class: 'small', text: '×' }), h('label', { for: 'mx-h', class: 'small', text: '高さ' }), hI, h('span', { class: 'small', text: 'mm' })),
         h('p', { class: 'small', text: `${MF.DIE_MIN_MM}〜${MF.DIE_MAX_MM} mm。小さくするとき、ブロックがはみ出す大きさにはできません` }),
-        m.die ? h('p', { class: 'err pmsg', role: 'alert', text: `✗ ${m.die}` }) : null));
+        m.die ? h('p', { class: 'err pmsg', role: 'alert', text: `✗ ${m.die}` }) : null,
+        cb.onFitDie ? h('div', { class: 'btnrow' }, h('button', { type: 'button', class: 'btn', id: 'mx-fit', disabled: !die.blocks.length, title: die.blocks.length ? '配置済みブロックの外接矩形(0.1 mm 単位で切り上げ。下限 1 mm)にダイ寸法を合わせる' : 'ブロックがありません', onclick: () => cb.onFitDie() }, '中身に合わせて最小ダイ')) : null,
+        die.widthMm * die.heightMm > RETICLE_MM2 + 1e-9 ? h('p', { class: 'small warn-note', role: 'note', text: `⚠ ダイ面積 ${Math.round(die.widthMm * die.heightMm)} mm² は単一ダイの露光上限(約 ${RETICLE_MM2} mm²。出典未取得で要確認)を超えています。チップレット分割は未対応です` }) : null,
+        h('p', { class: 'small', text: '縦横比の入力・I/O 外周の制約は未実装です。歩留まりは指定したダイ面積で決まります' })));
     }
     el.appendChild(h('p', { class: 'small' }, 'プロセス: ', h('b', { text: node ? node.name : (nodeId || '未指定') }), '(変更はできません。部品のプロセスが違うと「移植」になります)'));
 

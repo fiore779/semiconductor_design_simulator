@@ -38,7 +38,8 @@
     </ul>
     <p class="small">できること: 混合(C)=部品ライブラリから実在チップの部品を選んで空のダイに置く(性能は確度:低、電力・温度は出さない)。 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
     パッケージ設定(冷却・基板・電力制限)と、電力・温度の推定(確度:低・冷却の熱抵抗は仮置き)、電力密度・温度のマップ(模式図)。<br>
-    できないこと: 新規設計(D)、混合による性能低下の反映、面積・公表電力・歩留まりの再計算。電力・温度の制限による性能への反映。</p>
+    D 新規=プロセスとダイ寸法を決めて空のダイを作り、既存コアを「複製して編集」した自作コア(発行幅・ROB・L2・クロック・SMT。面積は範囲、確度は常に低)を置く。<br>
+    できないこと: 目標性能からの構成の提案、電力・温度・最大クロックの推定(自作コア)、混合による性能低下の反映、面積・公表電力・歩留まりの再計算。電力・温度の制限による性能への反映。</p>
   </div>
   <div id="notice" role="status" aria-live="polite"></div>
   <main id="workarea">
@@ -100,6 +101,7 @@
 <script src="js/sim/heatmap.js"></script>
 <script src="js/model/design.js"></script>
 <script src="js/model/blocklib.js"></script>
+<script src="js/model/coredef.js"></script>
 <script src="js/model/compat.js"></script>
 <script src="js/model/evaluate.js"></script>
 <script src="js/model/diff.js"></script>
@@ -112,6 +114,7 @@
 <!-- UI -->
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/mixform.js"></script>
+<script src="js/ui/coreform.js"></script>
 <script src="js/ui/presetlist.js"></script>
 <script src="js/ui/packageform.js"></script>
 <script src="js/ui/reproduce.js"></script>
@@ -125,6 +128,7 @@
 <script src="js/ui/packagepanel.js"></script>
 <script src="js/ui/diffpanel.js"></script>
 <script src="js/ui/library.js"></script>
+<script src="js/ui/coreeditor.js"></script>
 <script src="js/ui/mixpanel.js"></script>
 <script src="js/ui/panels.js"></script>
 <script src="js/main.js"></script>

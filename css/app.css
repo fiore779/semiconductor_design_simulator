@@ -186,3 +186,18 @@ td.d-up { color: var(--ok); background: var(--ok-bg); } td.d-down { color: var(-
 .mixdialog { padding: 10px 14px; max-width: 520px; }
 .mixdialog .pinput input, .mixdialog .pinput select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
 .mixdialog .actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* モード D: コアエディタ・自作コア */
+.modebadge.mode-D { border-color: var(--accent); color: var(--accent); }
+.area-derived { border-color: var(--warn); border-style: dotted; }
+.coreeditor { padding: 10px 14px; overflow: auto; }
+.coreeditor .ce-grid { display: grid; grid-template-columns: 1fr 1.1fr 1.4fr; gap: 14px; }
+.coreeditor .ce-col { min-width: 0; }
+.coreeditor .pinput input, .coreeditor .pinput select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
+.coreeditor .pinput input:disabled, .coreeditor .pinput select:disabled { background: var(--gray-bg); border-style: dashed; }
+.coreeditor .pinput input[aria-invalid="true"] { border: 2px solid var(--ng); }
+.coreeditor .actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.coreeditor .actions input { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 4em; }
+.ce-inh { list-style: none; padding: 0; margin: 0; }
+@media (max-width: 900px) { .coreeditor .ce-grid { grid-template-columns: 1fr; } }
+.lib-custom { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 4px; }

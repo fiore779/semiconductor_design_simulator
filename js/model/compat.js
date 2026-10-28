@@ -55,12 +55,17 @@
   const designNodeId = (design) => (design.mix && design.mix.nodeId) || (design.dies && design.dies[0] && design.dies[0].nodeId) || design.nodeId || null;
 
   // ダイの使用率。ブロックの面積合計(面積が未取得のブロックは含めない)÷ ダイ面積。
+  const RETICLE_MM2 = 858; // 単一ダイの露光上限(26×33 mm)。出典 URL 未取得[二次相当・要確認]
+
   function utilization(design) {
     const die = (design.dies || [])[0];
     const dieMm2 = die ? (num(die.areaMm2) ? die.areaMm2 : die.widthMm * die.heightMm) : null;
-    let used = 0; let unknown = 0;
-    allBlocks(design).forEach((b) => { if (num(b.areaMm2)) used += b.areaMm2; else unknown++; });
-    return { dieMm2, usedMm2: used, ratio: dieMm2 > 0 ? used / dieMm2 : null, unknownCount: unknown };
+    let used = 0; let usedMin = 0; let unknown = 0;
+    // 導出(範囲)の面積のブロックは、使用率の大きい側(areaMm2)と小さい側(範囲の下限)を併記する
+    allBlocks(design).forEach((b) => {
+      if (num(b.areaMm2)) { used += b.areaMm2; usedMin += b.areaOrigin === 'derived' && Array.isArray(b.areaRangeMm2) && num(b.areaRangeMm2[0]) ? b.areaRangeMm2[0] : b.areaMm2; } else unknown++;
+    });
+    return { dieMm2, usedMm2: used, usedMinMm2: usedMin, ratio: dieMm2 > 0 ? used / dieMm2 : null, ratioMin: dieMm2 > 0 ? usedMin / dieMm2 : null, unknownCount: unknown };
   }
 
   // メモリ種別の粗い判定(プリセットの cfg.memory 文字列から)。判定できなければ空集合
@@ -121,7 +126,10 @@
     // (d) ダイに入りきらない
     const u = utilization(design);
     if (u.dieMm2 > 0 && u.usedMm2 > u.dieMm2 + 1e-9) out.push({ level: 'error', code: 'die-overflow', text: `ブロックの合計面積 ${Math.round(u.usedMm2 * 100) / 100} mm² がダイ面積 ${Math.round(u.dieMm2 * 100) / 100} mm² を超えています` });
-    if (u.ratio != null) out.push({ level: 'info', code: 'utilization', value: u.ratio, usedMm2: u.usedMm2, dieMm2: u.dieMm2, text: `ダイの使用率 ${Math.round(u.ratio * 1000) / 10}%(${Math.round(u.usedMm2 * 100) / 100} / ${Math.round(u.dieMm2 * 100) / 100} mm²)` });
+    const ranged = u.ratio != null && u.usedMinMm2 < u.usedMm2 - 1e-9;
+    if (u.ratio != null) out.push({ level: 'info', code: 'utilization', value: u.ratio, valueMin: u.ratioMin, usedMm2: u.usedMm2, usedMinMm2: u.usedMinMm2, dieMm2: u.dieMm2, text: `ダイの使用率 ${Math.round(u.ratio * 1000) / 10}%(${Math.round(u.usedMm2 * 100) / 100} / ${Math.round(u.dieMm2 * 100) / 100} mm²)${ranged ? `。自作コアの面積が範囲のため、小さい側では ${Math.round(u.ratioMin * 1000) / 10}%(${Math.round(u.usedMinMm2 * 100) / 100} mm²)` : ''}` });
+    // 露光上限(エラーにはしない。計算は続ける)。ちょうど 858 mm² は出さない
+    if (u.dieMm2 > RETICLE_MM2 + 1e-9) out.push({ level: 'warn', code: 'reticle', text: `単一ダイの露光上限(約 ${RETICLE_MM2} mm²)を超えています。チップレット分割は未対応です` });
 
     // (f) メモリ種別がチップ間で食い違う(判定できないチップは除く。共通の種別がなければ警告)
     const mems = new Map();
@@ -143,7 +151,7 @@
     return out;
   }
 
-  const api = { check, portArea, utilization, memoryTypes, designNodeId };
+  const api = { RETICLE_MM2, check, portArea, utilization, memoryTypes, designNodeId };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.compat = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -18,7 +18,8 @@ class FakeNode {
   appendChild(c) { this.children.push(c); c.parentNode = this; return c; }
   removeChild(c) { this.children.splice(this.children.indexOf(c), 1); }
   get firstChild() { return this.children[0] || null; }
-  addEventListener() {}
+  addEventListener(t, fn) { (this.listeners = this.listeners || {})[t] = fn; }
+  getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
   querySelector() { return null; }
   remove() { if (this.parentNode) this.parentNode.removeChild(this); }
   setAttribute(k, v) { this.attrs[k] = v; }
@@ -44,9 +45,9 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   assert.ok(srcs.length > 20, 'script が少なすぎる');
   const ctx = loadAll();
   const ui = ctx.SDS && ctx.SDS.ui;
-  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
+  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
-  ['design', 'evaluate', 'diff', 'blocklib', 'compat'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
+  ['design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
 });
 
@@ -116,4 +117,96 @@ test('混合設計(Zen 5 コア 8 個 + L3)でも、結果・混合パネル・�
   ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
   ui.dialogs.openNew({ onPickMode() {} });
   ui.dialogs.openMix(c, { onCreate() { return { ok: true }; } });
+});
+
+// ---- モード D(自作コア)の画面 ----
+const findAll = (n, pred, out) => { out = out || []; if (pred(n)) out.push(n); (n.children || []).forEach((c) => findAll(c, pred, out)); return out; };
+const stubDoc = () => ({ Node: FakeNode, document: { createElement: (t) => new FakeNode(t), createTextNode: (s) => new FakeText(s) } });
+
+test('D 新規: 自作コアを置いた設計で、結果の注意帯・ライブラリの複製ボタン・混合パネル・プロパティ・検証・入口ダイアログの描画が例外にならない(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate;
+  const DS = ctx.SDS.model.design; const BL = ctx.SDS.model.blocklib; const CD = ctx.SDS.model.coredef; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const parts = BL.build(c.presets, ctx.SDS_DATA.blocklibAreas, c.nodes);
+  const ci = ui.coreform.cloneInfo(BL.get(parts, 'core:amd-zen1-1800x:P'), c.uarch, ctx.SDS_DATA.blocklibAreas);
+  assert.ok(ci.cloneable && ci.derivable);
+  const def = ui.coreform.assignId(ui.coreform.applyField(ui.coreform.applyField(ci.def, 'rob', '240').def, 'width', '7').def, []);
+  let d = DS.fromScratch({ name: '新規テスト', widthMm: 40, heightMm: 40, nodeId: 'tsmc-n4', entry: 'new' }); // 基準 GF 14 → N4 の移植も通す
+  const r = DS.addPart(d, Object.assign({}, CD.toPart(def), { sourceChip: ui.coreform.customChip(def) }), { count: 3, nodes: c.nodes });
+  assert.ok(r.ok, r.reason); d = r.design;
+  const ev = evaluate(d, c);
+  const out = new FakeNode('div');
+  ui.results.renderResults(out, ev, d);
+  const t = out.textContent;
+  assert.ok(t.includes('自作コアの性能は基準コア(Zen 1)の補正を借りた推定です') && t.includes('自作コアの面積は範囲です') && t.includes('電力・温度・最大クロックは出していません'));
+  assert.ok(t.includes('混合設計の性能は確度:低です') && t.includes('上振れ側の予測') && t.includes('校正した範囲の外'));
+  assert.ok(t.includes('導出(範囲)') && t.includes('自作コア『') && t.includes('基準のマイクロアーキ(Zen 1)の値を借りています'));
+  ui.mixpanel.renderMix(new FakeNode('div'), d, ev, { onDieSize() {}, onClock() {}, onFitDie() {} }, {}, c.nodes);
+  const lib = new FakeNode('div');
+  ui.library.renderLibrary(lib, d, parts, { onAdd() {}, onClone() {}, onEditDef() {} }, '', c.nodes, { uarch: c.uarch, areas: ctx.SDS_DATA.blocklibAreas });
+  assert.ok(lib.textContent.includes('複製して編集') && lib.textContent.includes('自作コア(1 件)') && lib.textContent.includes('この定義を元に編集') && lib.textContent.includes('面積の導出'));
+  ui.panels.renderProps(new FakeNode('div'), d, [d.dies[0].blocks[0].id], () => {}, '', { origin: () => 'x', onRemove() {} });
+  ui.panels.renderValidation(new FakeNode('div'), ev.warnings, () => {});
+  assert.strictEqual(ui.paramform.modeInfo(d).code, 'D');
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  ui.dialogs.openNew({ onPickMode() {} });
+  assert.ok(body.textContent.includes('D 新規') && !body.textContent.includes('未実装(今回は選べません)'));
+  ui.dialogs.close();
+  ui.dialogs.openMix(c, { onCreate() { return { ok: true }; } }, { entry: 'new' });
+  assert.ok(body.textContent.includes('D 新規') && body.textContent.includes('プロセス') && body.textContent.includes('ダイ寸法'));
+  ui.dialogs.close();
+});
+
+test('コアエディタ: 入力エラーを項目ごとに出す・編集で結果が変わる・無効欄に理由・追加は個数を検証して onAdd を呼ぶ(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  const { makeContext } = ctx.SDS.model.evaluate; const BL = ctx.SDS.model.blocklib; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const parts = BL.build(c.presets, ctx.SDS_DATA.blocklibAreas, c.nodes);
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  const infoOf = (p) => ui.coreform.cloneInfo(p, c.uarch, ctx.SDS_DATA.blocklibAreas);
+  const open = (def) => {
+    const added = [];
+    ui.coreeditor.openCoreEditor({ def, nodes: c.nodes, toNodeId: 'gf-14', evalCtx: { cal: c.cal, uarch: c.uarch, presets: c.presets, nodes: c.nodes } }, { onAdd(dd, n) { added.push([dd, n]); return { ok: true }; } });
+    return added;
+  };
+  const byId = (id) => findAll(body, (n) => n.attrs && n.attrs.id === id)[0];
+  const btn = (label) => findAll(body, (n) => n.tag === 'button' && n.textContent === label)[0];
+  const added = open(infoOf(BL.get(parts, 'core:amd-zen1-1800x:P')).def);
+  const t0 = body.textContent;
+  assert.ok(t0.includes('確度 ▼ 低') && t0.includes('基準 192') && t0.includes('継承') && t0.includes('1 コアの消費電力') && t0.includes('未実装'));
+  assert.ok(!t0.includes('導出(範囲)'));   // 未編集は表の区分のまま
+  // 範囲外の入力: エラーを出し、計算には反映しない
+  const rob = byId('ce-rob');
+  rob.value = '5'; rob.listeners.input({ target: rob });
+  assert.ok(body.textContent.includes('32〜1024') && body.textContent.includes('入力値は計算に反映していません'));
+  assert.strictEqual(rob.attrs['aria-invalid'], 'true');
+  btn('ダイに追加').listeners.click();
+  assert.strictEqual(added.length, 0);
+  assert.ok(body.textContent.includes('入力にエラーがあります'));
+  // 正しい入力: エラーが消え、基準比と校正範囲外・上振れが出る
+  rob.value = '400'; rob.listeners.input({ target: rob });
+  assert.ok(!body.textContent.includes('入力値は計算に反映していません'));
+  assert.ok(body.textContent.includes('導出(範囲)') && body.textContent.includes('仮定') && body.textContent.includes('データから導けない'));
+  assert.ok(body.textContent.includes('×2.08') && body.textContent.includes('校正範囲外') && body.textContent.includes('上振れ側'));
+  // 個数の検証
+  const cnt = byId('ce-count');
+  cnt.value = '65'; btn('ダイに追加').listeners.click();
+  assert.strictEqual(added.length, 0); assert.ok(body.textContent.includes('1〜64'));
+  cnt.value = '4'; btn('ダイに追加').listeners.click();
+  assert.strictEqual(added.length, 1); assert.strictEqual(added[0][1], 4); assert.strictEqual(added[0][0].params.rob, 400);
+  // 基準に戻す
+  btn('基準に戻す').listeners.click();
+  assert.strictEqual(rob.value, '192');
+  ui.dialogs.close();
+  // 面積を導けない基準では、幅・ROB・L2 の欄のうち編集不可のものが無効で、理由が出る
+  const nd = parts.filter((p) => p.kind === 'core').map(infoOf).find((i) => i.cloneable && !i.derivable);
+  assert.ok(nd);
+  body.children = [];
+  open(nd.def);
+  assert.ok(body.textContent.includes('編集できません') && body.textContent.includes('面積を導けません'));
+  assert.ok(byId('ce-l2KB').disabled === true);
+  ui.dialogs.close();
 });

@@ -39,13 +39,14 @@
     if (!r.ok) { base.reason = r.reason || '計算できません'; return base; }
     Object.assign(base, {
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
-      corrSource: kind === 'st' ? r.corrSource : null,
+      corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null,
       errPct: pct(r.score, pubVal),
       noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor,
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
       base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
       base.corrSources = r.detail.map((d) => d.corrSource);
+      base.corrFroms = r.detail.map((d) => d.corrFrom || d.corrSource);
     }
     if (pubVal == null) base.reason = '公開値が未取得のため比較できません';
     return base;
@@ -93,14 +94,14 @@
   // 校正の注意を日本語の文にする
   function calibrationWarnings(st, mt) {
     const w = [];
-    if (st.ok && st.corrSource === 'isa') w.push({ level: 'warn', text: 'ST: このマイクロアーキに専用の補正がなく、同じ命令セットの平均で代用しています(確度は低)' });
+    if (st.ok && (st.corrSource === 'isa' || st.corrFrom === 'isa')) w.push({ level: 'warn', text: 'ST: このマイクロアーキに専用の補正がなく、同じ命令セットの平均で代用しています(確度は低)' });
     if (st.ok && st.fallback) w.push({ level: 'warn', text: 'ST: in-order コアの IPC は根拠のない仮の値です' });
     if (!st.ok) w.push({ level: 'info', text: `ST を計算できません: ${st.reason}` });
     if (mt.ok) {
       w.push({ level: 'warn', text: 'MT: 確度は低です(並列効率 σ は AMD の代表 3 件だけで合わせ、SMT の効果 γ は未校正、メモリ帯域の頭打ちは未実装)' });
       if (mt.fallback) w.push({ level: 'warn', text: 'MT: in-order コアの仮の IPC を含むため信頼できません' });
       if (mt.mixedClock) w.push({ level: 'warn', text: 'MT: 一部のコアのブーストクロックが未取得で基本クロックを使っており、コア種別間でクロックの出所が混在しています(数値が歪みます)' });
-      if (mt.corrSources && mt.corrSources.includes('isa')) w.push({ level: 'warn', text: 'MT: 一部のコアは専用の補正がなく、命令セット平均で代用しています' });
+      if ((mt.corrFroms || mt.corrSources) && (mt.corrFroms || mt.corrSources).includes('isa')) w.push({ level: 'warn', text: 'MT: 一部のコアは専用の補正がなく、命令セット平均で代用しています' });
     } else w.push({ level: 'info', text: `MT を計算できません: ${mt.reason}` });
     return w;
   }
@@ -267,7 +268,13 @@
       });
       st = evalPerf('st', best ? Object.assign({}, preset, { isa: best.g.isa || preset.isa }) : preset, ctx, null, best ? { core: best.g, fGHz: best.fGHz } : undefined);
       if (!best && !st.ok && firstReason) st.reason = firstReason;
-      if (best && st.ok) st.chosen = { type: best.g.type, label: best.g.label || best.g.type, uarch: best.g.uarch || null, isa: best.g.isa || null, fGHz: best.fGHz, corrSource: best.corrSource };
+      if (best && st.ok) {
+        st.chosen = { type: best.g.type, label: best.g.label || best.g.type, uarch: best.g.uarch || null, isa: best.g.isa || null, fGHz: best.fGHz, corrSource: best.corrSource, custom: !!best.g.coreDefId };
+        if (best.g.coreDefId) {
+          const cdef = (design.coreDefs || []).find((x) => x.id === best.g.coreDefId);
+          Object.assign(st.chosen, { coreDefId: best.g.coreDefId, coreDefName: cdef ? cdef.name : null, baseUarch: best.g.uarch || null });
+        }
+      }
       mt = evalPerf('mt', preset, ctx, null);
       if (mt.ok && mt.detail) mt.detail.forEach((dt) => { const g = preset.cfg.cores.find((x) => x.type === dt.type); dt.label = (g && (g.label || g.type)) || dt.type; });
     }
@@ -280,7 +287,7 @@
     const blocks = []; let portedCount = 0;
     design.dies.forEach((die) => die.blocks.forEach((b) => {
       const known = typeof b.areaMm2 === 'number' && isFinite(b.areaMm2);
-      const cls = !known ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' ? b.areaOrigin : 'unknown');
+      const cls = !known ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' || b.areaOrigin === 'derived' ? b.areaOrigin : 'unknown');
       const conv = known && !!b.ported && !!b.portConverted;
       if (conv) portedCount++;
       blocks.push({
@@ -288,14 +295,27 @@
         areaFromMm2: typeof b.areaFromMm2 === 'number' ? b.areaFromMm2 : null, areaRangeMm2: Array.isArray(b.areaRangeMm2) ? b.areaRangeMm2.slice() : null, portRatio: typeof b.portRatio === 'number' ? b.portRatio : null,
       });
     }));
-    area.mix = { dieMm2: util.dieMm2, usedMm2: util.usedMm2, utilization: util.ratio, unknownCount: util.unknownCount, portedCount, blocks };
+    area.mix = { dieMm2: util.dieMm2, usedMm2: util.usedMm2, usedMinMm2: util.usedMinMm2, utilization: util.ratio, utilizationMin: util.ratioMin, unknownCount: util.unknownCount, portedCount, blocks };
     area.recomputed = false;
     compat.forEach((c) => warnings.push(Object.assign({}, c)));
     warnings.push({ level: 'warn', text: '混合設計の性能は確度:低です(校正した範囲の構成ではないため。ST は最も速いコア、MT は各コアの寄与の合算)' });
+    // 自作コア(設計書 §3.7.7): 注意帯 2〜5。校正範囲外・上振れ側は定義ごとに判定する
+    const CD = (root.SDS && root.SDS.model && root.SDS.model.coredef) || null;
+    const usedDefs = []; preset.cfg.cores.forEach((g) => { const x = g.coreDefId && (design.coreDefs || []).find((y) => y.id === g.coreDefId); if (x && !usedDefs.includes(x)) usedDefs.push(x); });
+    let ooc = []; const optReasons = [];
+    if (usedDefs.length && CD) {
+      warnings.push({ level: 'warn', text: `自作コアの性能は基準コア(${usedDefs.map((x) => x.base.uarch).join('、')})の補正を借りた推定です。幅・ROB・L2 の変更の効果は検証できていません` });
+      if (blocks.some((b) => b.origin === 'derived')) warnings.push({ level: 'warn', text: '自作コアの面積は範囲です(ロジックの上限は仮定で、データから導けません)' });
+      usedDefs.forEach((x) => {
+        CD.outOfCalibration(x, { presets: ctx.presets }).forEach((o) => { ooc.push(o); warnings.push({ level: 'warn', text: `校正した範囲の外: ${o.reason}(確度は低)` }); });
+        CD.optimisticInfo(x).reasons.forEach((t) => { optReasons.push(t); warnings.push({ level: 'warn', text: `上振れ側の予測: ${x.name}: ${t}` }); });
+      });
+    }
+    if (usedDefs.length || (design.origin && design.origin.entry === 'new')) warnings.push({ level: 'info', text: '電力・温度・最大クロックは出していません' });
     return {
       st, mt, area, isMix: true, published: null, errPct: null, compat,
       power: { published: { base: null, peak: null, range: null }, reason: '混合設計には公表電力がありません', model: null, modelReason: MIX_NO_POWER },
-      warnings: warnings.concat(calibrationWarnings(st, mt)), preset: null, tolerance: TOLERANCE, edited: false, outOfCalibration: [], optimistic: false, optimisticReasons: [], throttled: false,
+      warnings: warnings.concat(calibrationWarnings(st, mt)), preset: null, tolerance: TOLERANCE, edited: false, outOfCalibration: ooc, optimistic: optReasons.length > 0, optimisticReasons: optReasons, throttled: false,
       powerModel: { ok: false, reason: MIX_NO_POWER, confidence: 'low', notes: [POWER_NOTE] },
       thermal: { ok: false, reason: MIX_NO_POWER, tentative: true, notes: [THERMAL_NOTE] },
     };

@@ -116,17 +116,18 @@
     body.push(h('div', { class: 'row', text: MF.utilizationText(mix) }));
     const c = MF.areaClassCounts(mix.blocks);
     body.push(h('div', { class: 'row' }, '面積の出所: ',
-      ['table', 'estimated', 'unknown'].map((k) => h('span', { class: `badge area-${k}`, text: `${MF.areaClassLabel(k)} ${c[k]}` })), ' / 移植の換算: ',
+      ['table', 'estimated', 'unknown'].concat(c.derived ? ['derived'] : []).map((k) => h('span', { class: `badge area-${k}`, text: `${MF.areaClassLabel(k)} ${c[k]}` })), ' / 移植の換算: ',
       h('span', { class: 'badge area-ported', text: `移植 ${c.ported}` })));
     if (c.ported) body.push(note('移植は面積の換算値(目安)です。密度に幅があるため、面積が大きくなる側を採用しています。L2(SRAM)を含む値にロジックの密度比を掛けているので、縮み方が過大になりうる。', 'warn-note'));
     if (c.estimated) body.push(note(MF.ESTIMATE_NOTE, 'warn-note'));
+    if (c.derived) body.push(note('導出(範囲)は自作コアの面積です。基準コアの表の面積から導いた範囲で、ロジックの上限は仮定(データから導けません)。ダイへの配置・使用率には範囲の大きい側を使っています。', 'warn-note'));
     if (mix.unknownCount) body.push(note(`面積が未取得の部品が ${mix.unknownCount} 個あります(使用率に含めていません。ブロックの大きさは仮の寸法です)`, 'warn-note'));
     if (mix.blocks && mix.blocks.length) {
       const tb = h('tbody');
       mix.blocks.forEach((b) => {
         const pl = MF.portLine(b);
         tb.appendChild(h('tr', {}, h('td', { text: b.label }),
-          h('td', {}, b.mm2 == null ? '未取得' : `${Math.round(b.mm2 * 100) / 100} mm²`, pl ? h('div', { class: 'small', text: pl }) : null),
+          h('td', {}, b.mm2 == null ? '未取得' : `${Math.round(b.mm2 * 100) / 100} mm²`, b.class === 'derived' && b.areaRangeMm2 ? h('div', { class: 'small', text: `範囲 ${root.SDS.ui.coreform.rangeText(b.areaRangeMm2)}(大きい側を使用)` }) : null, pl ? h('div', { class: 'small', text: pl }) : null),
           h('td', {}, h('span', { class: `badge area-${b.class}`, text: MF.areaClassText(b.class, b.portConverted) }))));
       });
       body.push(h('details', {}, h('summary', { text: `ブロックごとの面積(${mix.blocks.length} 件)` }),
@@ -149,10 +150,14 @@
     el.appendChild(h('p', { class: 'caution' }, '混合設計の概算です。性能は部品のコア構成から予測した値で、公開値はありません。電力・温度は混合設計では推定できません。ブロックの配置を変えても数値は変わりません。'));
     el.appendChild(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${MIX_NO_PENALTY}`));
     el.appendChild(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${MIX_OUT_OF_CALIB}(確度は常に低)`));
+    // 自作コアがあるとき: 注意帯 1〜5(設計書 §3.7.7。文言固定)
+    const bands = root.SDS.ui.coreform.customBands(ev, design);
+    if (bands.length) el.appendChild(h('div', { class: 'custom-bands', 'aria-label': '自作コアの注意' }, bands.map((x) => h('p', { class: x.level === 'warn' ? 'low-banner' : 'note', role: 'note' }, `${x.level === 'warn' ? '⚠' : 'ⓘ'} ${x.text}`))));
     const stExtra = [];
     if (ev.st.ok && ev.st.chosen) {
       const ch = ev.st.chosen;
       stExtra.push(note(`最速として選んだコア: ${ch.label}(${ghz(ch.fGHz)})。各グループのクロックで計算し、最も速いものを採用しています。`));
+      root.SDS.ui.coreform.chosenCustomLines(ch).forEach((t) => stExtra.push(note(t, 'warn-note')));
       if (ch.corrSource === 'isa' || ev.st.corrSource === 'isa') stExtra.push(note(`${ch.label}: ${NO_OWN_CORR}`, 'warn-note'));
     }
     l3Notes(ev.st).forEach((n) => stExtra.push(n));

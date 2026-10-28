@@ -47,6 +47,7 @@
     const improve = !!(design.origin && design.origin.mode === 'improve');
     const locked = !!(design.locks && design.locks.params);
     const hasCfg = !!(design.cfg && Array.isArray(design.cfg.cores));
+    if (design.presetId == null && design.origin && design.origin.mode === 'mix' && design.origin.entry === 'new') return { code: 'D', symbol: '◆', text: 'D 新規', locked: false, editable: false, hasCfg };
     if (design.presetId == null && design.origin && design.origin.mode === 'mix') return { code: 'C', symbol: '◇', text: 'C 混合', locked: false, editable: false, hasCfg };
     return improve
       ? { code: 'B', symbol: '✎', text: 'B 改良', locked, editable: hasCfg && !locked, hasCfg }

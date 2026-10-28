@@ -45,7 +45,9 @@ test('areaBadge: 表 / 推定(仮の比率の注記)/ 未取得', () => {
   assert.deepStrictEqual(['table', 'estimated', 'unknown', 'ported'].map(MF.areaClassLabel), ['表', '推定', '未取得', '移植']);
   // 2 軸: 出所(table / estimated / unknown)と移植の換算(portConverted)を別に数える。推定かつ移植は両方に入る
   const c = MF.areaClassCounts([{ class: 'table' }, { class: 'estimated', portConverted: true }, { class: 'estimated' }, { class: 'zzz' }]);
-  assert.deepStrictEqual(c, { table: 1, estimated: 2, unknown: 1, ported: 1 });
+  assert.deepStrictEqual(c, { table: 1, estimated: 2, unknown: 1, derived: 0, ported: 1 });
+  assert.strictEqual(MF.areaClassCounts([{ class: 'derived' }, { class: 'derived', portConverted: true }]).derived, 2);
+  assert.strictEqual(MF.areaClassLabel('derived'), '導出(範囲)'); assert.strictEqual(MF.areaClassText('derived', true), '導出(範囲)・移植');
   assert.strictEqual(MF.areaClassText('estimated', true), '推定・移植'); assert.strictEqual(MF.areaClassText('table', false), '表');
   assert.strictEqual(MF.portLine({ portConverted: true, areaFromMm2: 7.43, portRatio: 100 / 143.7, areaMm2: 5.17, areaRangeMm2: [4.14, 5.17] }), '元 7.43 mm² × 0.696 → 5.17 mm²(幅 4.14〜5.17。目安)');
   assert.strictEqual(MF.portLine({ portConverted: false }), null);

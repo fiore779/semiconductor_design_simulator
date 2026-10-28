@@ -8,12 +8,12 @@
 
   const need = ['sim', 'model', 'history', 'ui'];
   const missing = need.filter((k) => !S || !S[k]);
-  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata || !S.ui.mixform || !S.ui.library || !S.ui.mixpanel || !S.model.blocklib || !S.model.compat) {
+  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata || !S.ui.mixform || !S.ui.library || !S.ui.mixpanel || !S.ui.coreform || !S.ui.coreeditor || !S.model.coredef || !S.model.blocklib || !S.model.compat) {
     document.body.insertBefore(Object.assign(document.createElement('p'), { className: 'fatal', textContent: '✗ 必要なスクリプトが読み込まれていません(コンソールを確認してください)。このページは動きません。' }), document.body.firstChild);
     return;
   }
   const { h, clear } = S.ui.dom;
-  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan; const PK = S.ui.packageform; const PP = S.ui.packagepanel; const HD = S.ui.heatdata; const MF = S.ui.mixform; const LB = S.ui.library; const MP = S.ui.mixpanel; const BL = S.model.blocklib;
+  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan; const PK = S.ui.packageform; const PP = S.ui.packagepanel; const HD = S.ui.heatdata; const MF = S.ui.mixform; const LB = S.ui.library; const MP = S.ui.mixpanel; const CF = S.ui.coreform; const CE = S.ui.coreeditor; const CDM = S.model.coredef; const BL = S.model.blocklib;
 
   let ctx;
   try { ctx = EV.makeContext(); } catch (e) {
@@ -74,17 +74,19 @@
 
   // ---- 描画 ----
   const isMix = () => !!design && DS.isMix(design);
-  const ORIGIN_TEXT = { table: '表(出典あり)', estimated: '推定(仮の比率)', unknown: '未取得' };
+  const ORIGIN_TEXT = { table: '表(出典あり)', estimated: '推定(仮の比率)', unknown: '未取得', derived: '導出(範囲。大きい側を配置に使用。ロジックの上限は仮定)' };
   function mixPropsExtra() {
     return {
       origin(b) {
-        const cls = typeof b.areaMm2 !== 'number' ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' ? b.areaOrigin : 'unknown');
-        const area = typeof b.areaMm2 === 'number' ? `${Math.round(b.areaMm2 * 100) / 100} mm²` : '未取得';
+        const cls = typeof b.areaMm2 !== 'number' ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' || b.areaOrigin === 'derived' ? b.areaOrigin : 'unknown');
+        const area = typeof b.areaMm2 === 'number' ? `${Math.round(b.areaMm2 * 100) / 100} mm²${cls === 'derived' && b.areaRangeMm2 ? `(範囲 ${CF.rangeText(b.areaRangeMm2)})` : ''}` : '未取得';
+        const cd = b.coreDefId ? (design.coreDefs || []).find((x) => x.id === b.coreDefId) : null;
+        const custom = cd ? ` / 自作コア『${cd.name}』(基準: ${cd.base.uarch}。補正は基準から借用・確度:低)` : '';
         const pl = MF.portLine(b);
         const portText = pl ? ` / 移植(密度比で換算): ${pl}` : '';
         const est = cls === 'estimated' ? ` / ${MF.ESTIMATE_NOTE}` : '';
         const core = b.kind === 'core' && cls === 'estimated' ? ' / コア面積は P/E の区別なし' : '';
-        return `出所: ${b.sourceChip || '—'} / 面積: ${area}(${ORIGIN_TEXT[cls] || '未取得'})${portText}${est}${core}${b.portNote ? ` / ${b.portNote}` : ''} / ${MF.SCHEMATIC_NOTE}`;
+        return `出所: ${b.sourceChip || '—'}${custom} / 面積: ${area}(${ORIGIN_TEXT[cls] || '未取得'})${portText}${est}${core}${b.portNote ? ` / ${b.portNote}` : ''} / ${MF.SCHEMATIC_NOTE}`;
       },
       onRemove: onRemoveBlock,
     };
@@ -108,8 +110,8 @@
     $('library').hidden = !mix; $('mixpanel').hidden = !mix; $('params').hidden = mix;
     const pl = document.querySelector('.partslist'); if (pl) pl.hidden = mix;
     if (!mix) { clear($('library')); clear($('mixpanel')); return; }
-    LB.renderLibrary($('library'), design, libraryParts(), { onAdd: onAddPart }, libMsg, ctx.nodes);
-    MP.renderMix($('mixpanel'), design, lastEval, { onDieSize: onDieSizeEdit, onClock: onBlockClockEdit }, mixMsgs, ctx.nodes);
+    LB.renderLibrary($('library'), design, libraryParts(), { onAdd: onAddPart, onClone: onCloneCore, onEditDef: onEditCoreDef }, libMsg, ctx.nodes, { uarch: ctx.uarch, areas: (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || [] });
+    MP.renderMix($('mixpanel'), design, lastEval, { onDieSize: onDieSizeEdit, onClock: onBlockClockEdit, onFitDie }, mixMsgs, ctx.nodes);
   }
   function renderParamsPanel() {
     if (isMix()) { clear($('params')); return; }
@@ -279,6 +281,37 @@
       notify(`${label}しました。`, 'info');
     } else renderMixPanels();
   }
+  // ---- 自作コア(D。設計書 §3.7.4) ----
+  function openEditorFor(def) {
+    CE.openCoreEditor({ def, nodes: ctx.nodes, toNodeId: (design.mix && design.mix.nodeId) || null, evalCtx: { cal: ctx.cal, uarch: ctx.uarch, presets: ctx.presets, nodes: ctx.nodes } }, { onAdd: onAddCore });
+  }
+  function onCloneCore(part) {
+    if (!design || !isMix()) return;
+    const ci = CF.cloneInfo(part, ctx.uarch, (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || []);
+    if (!ci.cloneable) { libMsg = ci.reason; renderMixPanels(); return; }
+    openEditorFor(ci.def);
+  }
+  function onEditCoreDef(def) { if (design && isMix()) openEditorFor(JSON.parse(JSON.stringify(def))); }
+  // addCoreDef と同じ経路(addPart)。違いは、ダイビューの出所色分けで基準チップと別に見えるよう、ブロックの出所名を「自作:基準名」にすること
+  function onAddCore(def0, count) {
+    if (!design || !isMix()) return { ok: false, reason: '混合設計(C/D)でだけ追加できます' };
+    const def = CF.assignId(def0, design.coreDefs);
+    const part = Object.assign({}, CDM.toPart(def), { sourceChip: CF.customChip(def) });
+    const res = DS.addPart(design, part, { count, nodes: ctx.nodes });
+    if (!res.ok) return { ok: false, reason: res.reason };
+    const label = CF.addLabel(def, count);
+    if (!commit(res.design, label, false)) return { ok: false, reason: '履歴の途中だったため、追加を取りやめました' };
+    DG.close();
+    notify(`${label}しました。`, 'info');
+    return { ok: true };
+  }
+  function onFitDie() {
+    if (!design || !isMix()) return;
+    const res = DS.fitDieToBlocks(design, design.dies[0].id);
+    if (!res.ok) { mixMsgs = { die: res.reason }; renderMixPanels(); return; }
+    if (!res.changed) { notify('ダイ寸法はすでに中身の外接矩形に合っています(またはブロックがありません)。', 'info'); return; }
+    if (!commit(res.design, `${MF.dieSizeLabel(res.widthMm, res.heightMm)}(中身に合わせて最小)`, false)) renderMixPanels();
+  }
   function onRemoveBlock(blockId) {
     if (!design || !isMix()) return;
     const hit = PN.findBlock(design, blockId);
@@ -344,18 +377,18 @@
   }
 
   // ---- ダイアログ ----
-  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A' || key === 'B') openPresets(); else if (key === 'C') openMix(); } }); }
-  function openMix() {
+  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A' || key === 'B') openPresets(); else if (key === 'C') openMix(); else if (key === 'D') openMix('new'); } }); }
+  function openMix(entry) {
     DG.openMix(ctx, {
       onCreate(o) {
         if (!confirmDiscard()) return { ok: true };
         let d;
-        try { d = DS.fromScratch({ name: o.name, widthMm: o.w, heightMm: o.h, nodeId: o.nodeId }); } catch (e) { return { ok: false, reason: e.message }; }
+        try { d = DS.fromScratch({ name: o.name, widthMm: o.w, heightMm: o.h, nodeId: o.nodeId, entry: entry === 'new' ? 'new' : undefined }); } catch (e) { return { ok: false, reason: e.message }; }
         DG.close();
-        if (loadDesign(d, 'mix')) notify(`混合設計「${d.name}」を作りました。左の部品ライブラリから部品を追加してください。`, 'info');
+        if (loadDesign(d, 'mix')) notify(entry === 'new' ? `新規設計「${d.name}」を作りました。左の部品ライブラリでコアを選び、「複製して編集」で自作コアを作れます。` : `混合設計「${d.name}」を作りました。左の部品ライブラリから部品を追加してください。`, 'info');
         return { ok: true };
       },
-    });
+    }, entry === 'new' ? { entry: 'new' } : undefined);
   }
   function openPresets() {
     DG.openPresets(ctx, {

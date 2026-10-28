@@ -10,7 +10,7 @@
   const KIND_OPTIONS = [['', 'すべて'], ['core', 'コア'], ['l3', 'L3'], ['gpu', 'GPU'], ['uncore', 'uncore']];
   const ISA_OPTIONS = [['', 'すべて'], ['x86', 'x86'], ['arm', 'Arm']];
   // 面積の区分の表示名(blocklib の origin と、評価の class('ported' を含む))
-  const AREA_CLASS_LABEL = { table: '表', estimated: '推定', unknown: '未取得', ported: '移植', mixed: '混在' };
+  const AREA_CLASS_LABEL = { table: '表', estimated: '推定', unknown: '未取得', ported: '移植', mixed: '混在', derived: '導出(範囲)' };
   const SCHEMATIC_NOTE = 'ブロックの大きさは模式図です。面積は部品の値で、ブロックの大きさを変えても面積は変わりません';
   const ESTIMATE_NOTE = '推定は「ダイ面積 × 仮の比率」で出した目安です(比率は根拠のない仮の値)';
 
@@ -64,9 +64,9 @@
   // 面積の区分は 2 軸: 出所(table / estimated / unknown)と、移植の換算の有無(portConverted)。
   // 数え方: table / estimated / unknown は出所で数え、ported は換算したブロックの数(出所とは別に数える。推定かつ移植のブロックは両方に入る)
   function areaClassCounts(blocks) {
-    const c = { table: 0, estimated: 0, unknown: 0, ported: 0 };
+    const c = { table: 0, estimated: 0, unknown: 0, derived: 0, ported: 0 };
     (blocks || []).forEach((b) => {
-      const cls = b.class === 'table' || b.class === 'estimated' ? b.class : 'unknown';
+      const cls = b.class === 'table' || b.class === 'estimated' || b.class === 'derived' ? b.class : 'unknown';
       c[cls]++;
       if (b.portConverted || b.class === 'ported') c.ported++;
     });
@@ -163,7 +163,7 @@
   function blockGroups(design) {
     const rows = []; const idx = new Map();
     ((design && design.dies) || []).forEach((d) => (d.blocks || []).forEach((b) => {
-      const cls = !num(b.areaMm2) ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' ? b.areaOrigin : 'unknown');
+      const cls = !num(b.areaMm2) ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' || b.areaOrigin === 'derived' ? b.areaOrigin : 'unknown');
       const conv = num(b.areaMm2) && !!b.ported && !!b.portConverted;
       if (b.kind === 'core') {
         const gid = `${b.sourcePresetId || 'x'}:${b.coreType}`;
@@ -189,6 +189,8 @@
     if (!mix || mix.utilization == null) return '使用率: 算出できません';
     const base = `使用率 ${Math.round(mix.utilization * 1000) / 10}%(ブロック合計 ${r2(mix.usedMm2)} / ダイ ${r2(mix.dieMm2)} mm²)`;
     const parts = [base];
+    // 自作コアの面積が範囲のとき: 上の値は大きい側。小さい側も併記する
+    if (num(mix.utilizationMin) && num(mix.usedMinMm2) && mix.usedMinMm2 < mix.usedMm2 - 1e-9) parts.push(`自作コアの面積が範囲のため、上は大きい側。小さい側では ${Math.round(mix.utilizationMin * 1000) / 10}%(${r2(mix.usedMinMm2)} mm²)`);
     if (mix.unknownCount) parts.push(`面積が未取得の部品 ${mix.unknownCount} 個は含みません`);
     if (mix.portedCount) parts.push(`うち移植 ${mix.portedCount} 個は換算値(目安)`);
     return parts.join('。');

@@ -1,5 +1,5 @@
 // 新規作成画面(設計書 §8.3)とプリセット選択画面(§8.4)。ブラウザ専用。
-// A 再現・B 改良・C 混合が有効。D は「未実装」と明示して無効にする。
+// A 再現・B 改良・C 混合・D 新規が有効。
 (function (root) {
   'use strict';
   const { h, clear, num } = root.SDS.ui.dom;
@@ -35,7 +35,7 @@
       card('A', '再現', '実在チップを忠実に再現し、公開値と比べる', true),
       card('B', '改良', '実在チップを土台に、コア数・クロック・L3 を変えて自分用に改造する', true),
       card('C', '混合', '複数チップの部品を組み合わせる', true),
-      card('D', '新規', '目標を決めてゼロから設計する', false)));
+      card('D', '新規', 'プロセスとダイ寸法を決めて空のダイを作り、既存コアを複製・編集した自作コアを置く', true)));
   }
 
   // ---- プリセット選択 ----
@@ -106,13 +106,14 @@
       filters, h('div', { class: 'list-col' }, countEl, listEl), h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn))));
   }
 
-  // ---- 混合設計の設定(モード C の入口) ----
-  // ctx.nodes: プロセス一覧。cb.onCreate({ name, w, h, nodeId }) は { ok, reason } を返す(成功ならダイアログを閉じるのは呼び出し側)
-  function openMix(ctx, cb) {
+  // ---- 混合設計の設定(モード C の入口。opts.entry === 'new' なら D 新規の入口: ① プロセス ② ダイ寸法の 2 ステップ。設計書 §3.7.2) ----
+  // ctx.nodes: プロセス一覧。cb.onCreate({ name, w, h, nodeId, entry }) は { ok, reason } を返す(成功ならダイアログを閉じるのは呼び出し側)
+  function openMix(ctx, cb, opts) {
+    const isNew = !!(opts && opts.entry === 'new');
     const MF = root.SDS.ui.mixform;
     const nodes = ctx.nodes || [];
     const defNode = (nodes.find((n) => n.id === 'tsmc-n4') || nodes[0] || {}).id || '';
-    const nameI = h('input', { id: 'mxd-name', type: 'text', value: '混合チップ', autocomplete: 'off' });
+    const nameI = h('input', { id: 'mxd-name', type: 'text', value: isNew ? '新規チップ' : '混合チップ', autocomplete: 'off' });
     const wI = h('input', { id: 'mxd-w', type: 'text', inputmode: 'decimal', value: String(MF.DEFAULT_DIE_MM), autocomplete: 'off', 'aria-label': 'ダイの幅(mm)' });
     const hI = h('input', { id: 'mxd-h', type: 'text', inputmode: 'decimal', value: String(MF.DEFAULT_DIE_MM), autocomplete: 'off', 'aria-label': 'ダイの高さ(mm)' });
     const nodeS = h('select', { id: 'mxd-node' }, nodes.map((n) => h('option', { value: n.id, selected: n.id === defNode }, n.name)));
@@ -123,19 +124,20 @@
       const r = MF.parseDieSize(wI.value, hI.value, check);
       if (!r.ok) { setMsg(r.reason); return; }
       setMsg('');
-      const res = cb.onCreate({ name: nameI.value.trim() || '混合チップ', w: r.w, h: r.h, nodeId: nodeS.value || null });
+      const res = cb.onCreate({ name: nameI.value.trim() || (isNew ? '新規チップ' : '混合チップ'), w: r.w, h: r.h, nodeId: nodeS.value || null, entry: isNew ? 'new' : null });
       if (res && res.ok === false) setMsg(res.reason);
     };
     const row = (id, label, input, unit) => h('div', { class: 'pfield' }, h('label', { for: id, text: label }), h('div', { class: 'pinput' }, input, unit ? h('span', { class: 'small', text: unit }) : null));
-    open('混合設計の設定(C 混合)', h('div', { class: 'mixdialog' },
-      h('p', { class: 'note', text: '空のダイを作り、部品ライブラリから実在チップの部品を置いていきます。プロセスは後から変えられません。' }),
+    const sizeRow = h('div', { class: 'pfield', role: 'group', 'aria-label': 'ダイ寸法' }, h('span', { class: 'lbl', text: (isNew ? '② ' : '') + 'ダイ寸法(1〜100 mm)' }),
+      h('div', { class: 'pinput' }, h('label', { for: 'mxd-w', class: 'small', text: '幅' }), wI, h('span', { class: 'small', text: '×' }), h('label', { for: 'mxd-h', class: 'small', text: '高さ' }), hI, h('span', { class: 'small', text: 'mm' })));
+    const nodeRow = row('mxd-node', (isNew ? '① ' : '') + 'プロセス', nodeS);
+    open(isNew ? '新規設計の設定(D 新規)' : '混合設計の設定(C 混合)', h('div', { class: 'mixdialog' },
+      h('p', { class: 'note', text: isNew ? 'プロセスとダイ寸法を決めて空のダイを作ります。続けて左の部品ライブラリで、既存コアを「複製して編集」した自作コアを置きます。プロセスは後から変えられません。目標性能からの構成の提案は作りません(未実装)。' : '空のダイを作り、部品ライブラリから実在チップの部品を置いていきます。プロセスは後から変えられません。' }),
       row('mxd-name', '設計名', nameI),
-      h('div', { class: 'pfield', role: 'group', 'aria-label': 'ダイ寸法' }, h('span', { class: 'lbl', text: 'ダイ寸法(1〜100 mm)' }),
-        h('div', { class: 'pinput' }, h('label', { for: 'mxd-w', class: 'small', text: '幅' }), wI, h('span', { class: 'small', text: '×' }), h('label', { for: 'mxd-h', class: 'small', text: '高さ' }), hI, h('span', { class: 'small', text: 'mm' }))),
-      row('mxd-node', 'プロセス', nodeS),
+      isNew ? [nodeRow, sizeRow] : [sizeRow, nodeRow],
       msg,
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: create }, '作成'), h('button', { type: 'button', class: 'btn', onclick: close }, 'キャンセル'))));
   }
 
-  root.SDS.ui.dialogs = { openNew, openPresets, openMix, close };
+  root.SDS.ui.dialogs = { openNew, openPresets, openMix, open, close };
 })(window);
