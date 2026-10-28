@@ -6,7 +6,7 @@
   const PK = root.SDS.ui.packageform;
 
   // cb: { onCooling(id), onSubstrate(id), onPowerLimit(str, input) }。msgs: { cooling, substrate, limit }
-  function renderPackage(el, design, cb, msgs) {
+  function renderPackage(el, design, cb, msgs, peakItem) {
     clear(el);
     el.appendChild(h('h2', { text: 'パッケージ設定' }));
     if (!design) { el.appendChild(h('p', { class: 'note', text: '設計を読み込むと、冷却・基板・電力制限を設定できます。' })); return; }
@@ -52,7 +52,7 @@
         onchange: (e) => cb.onPowerLimit(e.target.value, e.target),
         onkeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
       }), h('span', { class: 'small', text: 'W (1〜1000)' })),
-      PK.powerLimitSourceText(pkg) ? h('p', { class: 'small', text: PK.powerLimitSourceText(pkg) }) : null,
+      PK.powerLimitSourceText(pkg, peakItem) ? h('p', { class: 'small', text: PK.powerLimitSourceText(pkg, peakItem) }) : null,
       msgEl('pk-limit-msg', m.limit)));
   }
 

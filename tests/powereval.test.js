@@ -91,3 +91,23 @@ test('制限を満たせない(13900K + 小型ファン): feasible:false と not
   assert.ok(/最小クロックでも超過/.test(PK.INFEASIBLE_TEXT));
   assert.ok(/ダイ平均/.test(PK.TJ_NOTE) && /TIM/.test(PK.TJ_NOTE));
 });
+
+test('L4: 熱暴走(9700X + passive-phone)は throttled:false。「下がる見込み」でなく熱暴走の警告を出す', () => {
+  const r = ev(design.setCooling(mk('amd-zen5-9700x'), 'passive-phone').design);
+  assert.strictEqual(r.thermal.limitedBy, 'runaway');
+  assert.strictEqual(r.thermal.throttled, false); assert.strictEqual(r.throttled, false);
+  assert.ok(!r.warnings.some((w) => /持続クロックが下がる/.test(w.text)));
+  assert.ok(r.warnings.some((w) => /熱暴走の恐れ\(温度が収束しません\)。持続クロックは推定できません/.test(w.text)));
+});
+
+test('再現度パネルの電力行: A で電力制限を変えても変わらない。B(未編集)でも行は同じ判定(UI は B で再現度パネルを出さない)', () => {
+  const R = require('../js/ui/reproduce.js');
+  const last = (d) => { const x = R.reproductionRows(ev(d)); return x[x.length - 1]; };
+  const a = mk('intel-adl-12900k', 'reproduce');
+  const row0 = last(a);
+  assert.deepStrictEqual(last(design.setPowerLimit(a, 100).design), row0);
+  assert.deepStrictEqual(last(design.setPowerLimit(a, null).design), row0);
+  assert.strictEqual(row0.verdict, 'ng');
+  const rowB = last(mk('intel-adl-12900k', 'improve'));
+  assert.strictEqual(rowB.verdict, row0.verdict); assert.strictEqual(rowB.diffPct, row0.diffPct);
+});

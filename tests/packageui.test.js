@@ -128,7 +128,7 @@ test('パッケージ: A 再現(ロック中)でも冷却を変えられ、評�
 });
 
 test('電力制限の出所の表示', () => {
-  assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: 258.6, powerLimitSource: 'peak' }), '初期値: 公表のピーク電力から(258.6 W)');
+  assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: 258.6, powerLimitSource: 'peak' }), '初期値: ピーク電力から(258.6 W)');
   assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: 65, powerLimitSource: 'base' }), '初期値: 公表の基本電力から(65 W)');
   assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: 100, powerLimitSource: 'user' }), '');
   assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: null, powerLimitSource: null }), '');
@@ -141,4 +141,36 @@ test('buildHeatmap: 凡例の最小・最大・表示範囲・最高のダイ名
   assert.ok(/ダイ平均/.test(t.longNote) && /TIM/.test(t.longNote));
   const p = HD.buildHeatmap(d, ev, 'power', ctx);
   assert.ok(/W\/mm²/.test(p.legendText) && !/TIM/.test(p.longNote));
+});
+
+test('L3: ピークの呼び方は値の区分(meas/pub/sec)で出し分ける。区分が取れないときは「ピーク電力」', () => {
+  assert.strictEqual(PK.peakKindText('meas'), '実測のピーク');
+  assert.strictEqual(PK.peakKindText('pub'), '公表のピーク');
+  assert.strictEqual(PK.peakKindText('sec'), 'ピーク(二次情報)');
+  assert.strictEqual(PK.peakKindText(undefined), 'ピーク電力');
+  const pkg = { powerLimitW: 258.6, powerLimitSource: 'peak' };
+  assert.strictEqual(PK.powerLimitSourceText(pkg, { w: 258.6, s: 'meas' }), '初期値: 実測のピークから(258.6 W)');
+  assert.strictEqual(PK.powerLimitSourceText({ powerLimitW: 253, powerLimitSource: 'peak' }, { w: 253, s: 'pub' }), '初期値: 公表のピークから(253 W)');
+  const D = require('./helpers').D; const E = require('../js/model/evaluate.js'); const DS = require('../js/model/design.js'); const ctx = E.makeContext();
+  const peakS = (id) => E.evaluate(DS.fromPreset(D.presets.find((p) => p.id === id)), ctx).powerModel.vsPublishedPeak.s;
+  assert.strictEqual(peakS('intel-adl-12900k'), 'meas');
+  assert.strictEqual(peakS('intel-rpl-13900k'), 'pub');
+  const R = require('../js/ui/reproduce.js');
+  const label = (id) => { const rows = R.reproductionRows(E.evaluate(DS.fromPreset(D.presets.find((p) => p.id === id)), ctx)); return rows[rows.length - 1].label; };
+  assert.ok(/実測のピーク/.test(label('intel-adl-12900k')) && /公表のピーク/.test(label('intel-rpl-13900k')));
+});
+
+test('L1: 過大寄り注記は A 再現(未編集)で推定が公表ピークより 15% 超大きいときだけ', () => {
+  const D = require('./helpers').D; const E = require('../js/model/evaluate.js'); const DS = require('../js/model/design.js'); const ctx = E.makeContext();
+  const pre = (id) => D.presets.find((p) => p.id === id);
+  const pm = (id) => E.evaluate(DS.fromPreset(pre(id)), ctx).powerModel;
+  const n = PK.overEstimateNote(pm('intel-adl-12900k'), false);
+  assert.ok(/^電力の推定が実測のピークより \+\d+% 大きいため、温度・持続クロックの低下は過大寄りです$/.test(n), n);
+  assert.strictEqual(PK.overEstimateNote(pm('amd-zen5-9700x'), false), ''); // ピークなし
+  assert.strictEqual(PK.overEstimateNote(pm('intel-adl-12900k'), true), ''); // 編集後
+  const d = DS.fromPreset(pre('intel-adl-12900k'), { mode: 'improve' }); const g = d.cfg.cores[0];
+  const edited = E.evaluate(DS.setClock(d, g.type, (g.boostGHz || g.maxGHz) * 1.05).design, ctx).powerModel;
+  assert.strictEqual(PK.overEstimateNote(edited, false), '');
+  assert.strictEqual(PK.overEstimateNote({ ok: true, vsPublishedPeak: { errPct: 15, s: 'pub' } }, false), '');
+  assert.strictEqual(PK.overEstimateNote({ ok: true, vsPublishedPeak: { errPct: 15.4, s: 'pub' } }, false), '電力の推定が公表のピークより +15% 大きいため、温度・持続クロックの低下は過大寄りです');
 });

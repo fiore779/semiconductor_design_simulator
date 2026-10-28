@@ -10,7 +10,6 @@
   const TJ_NOTE = '制限の判定はダイ平均の温度で行っています。局所(ヒートマップの最高)は上限を超えうる。ヒートマップの局所差は TIM を含まず過小寄り';
   const RUNAWAY_TEXT = '熱暴走のため持続値はありません(温度が収束しない)';
   const INFEASIBLE_TEXT = '✗ 制限を満たせない(最小クロックでも超過)';
-  const ESTIMATE_NOTE = '電力・温度は推定(確度:低・仮置き)です。性能の数値には反映していません。';
 
   // 電力制限(W)。空欄=制限なし(null)。1〜1000。末尾の「W」は許す
   function parsePowerLimit(str) {
@@ -87,15 +86,28 @@
   function thermalNotes(thermal) {
     return ((thermal && thermal.notes) || []).filter((n) => !/^冷却の熱抵抗は根拠のない仮置き$/.test(n));
   }
+  // power.peak の値の区分(s)に合わせた「ピーク」の呼び方。区分が取れないときは「ピーク電力」
+  function peakKindText(s) {
+    if (s === 'meas') return '実測のピーク';
+    if (s === 'pub') return '公表のピーク';
+    if (s === 'sec') return 'ピーク(二次情報)';
+    return 'ピーク電力';
+  }
+  // 温度カードの過大寄り注記。A 再現(未編集)で、モデル推定が公表ピークより 15% 超大きいときだけ。無ければ ''
+  function overEstimateNote(pm, edited) {
+    const v = !edited && pm && pm.ok ? pm.vsPublishedPeak : null;
+    if (!v || typeof v.errPct !== 'number' || !(v.errPct > 15)) return '';
+    return `電力の推定が${peakKindText(v.s)}より +${Math.round(v.errPct)}% 大きいため、温度・持続クロックの低下は過大寄りです`;
+  }
   // 電力制限の初期値の出所の表示(ユーザーが変えた・空欄にした後は出さない)
-  function powerLimitSourceText(pkg) {
+  function powerLimitSourceText(pkg, peakItem) {
     if (!pkg || pkg.powerLimitW == null) return '';
-    if (pkg.powerLimitSource === 'peak') return `初期値: 公表のピーク電力から(${pkg.powerLimitW} W)`;
+    if (pkg.powerLimitSource === 'peak') return `初期値: ${peakKindText(peakItem && peakItem.s)}から(${pkg.powerLimitW} W)`;
     if (pkg.powerLimitSource === 'base') return `初期値: 公表の基本電力から(${pkg.powerLimitW} W)`;
     return '';
   }
 
-  const api = { TJ_NOTE, RUNAWAY_TEXT, INFEASIBLE_TEXT, isRunaway, thermalNotes, powerLimitSourceText, COOLING_NOTE, POWER_MODEL_NOTE, ESTIMATE_NOTE, parsePowerLimit, limitedByText, limitedBySymbol, sourceBadge, substrateRows, packageLabel, powerLimitLabel, coolingOptionText, sustainedRows, tjView };
+  const api = { TJ_NOTE, RUNAWAY_TEXT, INFEASIBLE_TEXT, isRunaway, thermalNotes, powerLimitSourceText, COOLING_NOTE, POWER_MODEL_NOTE, peakKindText, overEstimateNote, parsePowerLimit, limitedByText, limitedBySymbol, sourceBadge, substrateRows, packageLabel, powerLimitLabel, coolingOptionText, sustainedRows, tjView };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.packageform = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -29,16 +29,18 @@
   // 電力の判定(A 再現のみ)。モデル推定(全コア・最大クロック・電力制限なし)と公表ピークの差が ±15% 以内なら ok。
   // 条件が揃っていない(推定は制限なし、公表ピークは制限下)うえ、モデルは未校正なので、必ず注記を付ける
   const POWER_TOL = 0.15;
-  const POWER_LABEL = '電力: モデル推定(全コア・最大クロック・電力制限なし)vs 公表ピーク';
-  const POWER_CAVEAT = '推定は電力制限なしの値、公表ピークは電力制限下の値で条件が揃っていない。モデルは根拠のない仮の既定値で未校正';
+  const peakKind = (s) => ((typeof module !== 'undefined' && module.exports) ? require('./packageform.js') : root.SDS.ui.packageform).peakKindText(s);
+  const powerLabel = (s) => `電力: モデル推定(全コア・最大クロック・電力制限なし)vs ${peakKind(s)}`;
+  const POWER_LABEL = powerLabel(undefined);
+  const POWER_CAVEAT = '推定は電力制限なしの値、比べるピークは電力制限下の値で条件が揃っていない。モデルは根拠のない仮の既定値で未校正';
   function powerRow(ev) {
     const pm = ev.powerModel;
-    const row = { label: POWER_LABEL, published: null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: '' };
+    const row = { label: powerLabel(pm && pm.vsPublishedPeak && pm.vsPublishedPeak.s), published: null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: '' };
     const fin = (head) => { row.note = `${head}。${POWER_CAVEAT}`; return row; };
     if (!pm || !pm.ok) return fin(`判定しない: ${(pm && pm.reason) || '電力モデルを校正できない'}`);
     row.sim = pm.estW;
     const v = pm.vsPublishedPeak;
-    if (!v) return fin(`判定しない: ${pm.vsPublishedPeakReason || '公表ピーク電力が未取得'}`);
+    if (!v) return fin(`判定しない: ${pm.vsPublishedPeakReason || 'ピーク電力が未取得'}`);
     row.published = v.publishedW; row.diffPct = v.errPct;
     const ok = Math.abs(v.errPct) <= POWER_TOL * 100;
     row.verdict = ok ? 'ok' : 'ng';

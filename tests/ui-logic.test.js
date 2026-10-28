@@ -115,10 +115,10 @@ test('commitplan + history: ドラッグ中に 2 秒止めて離しても 1 手(
   assert.strictEqual(h.list().length, 2); // 最初の状態 + 1 手
 });
 
-test('再現度: 電力の行(モデル推定 vs 公表ピーク)。±15% で ✓/✗、公表ピーク無し・校正不可は判定しない、注記は必ず付く', () => {
+test('再現度: 電力の行(モデル推定 vs ピーク)。±15% で ✓/✗、公表ピーク無し・校正不可は判定しない、注記は必ず付く', () => {
   const rows = R.reproductionRows(ev('intel-adl-12900k'));
   const r = rows[rows.length - 1];
-  assert.ok(/電力制限なし/.test(r.label) && /公表ピーク/.test(r.label));
+  assert.ok(/電力制限なし/.test(r.label) && /実測のピーク/.test(r.label));
   assert.strictEqual(r.published, 258.6); assert.ok(r.sim > 0);
   assert.strictEqual(r.verdict, Math.abs(r.diffPct) <= 15 ? 'ok' : 'ng');
   assert.ok(r.note.includes(R.POWER_CAVEAT) && /電力制限下/.test(r.note) && /未校正/.test(r.note));

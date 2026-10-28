@@ -85,8 +85,9 @@
   function renderParamsPanel() {
     PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onUnlock }, paramMsgs);
   }
+  const peakOf = (d) => { const p = d && ctx.presets.find((q) => q.id === d.presetId); return (p && p.power && p.power.peak) || null; };
   function renderPackagePanel() {
-    PP.renderPackage($('package'), design, { onCooling: (id) => onPackageEdit('cooling', id), onSubstrate: (id) => onPackageEdit('substrate', id), onPowerLimit: (s) => onPackageEdit('limit', s) }, pkgMsgs);
+    PP.renderPackage($('package'), design, { onCooling: (id) => onPackageEdit('cooling', id), onSubstrate: (id) => onPackageEdit('substrate', id), onPowerLimit: (s) => onPackageEdit('limit', s) }, pkgMsgs, peakOf(design));
   }
   // ヒートマップのデータ接続。電力密度・温度のモードのときだけ計算する。ダイビューに setHeatmap が無ければ何もしない
   function updateHeat() {
@@ -96,7 +97,6 @@
     const r = HD.buildHeatmap(design, lastEval, viewMode, null);
     if (canSet) view.setHeatmap(r.ok ? r.data : null);
     note.hidden = false; note.className = r.ok ? 'small' : 'small err';
-    note.removeAttribute('role'); // 編集のたびに読み上げない(index.html の role=status を外す代わり)
     note.textContent = r.ok ? (r.longNote || r.data.note) + (canSet ? '' : '(ダイビューがヒートマップ表示に未対応のため、色は表示されません)') : `✗ ${r.reason}`;
   }
   function renderDiffPanel() {

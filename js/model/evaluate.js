@@ -186,7 +186,7 @@
       out.vsPublishedPeak = null; out.vsPublishedPeakReason = '編集後のため公表値とは比べない';
       const b = estAt(preset0);
       if (b.ok && b.w > 0) { out.baseEstW = b.w; out.deltaPct = (est.w / b.w - 1) * 100; }
-    } else if (peak && typeof peak.w === 'number' && peak.w > 0) out.vsPublishedPeak = { publishedW: peak.w, estW: est.w, errPct: (est.w / peak.w - 1) * 100 };
+    } else if (peak && typeof peak.w === 'number' && peak.w > 0) out.vsPublishedPeak = { publishedW: peak.w, estW: est.w, errPct: (est.w / peak.w - 1) * 100, s: peak.s || null };
     return out;
   }
 
@@ -199,7 +199,8 @@
     const r = S.thermal.solveThrottle({ preset, cal: { powerK: pm.powerK }, coolingId: pkg.coolingId, substrateId: pkg.substrateId, powerLimitW: base.powerLimitW });
     if (!r.ok) return Object.assign(base, { ok: false, reason: r.reason, notes: [THERMAL_NOTE] });
     const target = maxClockMap(preset);
-    const throttled = Object.keys(r.fByType).some((k) => target[k] > 0 && r.fByType[k] < target[k] * 0.999);
+    const runaway = r.limitedBy === 'runaway' || r.tjC == null || !isFinite(r.tjC);
+    const throttled = !runaway && Object.keys(r.fByType).some((k) => target[k] > 0 && r.fByType[k] < target[k] * 0.999);
     return Object.assign(base, {
       ok: true, limitedBy: r.limitedBy, tjC: r.tjC, tjLastC: r.tjLastC, sustainedGHz: r.fByType, powerW: r.powerW, rTotal: r.rTotal,
       converged: r.converged, feasible: r.feasible, throttled, notes: [THERMAL_NOTE].concat(r.notes || []),
@@ -212,7 +213,8 @@
     result.powerModel = pm; result.thermal = th;
     result.throttled = !!th.throttled;
     result.warnings.push({ level: 'warn', text: '電力・温度は推定(確度:低)' });
-    if (th.throttled) result.warnings.push({ level: 'warn', text: 'この設計は電力・温度の制限で持続クロックが下がる見込み(性能の数値には反映していない)' });
+    if (th.ok && (th.limitedBy === 'runaway' || th.tjC == null || !isFinite(th.tjC))) result.warnings.push({ level: 'warn', text: '熱暴走の恐れ(温度が収束しません)。持続クロックは推定できません' });
+    else if (th.throttled) result.warnings.push({ level: 'warn', text: 'この設計は電力・温度の制限で持続クロックが下がる見込み(性能の数値には反映していない)' });
   }
 
   function evaluate(design, ctx) {

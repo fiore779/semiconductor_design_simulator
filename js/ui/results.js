@@ -41,7 +41,7 @@
   const optBand = () => h('p', { class: 'low-banner', role: 'note' }, `⚠ ${root.SDS.ui.paramform.OPTIMISTIC_NOTE}(電力・温度の確度は低く、冷却の熱抵抗は仮置きです)。`);
 
   // 電力カードの「モデルの推定」部分。ok:false のときは理由だけで、数値は出さない
-  function powerModelBlock(pm, edited) {
+  function powerModelBlock(pm, edited, isA) {
     const box = h('div', { class: 'modelbox' }, h('h4', { text: 'モデルの推定(確度:低)' }));
     if (!pm || !pm.ok) {
       box.appendChild(h('div', { class: 'row' }, h('span', { class: 'val na', text: '—' }), ' 推定できません'));
@@ -50,8 +50,8 @@
       box.appendChild(h('div', { class: 'big' }, h('span', { class: 'val', text: pm.estW.toFixed(1) }), h('span', { class: 'unit', text: ' W(推定・全コア負荷)' })));
       const v = pm.vsPublishedPeak;
       if (edited) box.appendChild(h('div', { class: 'row small', text: '編集後のため公表値とは比べません(元の構成に対する相対変化だけ)' }));
-      else if (v) box.appendChild(h('div', { class: 'row' }, `公表ピーク ${v.publishedW} W との差: `, h('b', { text: diff(v.errPct) }), h('span', { class: 'small', text: '(外れていてもそのまま表示。合否の判定はしません)' })));
-      else box.appendChild(h('div', { class: 'row small', text: '公表ピーク電力が未取得のため、比較しません' }));
+      else if (v) box.appendChild(h('div', { class: 'row' }, `${PK.peakKindText(v.s)} ${v.publishedW} W との差: `, h('b', { text: diff(v.errPct) }), h('span', { class: 'small', text: isA ? '(判定は再現度パネル(±15%)に出しています)' : '(外れていてもそのまま表示。合否の判定はしません)' })));
+      else box.appendChild(h('div', { class: 'row small', text: 'ピーク電力が未取得のため、比較しません' }));
       if (edited && pm.deltaPct != null) box.appendChild(h('div', { class: 'row' }, '元の構成に対する相対変化: ', h('b', { text: diff(pm.deltaPct) }), h('span', { class: 'small', text: ` (元の推定 ${pm.baseEstW.toFixed(1)} W)` })));
     }
     box.appendChild(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${PK.POWER_MODEL_NOTE}`));
@@ -59,7 +59,7 @@
   }
 
   // 温度カード。冷却の熱抵抗は仮置きなので、注意帯は常に出す
-  function thermalCard(th, design) {
+  function thermalCard(th, design, pm, isA) {
     const body = [h('p', { class: 'low-banner', role: 'note' }, `⚠ ${PK.COOLING_NOTE}温度・持続クロックは目安です(暫定値)。`)];
     const v = PK.tjView(th);
     if (PK.isRunaway(th)) {
@@ -70,12 +70,10 @@
       body.push(h('div', { class: 'big' }, h('span', { class: 'val na', text: '—' }), h('span', { class: 'unit', text: ' 推定できません' })));
       body.push(note(`理由: ${v.reason}`, 'warn-note'));
     } else {
-      if (v.state === 'ok') body.push(h('div', { class: 'big' }, h('span', { class: 'val', text: v.tjC.toFixed(0) }), h('span', { class: 'unit', text: ' ℃ (平均 Tj・推定)' })));
-      else {
-        body.push(h('div', { class: 'big' }, h('span', { class: 'val na', text: '—' }), h('span', { class: 'unit', text: ` ${v.text}` })));
-        if (v.lastC != null) body.push(note(`参考: 最後の反復値 ${v.lastC.toFixed(0)} ℃(収束していないため温度とは見なせません)`, 'warn-note'));
-      }
+      body.push(h('div', { class: 'big' }, h('span', { class: 'val', text: v.tjC.toFixed(0) }), h('span', { class: 'unit', text: ' ℃ (平均 Tj・推定)' })));
       body.push(note(PK.TJ_NOTE));
+      const over = isA ? PK.overEstimateNote(pm, false) : '';
+      if (over) body.push(note(over, 'warn-note'));
       body.push(h('div', { class: 'row' }, '制限の理由: ', h('b', { text: `${PK.limitedBySymbol(th.limitedBy)} ${PK.limitedByText(th.limitedBy)}` }), th.feasible === false ? h('b', { class: 'err', text: ` ${PK.INFEASIBLE_TEXT}` }) : null));
       if (typeof th.powerW === 'number') body.push(h('div', { class: 'row' }, '持続時の電力: ', h('b', { text: `${th.powerW.toFixed(1)} W` }), th.powerLimitW != null ? ` (電力制限 ${th.powerLimitW} W)` : ''));
       const rows = PK.sustainedRows(th, design && design.cfg && design.cfg.cores);
@@ -95,6 +93,7 @@
   function renderResults(el, ev, design) {
     clear(el);
     const edited = !!ev.edited;
+    const isA = root.SDS.ui.paramform.showRepro(design); // A 再現(未編集)のときだけ再現度パネルが出る
     el.appendChild(h('p', { class: 'caution' }, '概算です。配置の編集では数値は変わりません。パラメータ(コア数・クロック・L3)の編集では性能だけ再計算します(面積・公表電力は再計算しません)。電力・温度は推定(確度:低・仮置き)として別のカードに載せ、性能の数値には反映しません。'));
     if (edited) el.appendChild(h('p', { class: 'low-banner' }, '予測(編集後): 下の性能は編集したパラメータでの予測です。公開値ではありません。'));
     // ST
@@ -137,9 +136,9 @@
     if (pw.range) pBody.push(h('div', { class: 'row' }, '設定範囲: ', h('b', { text: `${pw.range.minW}〜${pw.range.maxW} W` })));
     if (ev.power.reason) pBody.push(h('div', { class: 'row' }, '公表値: ', h('b', { text: '未取得' }), ` (${ev.power.reason})`));
     if (edited) pBody.push(note('公表電力は編集では再計算していません(元のチップの公表値)。', 'warn-note'));
-    pBody.push(powerModelBlock(ev.powerModel, edited));
+    pBody.push(powerModelBlock(ev.powerModel, edited, isA));
     el.appendChild(h('section', { class: 'card', 'aria-label': '電力(推定)' }, h('header', {}, h('h3', { text: '電力(推定)' }), confBadge('low')), pBody));
-    el.appendChild(thermalCard(ev.thermal, design));
+    el.appendChild(thermalCard(ev.thermal, design, ev.powerModel, isA));
   }
 
   function renderRepro(el, ev) {
