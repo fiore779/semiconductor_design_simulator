@@ -230,3 +230,16 @@ test('楽観: ST の確度が落ちるのはクロックを上げたときだけ
   assert.strictEqual(down.st.confidence, base.st.confidence);
   assert.strictEqual(E.OPTIMISTIC_NOTE, require('../js/ui/paramform.js').OPTIMISTIC_NOTE);
 });
+
+test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さい L3 は下限)', () => {
+  const exp = { 0: [1696.09, 14773.73], 1: [1882.25, 14773.73], 4: [2079.46, 14773.73], 30: [2227.63, 17654.36] };
+  const rs = {};
+  [0, 1, 4, 30].forEach((mb) => {
+    const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
+    assert.ok(Math.abs(r.st.score - exp[mb][0]) < 0.01, `ST ${mb}: ${r.st.score}`);
+    assert.ok(Math.abs(r.mt.score - exp[mb][1]) < 0.01, `MT ${mb}: ${r.mt.score}`);
+  });
+  assert.strictEqual(rs[0].st.noL3, true); assert.strictEqual(rs[0].mt.noL3, true);
+  assert.strictEqual(rs[1].mt.l3Floor, true); assert.strictEqual(rs[4].mt.l3Floor, true); assert.strictEqual(rs[30].mt.l3Floor, false);
+  assert.strictEqual(rs[30].mt.noL3, false);
+});

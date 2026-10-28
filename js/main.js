@@ -8,12 +8,12 @@
 
   const need = ['sim', 'model', 'history', 'ui'];
   const missing = need.filter((k) => !S || !S[k]);
-  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata) {
+  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata || !S.ui.mixform || !S.ui.library || !S.ui.mixpanel || !S.model.blocklib || !S.model.compat) {
     document.body.insertBefore(Object.assign(document.createElement('p'), { className: 'fatal', textContent: '✗ 必要なスクリプトが読み込まれていません(コンソールを確認してください)。このページは動きません。' }), document.body.firstChild);
     return;
   }
   const { h, clear } = S.ui.dom;
-  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan; const PK = S.ui.packageform; const PP = S.ui.packagepanel; const HD = S.ui.heatdata;
+  const DS = S.model.design; const DF = S.model.diff; const PF = S.ui.paramform; const PM = S.ui.params; const DP = S.ui.diffpanel; const EV = S.model.evaluate; const PN = S.ui.panels; const RS = S.ui.results; const DG = S.ui.dialogs; const CP = S.ui.commitplan; const PK = S.ui.packageform; const PP = S.ui.packagepanel; const HD = S.ui.heatdata; const MF = S.ui.mixform; const LB = S.ui.library; const MP = S.ui.mixpanel; const BL = S.model.blocklib;
 
   let ctx;
   try { ctx = EV.makeContext(); } catch (e) {
@@ -24,7 +24,7 @@
   let design = null;
   const history = S.history.createHistory({ limit: 200 }) /* まとめるかどうかは commitplan が決める(時間の窓は使わない。ドラッグ中に止めても 1 手) */;
   let selection = []; let viewMode = 'place'; let view = null; let propMsg = ''; let ignoreUntil = 0; let saveTimer = null; let noticeTimer = null;
-  let lastEval = null; let paramMsgs = {}; let pkgMsgs = {};
+  let lastEval = null; let paramMsgs = {}; let pkgMsgs = {}; let mixMsgs = {}; let libMsg = ''; let mixParts = null;
 
   // ---- 通知 ----
   function notify(text, kind) {
@@ -73,7 +73,23 @@
   function selectBlocks(ids) { selection = ids; if (view) view.setSelection(ids); renderProps(); if (!view) renderEmptyOrFallback(); }
 
   // ---- 描画 ----
-  function renderProps() { PN.renderProps($('props'), design || { dies: [] }, selection, onPropEdit, propMsg); }
+  const isMix = () => !!design && DS.isMix(design);
+  const ORIGIN_TEXT = { table: '表(出典あり)', estimated: '推定(仮の比率)', unknown: '未取得' };
+  function mixPropsExtra() {
+    return {
+      origin(b) {
+        const cls = typeof b.areaMm2 !== 'number' ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' ? b.areaOrigin : 'unknown');
+        const area = typeof b.areaMm2 === 'number' ? `${Math.round(b.areaMm2 * 100) / 100} mm²` : '未取得';
+        const pl = MF.portLine(b);
+        const portText = pl ? ` / 移植(密度比で換算): ${pl}` : '';
+        const est = cls === 'estimated' ? ` / ${MF.ESTIMATE_NOTE}` : '';
+        const core = b.kind === 'core' && cls === 'estimated' ? ' / コア面積は P/E の区別なし' : '';
+        return `出所: ${b.sourceChip || '—'} / 面積: ${area}(${ORIGIN_TEXT[cls] || '未取得'})${portText}${est}${core}${b.portNote ? ` / ${b.portNote}` : ''} / ${MF.SCHEMATIC_NOTE}`;
+      },
+      onRemove: onRemoveBlock,
+    };
+  }
+  function renderProps() { PN.renderProps($('props'), design || { dies: [] }, selection, onPropEdit, propMsg, isMix() ? mixPropsExtra() : null); }
   function renderHistory() { PN.renderHistory($('history'), history, jumpTo, undo, redo); }
   function renderButtons() {
     $('m-undo').disabled = !history.canUndo(); $('m-redo').disabled = !history.canRedo(); $('m-save').disabled = !design;
@@ -82,7 +98,21 @@
     mb.textContent = mi ? `${mi.symbol} ${mi.text}${mi.locked ? '(ロック中)' : ''}` : '';
     mb.className = 'badge modebadge' + (mi ? ` mode-${mi.code}` : ''); mb.hidden = !mi;
   }
+  function libraryParts() {
+    if (!mixParts) mixParts = BL.build(ctx.presets, (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || [], ctx.nodes);
+    return mixParts;
+  }
+  // C 混合のときだけ、部品ライブラリ・混合設計パネルを出し、パラメータ欄と簡易パーツ欄を隠す
+  function renderMixPanels() {
+    const mix = isMix();
+    $('library').hidden = !mix; $('mixpanel').hidden = !mix; $('params').hidden = mix;
+    const pl = document.querySelector('.partslist'); if (pl) pl.hidden = mix;
+    if (!mix) { clear($('library')); clear($('mixpanel')); return; }
+    LB.renderLibrary($('library'), design, libraryParts(), { onAdd: onAddPart }, libMsg, ctx.nodes);
+    MP.renderMix($('mixpanel'), design, lastEval, { onDieSize: onDieSizeEdit, onClock: onBlockClockEdit }, mixMsgs, ctx.nodes);
+  }
   function renderParamsPanel() {
+    if (isMix()) { clear($('params')); return; }
     PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onUnlock }, paramMsgs);
   }
   const peakOf = (d) => { const p = d && ctx.presets.find((q) => q.id === d.presetId); return (p && p.power && p.power.peak) || null; };
@@ -110,13 +140,13 @@
     renderButtons();
     if (!design) {
       clear($('results')).appendChild(h('p', { class: 'note', text: '設計を読み込むと、ここに結果が出ます。' }));
-      clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderParamsPanel(); renderPackagePanel(); updateHeat(); renderProps(); renderHistory(); renderEmptyOrFallback();
+      clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderMixPanels(); renderParamsPanel(); renderPackagePanel(); updateHeat(); renderProps(); renderHistory(); renderEmptyOrFallback();
       return;
     }
     lastEval = EV.evaluate(design, ctx);
     RS.renderResults($('results'), lastEval, design);
     if (PF.showRepro(design)) RS.renderRepro($('repro'), lastEval); else clear($('repro')); // B では差分ビューに置き換え
-    renderDiffPanel(); renderParamsPanel(); renderPackagePanel(); updateHeat();
+    renderDiffPanel(); renderMixPanels(); renderParamsPanel(); renderPackagePanel(); updateHeat();
     PN.renderValidation($('validation'), lastEval.warnings, (id) => selectBlocks([id]));
     if (!o.skipProps) renderProps();
     renderHistory();
@@ -147,15 +177,17 @@
   // 設計を丸ごと差し替える(履歴は作り直す)。評価に失敗したら元の設計に戻す。
   // M2 で保存した古い設計(cfg なし)は、プリセットから編集用パラメータを補う
   function ensure(d) { const p = ctx.presets.find((q) => q.id === d.presetId) || null; return DS.ensurePackage(DS.ensureCfg(d, p), p); }
+  // ダイビューの色分け: 混合は出所('origin')、プリセットは種類('kind')。ダイビューが未対応なら何もしない
+  function applyColorMode() { if (view && typeof view.setColorMode === 'function') view.setColorMode(design && DS.isMix(design) ? 'origin' : 'kind'); }
   function loadDesign(d, how) {
     const prev = design;
-    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {}; pkgMsgs = {};
+    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; mixMsgs = {}; libMsg = '';
     try { renderAll(); } catch (e) {
       design = prev; try { renderAll(); } catch (e2) { /* 元の設計も描けないときは諦める */ }
       notify(`✗ この設計を表示できませんでした: ${e.message}`, 'err'); return false;
     }
     history.clear(); renderHistory(); renderButtons();
-    if (view) { view.setDesign(design); view.setSelection([]); view.setViewMode(viewMode); if (view.fit) view.fit(); updateHeat(); }
+    if (view) { view.setDesign(design); applyColorMode(); view.setSelection([]); view.setViewMode(viewMode); if (view.fit) view.fit(); updateHeat(); }
     scheduleSave();
     return true;
   }
@@ -174,7 +206,7 @@
     history.push(design, next, label, { coalesce });
     design = next;
     if (!fromView && view) view.setDesign(design);
-    propMsg = ''; paramMsgs = {}; pkgMsgs = {};
+    propMsg = ''; paramMsgs = {}; pkgMsgs = {}; mixMsgs = {}; libMsg = '';
     renderAll({ skipProps: !!fromProps });
     scheduleSave();
     return true;
@@ -182,7 +214,7 @@
   function undo() { dragRun = false; const d = history.undo(); if (d) applyHistory(d); }
   function redo() { dragRun = false; const d = history.redo(); if (d) applyHistory(d); }
   function jumpTo(i) { dragRun = false; const d = history.jumpTo(i); if (d) applyHistory(d); }
-  function applyHistory(d) { design = d; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
+  function applyHistory(d) { design = d; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; mixMsgs = {}; libMsg = ''; if (view) view.setDesign(design); renderAll(); scheduleSave(); }
 
   // プロパティ欄の数値編集
   function onPropEdit(blockId, field, value, input, oldStr) {
@@ -236,6 +268,50 @@
     if (!res.ok) { fail(res.reason); return; }
     if (!commit(res.design, label, false)) renderPackagePanel();
   }
+  // ---- 混合設計の編集(部品の追加・削除、ダイ寸法、クロック)。失敗は理由を日本語で見せ、設計は変えない ----
+  function onAddPart(part, o) {
+    if (!design || !isMix()) return;
+    // x86 と Arm の混在は addPart が断る(既定)。追加前の表示は部品ライブラリ(preCheck)が出す
+    const res = DS.addPart(design, part, { count: o.count, capacityMB: o.capacityMB, nodes: ctx.nodes });
+    if (!res.ok) { libMsg = res.reason; renderMixPanels(); return; }
+    const label = MF.addLabel(part, o.count, o.capacityMB);
+    if (commit(res.design, label, false)) {
+      notify(`${label}しました。`, 'info');
+    } else renderMixPanels();
+  }
+  function onRemoveBlock(blockId) {
+    if (!design || !isMix()) return;
+    const hit = PN.findBlock(design, blockId);
+    const res = DS.removeBlock(design, blockId);
+    if (!res.ok) { propMsg = res.reason; renderProps(); return; }
+    selection = selection.filter((id) => id !== blockId);
+    if (!commit(res.design, MF.removeLabel(hit ? hit.block.label : blockId), false)) renderProps();
+    else if (view) view.setSelection(selection);
+  }
+  function onDieSizeEdit(wStr, hStr) {
+    if (!design || !isMix()) return;
+    const die = design.dies[0];
+    const fail = (reason) => { mixMsgs = { die: reason }; renderMixPanels(); };
+    const p = MF.parseDieSize(wStr, hStr, DS.checkDieSize);
+    if (!p.ok) { fail(p.reason); return; }
+    if (Math.abs(p.w - die.widthMm) < 1e-9 && Math.abs(p.h - die.heightMm) < 1e-9) { mixMsgs = {}; renderMixPanels(); return; }
+    const res = DS.setDieSize(design, die.id, p.w, p.h);
+    if (!res.ok) { fail(res.reason); return; }
+    if (!commit(res.design, MF.dieSizeLabel(p.w, p.h), false)) renderMixPanels();
+  }
+  function onBlockClockEdit(groupId, str) {
+    if (!design || !isMix()) return;
+    const row = MF.blockGroups(design).find((r) => r.groupId === groupId);
+    const key = `clock:${groupId}`;
+    const fail = (reason) => { mixMsgs = { [key]: reason }; renderMixPanels(); };
+    if (row && row.clockGHz == null && String(str).trim() === '') { mixMsgs = {}; renderMixPanels(); return; }
+    const p = PF.parseClock(str);
+    if (!p.ok) { fail(p.reason); return; }
+    if (row && row.clockGHz != null && Math.abs(p.value - row.clockGHz) < 1e-9) { mixMsgs = {}; renderMixPanels(); return; }
+    const res = DS.setBlockClock(design, groupId, p.value);
+    if (!res.ok) { fail(res.reason); return; }
+    if (!commit(res.design, MF.clockLabel(row ? row.name : groupId, PF.trimNum(p.value)), false)) renderMixPanels();
+  }
   function onUnlock() {
     if (!design || !window.confirm('ロックを解除して改良モードにします。パラメータ(コア数・クロック・L3)を編集できるようになります。再現モードの検証(公開値との比較)は、差分ビューに置き換わります。よろしいですか?')) return;
     if (commit(DS.unlock(design), 'ロックを解除して改良モードにする', false)) notify('改良モードにしました。パラメータを編集できます。', 'info');
@@ -268,7 +344,19 @@
   }
 
   // ---- ダイアログ ----
-  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A' || key === 'B') openPresets(); } }); }
+  function openNew() { DG.openNew({ onPickMode(key) { if (key === 'A' || key === 'B') openPresets(); else if (key === 'C') openMix(); } }); }
+  function openMix() {
+    DG.openMix(ctx, {
+      onCreate(o) {
+        if (!confirmDiscard()) return { ok: true };
+        let d;
+        try { d = DS.fromScratch({ name: o.name, widthMm: o.w, heightMm: o.h, nodeId: o.nodeId }); } catch (e) { return { ok: false, reason: e.message }; }
+        DG.close();
+        if (loadDesign(d, 'mix')) notify(`混合設計「${d.name}」を作りました。左の部品ライブラリから部品を追加してください。`, 'info');
+        return { ok: true };
+      },
+    });
+  }
   function openPresets() {
     DG.openPresets(ctx, {
       onReproduce(preset) {

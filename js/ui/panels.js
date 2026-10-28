@@ -12,7 +12,7 @@
   }
 
   // プロパティ。sel: 選択中の block id 配列。onEdit(blockId, field, value) は main.js が履歴に積む。
-  function renderProps(el, design, sel, onEdit, msg) {
+  function renderProps(el, design, sel, onEdit, msg, extra) {
     clear(el);
     el.appendChild(h('h3', { text: 'プロパティ' }));
     if (!sel.length) { el.appendChild(h('p', { class: 'note', text: 'ブロックを選ぶと、種別と位置・大きさを数値で編集できます。' })); return; }
@@ -33,6 +33,11 @@
     });
     el.appendChild(grid);
     if (msg) el.appendChild(h('p', { class: 'err', role: 'alert', text: `✗ ${msg}` }));
+    // 混合設計: 出所・面積の区分と削除。extra: { onRemove(blockId), origin(block) → 文字列 }
+    if (extra) {
+      if (extra.origin) el.appendChild(h('p', { class: 'small', text: extra.origin(block) }));
+      if (extra.onRemove) el.appendChild(h('button', { type: 'button', class: 'btn', onclick: () => extra.onRemove(block.id) }, 'このブロックを削除'));
+    }
   }
 
   function renderHistory(el, history, onJump, onUndo, onRedo) {

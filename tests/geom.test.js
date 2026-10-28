@@ -142,3 +142,26 @@ test('maxCellIndex: 最大セル(NaN 無視、同値は最初)', () => {
   assert.strictEqual(g.maxCellIndex([]), -1);
   assert.strictEqual(g.maxCellIndex([NaN]), -1);
 });
+
+test('dashedRectSegments: 破線の組み立て', () => {
+  const segs = g.dashedRectSegments({ x: 0, y: 0, w: 20, h: 10 }, 4, 2);
+  assert.ok(segs.length > 0);
+  segs.forEach((s) => {
+    assert.ok(s.x0 === s.x1 || s.y0 === s.y1, '軸平行');
+    const len = Math.abs(s.x1 - s.x0) + Math.abs(s.y1 - s.y0);
+    assert.ok(len > 0 && len <= 4 + 1e-9);
+    [s.x0, s.x1].forEach((x) => assert.ok(x >= -1e-9 && x <= 20 + 1e-9));
+    [s.y0, s.y1].forEach((y) => assert.ok(y >= -1e-9 && y <= 10 + 1e-9));
+  });
+  // 上辺(幅 20, 周期 6): 0-4, 6-10, 12-16, 18-20
+  const top = segs.filter((s) => s.y0 === 0 && s.y1 === 0);
+  assert.deepStrictEqual(top.map((s) => [s.x0, s.x1]), [[0, 4], [6, 10], [12, 16], [18, 20]]);
+  // 合計の線の長さは外周より短い
+  const total = segs.reduce((a, s) => a + Math.abs(s.x1 - s.x0) + Math.abs(s.y1 - s.y0), 0);
+  assert.ok(total < 60 && total > 20);
+});
+
+test('dashedRectSegments: 不正入力は空', () => {
+  assert.deepStrictEqual(g.dashedRectSegments({ x: 0, y: 0, w: 0, h: 5 }, 3, 2), []);
+  assert.deepStrictEqual(g.dashedRectSegments({ x: 0, y: 0, w: 5, h: 5 }, 0, 2), []);
+});

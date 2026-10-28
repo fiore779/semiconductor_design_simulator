@@ -9,6 +9,8 @@
     ? require('./geom.js') : root.SDS.render.geom;
   const colormap = (typeof module !== 'undefined' && module.exports && typeof require === 'function')
     ? require('./colormap.js') : root.SDS.render.colormap;
+  const palette = (typeof module !== 'undefined' && module.exports && typeof require === 'function')
+    ? require('./palette.js') : root.SDS.render.palette;
 
   // ---- パレット(#rrggbb)----
   const PALETTES = {
@@ -72,7 +74,7 @@
   const GL_ERROR_TEXT = 'WebGL が使えません。ブラウザの設定(ハードウェアアクセラレーション)を確認するか、別のブラウザでお試しください。ダイビューは表示できません。';
 
   function emptyApi() {
-    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setHeatmap() {}, fit() {}, destroy() {} };
+    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, destroy() {} };
   }
 
   function createDieView(container, handlers) {
@@ -123,6 +125,7 @@
     let progT = null; let locT = null; let bufT = null;
     let heat = null;              // setHeatmap で渡されたデータ(null なら無し)
     const heatTex = new Map();    // dieId -> { tex, nx, ny }
+    let colorMode = 'kind';       // 'kind'(種別で色分け)| 'origin'(出所で色分け)
     let hover = null;             // カーソル位置(CSS px)。ヒートマップ中のセル値表示用
 
     // ---- GL 初期化 ----
@@ -247,6 +250,40 @@
       if (sig !== fitSig) { fitSig = sig; doFit(); }
     }
 
+    // ---- 出所による色分け(混合設計)----
+    const originKey = (b) => b.sourcePresetId || b.sourceChip || 'その他';
+    const originOn = () => colorMode === 'origin' && !!palette && !heatActive();
+    // 出所ごとの { key, name, count, color:[r,g,b] }(キーのソート順)と、ported / 面積未取得の有無
+    function originInfo() {
+      const map = new Map(); let ported = false; let noArea = false;
+      design.dies.forEach((d) => d.blocks.forEach((b) => {
+        const k = originKey(b);
+        const e = map.get(k) || { key: k, name: b.sourceChip || k, count: 0 };
+        e.count++; map.set(k, e);
+        if (b.ported) ported = true;
+        if (typeof b.areaMm2 !== 'number') noArea = true;
+      }));
+      const cols = palette.originColors(Array.from(map.keys()), palName);
+      const list = Array.from(map.values()).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+      list.forEach((e) => { e.color = cols[e.key]; });
+      return { list, byKey: map, ported, noArea };
+    }
+    const mix = (c, t, a) => [c[0] + (t[0] - c[0]) * a, c[1] + (t[1] - c[1]) * a, c[2] + (t[2] - c[2]) * a];
+    const WHITE = [1, 1, 1]; const BLACK = [0, 0, 0];
+    // 出所色 + 種別: コアは明度で(P/super 濃い → E → LP-E 薄い)、L3 は薄い斜線、GPU は濃い斜線、uncore は灰色寄り
+    function originFill(b, base) {
+      const k = blockColorKey(b);
+      if (typeof b.areaMm2 !== 'number') return { col: base, col2: null, stripe: 'noarea' };
+      if (k === 'coreP') return { col: base };
+      if (k === 'coreE') return { col: mix(base, WHITE, 0.35) };
+      if (k === 'coreLP') return { col: mix(base, WHITE, 0.6) };
+      if (k === 'l3') return { col: base, col2: mix(base, WHITE, 0.45), stripe: 'kind' };
+      if (k === 'gpu') return { col: base, col2: mix(base, BLACK, 0.35), stripe: 'kind' };
+      if (k === 'uncore') return { col: mix(base, [0.5, 0.5, 0.5], 0.55) };
+      return { col: mix(base, [0.5, 0.5, 0.5], 0.3) };
+    }
+    const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+
     // ---- aria ----
     function hotDieName() { // 正規化値が最大のセルを持つダイの名前(一様なら null)
       let best = -1; let name = null;
@@ -271,7 +308,7 @@
         glCanvas.setAttribute('aria-label', `${KIND_NAMES[heat.kind]}のヒートマップ(模式図)。${text}。配置の編集はできません。`);
         return;
       }
-      glCanvas.setAttribute('aria-label', `ダイビュー(配置図): ダイ ${design.dies.length} 個、ブロック ${nBlocks} 個。${selText}。矢印キーで選択ブロックを移動、Esc で選択解除。`);
+      glCanvas.setAttribute('aria-label', `ダイビュー(配置図): ダイ ${design.dies.length} 個、ブロック ${nBlocks} 個。${originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : ''}${selText}。矢印キーで選択ブロックを移動、Esc で選択解除。`);
     }
 
     // ---- 描画 ----
@@ -292,6 +329,7 @@
       const edge = rgba(P.blockEdge, 0.9); const dieEdge = rgba(P.dieEdge, 1); const selCol = rgba(P.sel, 1);
 
       const heatOn = heatActive();
+      const oInfo = originOn() ? originInfo() : null;
       const heatQuads = []; // [{ tex, r }]
       design.dies.forEach((die) => {
         const r = geom.screenRect(view, geom.dieWorldRect(die));
@@ -313,8 +351,24 @@
             if (selection.indexOf(b.id) >= 0) selRects.push(r); else { outline(r, 3, edgeDark); outline(r, 1, edgeLight); }
             return;
           }
-          rect(r.x, r.y, r.w, r.h, rgba(P[blockColorKey(b)]));
+          if (oInfo) {
+            const f = originFill(b, oInfo.byKey.get(originKey(b)).color);
+            const c1 = [f.col[0], f.col[1], f.col[2], 1];
+            if (f.stripe === 'noarea') rect(r.x, r.y, r.w, r.h, c1, true, rgba(P.dieFill)); // 面積未取得: 斜線
+            else if (f.stripe) rect(r.x, r.y, r.w, r.h, c1, true, [f.col2[0], f.col2[1], f.col2[2], 1]);
+            else rect(r.x, r.y, r.w, r.h, c1);
+          } else rect(r.x, r.y, r.w, r.h, rgba(P[blockColorKey(b)]));
           if (selection.indexOf(b.id) >= 0) selRects.push(r); else outline(r, 1, edge);
+          if (oInfo && b.ported && r.w > 10 && r.h > 10) { // 移植した部品: 内側に破線の二重線(暗+白)
+            const segs = geom.dashedRectSegments({ x: r.x + 3, y: r.y + 3, w: r.w - 6, h: r.h - 6 }, 5, 3);
+            const dash = (t, col) => segs.forEach((sg) => {
+              if (sg.y0 === sg.y1) rect(sg.x0, sg.y0 - t / 2, sg.x1 - sg.x0, t, col); else rect(sg.x0 - t / 2, sg.y0, t, sg.y1 - sg.y0, col);
+            });
+            dash(4, rgba('#000000', 0.85)); dash(2, rgba('#ffffff', 1));
+          } else if (oInfo && b.ported) { // 小さいブロックには破線が出ないので、隅に小さな印(点: 暗い縁+白)を付ける
+            const dx = Math.min(5, Math.max(1, r.w / 3)); const dy = Math.min(5, Math.max(1, r.h / 3));
+            rect(r.x + 1, r.y + 1, dx + 2, dy + 2, rgba('#000000', 0.85)); rect(r.x + 2, r.y + 2, dx, dy, rgba('#ffffff', 1));
+          }
         });
       });
       selRects.forEach((r) => {
@@ -380,6 +434,7 @@
       c.font = FONT; c.textBaseline = 'middle';
       let anySchematic = false;
       const heatOn = heatActive();
+      const oInfo = originOn() ? originInfo() : null;
 
       design.dies.forEach((die) => {
         const r = geom.screenRect(view, geom.dieWorldRect(die));
@@ -395,6 +450,22 @@
         die.blocks.forEach((b) => {
           if (b.schematic) anySchematic = true;
           const br = geom.screenRect(view, geom.blockWorldRect(die, b));
+          if (oInfo) { // 候補を長い順に試し、入る最初のものを使う(出所の略称・移植 ⇄・面積未取得を添える)
+            const f = originFill(b, oInfo.byKey.get(originKey(b)).color);
+            const base = (b.ported ? '⇄ ' : '') + (b.label || '');
+            const sn = b.sourceChip ? palette.shortName(b.sourceChip) : '?';
+            const withSrc = sn !== '?' ? base + ' ' + sn : base;
+            const cands = typeof b.areaMm2 !== 'number' ? [withSrc + ' 面積未取得', base + ' 面積未取得', withSrc, base] : [withSrc, base];
+            const t2 = cands.find((t) => t.trim() && br.h >= 14 && c.measureText(t).width <= br.w - 4);
+            if (!t2) return;
+            c.textAlign = 'center';
+            const dk = lumOf(f.col) < 0.5;
+            c.lineJoin = 'round'; c.lineWidth = 3; c.strokeStyle = dk ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)';
+            c.strokeText(t2, br.x + br.w / 2, br.y + br.h / 2);
+            c.fillStyle = dk ? '#ffffff' : '#101418';
+            c.fillText(t2, br.x + br.w / 2, br.y + br.h / 2);
+            return;
+          }
           const text = b.label || '';
           if (!text) return;
           if (br.h < 14 || c.measureText(text).width > br.w - 4) return; // 入らなければ省略
@@ -430,6 +501,7 @@
         } else if (anySchematic) { c.fillStyle = P.note; c.fillText(NOTE_TEXT, x, y - 22); }
       }
       if (heatOn) drawHeatOverlay(c, P, FONT);
+      else if (oInfo) drawOriginLegend(c, P, FONT, oInfo);
 
       if (viewMode !== 'place' && !heatOn) {
         c.font = 'bold 15px sans-serif'; c.textAlign = 'center';
@@ -438,6 +510,33 @@
         c.strokeStyle = P.note; c.lineWidth = 1; c.strokeRect(cssW / 2 - w / 2 + 0.5, cssH / 2 - 19.5, w - 1, 39);
         c.fillStyle = P.text; c.fillText(HEAT_TEXT, cssW / 2, cssH / 2);
       }
+    }
+
+    // 出所の凡例(右上): 色見本 + 出所名 + 個数。最大 8 件、超えたら「ほか n 件」
+    function drawOriginLegend(c, P, FONT, info) {
+      if (!info.list.length) return;
+      const MAXN = 8; const shown = info.list.slice(0, MAXN); const rest = info.list.length - shown.length;
+      const lines = shown.map((e) => ({ col: e.color, text: e.name + ' (' + e.count + ')' }));
+      if (rest > 0) lines.push({ col: null, text: 'ほか ' + rest + ' 件' });
+      if (info.ported) lines.push({ col: null, text: '⇄ 破線の枠(小さい部品は隅の点)= 移植した部品' });
+      if (info.noArea) lines.push({ col: null, text: '斜線 = 面積未取得' });
+      c.font = FONT; c.textBaseline = 'middle'; c.textAlign = 'left';
+      const lh = 18; const sw = 12;
+      const w = Math.min(Math.max.apply(null, lines.map((l) => c.measureText(l.text).width)) + sw + 24, cssW - 16);
+      const h = (lines.length + 1) * lh + 8; const x = cssW - 16 - w; const y = 12;
+      c.fillStyle = P.pill; c.fillRect(x, y, w, h);
+      c.strokeStyle = P.note; c.lineWidth = 1; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      c.fillStyle = P.text; c.font = 'bold 12px sans-serif'; c.fillText('出所', x + 8, y + 4 + lh / 2);
+      c.font = FONT;
+      lines.forEach((l, i) => {
+        const ly = y + 4 + lh * (i + 1) + lh / 2;
+        if (l.col) {
+          c.fillStyle = 'rgb(' + Math.round(l.col[0] * 255) + ',' + Math.round(l.col[1] * 255) + ',' + Math.round(l.col[2] * 255) + ')';
+          c.fillRect(x + 8, ly - sw / 2, sw, sw);
+          c.strokeStyle = P.text; c.lineWidth = 1; c.strokeRect(x + 8.5, ly - sw / 2 + 0.5, sw - 1, sw - 1);
+        }
+        c.fillStyle = P.text; c.fillText(l.text, x + 8 + (l.col ? sw + 6 : 0), ly);
+      });
     }
 
     // ヒートマップ中の 2D オーバーレイ: 最大セルの十字、凡例(右下)、カーソル位置のセル値
@@ -678,6 +777,8 @@
         selection = selection.filter((i) => ids.has(i)); // 消えたブロックの選択は外す(通知はしない)
         maybeAutoFit(); updateAria(); invalidate();
       },
+      // 'kind'(既定: 種別で色分け)| 'origin'(出所ごとに色分け)。setDesign の前後どちらで呼んでもよい。
+      setColorMode(m) { colorMode = m === 'origin' ? 'origin' : 'kind'; updateAria(); invalidate(); },
       setSelection(ids) { selection = (ids || []).slice(); updateAria(); invalidate(); },
       setViewMode(m) {
         viewMode = (m === 'power' || m === 'temp') ? m : 'place';

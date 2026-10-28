@@ -19,6 +19,8 @@ class FakeNode {
   removeChild(c) { this.children.splice(this.children.indexOf(c), 1); }
   get firstChild() { return this.children[0] || null; }
   addEventListener() {}
+  querySelector() { return null; }
+  remove() { if (this.parentNode) this.parentNode.removeChild(this); }
   setAttribute(k, v) { this.attrs[k] = v; }
   removeAttribute(k) { delete this.attrs[k]; }
   set textContent(v) { this.children = []; this._t = String(v); }
@@ -42,9 +44,9 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   assert.ok(srcs.length > 20, 'script が少なすぎる');
   const ctx = loadAll();
   const ui = ctx.SDS && ctx.SDS.ui;
-  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
+  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
-  ['design', 'evaluate', 'diff'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
+  ['design', 'evaluate', 'diff', 'blocklib', 'compat'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
 });
 
@@ -76,4 +78,42 @@ test('全プリセットで、結果パネル・再現度パネル・パッケ�
     }
   }
   assert.deepStrictEqual(errs, []);
+});
+
+test('混合設計(Zen 5 コア 8 個 + L3)でも、結果・混合パネル・部品ライブラリ・プロパティ・検証の描画が例外にならない(DOM スタブ)', () => {
+  const ctx = loadAll({ Node: FakeNode, document: { createElement: (t) => new FakeNode(t), createTextNode: (s) => new FakeText(s) } });
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate;
+  const DS = ctx.SDS.model.design; const BL = ctx.SDS.model.blocklib;
+  const c = makeContext();
+  const parts = BL.build(c.presets, ctx.SDS_DATA.blocklibAreas, c.nodes);
+  let d = DS.fromScratch({ name: '混合テスト', widthMm: 60, heightMm: 60, nodeId: 'tsmc-n4' });
+  let r = DS.addPart(d, BL.get(parts, 'core:amd-zen5-9700x:P'), { count: 8 }); assert.ok(r.ok, r.reason); d = r.design;
+  r = DS.addPart(d, BL.get(parts, 'l3:amd-zen5-9700x'), {}); assert.ok(r.ok, r.reason); d = r.design;
+  r = DS.addPart(d, BL.get(parts, 'core:intel-adl-12900k:P'), {}); assert.ok(r.ok, r.reason); d = r.design; // Intel 7 → N4 の移植(換算の表示を通す)
+  // x86 と Arm の混在(error が出る状態)でも描ける
+  const mixed = DS.addPart(d, BL.get(parts, 'core:mt-9400:P'), { count: 1, allowIsaMix: true }); assert.ok(mixed.ok, mixed.reason);
+  const ui = ctx.SDS.ui;
+  for (const dd of [d, mixed.design, DS.fromScratch({ widthMm: 12, heightMm: 12 })]) {
+    const ev = evaluate(dd, c);
+    assert.strictEqual(ev.isMix, true);
+    const out = new FakeNode('div');
+    ui.results.renderResults(out, ev, dd);
+    assert.ok(out.textContent.includes('混合設計(予測)'));
+    assert.ok(out.textContent.includes('混合による性能低下は反映していません') && out.textContent.includes('混合設計は校正した範囲の外です'));
+    if (dd === d) assert.ok(out.textContent.includes('元 7.43 mm²') && out.textContent.includes('全コアが最大クロックで動く前提') && out.textContent.includes('最速として選んだコア') && out.textContent.includes('うち移植 1 個は換算値'));
+    assert.ok(!out.textContent.includes('再現度(公開値との比較)') && !out.textContent.includes('公開値(参考)'));
+    ui.mixpanel.renderMix(new FakeNode('div'), dd, ev, { onDieSize() {}, onClock() {} }, { die: 'x', 'clock:amd-zen5-9700x:P': 'y' }, c.nodes);
+    ui.library.renderLibrary(new FakeNode('div'), dd, parts, { onAdd() {} }, '理由', c.nodes);
+    ui.panels.renderProps(new FakeNode('div'), dd, dd.dies[0].blocks.length ? [dd.dies[0].blocks[0].id] : [], () => {}, '', { origin: () => 'x', onRemove() {} });
+    ui.panels.renderValidation(new FakeNode('div'), ev.warnings, () => {});
+    ui.packagepanel.renderPackage(new FakeNode('div'), dd, {}, {}, null);
+  }
+  assert.strictEqual(ui.paramform.modeInfo(d).code, 'C');
+  assert.strictEqual(ui.paramform.showRepro(d), false);
+  assert.strictEqual(ui.paramform.showDiff(d), false);
+  // 新規ダイアログ(C のカードが有効)と混合設計の設定ダイアログが描ける
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  ui.dialogs.openNew({ onPickMode() {} });
+  ui.dialogs.openMix(c, { onCreate() { return { ok: true }; } });
 });

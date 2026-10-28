@@ -90,8 +90,92 @@
     return h('section', { class: 'card', 'aria-label': '温度(推定)' }, h('header', {}, h('h3', { text: '温度(推定)' }), confBadge('low')), body);
   }
 
+  // ---- 混合設計(モード C)の結果。公開値・再現度は無い。確度は常に低。混合による性能低下は反映しない(U9) ----
+  const MIX_NO_PENALTY = '混合による性能低下は反映していません(今回の評価は CPU ベンチのみ)';
+  const MIX_OUT_OF_CALIB = '混合設計は校正した範囲の外です';
+  const MIX_PERF_PREMISE = '全コアが最大クロックで動く前提です。電力・熱・メモリ帯域の制限は見ていません。L2 を共有するクラスタも見ていません(大きなコアを大量に置くといくらでも伸びます)。';
+  const NO_OWN_CORR = '専用の補正が無く、命令セット平均で代用(確度低)';
+  const ghz = (x) => (typeof x === 'number' ? `${Math.round(x * 100) / 100} GHz` : '—');
+  function mixPerfCard(title, r, extra) {
+    const body = [];
+    if (r.ok) body.push(h('div', { class: 'big' }, h('span', { class: 'val', text: Math.round(r.score).toLocaleString('ja-JP') }), h('span', { class: 'unit', text: ' pt(混合設計・予測)' })));
+    else {
+      body.push(h('div', { class: 'big' }, h('span', { class: 'val na', text: '—' }), h('span', { class: 'unit', text: ' 計算できません' })));
+      body.push(note(`理由: ${r.reason}`));
+    }
+    body.push(note('混合設計の予測値で、公開値はありません。公開値との差・再現度は出しません。'));
+    body.push(note(MIX_PERF_PREMISE, 'warn-note'));
+    (extra || []).forEach((e) => body.push(e));
+    return h('section', { class: 'card conf-card-low', 'aria-label': title }, h('header', {}, h('h3', { text: title }), confBadge('low')), body);
+  }
+  function mixAreaCard(a) {
+    const mix = a.mix || {};
+    const MF = root.SDS.ui.mixform;
+    const body = [];
+    body.push(h('div', { class: 'big' }, h('span', { class: mix.utilization == null ? 'val na' : 'val', text: mix.utilization == null ? '—' : `${Math.round(mix.utilization * 1000) / 10}%` }), h('span', { class: 'unit', text: ' 使用率(ブロック合計 ÷ ダイ面積)' })));
+    body.push(h('div', { class: 'row', text: MF.utilizationText(mix) }));
+    const c = MF.areaClassCounts(mix.blocks);
+    body.push(h('div', { class: 'row' }, '面積の出所: ',
+      ['table', 'estimated', 'unknown'].map((k) => h('span', { class: `badge area-${k}`, text: `${MF.areaClassLabel(k)} ${c[k]}` })), ' / 移植の換算: ',
+      h('span', { class: 'badge area-ported', text: `移植 ${c.ported}` })));
+    if (c.ported) body.push(note('移植は面積の換算値(目安)です。密度に幅があるため、面積が大きくなる側を採用しています。L2(SRAM)を含む値にロジックの密度比を掛けているので、縮み方が過大になりうる。', 'warn-note'));
+    if (c.estimated) body.push(note(MF.ESTIMATE_NOTE, 'warn-note'));
+    if (mix.unknownCount) body.push(note(`面積が未取得の部品が ${mix.unknownCount} 個あります(使用率に含めていません。ブロックの大きさは仮の寸法です)`, 'warn-note'));
+    if (mix.blocks && mix.blocks.length) {
+      const tb = h('tbody');
+      mix.blocks.forEach((b) => {
+        const pl = MF.portLine(b);
+        tb.appendChild(h('tr', {}, h('td', { text: b.label }),
+          h('td', {}, b.mm2 == null ? '未取得' : `${Math.round(b.mm2 * 100) / 100} mm²`, pl ? h('div', { class: 'small', text: pl }) : null),
+          h('td', {}, h('span', { class: `badge area-${b.class}`, text: MF.areaClassText(b.class, b.portConverted) }))));
+      });
+      body.push(h('details', {}, h('summary', { text: `ブロックごとの面積(${mix.blocks.length} 件)` }),
+        h('table', { class: 'mini' }, h('thead', {}, h('tr', {}, ['ブロック', '面積', '区分'].map((x) => h('th', { text: x })))), tb)));
+    }
+    body.push(note('ブロックの大きさと配置は模式図です。実チップのフロアプランではありません。歩留まりは算出しません。'));
+    body.push(note(MF.SCHEMATIC_NOTE + '。'));
+    return h('section', { class: 'card', 'aria-label': 'ダイ面積(混合設計)' }, h('header', {}, h('h3', { text: 'ダイ面積(混合設計)' })), body);
+  }
+  // L3 なし/下限の注記(性能カード用)
+  function l3Notes(r) {
+    const out = [];
+    if (!r || !r.ok) return out;
+    if (r.noL3) out.push(note('L3 なしとして計算しています。', 'warn-note'));
+    else if (r.l3Floor) out.push(note('スレッドあたりの L3 が小さく、L3 なしと同じ値になっています(モデルの下限)。', 'warn-note'));
+    return out;
+  }
+
+  function renderMixResults(el, ev, design) {
+    el.appendChild(h('p', { class: 'caution' }, '混合設計の概算です。性能は部品のコア構成から予測した値で、公開値はありません。電力・温度は混合設計では推定できません。ブロックの配置を変えても数値は変わりません。'));
+    el.appendChild(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${MIX_NO_PENALTY}`));
+    el.appendChild(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${MIX_OUT_OF_CALIB}(確度は常に低)`));
+    const stExtra = [];
+    if (ev.st.ok && ev.st.chosen) {
+      const ch = ev.st.chosen;
+      stExtra.push(note(`最速として選んだコア: ${ch.label}(${ghz(ch.fGHz)})。各グループのクロックで計算し、最も速いものを採用しています。`));
+      if (ch.corrSource === 'isa' || ev.st.corrSource === 'isa') stExtra.push(note(`${ch.label}: ${NO_OWN_CORR}`, 'warn-note'));
+    }
+    l3Notes(ev.st).forEach((n) => stExtra.push(n));
+    el.appendChild(mixPerfCard('シングル性能 (GB7 ST) 混合設計(予測)', ev.st, stExtra));
+    const mtExtra = [];
+    if (ev.mt.ok) {
+      mtExtra.push(h('p', { class: 'low-banner' }, '▼ マルチ性能の確度は「低」です。この数値を精密な予測として扱わないでください。'));
+      mtExtra.push(note('各コアの寄与を合算した値です。並列効率 σ は AMD の代表 3 件だけで合わせ、SMT 効果 γ は未校正、メモリ帯域の頭打ちは未実装です。'));
+      if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
+      if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
+      (ev.mt.detail || []).filter((d) => d.corrSource === 'isa').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${NO_OWN_CORR}`, 'warn-note')));
+    }
+    l3Notes(ev.mt).forEach((n) => mtExtra.push(n));
+    el.appendChild(mixPerfCard('マルチ性能 (GB7 MT) 混合設計(予測)', ev.mt, mtExtra));
+    el.appendChild(mixAreaCard(ev.area));
+    // 電力・温度: ok:false の理由だけを出す(数値は出さない)
+    el.appendChild(h('section', { class: 'card', 'aria-label': '電力(推定)' }, h('header', {}, h('h3', { text: '電力(推定)' }), confBadge('low')), [powerModelBlock(ev.powerModel, false, false)]));
+    el.appendChild(thermalCard(ev.thermal, design, ev.powerModel, false));
+  }
+
   function renderResults(el, ev, design) {
     clear(el);
+    if (ev.isMix) { renderMixResults(el, ev, design); return; }
     const edited = !!ev.edited;
     const isA = root.SDS.ui.paramform.showRepro(design); // A 再現(未編集)のときだけ再現度パネルが出る
     el.appendChild(h('p', { class: 'caution' }, '概算です。配置の編集では数値は変わりません。パラメータ(コア数・クロック・L3)の編集では性能だけ再計算します(面積・公表電力は再計算しません)。電力・温度は推定(確度:低・仮置き)として別のカードに載せ、性能の数値には反映しません。'));
@@ -100,6 +184,7 @@
     const stExtra = [];
     if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note'));
+    l3Notes(ev.st).forEach((n) => stExtra.push(n));
     if (ev.optimistic) stExtra.push(optBand());
     el.appendChild(perfCard(edited ? 'シングル性能 (GB7 ST) 予測(編集後)' : 'シングル性能 (GB7 ST)', ev.st, stExtra, edited));
     // MT
@@ -111,6 +196,7 @@
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
     }
+    l3Notes(ev.mt).forEach((n) => mtExtra.push(n));
     el.appendChild(perfCard(edited ? 'マルチ性能 (GB7 MT) 予測(編集後)' : 'マルチ性能 (GB7 MT)', ev.mt, mtExtra, edited));
     // 面積
     const a = ev.area;

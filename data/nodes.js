@@ -6,10 +6,12 @@ window.SDS_DATA = window.SDS_DATA || {};
 (function () {
   const pub = (v) => ({ v, s: 'pub' });
   const sec = (v) => ({ v, s: 'sec' });
+  // 幅のある密度: range:[下限, 上限]。設計書 §2.6 の densityNote に書いてある幅だけ。移植の面積換算は面積が大きくなる側(元は上限・先は下限)を使う
+  const secR = (v, lo, hi) => ({ v, s: 'sec', range: [lo, hi] });
   const nodes = [
     // id, 名前, 製造元, 密度 MTr/mm², SRAM µm², CPP nm, Mx nm, 量産開始
     { id: 'intel-14', name: 'Intel 14nm', vendor: 'Intel', density: pub(37.5), sram: pub(0.0588), cpp: pub(70), mx: pub(52), start: 2014 },
-    { id: 'intel-7', name: 'Intel 7 (10nm ESF)', vendor: 'Intel', density: sec(80), densityNote: '約80(HP)〜約100(13900K 逆算)', sram: sec(0.0312), cpp: sec(54), mx: sec(36), start: 2019 },
+    { id: 'intel-7', name: 'Intel 7 (10nm ESF)', vendor: 'Intel', density: secR(80, 80, 100), densityNote: '約80(HP)〜約100(13900K 逆算)', sram: sec(0.0312), cpp: sec(54), mx: sec(36), start: 2019 },
     { id: 'intel-4', name: 'Intel 4', vendor: 'Intel', density: sec(160), sram: pub(0.0240), cpp: sec(50), mx: sec(30), start: 2023 },
     { id: 'intel-3', name: 'Intel 3', vendor: 'Intel', density: sec(143.37), sram: sec(0.024), cpp: sec(50), mx: sec(30), start: 2024 },
     { id: 'intel-18a', name: 'Intel 18A', vendor: 'Intel', density: null, densityNote: 'Intel 3 比で平均約30%増', sram: pub(0.021), cpp: pub(50), mx: pub(32), start: null },
@@ -17,10 +19,10 @@ window.SDS_DATA = window.SDS_DATA || {};
     { id: 'tsmc-12', name: 'TSMC 12nm', vendor: 'TSMC', density: null, sram: null, cpp: null, mx: null, start: 2017 },
     { id: 'tsmc-n7', name: 'TSMC N7', vendor: 'TSMC', density: sec(93.85), densityNote: '91.2〜96.5', sram: sec(0.027), cpp: sec(57), mx: sec(40), start: 2018 },
     { id: 'tsmc-n6', name: 'TSMC N6', vendor: 'TSMC', density: sec(114.2), sram: sec(0.0315), sramNote: '列ずれの疑い', cpp: null, mx: sec(40), start: 2020 },
-    { id: 'tsmc-n5', name: 'TSMC N5', vendor: 'TSMC', density: sec(138.2), densityNote: 'Wikipedia 138.2 / WikiChip 推定 171.3 で食い違い', sram: pub(0.021), cpp: sec(51), mx: sec(28), start: 2020 },
+    { id: 'tsmc-n5', name: 'TSMC N5', vendor: 'TSMC', density: secR(138.2, 138.2, 171.3), densityNote: 'Wikipedia 138.2 / WikiChip 推定 171.3 で食い違い', sram: pub(0.021), cpp: sec(51), mx: sec(28), start: 2020 },
     { id: 'tsmc-n4', name: 'TSMC N4', vendor: 'TSMC', density: sec(143.7), sram: null, cpp: sec(51), mx: sec(28), start: 2022 },
     { id: 'tsmc-n3b', name: 'TSMC N3B', vendor: 'TSMC', density: sec(197), sram: sec(0.0199), cpp: sec(45), mx: null, start: 2022 },
-    { id: 'tsmc-n3e', name: 'TSMC N3E', vendor: 'TSMC', density: sec(216), densityNote: '推定幅 180〜220', sram: pub(0.021), cpp: sec(48), mx: sec(23), start: 2023 },
+    { id: 'tsmc-n3e', name: 'TSMC N3E', vendor: 'TSMC', density: secR(216, 180, 220), densityNote: '推定幅 180〜220', sram: pub(0.021), cpp: sec(48), mx: sec(23), start: 2023 },
     { id: 'tsmc-n3p', name: 'TSMC N3P', vendor: 'TSMC', density: sec(224), sram: null, cpp: sec(47), mx: null, start: 2024 },
     { id: 'tsmc-n2', name: 'TSMC N2', vendor: 'TSMC', density: null, densityNote: 'N3E 比で約1.15倍(チップ密度, 公表)。絶対値は未取得', sram: pub(0.0175), cpp: null, mx: null, start: null },
     { id: 'samsung-8', name: 'Samsung 8nm (8LPP)', vendor: 'Samsung', density: sec(61.2), sram: null, cpp: sec(64), mx: sec(44), start: 2018 },

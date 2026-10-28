@@ -36,9 +36,9 @@
       <li>ダイビュー: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
-    <p class="small">できること: 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
+    <p class="small">できること: 混合(C)=部品ライブラリから実在チップの部品を選んで空のダイに置く(性能は確度:低、電力・温度は出さない)。 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
     パッケージ設定(冷却・基板・電力制限)と、電力・温度の推定(確度:低・冷却の熱抵抗は仮置き)、電力密度・温度のマップ(模式図)。<br>
-    できないこと: 混合・新規設計、面積・公表電力・歩留まりの再計算。電力・温度の制限による性能への反映。</p>
+    できないこと: 新規設計(D)、混合による性能低下の反映、面積・公表電力・歩留まりの再計算。電力・温度の制限による性能への反映。</p>
   </div>
   <div id="notice" role="status" aria-live="polite"></div>
   <main id="workarea">
@@ -51,6 +51,8 @@
       </ul>
       <p class="note">ブロックの大きさと配置は<b>模式図</b>です。実チップのフロアプランではありません。</p>
       </div>
+      <section id="library" aria-label="部品ライブラリ" hidden></section>
+      <section id="mixpanel" aria-label="混合設計" hidden></section>
       <section id="params" aria-label="パラメータ"></section>
       <section id="package" aria-label="パッケージ設定"></section>
     </aside>
@@ -89,6 +91,7 @@
 <script src="data/uarch.js"></script>
 <script src="data/presets/chips-pc.js"></script>
 <script src="data/presets/chips-soc.js"></script>
+<script src="data/blocklib.js"></script>
 <!-- 計算 -->
 <script src="js/sim/area.js"></script>
 <script src="js/sim/perf.js"></script>
@@ -96,15 +99,19 @@
 <script src="js/sim/thermal.js"></script>
 <script src="js/sim/heatmap.js"></script>
 <script src="js/model/design.js"></script>
+<script src="js/model/blocklib.js"></script>
+<script src="js/model/compat.js"></script>
 <script src="js/model/evaluate.js"></script>
 <script src="js/model/diff.js"></script>
 <script src="js/history/history.js"></script>
 <!-- ダイビュー(無くても画面は動く。main.js が有無を調べる) -->
 <script src="js/render/geom.js"></script>
+<script src="js/render/palette.js"></script>
 <script src="js/render/colormap.js"></script>
 <script src="js/render/dieview.js"></script>
 <!-- UI -->
 <script src="js/ui/dom.js"></script>
+<script src="js/ui/mixform.js"></script>
 <script src="js/ui/presetlist.js"></script>
 <script src="js/ui/packageform.js"></script>
 <script src="js/ui/reproduce.js"></script>
@@ -117,6 +124,8 @@
 <script src="js/ui/params.js"></script>
 <script src="js/ui/packagepanel.js"></script>
 <script src="js/ui/diffpanel.js"></script>
+<script src="js/ui/library.js"></script>
+<script src="js/ui/mixpanel.js"></script>
 <script src="js/ui/panels.js"></script>
 <script src="js/main.js"></script>
 </body>

@@ -163,8 +163,25 @@
     return mi;
   }
 
+  // 矩形 r の外周を破線風に分割した軸平行の線分列 [{x0,y0,x1,y1}](移植部品の外枠用)。
+  // 各辺の角から dash 長の線分 → gap 長の空き、を繰り返す(辺の終端で切る)。r.w/r.h が 0 以下、dash<=0 なら []。
+  function dashedRectSegments(r, dash, gap) {
+    if (!(r.w > 0) || !(r.h > 0) || !(dash > 0)) return [];
+    const g = gap > 0 ? gap : 0; const step = dash + g;
+    const out = [];
+    const side = (ax, ay, dx, dy, len) => {
+      for (let t = 0; t < len - 1e-9; t += step) {
+        const e = Math.min(t + dash, len);
+        out.push({ x0: ax + dx * t, y0: ay + dy * t, x1: ax + dx * e, y1: ay + dy * e });
+      }
+    };
+    side(r.x, r.y, 1, 0, r.w); side(r.x + r.w, r.y, 0, 1, r.h);
+    side(r.x + r.w, r.y + r.h, -1, 0, r.w); side(r.x, r.y + r.h, 0, -1, r.h);
+    return out;
+  }
+
   const api = {
-    cellAt, maxCellIndex,
+    dashedRectSegments, cellAt, maxCellIndex,
     MIN_SIZE_MM, DEFAULT_GRID_MM, HANDLE_PX, MIN_ZOOM, MAX_ZOOM, HANDLES,
     worldToScreen, screenToWorld, zoomAt, panBy, blockWorldRect, dieWorldRect, handlePoints, screenRect,
     hitTest, snap, moveBlock, resizeBlock, fit, niceLength,

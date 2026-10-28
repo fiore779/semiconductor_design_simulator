@@ -23,7 +23,8 @@
   const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
   // コア 1 個の CPI 内訳。u: マイクロアーキ記録(data/uarch.js)。
-  // opts: { fGHz, l3KBPerThread, params }
+  // opts: { fGHz, l3KBPerThread, noL3, params }。noL3=true は「L3 なし」(L2 ミスがそのまま DRAM へ行く。L3 の遅延の項も使わない)。
+  // l3KBPerThread が未指定(null)で noL3 でもないときは、従来どおり参照値(l3Ref)で計算する(L3 容量が未取得のプリセット用)。
   function coreCpi(u, opts) {
     const p = Object.assign({}, DEFAULT_PARAMS, opts.params || {});
     const f = opts.fGHz;
@@ -47,15 +48,21 @@
     const l3KB = opts.l3KBPerThread || p.l3Ref;
     const m1 = p.mpkiL1 * Math.pow(l1KB / p.l1Ref, p.capExp);   // L1 ミス → L2 へ
     const m2 = p.mpkiL2 * Math.pow(l2KB / p.l2Ref, p.capExp);   // L2 ミス → L3 へ
-    const m3 = p.mpkiL3 * Math.pow(l3KB / p.l3Ref, p.capExp);   // L3 ミス → DRAM へ
+    const m3 = opts.noL3 ? m2 : Math.min(m2, p.mpkiL3 * Math.pow(l3KB / p.l3Ref, p.capExp));   // L3 ミス → DRAM へ(L3 なしなら L2 ミスがそのまま DRAM へ。L3 のミスが L2 のミスを超えることはない)
     const mlp = clamp(Math.min(u.mshr || p.mshrDefault, u.rob ? u.rob / p.kMlp : 99), 1, 16);
-    const memCycles = (m1 * (u.l2Lat != null ? u.l2Lat : p.l2LatDefault) + m2 * (u.l3Lat != null ? u.l3Lat : p.l3LatDefault) + m3 * p.dramNs * f) / 1000;
+    const withoutL3 = (m1 * (u.l2Lat != null ? u.l2Lat : p.l2LatDefault) + m2 * p.dramNs * f) / 1000; // L3 なし: L2 ミスがそのまま DRAM へ
+    let memCycles = withoutL3; let l3Floor = false;
+    if (!opts.noL3) {
+      memCycles = (m1 * (u.l2Lat != null ? u.l2Lat : p.l2LatDefault) + m2 * (u.l3Lat != null ? u.l3Lat : p.l3LatDefault) + m3 * p.dramNs * f) / 1000;
+      // 容量が明示された L3 は「L3 なしより悪くならない」とする(スレッドあたりの容量が極端に小さいと、L3 の遅延の分だけ L3 なしより遅く出るのを防ぐ。L3 の容量に対して単調になる)
+      if (opts.l3KBPerThread && memCycles > withoutL3) { memCycles = withoutL3; l3Floor = true; }
+    }
     const mem = memCycles / mlp;
     const cpi = base + br + mem;
     const missing = ['width', 'rob', 'brPenalty', 'l2Lat', 'l3Lat', 'mshr'].filter((k) => u[k] == null);
     return {
       ok: true, confidence: missing.length >= 4 ? 'low' : missing.length >= 2 ? 'medium' : 'high',
-      cpi, ipc: 1 / cpi, parts: { base, br, mem }, missing,
+      cpi, ipc: 1 / cpi, parts: { base, br, mem }, missing, l3Floor,
     };
   }
 
@@ -75,15 +82,17 @@
     const u = uarchDb[core.uarch];
     // ST は 1 スレッドが L3 を使う想定(全量)。MT のときだけ呼び出し側が threads=総スレッド数を渡して C_L3/N にする(§5.2.2)
     const threads = (opts && opts.threads) || 1;
+    // l3MB が明示的に 0 なら「L3 なし」。null/undefined(未取得)は従来どおり参照値で計算する
+    const noL3 = preset.cfg.l3MB === 0;
     const l3KB = preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / threads : null;
-    const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, params: cal && cal.params });
+    const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, noL3, params: cal && cal.params });
     if (!r.ok) return { ok: false, reason: r.reason };
     let corr = cal && cal.u && cal.u[core.uarch];
     let corrSource = 'uarch';
-    if (corr == null) { corr = cal && cal.uIsa && cal.uIsa[preset.isa]; corrSource = 'isa'; }
+    if (corr == null) { corr = cal && cal.uIsa && cal.uIsa[core.isa || preset.isa]; /* 混合設計ではコアごとの isa(core.isa)を優先。通常のプリセットのコアには isa が無い */ corrSource = 'isa'; }
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     return {
-      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, core,
+      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, core, noL3, l3Floor: !!r.l3Floor,
       confidence: corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -128,7 +137,7 @@
     const totalThreads = cores.reduce((t, c) => t + c.count * (c.smt || 1), 0);
     if (!(totalThreads > 0)) return { ok: false, reason: 'コアなし' };
     let sum = 0; let threads = 0; const detail = [];
-    const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false;
+    const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
       // 既定は最大クロック(boost)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
@@ -139,6 +148,7 @@
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
       if (order[st.confidence] < order[worst]) worst = st.confidence;
       if (st.fallback) anyFallback = true;
+      if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
       detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockSource, corrSource: st.corrSource, confidence: st.confidence });
@@ -149,7 +159,7 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock };
+    return { ok: true, score: sum * eta, eta, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。

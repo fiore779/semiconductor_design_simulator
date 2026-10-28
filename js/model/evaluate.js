@@ -25,7 +25,7 @@
 
   const pct = (sim, pub) => (typeof pub === 'number' && pub > 0 && typeof sim === 'number' ? (sim / pub - 1) * 100 : null);
 
-  function evalPerf(kind, preset, ctx, gb7) {
+  function evalPerf(kind, preset, ctx, gb7, stOpts) {
     const S = sims();
     const base = { ok: false, score: null, confidence: null, corrSource: null, fallback: false, reason: null, published: null, publishedKind: null, errPct: null, isCalibSample: false };
     // ST は calib フラグ。MT は σ の合わせに実際に使った SKU だけ(calib:true でも MT で使っていない代表 SKU は検証側)
@@ -34,13 +34,14 @@
     base.calibNotUsedForMt = kind === 'mt' && !!preset.calib && !base.isCalibSample;
     const pubVal = gb7 ? (kind === 'st' ? gb7.single : gb7.multi) : null;
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
-    const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);
+    const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch, stOpts) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);
     if (kind === 'mt') Object.assign(base, { mixedClock: false, uncalibrated: [], threads: null });
     if (!r.ok) { base.reason = r.reason || '計算できません'; return base; }
     Object.assign(base, {
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
       corrSource: kind === 'st' ? r.corrSource : null,
       errPct: pct(r.score, pubVal),
+      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor,
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
       base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
@@ -110,7 +111,10 @@
   const isEdited = (design) => !!(design.cfg && design.baseCfg) && JSON.stringify(design.cfg) !== JSON.stringify(design.baseCfg);
 
   function effectivePreset(preset, cfg) {
-    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB: cfg.l3MB }) });
+    // 元のプリセットの L3 が未取得(null)で、設計側が 0(cfgFromPreset が未取得を 0 にしている)なら null のまま渡す
+    // (0 は「L3 なし」の意味になるので、未取得のプリセットの結果が変わらないようにする)
+    const l3MB = (preset.cfg.l3MB == null && cfg.l3MB === 0) ? preset.cfg.l3MB : cfg.l3MB;
+    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB }) });
   }
 
   const EPS = 1e-9; // 境界(ちょうど ±25% / 2 倍 / 半分)を範囲内にするための浮動小数の余裕
@@ -217,7 +221,88 @@
     else if (th.throttled) result.warnings.push({ level: 'warn', text: 'この設計は電力・温度の制限で持続クロックが下がる見込み(性能の数値には反映していない)' });
   }
 
+  // ---- 混合(モード C。設計書 §3.3 C)。design.presetId が null の設計を、design から作る仮想プリセットで評価する ----
+  // 混合による性能低下は入れない(U9)。確度は常に low(校正範囲外の構成)。公表値・電力モデル・温度は無い。
+  const MIX_NO_POWER = '混合設計には公表電力がなく、電力モデルを校正できません';
+
+  function mixPreset(design) {
+    const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
+    const cfg = (V && V.deriveCfg) ? V.deriveCfg(design) : design.cfg;
+    const isas = []; cfg.cores.forEach((g) => { if (g.isa && !isas.includes(g.isa)) isas.push(g.isa); });
+    const d0 = design.dies[0];
+    return {
+      id: 'mix', name: design.name, vendor: '(混合)', isa: isas[0] || null, kind: 'pc',
+      cfg: { cores: cfg.cores, l3MB: cfg.l3MB, memory: null },
+      dies: [{ name: d0 ? d0.name : '', mm2: d0 && typeof d0.areaMm2 === 'number' ? d0.areaMm2 : null, s: null, nodeId: d0 ? d0.nodeId : null }],
+      power: { base: null, peak: null }, gb7: null, calib: false,
+    };
+  }
+
+  const ISA_MIX_NO_PERF = 'x86 と Arm の混在は配置不可のため性能を出しません';
+
+  function evaluateMix(design, ctx) {
+    const S = sims();
+    const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
+    const C = (root.SDS && root.SDS.model && root.SDS.model.compat) || null;
+    const BL = (root.SDS && root.SDS.model && root.SDS.model.blocklib) || null;
+    const preset = mixPreset(design);
+    const area = evalArea(design, ctx);
+    const warnings = V ? V.validate(design).map((w) => Object.assign({}, w)) : [];
+    if (!ctx.mixParts && BL) ctx.mixParts = BL.build(ctx.presets, (root.SDS_DATA && root.SDS_DATA.blocklibAreas) || [], ctx.nodes);
+    const parts = ctx.mixParts || [];
+    const compat = C ? C.check(design, parts, ctx.nodes) : [];
+    const isaMix = compat.some((c) => c.level === 'error' && c.code === 'isa-mix');
+    let st; let mt;
+    if (isaMix) {
+      // 配置不可の設計(x86 と Arm の混在)では、性能の数値を出さない
+      const none = (kind) => Object.assign(evalPerf(kind, Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: [] }) }), ctx, null), { ok: false, score: null, confidence: null, reason: ISA_MIX_NO_PERF });
+      st = none('st'); mt = none('mt');
+    } else {
+      // ST: コアごとに計算して最も速いグループ(種別名の順位ではなく実際のスコア)。ISA ごとの補正はグループの isa を使う。
+      // 選んだグループの結果をそのまま使うので、部品を置いた順で値は変わらない
+      let best = null; let firstReason = null;
+      preset.cfg.cores.forEach((g) => {
+        const r = S.perf.stScore(Object.assign({}, preset, { isa: g.isa || preset.isa }), ctx.cal, ctx.uarch, { core: g, fGHz: g.boostGHz });
+        if (r.ok) { if (!best || r.score > best.score) best = Object.assign({ g }, r); } else if (!firstReason) firstReason = `${g.type}: ${r.reason}`;
+      });
+      st = evalPerf('st', best ? Object.assign({}, preset, { isa: best.g.isa || preset.isa }) : preset, ctx, null, best ? { core: best.g, fGHz: best.fGHz } : undefined);
+      if (!best && !st.ok && firstReason) st.reason = firstReason;
+      if (best && st.ok) st.chosen = { type: best.g.type, label: best.g.label || best.g.type, uarch: best.g.uarch || null, isa: best.g.isa || null, fGHz: best.fGHz, corrSource: best.corrSource };
+      mt = evalPerf('mt', preset, ctx, null);
+      if (mt.ok && mt.detail) mt.detail.forEach((dt) => { const g = preset.cfg.cores.find((x) => x.type === dt.type); dt.label = (g && (g.label || g.type)) || dt.type; });
+    }
+    [st, mt].forEach((r) => {
+      r.isMix = true; r.edited = false; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false;
+      if (r.ok) { r.confidence = 'low'; r.reason = '混合設計の予測値のため公開値はありません'; }
+    });
+    // 面積: 使用率と、ブロックごとの面積の区分(出所 class = table/estimated/unknown と、移植の換算の有無 portConverted の 2 軸)
+    const util = C ? C.utilization(design) : { dieMm2: null, usedMm2: 0, ratio: null, unknownCount: 0 };
+    const blocks = []; let portedCount = 0;
+    design.dies.forEach((die) => die.blocks.forEach((b) => {
+      const known = typeof b.areaMm2 === 'number' && isFinite(b.areaMm2);
+      const cls = !known ? 'unknown' : (b.areaOrigin === 'table' || b.areaOrigin === 'estimated' ? b.areaOrigin : 'unknown');
+      const conv = known && !!b.ported && !!b.portConverted;
+      if (conv) portedCount++;
+      blocks.push({
+        blockId: b.id, label: b.label, mm2: known ? b.areaMm2 : null, class: cls, ported: !!b.ported, portConverted: conv, origin: b.areaOrigin || 'unknown',
+        areaFromMm2: typeof b.areaFromMm2 === 'number' ? b.areaFromMm2 : null, areaRangeMm2: Array.isArray(b.areaRangeMm2) ? b.areaRangeMm2.slice() : null, portRatio: typeof b.portRatio === 'number' ? b.portRatio : null,
+      });
+    }));
+    area.mix = { dieMm2: util.dieMm2, usedMm2: util.usedMm2, utilization: util.ratio, unknownCount: util.unknownCount, portedCount, blocks };
+    area.recomputed = false;
+    compat.forEach((c) => warnings.push(Object.assign({}, c)));
+    warnings.push({ level: 'warn', text: '混合設計の性能は確度:低です(校正した範囲の構成ではないため。ST は最も速いコア、MT は各コアの寄与の合算)' });
+    return {
+      st, mt, area, isMix: true, published: null, errPct: null, compat,
+      power: { published: { base: null, peak: null, range: null }, reason: '混合設計には公表電力がありません', model: null, modelReason: MIX_NO_POWER },
+      warnings: warnings.concat(calibrationWarnings(st, mt)), preset: null, tolerance: TOLERANCE, edited: false, outOfCalibration: [], optimistic: false, optimisticReasons: [], throttled: false,
+      powerModel: { ok: false, reason: MIX_NO_POWER, confidence: 'low', notes: [POWER_NOTE] },
+      thermal: { ok: false, reason: MIX_NO_POWER, tentative: true, notes: [THERMAL_NOTE] },
+    };
+  }
+
   function evaluate(design, ctx) {
+    if (design.presetId == null && design.origin && design.origin.mode === 'mix') return evaluateMix(design, ctx);
     const preset0 = ctx.presets.find((p) => p.id === design.presetId) || null;
     const hasCfg = !!(preset0 && design.cfg && Array.isArray(design.cfg.cores));
     const edited = hasCfg && isEdited(design);

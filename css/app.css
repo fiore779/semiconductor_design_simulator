@@ -134,7 +134,8 @@ li.w-error { color: var(--ng); } li.w-warn { color: var(--warn); }
 .pgroup { border: 1px solid var(--border); border-radius: 4px; margin: 6px 0; padding: 4px 8px; }
 .pgroup legend { font-weight: bold; padding: 0 4px; }
 .pfield { margin: 4px 0; }
-.pfield label { display: block; font-size: 0.9em; color: var(--muted); }
+.pfield label, .pfield .lbl { display: block; font-size: 0.9em; color: var(--muted); }
+.pfield .pinput label { display: inline; }
 .pinput { display: flex; align-items: center; gap: 6px; }
 .pinput input { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
 .pinput input[readonly] { background: var(--gray-bg); border-style: dashed; }
@@ -167,3 +168,21 @@ td.d-up { color: var(--ok); background: var(--ok-bg); } td.d-down { color: var(-
 .modebox, .modelbox { margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--border); }
 #heatnote { margin: 0 10px 6px; }
 #heatnote[hidden] { display: none; }
+
+/* 混合(モード C) */
+.modebadge.mode-C { border-color: var(--warn); color: var(--warn); }
+#library, #mixpanel { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
+#library[hidden], #mixpanel[hidden], #params[hidden] { display: none; }
+.lib-filters { display: grid; gap: 4px; margin: 6px 0; }
+.libf { display: block; font-size: 0.9em; color: var(--muted); }
+.libf input, .libf select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; }
+.lib-list, .mx-parts { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; }
+.mx-parts { max-height: 30vh; }
+.lib-item, .mx-part { border: 1px solid var(--border); border-radius: 4px; background: var(--bg); padding: 4px 8px; margin: 4px 0; }
+.lib-add { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.lib-add input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 5em; }
+.area-table { border-color: var(--ok); } .area-estimated { border-color: var(--warn); } .area-ported { border-color: var(--accent); } .area-unknown { border-style: dashed; color: var(--muted); }
+.mx-util { background: var(--gray-bg); border-radius: 4px; padding: 3px 8px; margin: 6px 0; }
+.mixdialog { padding: 10px 14px; max-width: 520px; }
+.mixdialog .pinput input, .mixdialog .pinput select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 4px; width: 100%; min-width: 0; }
+.mixdialog .actions { display: flex; gap: 8px; margin-top: 10px; }
