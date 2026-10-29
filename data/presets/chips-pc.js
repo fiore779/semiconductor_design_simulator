@@ -282,6 +282,23 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
     calib: false, notes: '4C/4T・3.5/3.7GHz は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は検索要約(2200G は未確認)のため base には入れていない。L3 は行別の根拠が無いため null(2400G は 4MB)',
   });
+  // ---- M5b 波2 の条件待ち 2 件(2026-10-30。addedIn:'M5b'。calib は false) ----
+  P.push({
+    id: 'amd-epyc-7401', name: 'EPYC 7401', vendor: 'AMD', family: 'Zen 1 (Naples)', isa: 'x86', kind: 'server', year: 2017, addedIn: 'M5b',
+    gb7: 'EPYC 7401(Zen 1 サーバー、24c)',
+    dies: [die('Zeppelin 1', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)。EPYC 7001 は Zeppelin 4 個すべてが CPU を含む(1 ダイ 6 コア有効)'), die('Zeppelin 2', 213, 'pub', 'gf-14'), die('Zeppelin 3', 213, 'pub', 'gf-14'), die('Zeppelin 4', 213, 'pub', 'gf-14')],
+    power: { base: null, peak: null, range: { minW: 155, maxW: 170 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 24, smt: 2, baseGHz: 2.0, boostGHz: 3.0 }], l3MB: null, memory: null },
+    calib: false, notes: '24C/48T・2.0/3.0GHz は設計書 §2.7。電力は 155W と 170W の 2 値があり違いは不明なため range のみ(base には入れない)。GB7 は投稿 1 件のみ(区分は直近 25 件の中央値だが実質 n=1)、参考扱い。MT は全コアに boost 3.0GHz を使うため、サーバーの実際の全コアクロック(これより低い)に対して過大になる可能性がある。kind:server の MT クロック係数は 1.0',
+  });
+  P.push({
+    id: 'amd-zen3p-7735hs', name: 'Ryzen 7 7735HS', vendor: 'AMD', family: 'Zen 3+ (Rembrandt-R)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Zen 4 モバイル(Rembrandt-R): Ryzen 7 7735HS(3.2GHz, 8c)',
+    dies: [die('Rembrandt-R', 208.7, 'meas', 'tsmc-n6', 'Kurnal の実測 12.84×16.25mm')],
+    power: { base: null, peak: null, range: { minW: 35, maxW: 54 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 3.2, boostGHz: 4.75 }], l3MB: 16, memory: null },
+    calib: false, notes: 'uarch は Zen 3 を流用(uarch.js に Zen 3+ は作らない)。根拠: Zen 3+ は Zen 3 と IPC が同一。TechSpot(Tim Schiesser、2022-02-17、直接取得)「AMD told us there are no fundamental IPC improvements with Zen 3+ compared to Zen 3 ... micro-op queues, branch predictors, execution engine, ALUs and so on, are all unchanged」[二次、AMD 回答の引用]。Wikipedia「Zen 3」の Zen 3+ 節(直接取得)も「IPC is identical to that of Zen 3」。AnandTech の記事は取得時にボット確認の画面になり本文を読めなかった(未確認)。8C/16T・3.2/4.75GHz・L3 16MB・35〜54W は Notebookcheck の検索要約(原ページ未確認)なので電力は range のみ。GB7 の行名は「Zen 4 モバイル」だが実体は Rembrandt-R(Zen 3+)。MT は全コアに最大 4.75GHz を使うため mobile-pc 係数 0.81 を掛けても過大の可能性',
+  });
   // ---- Intel 第12世代以降の残り(addedIn:'M5b'。ユーザー決定 2026-10-29: 第12世代以降の Intel は C5 を適用しない。設計書 §13 M5b-4・M5b-11) ----
   // calib は false。未取得は null のまま。同じダイの別 SKU は s:'sec' + note で流用を明記(T4)。
   P.push({
