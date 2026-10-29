@@ -59,9 +59,11 @@ const gbUsers = new Map();
 (D.presets || []).forEach((p) => { if (p.gb7 !== null && p.gb7 !== undefined) gbUsers.set(p.gb7, (gbUsers.get(p.gb7) || []).concat(p.id)); });
 gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数のプリセットが使用 (${v.join(', ')})`));
 
-// M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4)。既存 65 件は対象外。
+// M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
+const INTEL_GEN12_PLUS_P = new Set(['Golden Cove', 'Raptor Cove', 'Redwood Cove', 'Lion Cove', 'Cougar Cove']);
+const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) || []).some((c) => INTEL_GEN12_PLUS_P.has(c.uarch));
 (D.presets || []).forEach((p) => sigCount.set(sig(p), (sigCount.get(sig(p)) || 0) + 1));
 (D.presets || []).filter((p) => p.addedIn === 'M5b').forEach((p) => {
   const id = `presets ${p.id}(M5b)`;
@@ -81,7 +83,8 @@ const sigCount = new Map();
   // C4 ノード
   numDies.forEach((d) => ok(!!d.nodeId && nodeIds.has(d.nodeId), `${id}: C4 die ${d.name} の nodeId(${d.nodeId}) が nodes.js に無い`));
   // C5 代表性(uarch・ダイ・コア数が同じ SKU は既存と合わせて最大 2 件)
-  ok(sigCount.get(sig(p)) <= 2, `${id}: C5 uarch・ダイ・コア数が同じ SKU が 3 件以上 (${sigCount.get(sig(p))})`);
+  // 例外(ユーザー決定 2026-10-29。設計書 §13 M5b-4): 第12世代以降の Intel(P コアが Golden Cove 以降)には C5 を適用しない
+  ok(isIntelGen12Plus(p) || sigCount.get(sig(p)) <= 2, `${id}: C5 uarch・ダイ・コア数が同じ SKU が 3 件以上 (${sigCount.get(sig(p))})`);
   ok(p.calib === false, `${id}: 追加分の calib は false`);
 });
 

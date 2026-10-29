@@ -282,4 +282,54 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
     calib: false, notes: '4C/4T・3.5/3.7GHz は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は検索要約(2200G は未確認)のため base には入れていない。L3 は行別の根拠が無いため null(2400G は 4MB)',
   });
+  // ---- Intel 第12世代以降の残り(addedIn:'M5b'。ユーザー決定 2026-10-29: 第12世代以降の Intel は C5 を適用しない。設計書 §13 M5b-4・M5b-11) ----
+  // calib は false。未取得は null のまま。同じダイの別 SKU は s:'sec' + note で流用を明記(T4)。
+  P.push({
+    id: 'intel-rpl-14600k', name: 'Core i5-14600K', vendor: 'Intel', family: 'Raptor Lake Refresh', isa: 'x86', kind: 'pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Raptor Lake Refresh: Core i5-14600K(3.5GHz, 14c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13600K と同じ 8P+16E ダイの流用(2P+8E 無効)。13900K に合わせた 252.3mm²。Notebookcheck と PC Games Hardware は 13600K を 257mm² と記載。14600K 個別の実測は未取得')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(181, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 6, smt: 2, baseGHz: 3.5, boostGHz: 5.3 }, { type: 'E', uarch: 'Gracemont', count: 8, smt: 1, baseGHz: 2.6, boostGHz: 4.0 }], l3MB: 24, memory: null },
+    calib: false, notes: '6P+8E・クロック・L3 24MB・125/181W は Wikipedia「Raptor Lake」の表(取得日 2026-10-29)',
+  });
+  P.push({
+    id: 'intel-rpl-14700hx', name: 'Core i7-14700HX', vendor: 'Intel', family: 'Raptor Lake-HX Refresh', isa: 'x86', kind: 'mobile-pc', year: 2024, addedIn: 'M5b',
+    gb7: 'Raptor Lake(モバイル): Core i7-14700HX(2.1GHz, 20c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '14700K と同じ 8P+16E ダイの流用(E コア4個無効)。Wikipedia「Raptor Lake」の『HX はデスクトップ向けプロセッサのモバイル転用』という記述に基づく([二次・直接]。ダイ写真での照合は未了。推論(未検証): 8P+12E を持てる Raptor Lake のダイは 8P+16E ダイのみ)。14700HX 個別の実測は未取得')],
+    power: { base: pw(55, 'sec', 'Wikipedia の HX 行(cTDP 45W)'), peak: pw(157, 'sec', 'MTP'), range: { minW: 45, maxW: 55 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: 2.1, boostGHz: 5.5 }, { type: 'E', uarch: 'Gracemont', count: 12, smt: 1, baseGHz: 1.5, boostGHz: 3.9 }], l3MB: 33, memory: null },
+    calib: false, notes: '8P+12E・クロック・電力は Wikipedia「Raptor Lake」の表(取得日 2026-10-29)。L3 は Wikipedia と ARK の URL が 33MB、Notebookcheck は 30MB で食い違い(設計書 §2.7.4)。33MB を採用',
+  });
+  P.push({
+    id: 'intel-adl-12100', name: 'Core i3-12100', vendor: 'Intel', family: 'Alder Lake', isa: 'x86', kind: 'pc', year: 2022, addedIn: 'M5b',
+    gb7: 'Alder Lake: Core i3-12100(3.3GHz, 4c)',
+    dies: [die('Alder Lake-S 6P', 163, 'sec', 'intel-7', '6P の H0 ダイ(2P 無効)。H0 の根拠: hwcooling.net「12100F・12400(F) は H0=6P だけの小さいダイ」(2023-02)、VideoCardz(発売前に 12400 の C0 と H0 を確認)。面積 163mm² は TechPowerUp CPU Database の 12100 のページ(12900K は 215mm²)と The Overclock Page の記事(H0=163、C0=215)。Wikipedia は同じダイを 157.74mm²(10.19×15.47mm。Fritzchens Fritz の 12400F の写真)としており 3% 差。12100(UHD 730 つき)個体のステッピングを直接確認した一次資料は無い。hwcooling・VideoCardz・The Overclock Page は検索の抜粋で、原ページ未確認。TechPowerUp CPU Database も集約サイトの [二次]')],
+    power: { base: pw(60, 'sec', 'PBP'), peak: pw(89, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Golden Cove', count: 4, smt: 2, baseGHz: 3.3, boostGHz: 4.3 }], l3MB: 12, memory: null },
+    calib: false, notes: '4P(8 スレッド)・クロック・L3 12MB・60/89W は Wikipedia「Alder Lake」(設計書 §2.7)。使用ダイは [二次] で確証が弱い(上の die の note)',
+  });
+  P.push({
+    id: 'intel-lnl-256v', name: 'Core Ultra 7 256V', vendor: 'Intel', family: 'Lunar Lake', isa: 'x86', kind: 'mobile-pc', year: 2024, addedIn: 'M5b',
+    gb7: 'Lunar Lake: Core Ultra 7 256V(2.2GHz, 8c)',
+    dies: [die('Compute タイル', 139.6, 'sec', 'tsmc-n3b', '268V と同じ3タイルを流用'), die('Platform Controller タイル', 45.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用'), die('Base タイル', 219.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用')],
+    power: { base: null, peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
+    calib: false, notes: '258V と同じ構成・最大 4.8GHz(設計書 §2.7.2)。電力・base クロック・LP-E のクロックは未取得。L3 は 258V と同じ理由(メモリサイドキャッシュとの区別が確定できない)で null。メモリは 16GB(オンパッケージ LPDDR5X-8533)',
+  });
+  P.push({
+    id: 'intel-ptl-x9-378h', name: 'Core Ultra X9 378H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
+    gb7: 'Panther Lake: Core Ultra X9 378H(2.0GHz, 16c)',
+    dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
+    power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.6, boostGHz: 3.8 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.6, boostGHz: 3.6 }], l3MB: 18, memory: null },
+    calib: false, notes: 'クロック・L3・電力は Wikipedia「Panther Lake (microprocessor)」の表(取得日 2026-10-29)。GB7 の行は外れ値あり(設計書 §2.4)',
+  });
+  P.push({
+    id: 'intel-ptl-x7-358h', name: 'Core Ultra X7 358H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
+    gb7: 'Panther Lake: Core Ultra X7 358H(1.9GHz, 16c)',
+    dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
+    power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 1.9, boostGHz: 4.8 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.5, boostGHz: 3.5 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.5, boostGHz: 3.3 }], l3MB: 18, memory: null },
+    calib: false, notes: 'クロック・L3・電力は Wikipedia「Panther Lake (microprocessor)」の表(取得日 2026-10-29)',
+  });
 })();
