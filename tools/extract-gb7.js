@@ -23,12 +23,14 @@ const num = (s) => {
 
 let heading = '';
 let sub = '';
+let tableKind = ''; // 区分の列が無い表の既定の区分(「追加取得分」節=直近25件の中央値、その中の Jetson 表=個別投稿の中央値。U16)
 const rows = [];
 const skipped = [];
 
 for (let i = start; i < end; i++) {
   const line = doc[i];
-  if (line.startsWith('#### ')) { heading = line.replace(/^####\s*/, ''); sub = ''; continue; }
+  if (line.startsWith('#### ')) { heading = line.replace(/^####\s*/, ''); sub = ''; tableKind = heading.startsWith('追加取得分') ? '直近25件の中央値' : ''; continue; }
+  if (tableKind && /^\s*-\s*\*\*NVIDIA Jetson/.test(line)) tableKind = '個別投稿の中央値';
   if (!line.trim().startsWith('|')) continue;
   if (heading.startsWith('Intel 第2〜第11世代')) continue; // 別処理(下)
   const cells = line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
@@ -57,7 +59,7 @@ for (let i = start; i < end; i++) {
     ...(single.hi ? { singleHi: single.hi } : {}),
     ...(multi.hi ? { multiHi: multi.hi } : {}),
     ...(single.note || multi.note ? { note: [single.note && 'シングル: ' + single.note, multi.note && 'マルチ: ' + multi.note].filter(Boolean).join(' / ') } : {}),
-    kind: (kindCell.match(/\[(.+?)\]/) || [, ''])[1] || 'チャート',
+    kind: (kindCell.match(/\[(.+?)\]/) || [, ''])[1] || tableKind || 'チャート',
     n: nCell ? Number(nCell) : null,
   });
 }

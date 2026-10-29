@@ -762,7 +762,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Panther Lake: Core Ultra 9 386H(2.1GHz, 16c)",
   "single": 2560,
   "multi": 17540,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -770,7 +770,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Panther Lake: Core Ultra X7 358H(1.9GHz, 16c)",
   "single": 2520,
   "multi": 16120,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -778,7 +778,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Panther Lake: Core Ultra X9 388H(2.1GHz, 16c)",
   "single": 2515,
   "multi": 15820,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -786,7 +786,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Panther Lake: Core Ultra X9 378H(2.0GHz, 16c)",
   "single": 2600,
   "multi": 17300,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -794,7 +794,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Panther Lake: Core Ultra 5 325(2.1GHz, 8c)",
   "single": 1885,
   "multi": 9500,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -802,7 +802,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "EPYC 7401(Zen 1 サーバー、24c)",
   "single": 957,
   "multi": 10113,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -810,7 +810,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "EPYC 7551(Zen 1 サーバー、32c×2 ソケット表記 64c)",
   "single": 777,
   "multi": 3656,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -818,7 +818,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 8 Elite Extreme Gen 6(SM8975、モバイル)",
   "single": 2973,
   "multi": 9810,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -826,7 +826,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 7+ Gen 3(SM7675)",
   "single": 1549,
   "multi": 4448,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -834,7 +834,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 7 Gen 3(SM7550)",
   "single": 990,
   "multi": 3096,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -842,7 +842,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 7 Gen 4(SM7750)",
   "single": 938,
   "multi": 3480,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -850,7 +850,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 7 Gen 1(SM7450)",
   "single": 883,
   "multi": 2780,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -858,7 +858,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 6 Gen 1(SM6450)",
   "single": 814,
   "multi": 2841,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -866,7 +866,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 4 Gen 2(SM4450)",
   "single": 771,
   "multi": 1855,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -874,7 +874,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Snapdragon 720G(SM7125)",
   "single": 681,
   "multi": 1839,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -882,7 +882,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Dimensity 9600 Pro(MT6995)",
   "single": 2648,
   "multi": 9453,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -890,7 +890,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Dimensity 9500(MT6993)",
   "single": 1203,
   "multi": 6574,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -898,7 +898,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Dimensity 8200(MT6896)",
   "single": 951,
   "multi": 3280,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -906,7 +906,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Dimensity 1000(MT6889)",
   "single": 878,
   "multi": 3013,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -914,7 +914,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Tegra X1(Google Pixel C)",
   "single": 193,
   "multi": 490,
-  "kind": "チャート",
+  "kind": "直近25件の中央値",
   "n": null
  },
  {
@@ -922,7 +922,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Thor(Jetson AGX Thor、14コア)",
   "single": 1297,
   "multi": 10845,
-  "kind": "チャート",
+  "kind": "個別投稿の中央値",
   "n": null
  },
  {
@@ -930,7 +930,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Orin(AGX Orin、12コア)",
   "single": 790,
   "multi": 6884,
-  "kind": "チャート",
+  "kind": "個別投稿の中央値",
   "n": null
  },
  {
@@ -938,7 +938,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Orin NX(8コア)",
   "single": 795,
   "multi": 4879,
-  "kind": "チャート",
+  "kind": "個別投稿の中央値",
   "n": null
  },
  {
@@ -946,7 +946,7 @@ window.SDS_DATA.gb7Scores = [
   "name": "Jetson Nano(Tegra X1、4コア)",
   "single": 351,
   "multi": 983,
-  "kind": "チャート",
+  "kind": "個別投稿の中央値",
   "n": null
  },
  {
