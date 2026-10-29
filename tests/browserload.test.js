@@ -210,3 +210,59 @@ test('コアエディタ: 入力エラーを項目ごとに出す・編集で結
   assert.ok(byId('ce-l2KB').disabled === true);
   ui.dialogs.close();
 });
+
+// ---- 比較・書き出し ----
+test('比較・書き出し: script が登録され、比較ダイアログ(3 種の比較先)と書き出しダイアログの描画が例外にならない(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  ['compareform', 'exporter', 'comparepanel', 'exportpanel'].forEach((m) => assert.ok(ctx.SDS.ui[m], `SDS.ui.${m} が登録されていない`));
+  const order = (f) => srcs.indexOf(f);
+  assert.ok(order('js/ui/compareform.js') < order('js/ui/comparepanel.js') && order('js/ui/presetdialog.js') < order('js/ui/comparepanel.js') && order('js/ui/exporter.js') < order('js/ui/exportpanel.js'));
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  const cur = DS.setClock(DS.fromPreset(c.presets[0], { mode: 'improve' }), c.presets[0].cfg.cores[0].type, c.presets[0].cfg.cores[0].boostGHz * 1.1);
+  assert.ok(cur.ok, cur.reason);
+  const d = cur.design; const ev = evaluate(d, c);
+  ui.comparepanel.openCompare({ design: d, ev, presets: c.presets, baseline: DS.fromPreset(c.presets[0]), evaluate: (x) => evaluate(x, c) });
+  const t = body.textContent;
+  assert.ok(t.includes('設計の比較') && t.includes('元のプリセット') && t.includes('差(現在 − 比較先)') && t.includes('編集後') && t.includes('[予測]'));
+  assert.ok(!t.includes('undefined') && !t.includes('NaN'));
+  // 混合設計: 元のプリセットは選べない(選択肢は無効)。履歴の最初の状態が既定になり、電力・温度は「—(理由)」
+  ctx.SDS.ui.dialogs.close(); body.children = [];
+  const mix = DS.fromScratch({ name: '混合', widthMm: 20, heightMm: 20, nodeId: 'tsmc-n4' });
+  ui.comparepanel.openCompare({ design: mix, ev: evaluate(mix, c), presets: c.presets, baseline: mix, evaluate: (x) => evaluate(x, c) });
+  assert.ok(body.textContent.includes('選べません') && body.textContent.includes('—(') && !body.textContent.includes('NaN'));
+  ctx.SDS.ui.dialogs.close(); body.children = [];
+  // 書き出しダイアログ
+  ui.exportpanel.openExport({ design: d, ev, notify() {} });
+  const bt = body.textContent;
+  assert.ok(bt.includes('設計を JSON で保存') && bt.includes('結果を CSV で保存') && bt.includes('要約テキストをコピー') && bt.includes('通信はしません'));
+  ctx.SDS.ui.dialogs.close();
+});
+
+test('ダイアログ: isOpen が開閉に追従し、書き出しはボタンを押した時点の最新の設計を書き出す(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const body = new FakeNode('body');
+  const blobs = [];
+  ctx.Blob = class { constructor(parts) { blobs.push(parts.join('')); } };
+  ctx.URL = { createObjectURL: () => 'blob:x', revokeObjectURL() {} };
+  ctx.setTimeout = () => 0;
+  ctx.document.createElement = (t) => { const n = new FakeNode(t); n.click = () => {}; return n; };
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  const d1 = DS.fromPreset(c.presets[0], { mode: 'reproduce' }); const d2 = DS.fromPreset(c.presets[1], { mode: 'reproduce' });
+  let now = { design: d1, ev: evaluate(d1, c) };
+  assert.strictEqual(ui.dialogs.isOpen(), false);
+  ui.exportpanel.openExport({ design: d1, ev: now.ev, notify() {}, getCurrent: () => now });
+  assert.strictEqual(ui.dialogs.isOpen(), true);
+  now = { design: d2, ev: evaluate(d2, c) }; // ダイアログを開いたまま設計が変わった
+  findAll(body, (n) => n.tag === 'button' && n.textContent === '設計を JSON で保存')[0].listeners.click();
+  assert.strictEqual(blobs.length, 1);
+  assert.strictEqual(JSON.parse(blobs[0]).name, d2.name);
+  findAll(body, (n) => n.tag === 'button' && n.textContent === '結果を CSV で保存')[0].listeners.click();
+  assert.ok(blobs[1].includes(d2.name));
+  ui.dialogs.close();
+  assert.strictEqual(ui.dialogs.isOpen(), false);
+});

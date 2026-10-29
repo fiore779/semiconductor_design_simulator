@@ -8,7 +8,7 @@
 
   const need = ['sim', 'model', 'history', 'ui'];
   const missing = need.filter((k) => !S || !S[k]);
-  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata || !S.ui.mixform || !S.ui.library || !S.ui.mixpanel || !S.ui.coreform || !S.ui.coreeditor || !S.model.coredef || !S.model.blocklib || !S.model.compat) {
+  if (missing.length || !S.sim.perf || !S.sim.area || !S.model.design || !S.model.evaluate || !S.model.diff || !S.ui.paramform || !S.ui.params || !S.ui.diffpanel || !S.ui.panels || !S.ui.dialogs || !S.ui.results || !S.ui.dom || !S.ui.commitplan || !S.ui.packageform || !S.ui.packagepanel || !S.ui.heatdata || !S.ui.mixform || !S.ui.library || !S.ui.mixpanel || !S.ui.coreform || !S.ui.coreeditor || !S.model.coredef || !S.model.blocklib || !S.model.compat || !S.ui.compareform || !S.ui.exporter || !S.ui.comparepanel || !S.ui.exportpanel) {
     document.body.insertBefore(Object.assign(document.createElement('p'), { className: 'fatal', textContent: '✗ 必要なスクリプトが読み込まれていません(コンソールを確認してください)。このページは動きません。' }), document.body.firstChild);
     return;
   }
@@ -24,7 +24,7 @@
   let design = null;
   const history = S.history.createHistory({ limit: 200 }) /* まとめるかどうかは commitplan が決める(時間の窓は使わない。ドラッグ中に止めても 1 手) */;
   let selection = []; let viewMode = 'place'; let view = null; let propMsg = ''; let ignoreUntil = 0; let saveTimer = null; let noticeTimer = null;
-  let lastEval = null; let paramMsgs = {}; let pkgMsgs = {}; let mixMsgs = {}; let libMsg = ''; let mixParts = null;
+  let baseline = null; let lastEval = null; let paramMsgs = {}; let pkgMsgs = {}; let mixMsgs = {}; let libMsg = ''; let mixParts = null;
 
   // ---- 通知 ----
   function notify(text, kind) {
@@ -94,6 +94,7 @@
   function renderProps() { PN.renderProps($('props'), design || { dies: [] }, selection, onPropEdit, propMsg, isMix() ? mixPropsExtra() : null); }
   function renderHistory() { PN.renderHistory($('history'), history, jumpTo, undo, redo); }
   function renderButtons() {
+    $('m-compare').disabled = !design; $('m-export').disabled = !design;
     $('m-undo').disabled = !history.canUndo(); $('m-redo').disabled = !history.canRedo(); $('m-save').disabled = !design;
     $('designname').textContent = design ? `設計: ${design.name}` : '';
     const mi = PF.modeInfo(design); const mb = $('modebadge');
@@ -188,6 +189,7 @@
       design = prev; try { renderAll(); } catch (e2) { /* 元の設計も描けないときは諦める */ }
       notify(`✗ この設計を表示できませんでした: ${e.message}`, 'err'); return false;
     }
+    baseline = JSON.parse(JSON.stringify(design)); // 比較用の「履歴の最初の状態」(読み込み時点)
     history.clear(); renderHistory(); renderButtons();
     if (view) { view.setDesign(design); applyColorMode(); view.setSelection([]); view.setViewMode(viewMode); if (view.fit) view.fit(); updateHeat(); }
     scheduleSave();
@@ -353,12 +355,7 @@
   // ---- 保存・開く ----
   function save() {
     if (!design) return;
-    const blob = new Blob([DS.serialize(design)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${(design.name || 'design').replace(/[\\/:*?"<>|]/g, '_')}.sds.json`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    S.ui.exportpanel.download(DS.serialize(design), S.ui.exporter.safeFileName(design.name, '.sds.json'), 'application/json');
     notify('設計をファイルに保存しました(ダウンロード)。', 'info');
   }
   function onFile(e) {
@@ -374,6 +371,16 @@
       if (loadDesign(r.design, 'file')) notify(`「${r.design.name}」を開きました。`, 'info');
     };
     rd.readAsText(f);
+  }
+
+  // ---- 比較・書き出し(設計は変更しない。評価をやり直すだけ) ----
+  function openCompare() {
+    if (!design || !lastEval) return;
+    S.ui.comparepanel.openCompare({ design, ev: lastEval, presets: ctx.presets, baseline, evaluate: (d) => EV.evaluate(d, ctx) });
+  }
+  function openExport() {
+    if (!design || !lastEval) return;
+    S.ui.exportpanel.openExport({ design, ev: lastEval, notify, getCurrent: () => (design && lastEval ? { design, ev: lastEval } : null) });
   }
 
   // ---- ダイアログ ----
@@ -421,12 +428,15 @@
   $('m-open').addEventListener('click', () => $('fileinput').click());
   $('fileinput').addEventListener('change', onFile);
   $('m-save').addEventListener('click', save);
+  $('m-compare').addEventListener('click', openCompare);
+  $('m-export').addEventListener('click', openExport);
   $('m-undo').addEventListener('click', undo);
   $('m-redo').addEventListener('click', redo);
   $('v-fit').addEventListener('click', () => { if (view && view.fit) view.fit(); });
   $('m-help').addEventListener('click', () => { const hp = $('help'); hp.hidden = !hp.hidden; $('m-help').setAttribute('aria-expanded', String(!hp.hidden)); });
   document.querySelectorAll('.vm').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   document.addEventListener('keydown', (e) => {
+    if (DG.isOpen() || document.querySelector('.dialog')) return; // ダイアログを開いている間は裏の設計を変えない
     const t = e.target; const tag = t && t.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
     if (!(e.ctrlKey || e.metaKey)) return;

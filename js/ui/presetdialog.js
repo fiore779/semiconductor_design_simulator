@@ -13,6 +13,7 @@
     document.removeEventListener('keydown', onKey, true);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
+  function isOpen() { return !!overlay; }
   function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
   function open(title, content) {
     if (overlay) overlay.remove(); else lastFocus = document.activeElement;
@@ -139,5 +140,5 @@
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: create }, '作成'), h('button', { type: 'button', class: 'btn', onclick: close }, 'キャンセル'))));
   }
 
-  root.SDS.ui.dialogs = { openNew, openPresets, openMix, open, close };
+  root.SDS.ui.dialogs = { openNew, openPresets, openMix, open, close, isOpen };
 })(window);
