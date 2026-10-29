@@ -192,3 +192,30 @@ test('mtScore: maxGHz だけのコア(Arm)は max を使い、fByType の部分�
   assert.deepStrictEqual(part.detail.map((d) => d.clockSource), ['given', 'boost']);
   assert.ok(part.score < F.mtScore(p, c, D.uarch, null).score);
 });
+
+// MT の持続クロック係数(設計書 §5.3.0。[推定・校正値]。kind=mobile/mobile-pc は 0.81、それ以外は 1.0)
+test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(pc)と kind なしは 1.0 で不変', () => {
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  assert.deepStrictEqual(F.MT_CLOCK_FACTOR, { pc: 1.0, mobile: 0.81, 'mobile-pc': 0.81 });
+  // mobile: fByType に boost×0.81 を明示した値と一致(係数は fByType の明示指定には掛からない)
+  const m = preset('qc-8gen2'); assert.strictEqual(m.kind, 'mobile');
+  const a = F.mtScore(m, c, D.uarch, null);
+  const explicit = {}; m.cfg.cores.forEach((g) => { explicit[g.type] = (g.boostGHz || g.maxGHz || g.baseGHz) * 0.81; });
+  const b = F.mtScore(m, c, D.uarch, explicit);
+  assert.ok(a.ok && b.ok); assert.strictEqual(a.clockFactor, 0.81); assert.ok(b.detail.every((d) => d.clockFactor === 1)); assert.strictEqual(b.clockFactor, 1);
+  // base にフォールバックしたコアには係数を掛けない(トップレベルは実際に掛けた係数)
+  const nb = JSON.parse(JSON.stringify(m)); nb.cfg.cores.forEach((g) => { g.baseGHz = g.maxGHz; delete g.boostGHz; delete g.maxGHz; });
+  const rb = F.mtScore(nb, c, D.uarch, null);
+  assert.ok(rb.ok && rb.detail.every((d) => d.clockSource === 'base' && d.clockFactor === 1)); assert.strictEqual(rb.clockFactor, 1);
+  assert.ok(Math.abs(a.score / b.score - 1) < 1e-12);
+  assert.ok(a.detail.every((d) => d.clockFactor === 0.81));
+  // mobile-pc も 0.81、pc は 1.0
+  assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.81);
+  const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
+  const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
+  assert.strictEqual(r1.clockFactor, 1); assert.strictEqual(r2.clockFactor, 1); assert.strictEqual(r1.score, r2.score);
+  // 係数が効くと mobile の MT は下がる(kind を外した同じ構成より低い)
+  assert.ok(a.score < F.mtScore(Object.assign({}, m, { kind: undefined }), c, D.uarch, null).score);
+  // embedded・server は 1.0
+  assert.strictEqual(F.mtClockFactor({ kind: 'embedded' }), 1); assert.strictEqual(F.mtClockFactor({ kind: 'server' }), 1); assert.strictEqual(F.mtClockFactor(null), 1);
+});

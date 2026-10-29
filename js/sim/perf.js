@@ -133,6 +133,11 @@
   // 校正前の仮の既定値(根拠なし)。mtScore の結果に uncalibrated として出す。メモリ帯域の頭打ち(§5.2.2 の BW_mem/B_score)は未実装。
   const MT_DEFAULTS = { sigma: 0.004, gammaSmt: 0.25 };
 
+  // MT の持続クロック係数(§5.3.0)。全コア負荷時のクロック = 係数 × boost。[推定・校正値]で、実際の熱・電力制限を表すものではない。
+  // preset.kind で引く(pc=1.0 に丸める。kind なし・混合設計・embedded・server は 1.0)。fByType を明示指定したときは掛けない。
+  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.81, 'mobile-pc': 0.81 };
+  const mtClockFactor = (preset) => (preset && MT_CLOCK_FACTOR[preset.kind]) || 1.0;
+
   // MT スコア(§5.2.2)。fByType: { 種別 → 全コア負荷時の持続クロック GHz }(電力モデルが決める)。
   function mtScore(preset, cal, uarchDb, fByType, mtParams) {
     // 優先順位: 引数 mtParams > 校正結果 cal.mt > 仮の既定値
@@ -141,12 +146,16 @@
     const totalThreads = cores.reduce((t, c) => t + c.count * (c.smt || 1), 0);
     if (!(totalThreads > 0)) return { ok: false, reason: 'コアなし' };
     let sum = 0; let threads = 0; const detail = [];
+    const kf = mtClockFactor(preset);
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
-      // 既定は最大クロック(boost)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
+      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.81)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
-      const f = given || c.boostGHz || c.maxGHz || c.baseGHz;
+      const f0 = given || c.boostGHz || c.maxGHz || c.baseGHz;
       const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
+      // 係数は boost/max がある場合のみ掛ける(base へのフォールバックと fByType 指定には掛けない)
+      const applied = clockSource === 'boost' || clockSource === 'max' ? kf : 1;
+      const f = f0 ? f0 * applied : f0;
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
       const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads });
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
@@ -155,7 +164,7 @@
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockSource, corrSource: st.corrSource, ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: applied, clockSource, corrSource: st.corrSource, ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // sigma・gammaSmt は未校正(既定値のまま)なので、呼び出し側が確度を過大評価しないよう明示する
@@ -163,11 +172,11 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
+    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。
-  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
+  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)に preset.kind の係数(pc=1.0、mobile=0.81。base には掛けない)を掛けたもの。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
   // 対数誤差の二乗和を最小化する σ を、区間 [0, 0.2] の黄金分割探索で求める。
   function calibrateMt(presets, gb7ByName, uarchDb, cal, fByTypeOf) {
     // 代表のうち、全コアが uarch 専用の補正を持ち、仮の IPC を含まないものだけを使う(ISA 平均の代用は σ を歪める)
@@ -195,7 +204,7 @@
     return Object.assign({}, cal, { mt: { sigma, gammaSmt: gamma, fitted: ['sigma'], usedPresets: used, rmsLogError: Math.sqrt(cost(sigma)) } });
   }
 
-  const api = { DEFAULT_PARAMS, MT_DEFAULTS, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
+  const api = { DEFAULT_PARAMS, MT_DEFAULTS, MT_CLOCK_FACTOR, mtClockFactor, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
   root.SDS = root.SDS || {}; root.SDS.sim = root.SDS.sim || {}; root.SDS.sim.perf = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -44,7 +44,7 @@
       noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor,
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
-      base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
+      base.clockFactor = r.clockFactor == null ? 1 : r.clockFactor; base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
       base.corrSources = r.detail.map((d) => d.corrSource);
       base.corrFroms = r.detail.map((d) => d.corrFrom || d.corrSource);
     }

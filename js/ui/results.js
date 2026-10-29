@@ -198,6 +198,7 @@
     if (ev.mt.ok) {
       mtExtra.push(h('p', { class: 'low-banner' }, '▼ マルチ性能の確度は「低」です。この数値を精密な予測として扱わないでください。'));
       mtExtra.push(note('並列効率 σ は AMD の代表 3 件だけで合わせ、SMT 効果 γ は未校正、メモリ帯域の頭打ちは未実装です。'));
+      if (ev.mt.clockFactor && ev.mt.clockFactor !== 1) mtExtra.push(note(`MT の全コア負荷時クロックは ${(ev.mt.detail||[]).some((d) => d.clockFactor !== 1 && d.clockSource === 'boost') ? 'boost' : '最大クロック'} × ${ev.mt.clockFactor}(モバイル向けの持続クロック係数。[推定・校正値]で、実際の熱・電力制限を表すものではありません)。`, 'warn-note'));
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
     }
