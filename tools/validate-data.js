@@ -54,6 +54,37 @@ const pids = new Set();
   if (p.calib) ok(!!p.calibNote, `presets ${p.id}: calib=true なのに calibNote が無い`);
 });
 
+// 同じ GB7 行を 2 件のプリセットが使っていないか(全件)
+const gbUsers = new Map();
+(D.presets || []).forEach((p) => { if (p.gb7 !== null && p.gb7 !== undefined) gbUsers.set(p.gb7, (gbUsers.get(p.gb7) || []).concat(p.id)); });
+gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数のプリセットが使用 (${v.join(', ')})`));
+
+// M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4)。既存 65 件は対象外。
+const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
+const sigCount = new Map();
+(D.presets || []).forEach((p) => sigCount.set(sig(p), (sigCount.get(sig(p)) || 0) + 1));
+(D.presets || []).filter((p) => p.addedIn === 'M5b').forEach((p) => {
+  const id = `presets ${p.id}(M5b)`;
+  // C1 GB7
+  const g = (D.gb7Scores || []).find((r) => r.name === p.gb7);
+  ok(!!g && gbByName.get(p.gb7) === 1 && Number.isFinite(g.single) && Number.isFinite(g.multi), `${id}: C1 gb7 が一意に一致し single/multi が数値であること`);
+  ok(!/64c/.test(p.gb7 || ''), `${id}: C1 定義が不明な GB7 行(64c 表記)は使えない`);
+  // C2 面積
+  const numDies = (p.dies || []).filter((d) => typeof d.mm2 === 'number');
+  ok(numDies.length >= 1, `${id}: C2 mm2 が数値のダイが 1 つも無い`);
+  numDies.forEach((d) => ok(['meas', 'pub'].includes(d.s) || (d.s === 'sec' && !!d.note), `${id}: C2 die ${d.name} の区分は meas/pub、または note つきの sec のみ`));
+  // C3 構成(uarch が存在・count・クロックは cores のどれか 1 件以上。LP-E など個別に未取得のコアは null を許す)
+  const cores = (p.cfg && p.cfg.cores) || [];
+  ok(cores.length >= 1, `${id}: C3 cfg.cores が空`);
+  cores.forEach((c, i) => ok(!!(D.uarch && D.uarch[c.uarch]) && Number.isFinite(c.count) && c.count > 0, `${id}: C3 cores[${i}] の uarch(${c.uarch})/count が不正`));
+  ok(cores.some((c) => [c.baseGHz, c.boostGHz, c.maxGHz].some((v) => typeof v === 'number')), `${id}: C3 クロックが 1 件も無い`);
+  // C4 ノード
+  numDies.forEach((d) => ok(!!d.nodeId && nodeIds.has(d.nodeId), `${id}: C4 die ${d.name} の nodeId(${d.nodeId}) が nodes.js に無い`));
+  // C5 代表性(uarch・ダイ・コア数が同じ SKU は既存と合わせて最大 2 件)
+  ok(sigCount.get(sig(p)) <= 2, `${id}: C5 uarch・ダイ・コア数が同じ SKU が 3 件以上 (${sigCount.get(sig(p))})`);
+  ok(p.calib === false, `${id}: 追加分の calib は false`);
+});
+
 console.log(`プリセット ${(D.presets || []).length} 件 / ファイル ${files.length} / nodes ${(D.nodes || []).length} / substrates ${(D.substrates || []).length} / cooling ${(D.cooling || []).length} / gb7 ${(D.gb7Scores || []).length}`);
 if (errs.length) { console.error('エラー:\n' + errs.join('\n')); process.exit(1); }
 console.log('OK');

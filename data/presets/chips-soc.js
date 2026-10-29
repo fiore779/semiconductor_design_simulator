@@ -134,6 +134,14 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [c('P', 'Cortex-A78C', 8, 1.1)], l3MB: 4, memory: 'LPDDR5X, 128bit' },
   });
 
+  // ---- M5b 波1 追加分(addedIn:'M5b'。calib は false。電力・キャッシュは未取得のまま null。メモリは任意項目で null のまま(§2.7.4 に 7 Gen 1・7 Gen 4 のメモリ LPDDR5/5X・32bit の記載はあるが未転記)。設計書 §13) ----
+  const m5b = (note) => ({ addedIn: 'M5b', ...(note ? { notes: note } : {}) });
+  q('qc-7gen3', '7 Gen 3', 2023, 'Snapdragon 7 Gen 3(SM7550)', 55.2, 'tsmc-n4', [c('P', 'Cortex-A715', 1, 2.63), c('M', 'Cortex-A715', 3, 2.4), c('E', 'Cortex-A510', 4, 1.8)], m5b('プロセスは §2.7.4 が N4P、§2.2 が 4nm のため tsmc-n4 に対応づけ'));
+  q('qc-7gen4', '7 Gen 4', 2025, 'Snapdragon 7 Gen 4(SM7750)', 70.3, 'tsmc-n4', [c('P', 'Cortex-A720', 1, 2.8), c('M', 'Cortex-A720', 4, 2.4), c('E', 'Cortex-A520', 3, 1.84)], m5b('nodeId は §2.2 の TSMC 4nm(§2.7.4 はプロセス未取得)から tsmc-n4 に対応づけた'));
+  q('qc-7gen1', '7 Gen 1', 2022, 'Snapdragon 7 Gen 1(SM7450)', 77.8, 'samsung-4', [c('P', 'Cortex-A710', 1, 2.4), c('M', 'Cortex-A710', 3, 2.36), c('E', 'Cortex-A510', 4, 1.8)], m5b('プロセスは Samsung 4nm(§2.7.4 は 4LPX)'));
+  q('qc-720g', '720G', 2020, 'Snapdragon 720G(SM7125)', 55.5, 'samsung-8', [c('P', 'Cortex-A76', 2, 2.3), c('E', 'Cortex-A55', 6, 1.8)], m5b('プロセスは Samsung 8nm(§2.7.4 は 8LPP)'));
+  q('qc-8elite-x-gen6', '8 Elite Extreme Gen 6', 2026, 'Snapdragon 8 Elite Extreme Gen 6(SM8975、モバイル)', 133.2, 'tsmc-n2', [c('P', 'Oryon Prime', 2, 5.0), c('E', 'Oryon Performance', 6, 4.0)], m5b('クロック(最大 5.0 / 4.0GHz)とプロセスは報道(二次)。ダイ面積 133.2 は N2P の実測。nodeId は N2P 専用の記録が無いため tsmc-n2。キャッシュ容量は未確定'));
+
   // 校正の代表 SKU(§5.3.1)。同じ P コアを使う他のチップは検証用(代表の補正係数で予測して誤差を見る)。
   // 条件: GB7 が機種中央値で n が比較的多い([中央値])、コア構成が単純、電力モードの影響が小さい。
   const reps = {

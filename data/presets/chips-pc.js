@@ -152,4 +152,73 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 3.0, boostGHz: 5.1 }], l3MB: 64, memory: 'LPDDR5X, 256bit' },
     calib: false,
   });
+
+  // ---- M5b 波1 追加分(addedIn:'M5b'。calib は false。未取得は null のまま。設計書 §13) ----
+  // Intel(同じダイの別 SKU は s:'sec' + note で流用を明記)
+  P.push({
+    id: 'intel-adl-12700k', name: 'Core i7-12700K', vendor: 'Intel', family: 'Alder Lake', isa: 'x86', kind: 'pc', year: 2021, addedIn: 'M5b',
+    gb7: 'Alder Lake: Core i7-12700K(3.6GHz, 12c)',
+    dies: [die('Alder Lake-S 8P+8E', 208.0, 'sec', 'intel-7', '12900K と同じダイを流用(E コア4個無効)')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(190, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Golden Cove', count: 8, smt: 2, baseGHz: 3.6, boostGHz: 4.9 }, { type: 'E', uarch: 'Gracemont', count: 4, smt: 1, baseGHz: 2.7, boostGHz: 3.8 }], l3MB: 25, memory: null },
+    calib: false,
+  });
+  P.push({
+    id: 'intel-rpl-13700k', name: 'Core i7-13700K', vendor: 'Intel', family: 'Raptor Lake', isa: 'x86', kind: 'pc', year: 2022, addedIn: 'M5b',
+    gb7: 'Raptor Lake: Core i7-13700K(3.4GHz, 16c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13900K と同じダイを流用(E コア8個無効)')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(253, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: 3.4, boostGHz: 5.4 }, { type: 'E', uarch: 'Gracemont', count: 8, smt: 1, baseGHz: 2.5, boostGHz: 4.2 }], l3MB: 30, memory: null },
+    calib: false,
+  });
+  P.push({
+    id: 'intel-rpl-14700k', name: 'Core i7-14700K', vendor: 'Intel', family: 'Raptor Lake Refresh', isa: 'x86', kind: 'pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Raptor Lake Refresh: Core i7-14700K(3.4GHz, 20c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13900K と同じダイを流用(E コア4個無効)。14700K 個別の実測は未取得')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(253, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: 3.4, boostGHz: 5.5 }, { type: 'E', uarch: 'Gracemont', count: 12, smt: 1, baseGHz: 2.5, boostGHz: 4.3 }], l3MB: 33, memory: null },
+    calib: false,
+  });
+  P.push({
+    id: 'intel-lnl-258v', name: 'Core Ultra 7 258V', vendor: 'Intel', family: 'Lunar Lake', isa: 'x86', kind: 'mobile-pc', year: 2024, addedIn: 'M5b',
+    gb7: 'Lunar Lake: Core Ultra 7 258V(2.2GHz, 8c)',
+    dies: [die('Compute タイル', 139.6, 'sec', 'tsmc-n3b', '268V と同じ3タイルを流用'), die('Platform Controller タイル', 45.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用'), die('Base タイル', 219.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用')],
+    power: { base: null, peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
+    calib: false, notes: '電力・base クロック・LP-E のクロックは未取得。L3 は値を入れていない: 設計書 §2.7.2 にはメモリサイドキャッシュ 8MB の記載があり(12MB は要確認)、268V は l3MB:12 + memorySideCacheMB:8 としているが、258V は L3 とメモリサイドの区別が確定できないため null のまま',
+  });
+
+  // AMD
+  P.push({
+    id: 'amd-zenplus-2600x', name: 'Ryzen 5 2600X', vendor: 'AMD', family: 'Zen+ (Pinnacle Ridge)', isa: 'x86', kind: 'pc', year: 2018, addedIn: 'M5b',
+    gb7: 'Zen+: Ryzen 5 2600X(3.6GHz, 6c)',
+    dies: [die('Pinnacle Ridge', 211.7, 'meas', 'gf-12', 'R5 2600 の写真計測(2700X と同じダイ)')],
+    power: { base: pw(95, 'sec', 'TDP'), peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen+', count: 6, smt: 2, baseGHz: 3.6, boostGHz: 4.2 }], l3MB: null, memory: null },
+    calib: false, notes: 'L3 容量は §2.7.3 に 2700X のみのため未取得(null)',
+  });
+  P.push({
+    id: 'amd-zen1-1500x', name: 'Ryzen 5 1500X', vendor: 'AMD', family: 'Zen 1 (Summit Ridge)', isa: 'x86', kind: 'pc', year: 2017, addedIn: 'M5b',
+    gb7: 'Zen 1: Ryzen 5 1500X(3.5GHz, 4c)',
+    dies: [die('Zeppelin', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)')],
+    power: { base: pw(65, 'sec', 'TDP'), peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 2, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
+    calib: false, notes: 'L3 は 8MB/CCX だが CCX 数が未取得のため null',
+  });
+  P.push({
+    id: 'amd-zen4-7840hs', name: 'Ryzen 7 7840HS', vendor: 'AMD', family: 'Zen 4 (Phoenix)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Zen 4 モバイル(Phoenix): Ryzen 7 7840HS(3.8GHz, 8c)',
+    dies: [die('Phoenix 1', 176.8, 'meas', 'tsmc-n4')],
+    power: { base: null, peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 5.1 }], l3MB: 16, memory: null },
+    calib: false, notes: '電力は未取得',
+  });
+  P.push({
+    id: 'amd-zen3-5800u', name: 'Ryzen 7 5800U', vendor: 'AMD', family: 'Zen 3 (Cezanne)', isa: 'x86', kind: 'mobile-pc', year: 2021, addedIn: 'M5b',
+    gb7: 'Cezanne: Ryzen 7 5800U(1.9GHz, 8c)',
+    dies: [die('Cezanne', 179.6, 'meas', 'tsmc-n7')],
+    power: { base: null, peak: null, range: { minW: 10, maxW: 25 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 1.9, boostGHz: 4.4 }], l3MB: 16, memory: null },
+    calib: false, notes: '電力 10〜25W は [二次]。最大ブースト 4.4GHz は [公表](出典: AMD Ryzen 7 5800U 製品仕様。ユーザーがページで確認、取得日 2026-10-29。単コア最大値で全コア値ではない)。MT は全コアに最大ブースト 4.4GHz を使うため過大(全コア実クロックは電力制限で大幅に低い)。L3 16MB [二次](設計書 §2.7.3、Notebookcheck、取得日 2026-10-29)。nodeId tsmc-n7 の根拠: TSMC 7nm FinFET [二次](Notebookcheck の仕様表、取得日 2026-10-29)。設計書 §2.2・§2.7.3 に記載',
+  });
 })();

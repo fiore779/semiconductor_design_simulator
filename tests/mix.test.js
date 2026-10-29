@@ -260,7 +260,41 @@ test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(
     const got = [r.st.ok ? +r.st.score.toFixed(3) : null, r.mt.ok ? +r.mt.score.toFixed(3) : null];
     assert.deepStrictEqual(got, BASE[id], id);
   });
-  assert.strictEqual(Object.keys(BASE).length, D.presets.length);
+  // 追加(M5b)で件数が増えても、BASE の 65 件がすべて存在して値が一致していること
+  assert.strictEqual(Object.keys(BASE).length, 65);
+  Object.keys(BASE).forEach((id) => assert.ok(D.presets.some((p) => p.id === id), 'BASE の ' + id + ' が無い'));
+  assert.ok(D.presets.filter((p) => !p.addedIn).length === 65 && D.presets.every((p) => !!BASE[p.id] || p.addedIn === 'M5b'));
+});
+
+// M5b 波1 の追加分(13 件)の ST/MT を固定(追加時の初回値。公開値との差は設計書 §5.3.0 に記録)。null は計算不能
+// 5800U は 2026-10-29 に最大ブースト 4.4GHz(公表。AMD 製品仕様)を入れたため、初回値 [834.035, 5912.618](boost 未取得でベース 1.9GHz 計算)から更新。さらに L3 16MB([二次]。設計書 §2.7.3、Notebookcheck)を入れて [1684.475, 11941.535](boost 4.4GHz・L3 未取得)から更新
+const BASE_M5B = {"intel-adl-12700k":[2135.682,15303.525],"intel-rpl-13700k":[2370.843,18656.63],"intel-rpl-14700k":[2417.793,20613.191],"intel-lnl-258v":[2148.852,null],"amd-zenplus-2600x":[1209.484,6971.852],"amd-zen1-1500x":[923.325,3874.26],"amd-zen4-7840hs":[2360.25,13638.166],"amd-zen3-5800u":[1971.261,10923.276],"qc-7gen3":[1054.755,3869.733],"qc-7gen4":[null,null],"qc-7gen1":[924.637,3613.542],"qc-720g":[567.715,1772.052],"qc-8elite-x-gen6":[2108.635,14259.518]};
+test('M5b 波1: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
+  const added = D.presets.filter((p) => p.addedIn === 'M5b');
+  assert.deepStrictEqual(added.map((p) => p.id).sort(), Object.keys(BASE_M5B).sort());
+  added.forEach((p) => {
+    assert.strictEqual(p.calib, false, p.id);
+    const r = E.evaluate(design.fromPreset(p), ctx);
+    const got = [r.st.ok ? +r.st.score.toFixed(3) : null, r.mt.ok ? +r.mt.score.toFixed(3) : null];
+    assert.deepStrictEqual(got, BASE_M5B[p.id], p.id);
+  });
+});
+
+test('M5b 波1: 追加分を足しても校正(σ・γ・uarch ごとの u・uIsa)は既存 65 件だけの場合と完全に一致する', () => {
+  const S = require('../js/sim/perf.js');
+  const only = D.presets.filter((p) => !p.addedIn);
+  assert.strictEqual(only.length, 65);
+  const cal0 = S.calibrate(only, ctx.gb7ByName, ctx.uarch, 'rep', null);
+  const cal = S.calibrateMt(only, ctx.gb7ByName, ctx.uarch, cal0);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));
+});
+
+test('M5b 波1: 部品ライブラリの既存 173 件は追加前と同じ(追加分の部品が増えるだけ)', () => {
+  const before = BL.build(D.presets.filter((p) => !p.addedIn), areas, D.nodes);
+  assert.strictEqual(before.length, 173);
+  const byId = new Map(parts.map((p) => [p.id, p]));
+  before.forEach((p) => assert.deepStrictEqual(byId.get(p.id), p, p.id));
+  assert.ok(parts.length > 173);
 });
 
 test('指摘1: 混合設計で L3 を 0 → 1 → 4 → 30 MB と増やすと ST/MT は単調に増える(L3 なしは L3 の遅延を使わず DRAM へ)', () => {
