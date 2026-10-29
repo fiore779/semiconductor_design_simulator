@@ -266,3 +266,37 @@ test('ダイアログ: isOpen が開閉に追従し、書き出しはボタン�
   ui.dialogs.close();
   assert.strictEqual(ui.dialogs.isOpen(), false);
 });
+
+// ---- プリセット一覧(グループ化) ----
+test('プリセット一覧: 87 行・24 見出し・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  const ui = ctx.SDS.ui; const c = ctx.SDS.model.evaluate.makeContext();
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  let focused = null;
+  FakeNode.prototype.focus = function () { focused = this; };
+  const got = [];
+  try {
+    ui.dialogs.openPresets(c, { onReproduce(p) { got.push(p.id); }, onImprove() {} });
+    const rows = () => findAll(body, (n) => n.tag === 'button' && n.attrs.role === 'option');
+    const heads = () => findAll(body, (n) => n.tag === 'button' && n.className === 'group-head');
+    assert.strictEqual(c.presets.length, 87);
+    assert.strictEqual(rows().length, 87);
+    assert.strictEqual(heads().length, 24);
+    assert.ok(heads().every((n) => n.attrs['aria-expanded'] === 'false'));
+    const key = heads()[0].dataset.key;
+    heads()[0].listeners.click();
+    assert.strictEqual(heads()[0].attrs['aria-expanded'], 'true');
+    assert.ok(heads().slice(1).every((n) => n.attrs['aria-expanded'] === 'false'));
+    assert.ok(focused && focused.dataset.key === key, '作り直した後も同じ見出しにフォーカスが戻る');
+    rows().forEach((r) => { const t = r.textContent; assert.ok(!/n=null|undefined|NaN/.test(t), t); });
+    // 行クリック後は選んだ行にフォーカス
+    const r1 = rows()[3]; const id = r1.dataset.id;
+    r1.listeners.click();
+    assert.ok(focused && focused.dataset.id === id);
+    rows().forEach((r) => r.listeners.dblclick());
+    assert.strictEqual(got.length, 87);
+    assert.strictEqual(new Set(got).size, 87);
+    assert.strictEqual([...got].sort().join(','), Array.from(c.presets, (p) => p.id).sort().join(','));
+  } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
+});

@@ -135,3 +135,52 @@ test('再現度: 電力の行(モデル推定 vs ピーク)。±15% で ✓/✗�
   assert.strictEqual(bad.verdict, 'na'); assert.ok(/基本電力が未取得/.test(bad.note));
   assert.strictEqual(last(undefined).verdict, 'na');
 });
+
+test('groupByFamily: 並び(メーカー→年の降順→名前)・空リスト・family 未定義は「その他」・全件が1回ずつ入る', () => {
+  assert.deepStrictEqual(PL.groupByFamily([]), []);
+  const L = [
+    { id: 'a', vendor: 'B', family: 'F1', year: 2020, name: 'z' },
+    { id: 'b', vendor: 'A', family: 'F2', year: 2021, name: 'y' },
+    { id: 'c', vendor: 'A', family: 'F3', year: 2023, name: 'x' },
+    { id: 'd', vendor: 'A', family: 'F2', year: 2021, name: 'a' },
+    { id: 'e', vendor: 'A', year: 2010, name: 'q' },
+  ];
+  const g = PL.groupByFamily(L);
+  assert.deepStrictEqual(g.map((x) => `${x.vendor}/${x.family}`), ['A/F3', 'A/F2', 'A/その他', 'B/F1']);
+  assert.deepStrictEqual(g[1].items.map((p) => p.id), ['d', 'b']);
+  assert.strictEqual(g[2].items[0].id, 'e');
+  const all = PL.groupByFamily(D.presets);
+  assert.strictEqual(all.reduce((s, x) => s + x.items.length, 0), D.presets.length);
+  assert.ok(all.length > 1 && all.length < D.presets.length);
+});
+
+test('絞り込み: 命令セット・充実度。server ラベル', () => {
+  const all = D.presets;
+  const arm = PL.filterPresets(all, { isa: ['arm'] }, gb7ByName);
+  assert.ok(arm.length > 0 && arm.every((p) => p.isa === 'arm'));
+  const x86 = PL.filterPresets(all, { isa: ['x86'] }, gb7ByName);
+  assert.strictEqual(arm.length + x86.length, all.filter((p) => p.isa === 'arm' || p.isa === 'x86').length);
+  assert.strictEqual(PL.filterPresets(all, { isa: [] }, gb7ByName).length, all.length);
+  const full = PL.filterPresets(all, { levels: ['full'] }, gb7ByName);
+  assert.ok(full.length > 0 && full.every((p) => PL.completeness(p, gb7ByName).level === 'full'));
+  const armFull = PL.filterPresets(all, { isa: ['arm'], levels: ['full'] }, gb7ByName);
+  assert.ok(armFull.every((p) => p.isa === 'arm' && PL.completeness(p, gb7ByName).level === 'full') && armFull.length <= Math.min(arm.length, full.length));
+  assert.strictEqual(PL.kindLabel('server'), 'サーバー');
+});
+
+test('gb7Basis: n が null のものは件数を出さない(0 や推測で埋めない)', () => {
+  assert.strictEqual(PL.gb7Basis(null), null);
+  assert.deepStrictEqual(PL.gb7Basis({ kind: '中央値', n: 1 }), { label: '中央値 n=1', n: 1, low: true });
+  assert.strictEqual(PL.gb7Basis({ kind: '中央値', n: 7 }).low, false);
+  const unk = PL.gb7Basis({ kind: '中央値', n: null });
+  assert.strictEqual(unk.n, null); assert.ok(!/n=/.test(unk.label)); assert.strictEqual(unk.low, null);
+  assert.strictEqual(PL.gb7Basis({ kind: '直近25件の中央値', n: null }).label, '直近25件の中央値');
+  assert.strictEqual(PL.gb7Basis({ kind: '個別投稿の中央値', n: null }).label, '個別投稿の中央値');
+  assert.strictEqual(PL.gb7Basis({ kind: '個別投稿 n=5以上', n: null }).low, true);
+  assert.strictEqual(PL.lowReason({ kind: '中央値', n: 2 }), '件数が少ない(n≤2)');
+  assert.strictEqual(PL.lowReason({ kind: '個別投稿の中央値', n: null }), '個別投稿の中央値');
+  assert.strictEqual(PL.lowReason({ kind: '中央値', n: 9 }), null);
+  assert.strictEqual(PL.gb7Basis({ kind: 'チャート', n: null }).label, 'チャート');
+  assert.ok(!PL.gb7Basis({ kind: '直近25件の中央値', n: null }).label.includes('n='));
+  Object.values(gb7ByName).forEach((r) => { const b = PL.gb7Basis(r); assert.ok(b.label); if (r.n == null) assert.strictEqual(b.n, null); });
+});

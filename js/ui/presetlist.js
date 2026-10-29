@@ -3,7 +3,7 @@
   'use strict';
 
   const SOURCE_LABEL = { meas: '実測', pub: '公表', sec: '二次' };
-  const KIND_LABEL = { pc: 'PC', 'mobile-pc': 'ノートPC', mobile: 'モバイル', embedded: '組込み' };
+  const KIND_LABEL = { pc: 'PC', 'mobile-pc': 'ノートPC', mobile: 'モバイル', embedded: '組込み', server: 'サーバー' };
   // 区分バッジの文字。未取得(null)は「未取得」と書く。'sec' は二次・推定をまとめたもの。
   function sourceLabel(s) { return SOURCE_LABEL[s] || '未取得'; }
   function kindLabel(k) { return KIND_LABEL[k] || k; }
@@ -43,6 +43,7 @@
       if (!has(f.vendors, p.vendor) || !has(f.kinds, p.kind)) return false;
       if (f.yearMin != null && p.year < f.yearMin) return false;
       if (f.yearMax != null && p.year > f.yearMax) return false;
+      if (f.isa && f.isa.length && !f.isa.includes(p.isa)) return false;
       if (f.levels && f.levels.length && !f.levels.includes(completeness(p, gb7ByName).level)) return false;
       if (q) {
         const hay = [p.name, p.family, p.vendor, p.id, p.isa, ...(p.cfg && p.cfg.cores ? p.cfg.cores.map((c) => c.uarch) : [])].join(' ').toLowerCase();
@@ -65,7 +66,49 @@
     });
   }
 
-  const api = { sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets };
+  // GB7 の行の区分の表示用。{ label, n, low }。n が null のときは件数を出さない(0 や推測で埋めない)。
+  // low: 信頼度が低い(中央値 n が 1〜2、または個別投稿)なら true。n 不明の中央値は判断できないので null。
+  function gb7Basis(gb) {
+    if (!gb) return null;
+    const k = gb.kind || '';
+    const n = typeof gb.n === 'number' && gb.n >= 0 ? gb.n : null;
+    if (k === '中央値') {
+      if (n == null) return { label: '中央値(n 不明)', n: null, low: null };
+      return { label: `中央値 n=${n}`, n, low: n <= 2 };
+    }
+    if (k === '直近25件の中央値') return { label: '直近25件の中央値', n: null, low: false };
+    if (k === '個別投稿の中央値') return { label: '個別投稿の中央値', n: null, low: true };
+    if (k.indexOf('個別投稿') === 0) return { label: k, n: null, low: true };
+    if (k === 'チャート') return { label: 'チャート', n: null, low: false };
+    return { label: k || '区分不明', n: null, low: null };
+  }
+
+  // 「⚠ 信頼度低」の理由(title 用)。low でなければ null。
+  function lowReason(gb) {
+    const b = gb7Basis(gb);
+    if (!b || !b.low) return null;
+    return gb.kind === '中央値' ? '件数が少ない(n≤2)' : '個別投稿の中央値';
+  }
+
+  // ファミリー単位のグループ化。[ { vendor, family, items } ]。並び: メーカー → グループの最新年の降順 → ファミリー名。
+  // 各グループ内は名前順。family が未定義・空なら 'その他'。
+  function groupByFamily(list) {
+    const map = new Map();
+    (list || []).forEach((p) => {
+      const vendor = p.vendor || 'その他';
+      const family = p.family || 'その他';
+      const key = vendor + '\u0000' + family;
+      if (!map.has(key)) map.set(key, { vendor, family, items: [] });
+      map.get(key).items.push(p);
+    });
+    const yearOf = (g) => g.items.reduce((m, p) => (typeof p.year === 'number' && p.year > m ? p.year : m), -Infinity);
+    const groups = Array.from(map.values());
+    groups.forEach((g) => g.items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja')));
+    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || a.family.localeCompare(b.family, 'ja'));
+    return groups;
+  }
+
+  const api = { gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.presetlist = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

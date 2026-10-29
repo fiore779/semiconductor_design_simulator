@@ -114,6 +114,11 @@ li.w-error { color: var(--ng); } li.w-warn { color: var(--warn); }
 .preset-row { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; width: 100%; text-align: left; padding: 4px 8px; margin: 2px 0; cursor: pointer; display: block; }
 .preset-row.sel { border: 2px solid var(--accent); font-weight: normal; }
 .preset-row .badge { margin-right: 6px; }
+.preset-items { list-style: none; padding: 0; margin: 0 0 0 12px; }
+.preset-items.flat { margin-left: 0; }
+.preset-items[hidden] { display: none; }
+.group-head { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; width: 100%; text-align: left; padding: 4px 8px; margin: 4px 0 2px; cursor: pointer; display: block; }
+.group-head:focus-visible, .preset-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .detail-col .actions { position: sticky; bottom: 0; background: var(--panel); padding: 8px 0; display: flex; gap: 8px; }
 
 @media (max-width: 1000px) {
