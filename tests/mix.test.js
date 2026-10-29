@@ -266,10 +266,10 @@ test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(
   assert.ok(D.presets.filter((p) => !p.addedIn).length === 65 && D.presets.every((p) => !!BASE[p.id] || p.addedIn === 'M5b'));
 });
 
-// M5b 波1 の追加分(13 件)の ST/MT を固定(追加時の初回値。公開値との差は設計書 §5.3.0 に記録)。null は計算不能
+// M5b 波1(13 件)+波2(9 件)の追加分の ST/MT を固定(追加時の初回値。公開値との差は設計書 §5.3.0 に記録)。null は計算不能
 // 5800U は 2026-10-29 に最大ブースト 4.4GHz(公表。AMD 製品仕様)を入れたため、初回値 [834.035, 5912.618](boost 未取得でベース 1.9GHz 計算)から更新。さらに L3 16MB([二次]。設計書 §2.7.3、Notebookcheck)を入れて [1684.475, 11941.535](boost 4.4GHz・L3 未取得)から更新
-const BASE_M5B = {"intel-adl-12700k":[2135.682,15303.525],"intel-rpl-13700k":[2370.843,18656.63],"intel-rpl-14700k":[2417.793,20613.191],"intel-lnl-258v":[2148.852,null],"amd-zenplus-2600x":[1209.484,6971.852],"amd-zen1-1500x":[923.325,3874.26],"amd-zen4-7840hs":[2360.25,13638.166],"amd-zen3-5800u":[1971.261,10923.276],"qc-7gen3":[1054.755,3869.733],"qc-7gen4":[null,null],"qc-7gen1":[924.637,3613.542],"qc-720g":[567.715,1772.052],"qc-8elite-x-gen6":[2108.635,14259.518]};
-test('M5b 波1: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
+const BASE_M5B = {"intel-adl-12700k":[2135.682,15303.525],"intel-rpl-13700k":[2370.843,18656.63],"intel-rpl-14700k":[2417.793,20613.191],"intel-lnl-258v":[2148.852,null],"amd-zenplus-2600x":[1209.484,6971.852],"amd-zen1-1500x":[923.325,3874.26],"amd-zen4-7840hs":[2360.25,13638.166],"amd-zen3-5800u":[1971.261,10923.276],"qc-7gen3":[1054.755,3869.733],"qc-7gen4":[null,null],"qc-7gen1":[924.637,3613.542],"qc-720g":[567.715,1772.052],"qc-8elite-x-gen6":[2108.635,14259.518],"intel-adl-12600k":[2124.887,13056.858],"intel-rpl-13600k":[2233.681,15768.951],"intel-ptl-x9-386h":[2730.829,21016.418],"intel-arl-275hx":[2375.13,null],"amd-zen1-1200":[861.292,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[923.325,3413.02],"qc-6gen1":[733.317,3007.725],"qc-4gen2":[733.317,2118.264]};
+test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
   const added = D.presets.filter((p) => p.addedIn === 'M5b');
   assert.deepStrictEqual(added.map((p) => p.id).sort(), Object.keys(BASE_M5B).sort());
   added.forEach((p) => {

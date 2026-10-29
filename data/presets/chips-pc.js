@@ -221,4 +221,65 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 1.9, boostGHz: 4.4 }], l3MB: 16, memory: null },
     calib: false, notes: '電力 10〜25W は [二次]。最大ブースト 4.4GHz は [公表](出典: AMD Ryzen 7 5800U 製品仕様。ユーザーがページで確認、取得日 2026-10-29。単コア最大値で全コア値ではない)。MT は全コアに最大ブースト 4.4GHz を使うため過大(全コア実クロックは電力制限で大幅に低い)。L3 16MB [二次](設計書 §2.7.3、Notebookcheck、取得日 2026-10-29)。nodeId tsmc-n7 の根拠: TSMC 7nm FinFET [二次](Notebookcheck の仕様表、取得日 2026-10-29)。設計書 §2.2・§2.7.3 に記載',
   });
+
+  // ---- M5b 波2 追加分 9 件(addedIn:'M5b'。calib は false。設計書 §13 M5b-8 で「直接」確認できた値だけを入れ、検索要約のみの値は null) ----
+  // Intel
+  P.push({
+    id: 'intel-adl-12600k', name: 'Core i5-12600K', vendor: 'Intel', family: 'Alder Lake', isa: 'x86', kind: 'pc', year: 2021, addedIn: 'M5b',
+    gb7: 'Alder Lake: Core i5-12600K(3.7GHz, 10c)',
+    dies: [die('Alder Lake-S 8P+8E', 208.0, 'sec', 'intel-7', '12900K と同じ 8P+8E ダイ(C0)を流用(2P+4E 無効)。流用の根拠は TechPowerUp の引用(検索要約。原ページで未確認)。Kurnal の実測 208.0mm²(Wikipedia は 215.25mm²)')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(150, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Golden Cove', count: 6, smt: 2, baseGHz: 3.7, boostGHz: 4.9 }, { type: 'E', uarch: 'Gracemont', count: 4, smt: 1, baseGHz: 2.8, boostGHz: 3.6 }], l3MB: 20, memory: null },
+    calib: false, notes: '6P+4E は Wikipedia と Notebookcheck(10 コア 16 スレッド)',
+  });
+  P.push({
+    id: 'intel-rpl-13600k', name: 'Core i5-13600K', vendor: 'Intel', family: 'Raptor Lake', isa: 'x86', kind: 'pc', year: 2022, addedIn: 'M5b',
+    gb7: 'Raptor Lake: Core i5-13600K(3.5GHz, 14c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13900K と同じ 8P+16E ダイを流用(2P+8E 無効)。13700K・14700K に合わせた 252.3mm²。Notebookcheck と PC Games Hardware は 257mm²(23.8×10.8mm)で 4.7mm² 違う')],
+    power: { base: pw(125, 'sec', 'PBP'), peak: pw(181, 'sec', 'MTP'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 6, smt: 2, baseGHz: 3.5, boostGHz: 5.1 }, { type: 'E', uarch: 'Gracemont', count: 8, smt: 1, baseGHz: 2.6, boostGHz: 3.9 }], l3MB: 24, memory: null },
+    calib: false, notes: '6P+8E(14 コア 20 スレッド)は Notebookcheck で直接確認。ダイ流用は hwcooling(検索要約)',
+  });
+  P.push({
+    id: 'intel-ptl-x9-386h', name: 'Core Ultra 9 386H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
+    gb7: 'Panther Lake: Core Ultra 9 386H(2.1GHz, 16c)',
+    dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
+    power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 2.1, boostGHz: 4.9 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.6, boostGHz: 3.7 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.6, boostGHz: 3.5 }], l3MB: 18, memory: null },
+    calib: false, notes: 'クロック・L3・電力は Wikipedia「Panther Lake (microprocessor)」の表(取得日 2026-10-29)。GPU は 4 Xe(388H は 12 Xe の Arc B390)',
+  });
+  P.push({
+    id: 'intel-arl-275hx', name: 'Core Ultra 9 275HX', vendor: 'Intel', family: 'Arrow Lake-HX', isa: 'x86', kind: 'mobile-pc', year: 2025, addedIn: 'M5b',
+    gb7: 'Arrow Lake-HX: Core Ultra 9 275HX(2.7GHz, 24c)',
+    dies: [die('Compute タイル', 117.4, 'sec', 'tsmc-n3b', '285K と同じ 8P+16E のコンピュートタイルを流用(デスクトップと同じチップレットは TechPowerUp・Notebookcheck の検索要約。原ページで未確認)。他のタイルは HX 用の寸法が未取得')],
+    power: { base: null, peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 2.7, boostGHz: 5.4 }, { type: 'E', uarch: 'Skymont', count: 16, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
+    calib: false, notes: 'E コアのクロックは未取得(Wikipedia の行の 3 つ目の値 1.9 が未ラベルで不明)。L3 36MB は 285HX の行からの推測で 275HX の行としては未取得のため null。電力は未取得。P の 2.7/5.4GHz は Wikipedia「Arrow Lake」',
+  });
+
+  // AMD
+  P.push({
+    id: 'amd-zen1-1200', name: 'Ryzen 3 1200', vendor: 'AMD', family: 'Zen 1 (Summit Ridge)', isa: 'x86', kind: 'pc', year: 2017, addedIn: 'M5b',
+    gb7: 'Zen 1: Ryzen 3 1200(3.1GHz, 4c)',
+    dies: [die('Zeppelin', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)。1500X と同じダイ')],
+    power: { base: null, peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.1, boostGHz: 3.4 }], l3MB: null, memory: null },
+    calib: false, notes: '4 コア(GB7 の行名 4c)・クロック 3.1/3.4GHz は Wikipedia(直接。3.4 は Wikipedia の表の値)。SMT なし(smt:1)・L3 8MB・TDP 65W は AMD サポートページの検索要約のみ(原ページで未確認。Notebookcheck も SMT なしと記載)なので、SMT なしは要原ページ確認、L3 と電力は null のまま',
+  });
+  P.push({
+    id: 'amd-raven-2400g', name: 'Ryzen 5 2400G', vendor: 'AMD', family: 'Zen 1 (Raven Ridge)', isa: 'x86', kind: 'pc', year: 2018, addedIn: 'M5b',
+    gb7: 'Raven Ridge: Ryzen 5 2400G(3.6GHz, 4c)',
+    dies: [die('Raven Ridge', 209.78, 'pub', 'gf-14', 'WikiChip、Tom\'s Hardware ほか(設計書 §2.2)')],
+    power: { base: null, peak: null, range: { minW: 46, maxW: 65 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 2, baseGHz: 3.6, boostGHz: 3.9 }], l3MB: 4, memory: null },
+    calib: false, notes: '4C/8T・3.6/3.9GHz・L3 4MB は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は AMD ページの検索要約(原ページで未確認)のため base には入れていない。コアは Zen 1(Raven Ridge は Zen 1 コア)',
+  });
+  P.push({
+    id: 'amd-raven-2200g', name: 'Ryzen 3 2200G', vendor: 'AMD', family: 'Zen 1 (Raven Ridge)', isa: 'x86', kind: 'pc', year: 2018, addedIn: 'M5b',
+    gb7: 'Raven Ridge: Ryzen 3 2200G(3.5GHz, 4c)',
+    dies: [die('Raven Ridge', 209.78, 'pub', 'gf-14', '2400G と同じダイ。WikiChip、Tom\'s Hardware ほか(設計書 §2.2)')],
+    power: { base: null, peak: null, range: { minW: 46, maxW: 65 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
+    calib: false, notes: '4C/4T・3.5/3.7GHz は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は検索要約(2200G は未確認)のため base には入れていない。L3 は行別の根拠が無いため null(2400G は 4MB)',
+  });
 })();

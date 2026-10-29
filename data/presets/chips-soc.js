@@ -142,6 +142,10 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   q('qc-720g', '720G', 2020, 'Snapdragon 720G(SM7125)', 55.5, 'samsung-8', [c('P', 'Cortex-A76', 2, 2.3), c('E', 'Cortex-A55', 6, 1.8)], m5b('プロセスは Samsung 8nm(§2.7.4 は 8LPP)'));
   q('qc-8elite-x-gen6', '8 Elite Extreme Gen 6', 2026, 'Snapdragon 8 Elite Extreme Gen 6(SM8975、モバイル)', 133.2, 'tsmc-n2', [c('P', 'Oryon Prime', 2, 5.0), c('E', 'Oryon Performance', 6, 4.0)], m5b('クロック(最大 5.0 / 4.0GHz)とプロセスは報道(二次)。ダイ面積 133.2 は N2P の実測。nodeId は N2P 専用の記録が無いため tsmc-n2。キャッシュ容量は未確定'));
 
+  // ---- M5b 波2 追加分(Qualcomm 2 件。nodeId は Samsung 4LPX の記録が無いため 4LPE の samsung-4 で代用。設計書 §13 M5b-8 R1) ----
+  q('qc-6gen1', '6 Gen 1', 2022, 'Snapdragon 6 Gen 1(SM6450)', 53.9, 'samsung-4', [c('P', 'Cortex-A78', 4, 2.2), c('E', 'Cortex-A55', 4, 1.8)], m5b('プロセスは Samsung 4nm(4LPX。Wikipedia の SoC 一覧)。4LPX を 4LPE の記録 samsung-4 で代用(旧記載の 8nm は誤り)。クロックは Wikipedia 値。発売年は設計書 §2.7.4 の 2022(2023 とする根拠は未取得)'));
+  q('qc-4gen2', '4 Gen 2', 2023, 'Snapdragon 4 Gen 2(SM4450)', 40.3, 'samsung-4', [c('P', 'Cortex-A78', 2, 2.2), c('E', 'Cortex-A55', 6, 1.95)], m5b('プロセスは Samsung 4nm(4LPX。Wikipedia の SoC 一覧)。4LPX を 4LPE の記録 samsung-4 で代用。クロックは Wikipedia の 2.2/1.95GHz。Qualcomm 製品概要 Rev C は 2.3/2.0GHz(検索要約。2.4GHz 版もある)で食い違う。GB7 の行(SM4450)の実機クロックは未確認'));
+
   // 校正の代表 SKU(§5.3.1)。同じ P コアを使う他のチップは検証用(代表の補正係数で予測して誤差を見る)。
   // 条件: GB7 が機種中央値で n が比較的多い([中央値])、コア構成が単純、電力モードの影響が小さい。
   const reps = {
