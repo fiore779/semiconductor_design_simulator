@@ -124,10 +124,17 @@
     const median = (a) => { const s = a.slice().sort((x, y) => x - y); const n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
     const geo = (a) => Math.exp(a.reduce((s, x) => s + Math.log(x), 0) / a.length);
     const u = {}; Object.keys(samples).forEach((k) => { u[k] = median(samples[k]); });
+    // 校正済み定数(uarch.js の uCal。M6 第 4 段): 代表の u が無い uarch にだけ当てる。代表の u がある uarch は代表を優先。
+    // mode 'all' でも同様(その uarch に標本があれば標本の中央値が優先)。定数は代表ではないので usedPresets・n・uIsa には入れない
+    const uFixed = {};
+    Object.keys(uarchDb).forEach((name) => {
+      const c = uarchDb[name].uCal;
+      if (c && typeof c.u === 'number' && u[name] == null) { u[name] = c.u; uFixed[name] = { u: c.u, n: c.n, date: c.date }; }
+    });
     const uIsa = {}; Object.keys(isaSamples).forEach((k) => { uIsa[k] = geo(isaSamples[k]); });
     // isValidation: 'rep' は代表で合わせて別 SKU で検証できる。'all' は全 SKU に合わせるので、その誤差は検証にならない(再現モード用)
     const n = {}; Object.keys(samples).forEach((k) => { n[k] = samples[k].length; });
-    return { u, uIsa, params, mode, isValidation: mode === 'rep', n, usedPresets };
+    return { u, uIsa, params, mode, isValidation: mode === 'rep', n, usedPresets, uFixed };
   }
 
   // 校正前の仮の既定値(根拠なし)。mtScore の結果に uncalibrated として出す。メモリ帯域の頭打ち(§5.2.2 の BW_mem/B_score)は未実装。

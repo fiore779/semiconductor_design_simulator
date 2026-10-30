@@ -232,7 +232,8 @@ test('楽観: ST の確度が落ちるのはクロックを上げたときだけ
 });
 
 test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さい L3 は下限)', () => {
-  const exp = { 0: [1696.09, 14773.73], 1: [1882.25, 14773.73], 4: [2079.46, 14773.73], 30: [2227.63, 17654.36] };
+  // 2026-10-30(M6 第 4 段): Golden Cove の専用 u(112.3)導入で更新。旧値 0:[1696.09,14773.73] 1:[1882.25,14773.73] 4:[2079.46,14773.73] 30:[2227.63,17654.36]
+  const exp = { 0: [1774.11, 15252.54], 1: [1968.84, 15252.54], 4: [2175.13, 15252.54], 30: [2330.12, 18196.59] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -242,4 +243,13 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   assert.strictEqual(rs[0].st.noL3, true); assert.strictEqual(rs[0].mt.noL3, true);
   assert.strictEqual(rs[1].mt.l3Floor, true); assert.strictEqual(rs[4].mt.l3Floor, true); assert.strictEqual(rs[30].mt.l3Floor, false);
   assert.strictEqual(rs[30].mt.noL3, false);
+});
+
+test('inUCalSet: Golden/Raptor 11 件の ST だけ true(代表ではない学習内)。ISA 代用・代表・MT は false', () => {
+  const ids = D.presets.filter((p) => ev(p.id).st.inUCalSet).map((p) => p.id).sort();
+  assert.strictEqual(ids.length, 11);
+  assert.ok(ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
+  assert.strictEqual(ev('intel-arl-265k').st.inUCalSet, false);
+  assert.strictEqual(ev('intel-adl-12900k').mt.inUCalSet, false);
+  assert.strictEqual(ev('intel-adl-12900k').st.isCalibSample, false);
 });

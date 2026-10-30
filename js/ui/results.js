@@ -32,6 +32,7 @@
       if (r.ok) body.push(h('div', { class: 'row' }, h('span', { text: '公開値との差 ' }), h('b', { text: diff(r.errPct) })));
     } else body.push(h('div', { class: 'row' }, '公開値: ', h('b', { text: '未取得' }), '(比較しません)'));
     if (r.ok && r.isCalibSample) body.push(note('校正に使った代表 SKU です。公開値と近いのは当然で、検証ではありません。', 'warn-note'));
+    else if (r.ok && r.inUCalSet) body.push(note('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数です。公開値との差は学習内の誤差で、検証ではありません。', 'warn-note'));
     else if (r.ok && r.calibNotUsedForMt) body.push(note('ST の補正には使ったが、MT の σ の合わせには使っていない SKU です。', 'warn-note'));
     (extra || []).forEach((e) => body.push(e));
     return h('section', { class: `card conf-card-${r.ok ? r.confidence : 'none'}`, 'aria-label': title },

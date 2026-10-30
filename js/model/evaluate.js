@@ -32,6 +32,9 @@
     base.isCalibSample = kind === 'st' ? !!preset.calib : !!(ctx.cal && ctx.cal.mt && (ctx.cal.mt.usedPresets || []).includes(preset.id));
     // 代表 SKU だが MT の σ の合わせには使っていない
     base.calibNotUsedForMt = kind === 'mt' && !!preset.calib && !base.isCalibSample;
+    // 校正済み定数 uCal(複数 SKU の中央値。§5.3.0 M6 第 4 段)で ST を出す uarch の SKU は、その中央値の学習に使われている(代表ではないが、誤差は検証にならない)
+    base.inUCalSet = false;
+    if (kind === 'st' && ctx.cal && ctx.cal.uFixed) { const tc = S.perf.topCore(preset.cfg.cores || []); base.inUCalSet = !!(tc && ctx.cal.uFixed[tc.uarch] && !preset.calib && gb7 && typeof gb7.single === 'number'); }
     const pubVal = gb7 ? (kind === 'st' ? gb7.single : gb7.multi) : null;
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
     const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch, stOpts) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);
@@ -279,7 +282,7 @@
       if (mt.ok && mt.detail) mt.detail.forEach((dt) => { const g = preset.cfg.cores.find((x) => x.type === dt.type); dt.label = (g && (g.label || g.type)) || dt.type; });
     }
     [st, mt].forEach((r) => {
-      r.isMix = true; r.edited = false; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false;
+      r.isMix = true; r.edited = false; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false;
       if (r.ok) { r.confidence = 'low'; r.reason = '混合設計の予測値のため公開値はありません'; }
     });
     // 面積: 使用率と、ブロックごとの面積の区分(出所 class = table/estimated/unknown と、移植の換算の有無 portConverted の 2 軸)
@@ -347,7 +350,7 @@
     if (edited) {
       result.edited = true;
       // 編集後の設計に公開値は無い: 公開値との差は出さず、元のチップの値は basePublished に残す
-      [st, mt].forEach((r) => { r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
+      [st, mt].forEach((r) => { r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
       area.recomputedReason = 'コア別面積は未取得のため編集では再計算しない';
       result.power.recomputed = false;
       result.warnings.push({ level: 'warn', text: '編集後の数値は予測です。公開値ではありません' });

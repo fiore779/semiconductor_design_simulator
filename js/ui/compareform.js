@@ -40,6 +40,7 @@
       if (!ev.isMix && !ev.edited && isNum(r.published)) c.pub = { published: r.published, errPct: isNum(r.errPct) ? r.errPct : null, kindText: r.publishedKind || '' };
       else c.pubNote = ev.isMix ? '混合設計の予測のため、公開値との差は出しません' : ev.edited ? '編集後の予測のため、公開値との差は出しません' : '公開値が未取得のため比較しません';
       if (c.pub && r.isCalibSample) c.sub.push('校正に使った代表 SKU のため、公開値に近くて当然(検証ではない)');
+      if (c.pub && r.inUCalSet) c.sub.push('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
       if (c.pub && r.calibNotUsedForMt) c.sub.push('ST の補正には使ったが、MT の σ の合わせには使っていない');
       if (key === 'mt') c.sub.push('MT の確度は常に低');
       return c;

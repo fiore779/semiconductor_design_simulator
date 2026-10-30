@@ -52,7 +52,7 @@
       origin, mm2: num(a.mm2) ? a.mm2 : null, noL2Mm2: origin === 'table' && num(a.mm2) ? a.mm2 : null,
       withL2Mm2: num(a.withL2Mm2) ? a.withL2Mm2 : null, l2KB: num(a.l2KB) ? a.l2KB : null, s: typeof a.s === 'string' ? a.s : null,
     };
-    const uRecord = copy(rec);
+    const uRecord = copy(rec); delete uRecord.uCal; // uCal は除く: validateDef が uRecord の値に数・文字列・真偽値・null しか許さず、オブジェクトの uCal を残すと Golden Cove 複製が保存・読込で不正になる(補正 u は基準 uarch から借りる)
     const smt = basePart.smt === 2 ? 2 : 1;
     const def = {
       id: typeof o.id === 'string' && o.id ? o.id : 'cd1',

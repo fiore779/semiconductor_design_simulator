@@ -219,3 +219,40 @@ test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(
   // embedded・server は 1.0
   assert.strictEqual(F.mtClockFactor({ kind: 'embedded' }), 1); assert.strictEqual(F.mtClockFactor({ kind: 'server' }), 1); assert.strictEqual(F.mtClockFactor(null), 1);
 });
+
+// ---- M6 第 4 段: Golden Cove / Raptor Cove の校正済み定数 uCal(設計書 §5.3.0) ----
+test('uCal: Golden/Raptor 11 件の SKU 別 u の中央値から再計算した値と一致する(丸め 0.05 以内)・n=11', () => {
+  const ids = [];
+  const us = [];
+  D.presets.forEach((p) => {
+    const c = F.topCore(p.cfg.cores || []);
+    if (!c || !/^(Golden|Raptor) Cove$/.test(c.uarch) || !p.gb7 || !gb7ByName[p.gb7]) return;
+    const r = F.stScore(p, { u: { [c.uarch]: 1 } }, D.uarch);
+    ids.push(p.id); us.push(gb7ByName[p.gb7].single / r.score);
+  });
+  const s = us.slice().sort((a, b) => a - b); const n = s.length;
+  const median = n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  assert.strictEqual(n, 11, ids.join(',') + ' — GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す');
+  ['Golden Cove', 'Raptor Cove'].forEach((k) => {
+    assert.strictEqual(D.uarch[k].uCal.n, 11);
+    assert.ok(Math.abs(D.uarch[k].uCal.u - median) < 0.05, `${k}: ${D.uarch[k].uCal.u} vs ${median}。uCal の u・n・date・basis を見直し、設計書 §5.3.0 の表を作り直す`);
+    assert.ok(D.uarch[k].uCal.date && D.uarch[k].uCal.basis);
+  });
+});
+
+test('uCal: rep 校正で Golden/Raptor に u が入り、calib・n・usedPresets・uIsa には影響しない', () => {
+  const c = cal();
+  assert.strictEqual(c.u['Golden Cove'], 112.3); assert.strictEqual(c.u['Raptor Cove'], 112.3);
+  assert.deepStrictEqual(Object.keys(c.uFixed).sort(), ['Golden Cove', 'Raptor Cove']);
+  assert.strictEqual(c.n['Golden Cove'], undefined); assert.strictEqual(c.usedPresets['Golden Cove'], undefined);
+  assert.ok(Math.abs(c.uIsa.x86 - 107.36091595190973) < 1e-9); // ISA 平均は代表だけで決まるので不変
+  assert.ok(!D.presets.some((p) => p.calib && /^(Golden|Raptor) Cove$/.test((F.topCore(p.cfg.cores) || {}).uarch)));
+  const r = F.stScore(preset('intel-adl-12900k'), c, D.uarch);
+  assert.strictEqual(r.corrSource, 'uarch'); assert.strictEqual(r.corr, 112.3);
+});
+
+test('uCal: 代表の u がある uarch には定数より代表を優先する', () => {
+  const db = clone(D.uarch); db['Zen 1'].uCal = { u: 1, n: 1, date: 'x', basis: 'x' };
+  const c = F.calibrate(D.presets, gb7ByName, db, 'rep', null);
+  assert.ok(c.u['Zen 1'] > 50); assert.strictEqual(c.uFixed['Zen 1'], undefined);
+});
