@@ -146,6 +146,11 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   q('qc-6gen1', '6 Gen 1', 2022, 'Snapdragon 6 Gen 1(SM6450)', 53.9, 'samsung-4', [c('P', 'Cortex-A78', 4, 2.2), c('E', 'Cortex-A55', 4, 1.8)], m5b('プロセスは Samsung 4nm(4LPX。Wikipedia の SoC 一覧)。4LPX を 4LPE の記録 samsung-4 で代用(旧記載の 8nm は誤り)。クロックは Wikipedia 値。発売年は設計書 §2.7.4 の 2022(2023 とする根拠は未取得)'));
   q('qc-4gen2', '4 Gen 2', 2023, 'Snapdragon 4 Gen 2(SM4450)', 40.3, 'samsung-4', [c('P', 'Cortex-A78', 2, 2.2), c('E', 'Cortex-A55', 6, 1.95)], m5b('プロセスは Samsung 4nm(4LPX。Wikipedia の SoC 一覧)。4LPX を 4LPE の記録 samsung-4 で代用。クロックは Wikipedia の 2.2/1.95GHz。Qualcomm 製品概要 Rev C は 2.3/2.0GHz(検索要約。2.4GHz 版もある)で食い違う。GB7 の行(SM4450)の実機クロックは未確認'));
 
+  // ---- M6 第 5 段 E5 追加分(Windows ノート向け。ユーザー承認 2026-10-31。設計書 §5.3.2 E5) ----
+  q('qc-8cx-gen3', '8cx Gen 3', 2021, 'Snapdragon 8cx Gen 3(SC8280XP、Windows ノート)', null, null, [c('P', 'Cortex-X1', 4, 3.0), c('M', 'Cortex-A78', 4, 2.4)],
+    { kind: 'mobile-pc', dies: [die('Snapdragon 8cx Gen 3', 171.17, 'meas', 'samsung-5', 'Kurnal Insights の計測値 1 サイトのみ(12.35×13.86mm。SA8295P と同一ダイとして掲載)。他に独立した出典なし。設計書 §2.x の既存方針〔Kurnal の計測=meas〕に従い区分は meas')],
+      ...m5b('面積は Kurnal Insights 1 サイトのみ(区分は既存方針どおり meas)。構成・クロック・プロセス(Samsung 5LPE)は Wikipedia と Notebookcheck の 2 サイトで一致。GB7 は機種が混在する 17 件の中央値。L3 は資料間で食い違う(Notebookcheck 8MB / Wikipedia 4MB+SLC 3MB)ため未設定') });
+
   // 校正の代表 SKU(§5.3.1)。同じ P コアを使う他のチップは検証用(代表の補正係数で予測して誤差を見る)。
   // 条件: GB7 が機種中央値で n が比較的多い([中央値])、コア構成が単純、電力モードの影響が小さい。
   const reps = {

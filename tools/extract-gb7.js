@@ -51,6 +51,8 @@ for (let i = start; i < end; i++) {
     continue;
   }
   const nCell = rest.find((c) => /^\d+$/.test(c));
+  // 備考欄が「N件」で始まる行(追加取得分の「13件」「17件(機種が混在)」など)は N を件数として読む。「直近25件」「約12件」のように先頭が数字でないものは対象外
+  const nNote = rest.map((c) => c.match(/^(\d+)件/)).find(Boolean);
   rows.push({
     group: heading,
     name,
@@ -60,7 +62,7 @@ for (let i = start; i < end; i++) {
     ...(multi.hi ? { multiHi: multi.hi } : {}),
     ...(single.note || multi.note ? { note: [single.note && 'シングル: ' + single.note, multi.note && 'マルチ: ' + multi.note].filter(Boolean).join(' / ') } : {}),
     kind: (kindCell.match(/\[(.+?)\]/) || [, ''])[1] || tableKind || 'チャート',
-    n: nCell ? Number(nCell) : null,
+    n: nCell ? Number(nCell) : (nNote ? Number(nNote[1]) : null),
   });
 }
 

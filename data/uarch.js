@@ -73,7 +73,7 @@ window.SDS_DATA.uarch = (function () {
     'C2-Ultra': u({ note: '数値は未取得', vecBits: 128 }),
     'C2-Pro': u({ note: '数値は未取得', vecBits: 128 }),
     'Oryon Prime': u({ decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 3072, l2Lat: 18, vecBits: 128, note: 'Oryon(Phoenix, X Elite)の値。8 Elite 系 Gen2/Gen3 は非公開のため Phoenix に準じる仮置き(信頼度低)。L2 は 12MB/4コアクラスタ共有 → コアあたり 3072KB に換算。L2 遅延は 17〜20 の代表値' }),
-    'Oryon Performance': u({ decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 3072, l2Lat: 18, vecBits: 128, note: 'Oryon Prime と同じ値を仮置き(信頼度低)' }),
+    'Oryon Performance': u({ decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 2048, l2Lat: 18, vecBits: 128, note: 'Oryon Prime と同じ値を仮置き(信頼度低)。ただし l2KB は 2026-10-31 に 3072→2048(Performance 6 コアで 12MB 共有÷6。8 Elite は Notebookcheck・Android Authority・Wikipedia・m1k.tech の 4 サイト、第 3 世代 X2 Elite とも一致。設計書 §5.3.2 E5)。幅 8・ROB 680 は第 2 世代で未確認のまま(第 3 世代 Performance は 4-wide の測定あり)なので変えていない' }),
     'Neoverse V2': u({ decodeWidth: 6, width: 8, rob: 320, vecBits: 128 }),
     'Neoverse V3AE': u({ vecBits: 128, note: '数値は未取得' }),
   };

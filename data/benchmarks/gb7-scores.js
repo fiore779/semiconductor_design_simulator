@@ -795,7 +795,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 1885,
   "multi": 9500,
   "kind": "直近25件の中央値",
-  "n": null
+  "n": 2
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -811,7 +811,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 777,
   "multi": 3656,
   "kind": "直近25件の中央値",
-  "n": null
+  "n": 12
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -907,7 +907,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 878,
   "multi": 3013,
   "kind": "直近25件の中央値",
-  "n": null
+  "n": 13
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -919,11 +919,19 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
+  "name": "Snapdragon 8cx Gen 3(SC8280XP、Windows ノート)",
+  "single": 1315,
+  "multi": 6722,
+  "kind": "直近25件の中央値",
+  "n": 17
+ },
+ {
+  "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Thor(Jetson AGX Thor、14コア)",
   "single": 1297,
   "multi": 10845,
   "kind": "個別投稿の中央値",
-  "n": null
+  "n": 8
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -931,7 +939,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 790,
   "multi": 6884,
   "kind": "個別投稿の中央値",
-  "n": null
+  "n": 2
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -939,7 +947,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 795,
   "multi": 4879,
   "kind": "個別投稿の中央値",
-  "n": null
+  "n": 3
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -947,7 +955,7 @@ window.SDS_DATA.gb7Scores = [
   "single": 351,
   "multi": 983,
   "kind": "個別投稿の中央値",
-  "n": null
+  "n": 1
  },
  {
   "group": "追加取得分(M6 第5段。2026-10-31: Zen 3 デスクトップ)",

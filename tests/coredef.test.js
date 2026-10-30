@@ -394,19 +394,27 @@ test('RD10: 歩留まりは指定ダイ面積で一つに決まる(コア定義�
 });
 
 // ---- M5 レビュー対応 ----
-test('面積の L2 比の分母は表の l2KB(Oryon Performance: 表 2048 / uarch.js 3072)', () => {
-  const id = 'core:qc-8elite:E'; const d = cl(id);
-  assert.strictEqual(CD.areaL2KB(d), 2048); assert.strictEqual(CD.perfL2KB(d), 3072);
+// 2026-10-31(設計書 §5.3.2 E5): Oryon Performance の uarch.js l2KB を 3072→2048 に直したため、表と一致し食い違いは無くなった。
+// 食い違いが残る例として Oryon Prime(表 6144 / uarch.js 3072)で同じ検査を行う
+test('面積の L2 比の分母は表の l2KB(Oryon Prime: 表 6144 / uarch.js 3072。Performance は 2048 で一致)', () => {
+  const pf = cl('core:qc-8elite:E');
+  assert.strictEqual(CD.areaL2KB(pf), 2048); assert.strictEqual(CD.perfL2KB(pf), 2048);
+  assert.strictEqual(CD.l2Mismatch(pf), null);
+  assert.ok(!CD.evaluate(pf, { cal: ctx.cal, uarch: D.uarch, presets: ctx.presets, nodes: D.nodes }).warnings.some((x) => x.code === 'l2-mismatch'));
+  near(CD.ratios(ap(pf, { l2KB: 2048 })).l2, 1);
+  const id = 'core:qc-8elite:P'; const d = cl(id);
+  assert.strictEqual(CD.areaL2KB(d), 6144); assert.strictEqual(CD.perfL2KB(d), 3072);
   const ar = (x) => CD.deriveArea(x, { toNodeId: P(id).nodeId, nodes: D.nodes });
-  const a0 = ar(d); near(a0.placeMm2, 1.9); assert.deepStrictEqual(a0.rangeMm2, [1.9, 1.9]);
-  const a = ar(ap(d, { l2KB: 2048 }));
-  assert.ok(a.rangeMm2[0] >= 1.9 - 1e-9 && a.rangeMm2[1] >= 1.9 - 1e-9, JSON.stringify(a.rangeMm2));
+  const a0 = ar(d); near(a0.placeMm2, 5.22); assert.deepStrictEqual(a0.rangeMm2, [5.22, 5.22]);
+  // 表の値(6144)を入れても面積の範囲は 5.22 以上(表基準なので縮まない)
+  const a6 = ar(ap(d, { l2KB: 6144 }));
+  assert.ok(a6.rangeMm2[0] >= 5.22 - 1e-9 && a6.rangeMm2[1] >= 5.22 - 1e-9, JSON.stringify(a6.rangeMm2));
   // 性能は uarch.js(3072)基準: 2048 は 0.667 倍
   near(CD.ratios(ap(d, { l2KB: 2048 })).l2, 2048 / 3072);
-  // 面積は表(2048)基準: 4096 で 2 倍
-  near(ar(ap(d, { l2KB: 4096 })).l2Mm2[1], (1.9 - 0.91) * 2);
+  // 面積は表(6144)基準: 12288 で L2 部分が 2 倍
+  near(ar(ap(d, { l2KB: 12288 })).l2Mm2[1], (5.22 - 2.14) * 2);
   const ev = CD.evaluate(d, { cal: ctx.cal, uarch: D.uarch, presets: ctx.presets, nodes: D.nodes });
-  assert.ok(ev.warnings.some((x) => x.code === 'l2-mismatch' && x.text.includes('表 2048 KB / uarch.js 3072 KB') && x.text.includes('§3.7.11')));
+  assert.ok(ev.warnings.some((x) => x.code === 'l2-mismatch' && x.text.includes('表 6144 KB / uarch.js 3072 KB') && x.text.includes('§3.7.11')));
 });
 
 test('SMT なし基準で SMT 2 は上振れ側(理由つき)', () => {
