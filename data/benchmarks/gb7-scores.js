@@ -950,6 +950,22 @@ window.SDS_DATA.gb7Scores = [
   "n": null
  },
  {
+  "group": "追加取得分(M6 第5段。2026-10-31: Zen 3 デスクトップ)",
+  "name": "Zen 3: Ryzen 5 5600X(3.7GHz, 6c)",
+  "single": 2046,
+  "multi": 9505,
+  "kind": "直近25件の中央値",
+  "n": 24
+ },
+ {
+  "group": "追加取得分(M6 第5段。2026-10-31: Zen 3 デスクトップ)",
+  "name": "Zen 3: Ryzen 9 5950X(3.4GHz, 16c)",
+  "single": 2040,
+  "multi": 14956,
+  "kind": "直近25件の中央値",
+  "n": 23
+ },
+ {
   "group": "Intel 第2〜第11世代",
   "generation": "第2世代 Sandy Bridge",
   "name": "i7-2600K(4c)",

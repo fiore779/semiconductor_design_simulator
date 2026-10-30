@@ -104,6 +104,23 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: null, boostGHz: 4.7 }], l3MB: 32, memory: 'DDR4-3200, 2ch' },
     calib: false, notes: '面積・TDP は設計書で未取得',
   });
+  // ---- M6 第5段(2026-10-31): Zen 3 デスクトップ 2 件(C5 の上限 2 件。mobile 補正と分離する標本用。addedIn:'M5b'、calib は false) ----
+  P.push({
+    id: 'amd-zen3-5600x', name: 'Ryzen 5 5600X', vendor: 'AMD', family: 'Zen 3 (Vermeer)', isa: 'x86', kind: 'pc', year: 2020, addedIn: 'M5b',
+    gb7: 'Zen 3: Ryzen 5 5600X(3.7GHz, 6c)',
+    dies: [die('Zen 3 CCD', 80.7, 'sec', 'tsmc-n7', '[二次] SemiAccurate「A long look at AMD の Zen 3 core and chips」(2020-11-07、直接取得 2026-10-31)「Each CCD is 80.7mm^2」。8 コア CCD の 2 コアを無効化した 6 コア品(Wikipedia「Zen 3」の 5600X 分解写真は CCD 1 個)')],
+    power: { base: pw(65, 'sec', 'TDP'), peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 6, smt: 2, baseGHz: 3.7, boostGHz: 4.6 }], l3MB: 32, memory: 'DDR4-3200, 2ch' },
+    calib: false, notes: '6C/12T・3.7/4.6GHz・L3 32MB・TDP 65W・CCD 1 個は [二次] Wikipedia「List of AMD Ryzen processors」(テンプレート Template:AMD Ryzen 5000 Series を原ページ直接取得、2026-10-31)。CCD 面積 80.7mm² は [二次] SemiAccurate(直接)。IOD(12nm、約 125mm²=205.7−80.7 の差し引き)は dies に入れず(Zen 4/5 のデスクトップと同じ扱い)。GB7 は検索の直近 25 件の中央値(チャート不可=Cloudflare。設計書 §2.4 の M6 第5段)。mobile(5800U)と分離して Zen 3 の ST 補正を見るための標本',
+  });
+  P.push({
+    id: 'amd-zen3-5950x', name: 'Ryzen 9 5950X', vendor: 'AMD', family: 'Zen 3 (Vermeer)', isa: 'x86', kind: 'pc', year: 2020, addedIn: 'M5b',
+    gb7: 'Zen 3: Ryzen 9 5950X(3.4GHz, 16c)',
+    dies: [die('Zen 3 CCD ×2', 161.4, 'sec', 'tsmc-n7', '80.7 mm² × 2。[二次] SemiAccurate(直接取得 2026-10-31)「Each CCD is 80.7mm^2 ... 286.4mm^2 for the 2 CCD SKUs」')],
+    power: { base: pw(105, 'sec', 'TDP'), peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 16, smt: 2, baseGHz: 3.4, boostGHz: 4.9 }], l3MB: 64, l3Note: '総容量=32MB × 2 CCD。[二次] Wikipedia「List of AMD Ryzen processors」の L3 cache (total) 列(テンプレート直接取得、2026-10-31)', memory: 'DDR4-3200, 2ch' },
+    calib: false, notes: '16C/32T・3.4/4.9GHz・L3 64MB・TDP 105W・CCD 2 個(2×8)は [二次] Wikipedia(テンプレート直接取得、2026-10-31)。CCD 面積は SemiAccurate(二次)。IOD は dies に入れず。GB7 は検索の直近 25 件の中央値(設計書 §2.4 の M6 第5段)。2 CCD 構成の標本(5800X・5600X は 1 CCD)',
+  });
   P.push({
     id: 'amd-zen4-7700', name: 'Ryzen 7 7700', vendor: 'AMD', family: 'Zen 4 (Raphael)', isa: 'x86', kind: 'pc', year: 2023,
     gb7: 'Zen 4: Ryzen 7 7700(3.8GHz, 8c)',
