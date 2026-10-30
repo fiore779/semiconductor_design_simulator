@@ -184,8 +184,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Lunar Lake: Core Ultra 7 258V(2.2GHz, 8c)',
     dies: [die('Compute タイル', 139.6, 'sec', 'tsmc-n3b', '268V と同じ3タイルを流用'), die('Platform Controller タイル', 45.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用'), die('Base タイル', 219.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用')],
     power: { base: null, peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
-    calib: false, notes: '電力・base クロック・LP-E のクロックは未取得。L3 は値を入れていない: 設計書 §2.7.2 にはメモリサイドキャッシュ 8MB の記載があり(12MB は要確認)、268V は l3MB:12 + memorySideCacheMB:8 としているが、258V は L3 とメモリサイドの区別が確定できないため null のまま',
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 12, l3Note: '[二次] Wikipedia「Lunar Lake」(原ページ直接取得、2026-10-30)の Smart cache 12MB(P コアのみアクセス。288V〜256V の結合セル)', memory: null },
+    calib: false, notes: '電力・base クロック・LP-E のクロックは未取得。L3 12MB は Wikipedia「Lunar Lake」の Smart cache 列(288V〜256V の結合セル、脚注「Only the P-cores can access this L3 cache」。直接取得、2026-10-30)。メモリサイドキャッシュ 8MB は 258V については未確認のため入れない(268V は設計書 §2.7.2 で memorySideCacheMB:8)',
   });
 
   // AMD
@@ -194,16 +194,16 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen+: Ryzen 5 2600X(3.6GHz, 6c)',
     dies: [die('Pinnacle Ridge', 211.7, 'meas', 'gf-12', 'R5 2600 の写真計測(2700X と同じダイ)')],
     power: { base: pw(95, 'sec', 'TDP'), peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen+', count: 6, smt: 2, baseGHz: 3.6, boostGHz: 4.2 }], l3MB: null, memory: null },
-    calib: false, notes: 'L3 容量は §2.7.3 に 2700X のみのため未取得(null)',
+    cfg: { cores: [{ type: 'P', uarch: 'Zen+', count: 6, smt: 2, baseGHz: 3.6, boostGHz: 4.2 }], l3MB: 16, l3Note: '総容量(2 CCX × 8MB)。[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列', memory: null },
+    calib: false, notes: 'L3 16MB は[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(2700X〜2600X の結合セル=16 MB、CCX 構成 2×3)。2026-10-30 に追加(それまで null=参照値 l3Ref で計算)',
   });
   P.push({
     id: 'amd-zen1-1500x', name: 'Ryzen 5 1500X', vendor: 'AMD', family: 'Zen 1 (Summit Ridge)', isa: 'x86', kind: 'pc', year: 2017, addedIn: 'M5b',
     gb7: 'Zen 1: Ryzen 5 1500X(3.5GHz, 4c)',
     dies: [die('Zeppelin', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)')],
     power: { base: pw(65, 'sec', 'TDP'), peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 2, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
-    calib: false, notes: 'L3 は 8MB/CCX だが CCX 数が未取得のため null',
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 2, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: 16, l3Note: '総容量(2 CCX × 8MB)。[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列', memory: null },
+    calib: false, notes: 'L3 16MB は[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(1800X〜1500X の結合セル=16 MB、CCX 構成 2×2)。2026-10-30 に追加(それまで null)',
   });
   P.push({
     id: 'amd-zen4-7840hs', name: 'Ryzen 7 7840HS', vendor: 'AMD', family: 'Zen 4 (Phoenix)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
@@ -253,8 +253,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Arrow Lake-HX: Core Ultra 9 275HX(2.7GHz, 24c)',
     dies: [die('Compute タイル', 117.4, 'sec', 'tsmc-n3b', '285K と同じ 8P+16E のコンピュートタイルを流用(デスクトップと同じチップレットは TechPowerUp・Notebookcheck の検索要約。原ページで未確認)。他のタイルは HX 用の寸法が未取得')],
     power: { base: null, peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 2.7, boostGHz: 5.4 }, { type: 'E', uarch: 'Skymont', count: 16, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
-    calib: false, notes: 'E コアのクロックは未取得(Wikipedia の行の 3 つ目の値 1.9 が未ラベルで不明)。L3 36MB は 285HX の行からの推測で 275HX の行としては未取得のため null。電力は未取得。P の 2.7/5.4GHz は Wikipedia「Arrow Lake」',
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 2.7, boostGHz: 5.4 }, { type: 'E', uarch: 'Skymont', count: 16, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 36, l3Note: '[二次] Wikipedia「Arrow Lake」(原ページ直接取得、2026-10-30)の 285HX/275HX の結合セル(L3 36MB)', memory: null },
+    calib: false, notes: 'E コアのクロックは未取得(Wikipedia の行の 3 つ目の値 1.9 が未ラベルで不明)。L3 36MB は Wikipedia「Arrow Lake」の表で 285HX と 275HX が結合セルを共有(直接取得、2026-10-30)。電力は未取得。P の 2.7/5.4GHz は Wikipedia「Arrow Lake」',
   });
 
   // AMD
@@ -263,8 +263,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 1: Ryzen 3 1200(3.1GHz, 4c)',
     dies: [die('Zeppelin', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)。1500X と同じダイ')],
     power: { base: null, peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.1, boostGHz: 3.4 }], l3MB: null, memory: null },
-    calib: false, notes: '4 コア(GB7 の行名 4c)・クロック 3.1/3.4GHz は Wikipedia(直接。3.4 は Wikipedia の表の値)。SMT なし(smt:1)・L3 8MB・TDP 65W は AMD サポートページの検索要約のみ(原ページで未確認。Notebookcheck も SMT なしと記載)なので、SMT なしは要原ページ確認、L3 と電力は null のまま',
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.1, boostGHz: 3.4 }], l3MB: 8, l3Note: '総容量。[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列', memory: null },
+    calib: false, notes: '4 コア(GB7 の行名 4c)・クロック 3.1/3.4GHz は Wikipedia(直接。3.4 は Wikipedia の表の値)。SMT なし(smt:1)・L3 8MB・TDP 65W は AMD サポートページの検索要約のみ(原ページで未確認。Notebookcheck も SMT なしと記載)なので、SMT なしは要原ページ確認、L3 8MB は[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(1400〜1200 の結合セル=8 MB。検索要約の 8MB とも一致)。2026-10-30 に追加。電力は null のまま',
   });
   P.push({
     id: 'amd-raven-2400g', name: 'Ryzen 5 2400G', vendor: 'AMD', family: 'Zen 1 (Raven Ridge)', isa: 'x86', kind: 'pc', year: 2018, addedIn: 'M5b',
@@ -279,8 +279,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Raven Ridge: Ryzen 3 2200G(3.5GHz, 4c)',
     dies: [die('Raven Ridge', 209.78, 'pub', 'gf-14', '2400G と同じダイ。WikiChip、Tom\'s Hardware ほか(設計書 §2.2)')],
     power: { base: null, peak: null, range: { minW: 46, maxW: 65 } },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: null, memory: null },
-    calib: false, notes: '4C/4T・3.5/3.7GHz は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は検索要約(2200G は未確認)のため base には入れていない。L3 は行別の根拠が無いため null(2400G は 4MB)',
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 1, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: 4, l3Note: '総容量。[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(2400G〜2200GE の結合セル)', memory: null },
+    calib: false, notes: '4C/4T・3.5/3.7GHz は Wikipedia(直接)、cTDP 46〜65W も Wikipedia(range のみ。区分 sec)。65W は検索要約(2200G は未確認)のため base には入れていない。L3 4MB は[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(2400G の 4 MB が 2400GE・2200G・2200GE に及ぶ結合セル)。2026-10-30 に追加',
   });
   // ---- M5b 波2 の条件待ち 2 件(2026-10-30。addedIn:'M5b'。calib は false) ----
   P.push({
@@ -288,8 +288,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'EPYC 7401(Zen 1 サーバー、24c)',
     dies: [die('Zeppelin 1', 213, 'pub', 'gf-14', '212.97。AMD 由来(PC Games Hardware)。EPYC 7001 は Zeppelin 4 個すべてが CPU を含む(1 ダイ 6 コア有効)'), die('Zeppelin 2', 213, 'pub', 'gf-14'), die('Zeppelin 3', 213, 'pub', 'gf-14'), die('Zeppelin 4', 213, 'pub', 'gf-14')],
     power: { base: null, peak: null, range: { minW: 155, maxW: 170 } },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 24, smt: 2, baseGHz: 2.0, boostGHz: 3.0 }], l3MB: null, memory: null },
-    calib: false, notes: '24C/48T・2.0/3.0GHz は設計書 §2.7。電力は 155W と 170W の 2 値があり違いは不明なため range のみ(base には入れない)。GB7 は投稿 1 件のみ(区分は直近 25 件の中央値だが実質 n=1)、参考扱い。MT は全コアに boost 3.0GHz を使うため、サーバーの実際の全コアクロック(これより低い)に対して過大になる可能性がある。kind:server の MT クロック係数は 1.0',
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 24, smt: 2, baseGHz: 2.0, boostGHz: 3.0 }], l3MB: 64, l3Note: '総容量=8MB/CCX × 8 CCX(24 コア=8 CCX×3)。Wikipedia「Epyc」(原ページ直接取得、2026-10-30)の表の L3 per CCX=8MB と CCX 数 8(8×3)から算出。同表の Total 76MB は L2(24×512KB=12MB)込み', memory: null },
+    calib: false, notes: '24C/48T・2.0/3.0GHz は設計書 §2.7。電力は 155W と 170W の 2 値があり違いは不明なため range のみ(base には入れない)。GB7 は投稿 1 件のみ(区分は直近 25 件の中央値だが実質 n=1)、参考扱い。L3 64MB は [二次] Wikipedia「Epyc」の L3 per CCX 8MB × 8 CCX(表に 64MB の記載は無く算出値。Total 76MB−L2 12MB とも一致)。2026-10-30 に追加。MT は全コアに boost 3.0GHz を使うため、サーバーの実際の全コアクロック(これより低い)に対して過大になる可能性がある。kind:server の MT クロック係数は 1.0',
   });
   P.push({
     id: 'amd-zen3p-7735hs', name: 'Ryzen 7 7735HS', vendor: 'AMD', family: 'Zen 3+ (Rembrandt-R)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
@@ -330,8 +330,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Lunar Lake: Core Ultra 7 256V(2.2GHz, 8c)',
     dies: [die('Compute タイル', 139.6, 'sec', 'tsmc-n3b', '268V と同じ3タイルを流用'), die('Platform Controller タイル', 45.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用'), die('Base タイル', 219.7, 'sec', 'tsmc-n6', '268V と同じタイルを流用')],
     power: { base: null, peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: null, memory: null },
-    calib: false, notes: '258V と同じ構成・最大 4.8GHz(設計書 §2.7.2)。電力・base クロック・LP-E のクロックは未取得。L3 は 258V と同じ理由(メモリサイドキャッシュとの区別が確定できない)で null。メモリは 16GB(オンパッケージ LPDDR5X-8533)',
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 4.8 }, { type: 'LP-E', uarch: 'Skymont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 12, l3Note: '258V と同じ(Wikipedia「Lunar Lake」の結合セル、[二次])', memory: null },
+    calib: false, notes: '258V と同じ構成・最大 4.8GHz(設計書 §2.7.2)。電力・base クロック・LP-E のクロックは未取得。L3 12MB は 258V と同じ(Wikipedia「Lunar Lake」の結合セル、2026-10-30)。メモリサイドキャッシュは未確認のため入れない。メモリは 16GB(オンパッケージ LPDDR5X-8533)',
   });
   P.push({
     id: 'intel-ptl-x9-378h', name: 'Core Ultra X9 378H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
