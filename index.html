@@ -34,7 +34,8 @@
       <li>Ctrl+Z: 元に戻す / Ctrl+Y(または Ctrl+Shift+Z): やり直す</li>
       <li>Ctrl+S: 保存 / Ctrl+O: 開く</li>
       <li>Esc: ダイアログを閉じる(ダイビューでは選択解除)</li>
-      <li>ダイビュー: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
+      <li>ダイビュー 2D 編集: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
+      <li>ダイビュー 3D 表示: ドラッグ=回転 / ホイール=拡大縮小 / 右・中・Shift+ドラッグ=移動 / 矢印=回転 / +/-=ズーム / 0=リセット / Esc=選択解除 / Shift+クリック=選択の追加/解除(編集は 2D 編集で)</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
     <p class="small">できること: 混合(C)=部品ライブラリから実在チップの部品を選んで空のダイに置く(性能は確度:低、電力・温度は出さない)。 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
@@ -113,6 +114,10 @@
 <script src="js/render/palette.js"></script>
 <script src="js/render/colormap.js"></script>
 <script src="js/render/dieview.js"></script>
+<script src="js/render/mat4.js"></script>
+<script src="js/render/pkggeom.js"></script>
+<script src="js/render/pkgview3d.js"></script>
+<script src="js/render/viewhost.js"></script>
 <!-- UI -->
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/mixform.js"></script>

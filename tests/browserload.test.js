@@ -49,6 +49,13 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
   ['design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
+  // 3D パッケージビュー(依存順: mat4 → pkggeom → pkgview3d → viewhost。pkgview3d は dieview の後)
+  ['mat4', 'pkggeom', 'pkgview3d'].forEach((m) => assert.ok(ctx.SDS.render[m], `SDS.render.${m} が登録されていない`));
+  assert.ok(typeof ctx.SDS.render.createPackageView3D === 'function' && typeof ctx.SDS.render.createViewHost === 'function');
+  const order = (f) => srcs.indexOf(f);
+  const R = (n) => order(`js/render/${n}.js`);
+  assert.ok(R('mat4') >= 0 && R('mat4') < R('pkggeom') && R('pkggeom') < R('pkgview3d') && R('dieview') < R('pkgview3d') && R('colormap') < R('pkgview3d') && R('pkgview3d') < R('viewhost'));
+  assert.ok(R('viewhost') < order('js/main.js'));
 });
 
 test('main.js が使う SDS のモジュール(ui / sim / model / render / history)は、すべて読み込み後に登録されている', () => {

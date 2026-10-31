@@ -55,6 +55,9 @@ canvas:focus-visible { outline-offset: -3px; } /* ダイビューのフォーカ
 #viewbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; }
 #viewwrap { position: relative; flex: 1; min-height: 240px; margin: 0 8px 8px; border: 1px solid var(--border); background: var(--panel); overflow: hidden; }
 #dieview { position: absolute; inset: 0; }
+.vh-bar { background: var(--panel); border-bottom: 1px solid var(--border); }
+.vh-ihs { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; }
+.vh-bar .btn { padding: 2px 8px; }
 .viewmsg { position: absolute; inset: 0; padding: 16px; overflow: auto; background: var(--panel); z-index: 2; }
 .viewmsg[hidden] { display: none; }
 #center > .err { margin: 4px 10px; }

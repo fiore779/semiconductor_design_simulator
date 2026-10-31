@@ -48,9 +48,11 @@
   }
   let dragRun = false; // ダイビューのドラッグ中(coalesce:true の連続)かどうか
   function initView() {
-    if (!(S.render && typeof S.render.createDieView === 'function')) { view = null; return; }
+    // 3D 表示 / 2D 編集の切替つきのビュー(viewhost.js)。無ければ従来の 2D ダイビューだけ使う
+    const create = S.render && (typeof S.render.createViewHost === 'function' ? S.render.createViewHost : S.render.createDieView);
+    if (typeof create !== 'function') { view = null; return; }
     try {
-      const v = S.render.createDieView($('dieview'), {
+      const v = create($('dieview'), {
         onSelect(ids) { selection = ids || []; renderProps(); },
         // ドラッグ中は coalesce:true が続き、離したときに coalesce:false が 1 回来る。この最後の 1 回も同じ 1 手にまとめる
         onChange(next, info) {
