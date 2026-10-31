@@ -199,7 +199,13 @@
     if (ev.mt.ok) {
       mtExtra.push(h('p', { class: 'low-banner' }, '▼ マルチ性能の確度は「低」です。この数値を精密な予測として扱わないでください。'));
       mtExtra.push(note('並列効率 σ は AMD の代表 3 件だけで合わせ、SMT 効果 γ は未校正、メモリ帯域の頭打ちは未実装です。'));
-      if (ev.mt.clockFactor && ev.mt.clockFactor !== 1) mtExtra.push(note(`MT の全コア負荷時クロックは ${(ev.mt.detail||[]).some((d) => d.clockFactor !== 1 && d.clockSource === 'boost') ? 'boost' : '最大クロック'} × ${ev.mt.clockFactor}(モバイル向けの持続クロック係数。[推定・校正値]で、実際の熱・電力制限を表すものではありません)。`, 'warn-note'));
+      if (ev.mt.clockFactor && ev.mt.clockFactor !== 1) {
+        const ci = ev.mt.clockInfo || {};
+        const base = (ev.mt.detail || []).some((d) => d.clockFactor !== 1 && d.clockSource === 'boost') ? 'boost' : '最大クロック';
+        const how = ci.band ? `公表電力 ${ci.powerW}W(${ci.source === 'range.maxW' ? '設定範囲の上限' : '基準電力'})→ 帯「${ci.band}」の係数。編集後も元のチップの公表電力で決まります`
+          : ci.fallback ? '公表電力が未取得のため、従来の一律 0.81 を使用' : 'モバイル(スマホ SoC)は一律の係数';
+        mtExtra.push(note(`MT の全コア負荷時クロックは ${base} × ${ev.mt.clockFactor}(${how}。[推定・校正値]で、実際の熱・電力制限を表すものではありません。係数はチャート値からの逆算で、チャートの偏りを含みます〔推測・未検証〕)。`, 'warn-note'));
+      }
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
     }

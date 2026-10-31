@@ -142,8 +142,32 @@
 
   // MT の持続クロック係数(§5.3.0)。全コア負荷時のクロック = 係数 × boost。[推定・校正値]で、実際の熱・電力制限を表すものではない。
   // preset.kind で引く(pc=1.0 に丸める。kind なし・混合設計・embedded・server は 1.0)。fByType を明示指定したときは掛けない。
+  // 'mobile'(スマホ SoC)は一律 0.81。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)。
   const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.81, 'mobile-pc': 0.81 };
-  const mtClockFactor = (preset) => (preset && MT_CLOCK_FACTOR[preset.kind]) || 1.0;
+  // mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
+  // 値は、MT を計算できる x86 mobile-pc 9 件で「予測がチャート値と一致する係数」の帯内の中央値を小数 2 桁に丸めたもの(チャートの偏りを含む逆算。推測・未検証)
+  const MT_CLOCK_BANDS = [{ maxW: 60, factor: 0.65, label: '60W 以下' }, { maxW: Infinity, factor: 0.76, label: '60W 超' }];
+  // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
+  function mtPublishedW(preset) {
+    const pw = (preset && preset.power) || {};
+    const mx = pw.range && pw.range.maxW;
+    if (typeof mx === 'number' && mx > 0) return { w: mx, source: 'range.maxW' };
+    const b = pw.base && pw.base.w;
+    if (typeof b === 'number' && b > 0) return { w: b, source: 'base' };
+    return null;
+  }
+  // MT の係数と、その決め方。{ factor, band(帯の label。帯を使わないとき null), powerW, source, fallback(mobile-pc で電力が無く 0.81 を使った) }
+  function mtClockInfo(preset) {
+    const kind = preset && preset.kind;
+    const flat = MT_CLOCK_FACTOR[kind];
+    if (!flat) return { factor: 1.0, band: null, powerW: null, source: null, fallback: false };
+    if (kind !== 'mobile-pc') return { factor: flat, band: null, powerW: null, source: null, fallback: false };
+    const p = mtPublishedW(preset);
+    if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
+    const b = MT_CLOCK_BANDS.find((x) => p.w <= x.maxW);
+    return { factor: b.factor, band: b.label, powerW: p.w, source: p.source, fallback: false };
+  }
+  const mtClockFactor = (preset) => mtClockInfo(preset).factor;
 
   // MT スコア(§5.2.2)。fByType: { 種別 → 全コア負荷時の持続クロック GHz }(電力モデルが決める)。
   function mtScore(preset, cal, uarchDb, fByType, mtParams) {
@@ -153,10 +177,10 @@
     const totalThreads = cores.reduce((t, c) => t + c.count * (c.smt || 1), 0);
     if (!(totalThreads > 0)) return { ok: false, reason: 'コアなし' };
     let sum = 0; let threads = 0; const detail = [];
-    const kf = mtClockFactor(preset);
+    const clockInfo = mtClockInfo(preset); const kf = clockInfo.factor;
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
-      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.81)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
+      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.81、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
       const f0 = given || c.boostGHz || c.maxGHz || c.baseGHz;
       const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
@@ -179,11 +203,11 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
+    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。
-  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)に preset.kind の係数(pc=1.0、mobile=0.81。base には掛けない)を掛けたもの。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
+  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)に mtClockInfo の係数(pc=1.0、mobile=0.81、mobile-pc は TDP 帯別。base には掛けない)を掛けたもの。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
   // 対数誤差の二乗和を最小化する σ を、区間 [0, 0.2] の黄金分割探索で求める。
   function calibrateMt(presets, gb7ByName, uarchDb, cal, fByTypeOf) {
     // 代表のうち、全コアが uarch 専用の補正を持ち、仮の IPC を含まないものだけを使う(ISA 平均の代用は σ を歪める)
@@ -211,7 +235,7 @@
     return Object.assign({}, cal, { mt: { sigma, gammaSmt: gamma, fitted: ['sigma'], usedPresets: used, rmsLogError: Math.sqrt(cost(sigma)) } });
   }
 
-  const api = { DEFAULT_PARAMS, MT_DEFAULTS, MT_CLOCK_FACTOR, mtClockFactor, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
+  const api = { DEFAULT_PARAMS, MT_DEFAULTS, MT_CLOCK_FACTOR, MT_CLOCK_BANDS, mtPublishedW, mtClockInfo, mtClockFactor, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
   root.SDS = root.SDS || {}; root.SDS.sim = root.SDS.sim || {}; root.SDS.sim.perf = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
