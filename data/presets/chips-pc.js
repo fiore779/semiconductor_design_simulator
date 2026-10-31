@@ -118,7 +118,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 3: Ryzen 9 5950X(3.4GHz, 16c)',
     dies: [die('Zen 3 CCD ×2', 161.4, 'sec', 'tsmc-n7', '80.7 mm² × 2。[二次] SemiAccurate(直接取得 2026-10-31)「Each CCD is 80.7mm^2 ... 286.4mm^2 for the 2 CCD SKUs」')],
     power: { base: pw(105, 'sec', 'TDP'), peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 16, smt: 2, baseGHz: 3.4, boostGHz: 4.9 }], l3MB: 64, l3Note: '総容量=32MB × 2 CCD。[二次] Wikipedia「List of AMD Ryzen processors」の L3 cache (total) 列(テンプレート直接取得、2026-10-31)', memory: 'DDR4-3200, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 16, smt: 2, baseGHz: 3.4, boostGHz: 4.9 }], l3MB: 64, l3Ccds: 2, l3Note: '総容量=32MB × 2 CCD。[二次] Wikipedia「List of AMD Ryzen processors」の L3 cache (total) 列(テンプレート直接取得、2026-10-31)', memory: 'DDR4-3200, 2ch' },
     calib: false, notes: '16C/32T・3.4/4.9GHz・L3 64MB・TDP 105W・CCD 2 個(2×8)は [二次] Wikipedia(テンプレート直接取得、2026-10-31)。CCD 面積は SemiAccurate(二次)。IOD は dies に入れず。GB7 は検索の直近 25 件の中央値(設計書 §2.4 の M6 第5段)。2 CCD 構成の標本(5800X・5600X は 1 CCD)',
   });
   P.push({
@@ -134,7 +134,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 4: Ryzen 9 7950X(4.5GHz, 16c)',
     dies: [die('Zen 4 CCD ×2', 139.0, 'meas', 'tsmc-n5', '69.5 mm² × 2'), die('IOD', null, null, 'tsmc-n6', '面積は未取得')],
     power: { base: pw(170, 'sec', 'TDP'), peak: pw(260, 'meas', 'TweakTown'), range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 16, smt: 2, baseGHz: 4.5, boostGHz: 5.7 }], l3MB: 64, memory: 'DDR5-5200, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 16, smt: 2, baseGHz: 4.5, boostGHz: 5.7 }], l3MB: 64, l3Ccds: 2, memory: 'DDR5-5200, 2ch' },
     calib: false,
   });
   P.push({
@@ -150,7 +150,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 5: Ryzen 9 9950X(4.3GHz, 16c)',
     dies: [die('Zen 5 CCD ×2', 140.4, 'meas', 'tsmc-n4', '70.2 mm² × 2'), die('IOD', null, null, 'tsmc-n6', '面積は未取得')],
     power: { base: pw(170, 'sec', 'TDP。PPT 230W'), peak: pw(286, 'meas', 'HWBusters(Blender)。他レビューは 260W/220W で幅あり'), range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 4.3, boostGHz: 5.7 }], l3MB: 64, memory: 'DDR5, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 4.3, boostGHz: 5.7 }], l3MB: 64, l3Ccds: 2, memory: 'DDR5, 2ch' },
     calib: false,
   });
   P.push({
@@ -166,7 +166,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)',
     dies: [die('Zen 5 CCD ×2', 134.2, 'meas', 'tsmc-n4', '67.1 mm² × 2'), die('SoC/iGPU ダイ', 307.6, 'meas', 'tsmc-n4')],
     power: { base: null, peak: null, range: { minW: 45, maxW: 120 } }, // 設定範囲のみ公表(二次)。基本電力は未取得
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 3.0, boostGHz: 5.1 }], l3MB: 64, memory: 'LPDDR5X, 256bit' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 3.0, boostGHz: 5.1 }], l3MB: 64, l3Ccds: 2, memory: 'LPDDR5X, 256bit' },
     calib: false,
   });
 

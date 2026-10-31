@@ -86,7 +86,11 @@
     const threads = (opts && opts.threads) || 1;
     // l3MB が明示的に 0 なら「L3 なし」。null/undefined(未取得)は従来どおり参照値で計算する
     const noL3 = preset.cfg.l3MB === 0;
-    const l3KB = preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / threads : null;
+    // チップレット(複数 CCD)の SKU は cfg.l3Ccds(CCD 数)を持つ。ST(threads=1)は 1 CCD 分(l3MB ÷ l3Ccds)だけを L3 容量にする。
+    // 別 CCD の L3 はそのコアの L3 容量として使えない(IO ダイ経由のコア間転送のみ)ため、別 CCD 分は割引しても足さない(§5.3.3 G の3)。
+    // MT は総 L3 ÷ 総スレッド数のまま(各 CCD の L3 を自分の CCD のスレッドで使うのと同じ値)。l3Ccds が無い SKU は従来どおり全量
+    const ccds = threads === 1 && preset.cfg.l3Ccds > 1 ? preset.cfg.l3Ccds : 1;
+    const l3KB = preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / ccds / threads : null;
     const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, noL3, params: cal && cal.params });
     if (!r.ok) return { ok: false, reason: r.reason };
     let corr = cal && cal.u && cal.u[core.uarch];
@@ -96,7 +100,7 @@
     if (isClone) corrSource = 'clone';
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     return {
-      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor,
+      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
       confidence: isClone || corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };

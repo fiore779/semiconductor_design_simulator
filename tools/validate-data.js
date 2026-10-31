@@ -59,6 +59,11 @@ const gbUsers = new Map();
 (D.presets || []).forEach((p) => { if (p.gb7 !== null && p.gb7 !== undefined) gbUsers.set(p.gb7, (gbUsers.get(p.gb7) || []).concat(p.id)); });
 gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数のプリセットが使用 (${v.join(', ')})`));
 
+// cfg.l3Ccds(ST の L3 を 1 CCD 分にする。設計書 §5.3.3 G の3): 2 以上の整数で、l3MB が正の数であること
+(D.presets || []).forEach((p) => {
+  if (p.cfg && p.cfg.l3Ccds !== undefined) ok(Number.isInteger(p.cfg.l3Ccds) && p.cfg.l3Ccds >= 2 && typeof p.cfg.l3MB === 'number' && p.cfg.l3MB > 0, `presets ${p.id}: cfg.l3Ccds は 2 以上の整数で、l3MB が正の数であること`);
+});
+
 // M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();

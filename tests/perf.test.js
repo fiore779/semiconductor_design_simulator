@@ -337,3 +337,47 @@ test('TDP 帯別係数: σ の校正(代表 3 件)は不変(代表は pc で係�
   assert.ok(Math.abs(c.mt.sigma - 0.02737344460936582) < 1e-12);
   assert.deepStrictEqual(c.mt.usedPresets, ['amd-zen1-1800x', 'amd-zen4-7700', 'amd-zen5-9700x']);
 });
+
+// ---- ST の L3 は 1 CCD 分(設計書 §5.3.3 G の3。cfg.l3Ccds) ----
+const CCD_IDS = ['amd-zen3-5950x', 'amd-zen4-7950x', 'amd-zen5-9950x', 'amd-strixhalo-395'];
+test('ST の L3: l3Ccds を持つ SKU は 1 CCD 分(l3MB ÷ l3Ccds)で計算し、合計で計算した値より低い', () => {
+  const c = cal();
+  CCD_IDS.forEach((id) => {
+    const p = preset(id);
+    assert.strictEqual(p.cfg.l3Ccds, 2, id);
+    const r = F.stScore(p, c, D.uarch);
+    const q = clone(p); delete q.cfg.l3Ccds; // 合計 64MB で計算(従来)
+    const half = clone(p); delete half.cfg.l3Ccds; half.cfg.l3MB = p.cfg.l3MB / 2; // 32MB で計算
+    assert.strictEqual(r.l3Ccds, 2);
+    assert.ok(r.score < F.stScore(q, c, D.uarch).score, id);
+    assert.ok(Math.abs(r.score - F.stScore(half, c, D.uarch).score) < 1e-9, id + ': 1 CCD 分 = l3MB/2 と同じ');
+  });
+});
+test('ST の L3: 5950X は 2289.8 → 2239.6(従来比 -2.2%)に固定', () => {
+  const r = F.stScore(preset('amd-zen3-5950x'), cal(), D.uarch);
+  assert.ok(Math.abs(r.score - 2239.6) < 0.1, String(r.score));
+});
+test('MT は L3 を合計で使う: l3Ccds の有無で MT は変わらない', () => {
+  const c = cal();
+  CCD_IDS.forEach((id) => {
+    const p = preset(id); const q = clone(p); delete q.cfg.l3Ccds;
+    assert.strictEqual(F.mtScore(p, c, D.uarch, null).score, F.mtScore(q, c, D.uarch, null).score, id);
+  });
+});
+test('ST の L3: 1 CCD の SKU・Zen 1 系・Intel・l3Ccds なしは従来どおり(全量)', () => {
+  D.presets.forEach((p) => { if (!CCD_IDS.includes(p.id)) assert.ok(!(p.cfg.l3Ccds > 1), p.id); });
+  const c = cal(); const p = preset('amd-zen4-7700');
+  assert.strictEqual(F.stScore(p, c, D.uarch).l3Ccds, null);
+});
+test('ST の L3: L3 容量の編集は CCD 分に比例して効く(合計を 2 倍にすると 1 CCD 分も 2 倍)', () => {
+  const c = cal(); const p = clone(preset('amd-zen3-5950x')); const base = F.stScore(p, c, D.uarch).score;
+  p.cfg.l3MB = 128; const big = F.stScore(p, c, D.uarch).score;
+  const ref = clone(p); delete ref.cfg.l3Ccds; ref.cfg.l3MB = 64;
+  assert.ok(big >= base);
+  assert.ok(Math.abs(big - F.stScore(ref, c, D.uarch).score) < 1e-9);
+});
+test('ST の L3: L3 なし(l3MB=0)のとき l3Ccds は null', () => {
+  const p = clone(preset('amd-zen3-5950x')); p.cfg.l3MB = 0;
+  const r = F.stScore(p, cal(), D.uarch);
+  assert.strictEqual(r.noL3, true); assert.strictEqual(r.l3Ccds, null);
+});

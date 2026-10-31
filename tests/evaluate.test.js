@@ -253,3 +253,12 @@ test('inUCalSet: Golden/Raptor 11 件の ST だけ true(代表ではない学習
   assert.strictEqual(ev('intel-adl-12900k').mt.inUCalSet, false);
   assert.strictEqual(ev('intel-adl-12900k').st.isCalibSample, false);
 });
+
+test('l3Ccds: design.setL3 → evaluate の経路。編集した合計が 1 CCD 分に効き、注記用の l3Ccds は ST に出る(MT には出ない)。L3 0 では null', () => {
+  const base = E.evaluate(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5950x')), ctx);
+  assert.strictEqual(base.st.l3Ccds, 2); assert.strictEqual(base.mt.l3Ccds, null);
+  const big = E.evaluate(design.setL3(impD('amd-zen3-5950x'), 128).design, ctx);
+  assert.strictEqual(big.st.l3Ccds, 2); assert.ok(big.st.score >= base.st.score);
+  const zero = E.evaluate(design.setL3(impD('amd-zen3-5950x'), 0).design, ctx);
+  assert.strictEqual(zero.st.noL3, true); assert.strictEqual(zero.st.l3Ccds, null);
+});

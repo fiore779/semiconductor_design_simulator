@@ -44,7 +44,7 @@
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
       corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null,
       errPct: pct(r.score, pubVal),
-      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor,
+      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null,
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
       base.clockFactor = r.clockFactor == null ? 1 : r.clockFactor; base.clockInfo = r.clockInfo || null; base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
