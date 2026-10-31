@@ -421,7 +421,7 @@
   }
   function openExport() {
     if (!design || !lastEval) return;
-    S.ui.exportpanel.openExport({ design, ev: lastEval, notify, getCurrent: () => (design && lastEval ? { design, ev: lastEval } : null) });
+    S.ui.exportpanel.openExport({ design, ev: lastEval, notify, getCurrent: () => (design && lastEval ? { design, ev: lastEval } : null), captureDie: (w) => (view && view.captureCanvas ? view.captureCanvas(w) : null) });
   }
 
   // ---- ダイアログ ----

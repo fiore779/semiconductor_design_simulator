@@ -168,3 +168,62 @@ test('比較: 比較先が元・別のプリセットのとき既定パッケー
   const mk = (k) => CF.compareNotes(side(d), Object.assign(side(d), { sourceKey: k })).some((t) => t.includes('既定のパッケージ設定で評価'));
   assert.ok(mk('origin')); assert.ok(mk('preset')); assert.ok(!mk('history'));
 });
+
+// ---- PNG(ダイ図)の純ロジック ----
+test('PNG: 注記・主要値・区分が画像用テキストに入り、値が無い項目は 0 で埋めず理由を書く', () => {
+  const d = design.fromPreset(P('intel-rpl-13900k'), { mode: 'reproduce' });
+  const info = EX.pngInfo(d, evalOf(d), { date: '2026-10-31 12:00', mode: 'power' });
+  assert.strictEqual(info.title, d.name);
+  assert.ok(info.subtitle.includes('電力密度ヒートマップ') && info.subtitle.includes('2026-10-31 12:00'));
+  assert.deepStrictEqual(info.values.map((v) => v.label), ['ST', 'MT', 'ダイ面積', '電力(推定)', '温度 Tj(推定)']);
+  assert.ok(info.values[3].text.includes('確度:低') && info.values[0].text.includes('予測'));
+  assert.ok(info.note.includes('性能・面積は概算') && info.note.includes('電力・温度は推定(確度:低)') && info.note.includes('模式図'));
+  assert.ok(info.values.every((v) => !v.text.includes('NaN') && !v.text.includes('undefined')));
+  const bad = EX.pngInfo(d, null, {});
+  assert.ok(bad.values.every((v) => v.text.includes('—(')));
+  assert.ok(bad.subtitle.includes('ブロック配置'));
+});
+
+test('PNG: 出力幅は上限 2400・下限 900 に収まり devicePixelRatio で巨大にならない。高さ超過・不正値は ok:false', () => {
+  assert.strictEqual(EX.pngMetrics(8000).width, 2400);
+  assert.strictEqual(EX.pngMetrics(300).width, 900);
+  assert.strictEqual(EX.pngMetrics(1500).width, 1500);
+  [0, -1, NaN, Infinity, undefined, '5'].forEach((v) => assert.strictEqual(EX.pngMetrics(v).ok, false, String(v)));
+  const m = EX.pngMetrics(1200);
+  const L = EX.pngLayout(m, { srcW: 1200, srcH: 600, legendRows: 2, valueLines: 5, noteLines: 2 });
+  assert.ok(L.ok && L.width === 1200 && L.image.w === 1200 - 2 * m.pad && L.image.h === Math.round(L.image.w / 2));
+  assert.ok(L.title.y < L.subtitle.y && L.subtitle.y < L.image.y && L.image.y + L.image.h <= L.legend.y && L.legend.y < L.values.y && L.values.y < L.note.y && L.note.y < L.height);
+  const L0 = EX.pngLayout(m, { srcW: 1200, srcH: 600, legendRows: 0, valueLines: 5, noteLines: 1 });
+  assert.ok(L0.height < L.height);
+  // 縦長: 失敗でなく高さ 4800 に合わせて縮小(中央寄せ)。縮小後の幅が下限未満なら失敗
+  const tl = EX.pngLayout(m, { srcW: 1200, srcH: 6000, legendRows: 1, valueLines: 5, noteLines: 1 });
+  assert.ok(tl.ok && tl.height === EX.PNG.MAX_HEIGHT && tl.image.w < 1200 - 2 * m.pad && tl.image.w >= 900 - 2 * m.pad);
+  assert.strictEqual(tl.image.x, m.pad + Math.round((m.width - 2 * m.pad - tl.image.w) / 2));
+  assert.ok(tl.image.y + tl.image.h <= tl.legend.y && tl.note.y < tl.height);
+  const tall = EX.pngLayout(m, { srcW: 1200, srcH: 100000, legendRows: 0, valueLines: 5, noteLines: 1 });
+  assert.strictEqual(tall.ok, false); assert.ok(tall.reason.includes('大きすぎ'));
+  assert.strictEqual(EX.pngLayout(m, { srcW: 1200, srcH: 600, titleLines: 2, legendRows: 0, valueLines: 5, noteLines: 1 }).image.y, L0.image.y + m.titleH);
+  assert.strictEqual(EX.pngLayout(m, { srcW: 0, srcH: 10 }).ok, false);
+  assert.strictEqual(EX.pngLayout({ ok: false, reason: 'x' }, {}).reason, 'x');
+});
+
+test('PNG: wrapText は幅以内に折り返し、文字を失わない', () => {
+  const measure = (t) => Array.from(t).length * 10;
+  const lines = EX.wrapText(measure, 'あいうえおかきくけこさ', 35);
+  assert.deepStrictEqual(lines, ['あいう', 'えおか', 'きくけ', 'こさ']);
+  assert.strictEqual(lines.join(''), 'あいうえおかきくけこさ');
+  assert.deepStrictEqual(EX.wrapText(measure, '', 100), []);
+  assert.deepStrictEqual(EX.wrapText(measure, 'ab', 1), ['a', 'b']);
+});
+
+test('PNG: タイトルの制御文字・双方向制御文字は空白に置換し、2 行を超える分は … で切る', () => {
+  assert.strictEqual(EX.sanitizeText('a' + String.fromCharCode(8238) + 'b' + String.fromCharCode(8294) + 'c' + String.fromCharCode(0) + 'd' + String.fromCharCode(10) + 'e' + String.fromCharCode(8207) + 'f'), 'a b c d e f');
+  assert.strictEqual(EX.sanitizeText(null), '');
+  const d = design.fromPreset(P('intel-rpl-13900k'), { mode: 'reproduce' });
+  assert.strictEqual(EX.pngInfo(Object.assign({}, d, { name: 'x' + String.fromCharCode(0x202e) + 'y' }), evalOf(d), {}).title, 'x y');
+  const measure = (t) => Array.from(t).length * 10;
+  const lines = EX.wrapLimited(measure, 'あ'.repeat(50), 100, 2);
+  assert.strictEqual(lines.length, 2); assert.ok(lines[1].endsWith('…') && measure(lines[1]) <= 100);
+  assert.deepStrictEqual(EX.wrapLimited(measure, 'あ'.repeat(15), 100, 2), ['あ'.repeat(10), 'あ'.repeat(5)]);
+  assert.ok(EX.pngInfo(d, evalOf(d), { mode: 'power', noData: true }).subtitle.includes('電力密度ヒートマップ(推定)(データなし)'));
+});

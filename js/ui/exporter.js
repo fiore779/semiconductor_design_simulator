@@ -98,7 +98,92 @@
     return L.join('\n');
   }
 
-  const api = { safeFileName, csvCell, toCsv, toJson, resultRows, toSummaryText, HEADER };
+  // ---- PNG(ダイ図)の純ロジック(DOM 非依存。canvas への描画は exportpanel.js)----
+  // 解像度は devicePixelRatio に依存させない: 出力幅は元画像の幅を MIN〜MAX に収めた値。高さにも上限がある。
+  const PNG = { MAX_WIDTH: 2400, MIN_WIDTH: 900, MAX_HEIGHT: 4800, BASE_WIDTH: 1200 };
+  const PNG_NOTE = '性能・面積は概算。電力・温度は推定(確度:低)。ブロック配置は模式図。';
+  const PNG_MODE_TEXT = { place: 'ブロック配置', power: '電力密度ヒートマップ(推定)', temp: '温度ヒートマップ(推定)' };
+
+  // 画像に描く文字から、制御文字・双方向制御文字(U+202A-202E, U+2066-2069, U+200E/F, U+061C)・行/段落区切りを空白に置換する
+  const CTRL_RANGES = [[0, 0x1f], [0x7f, 0x9f], [0x61c, 0x61c], [0x200b, 0x200f], [0x2028, 0x202e], [0x2060, 0x2069], [0xfeff, 0xfeff]];
+  function sanitizeText(s) {
+    let out = '';
+    for (const ch of String(s == null ? '' : s)) { const c = ch.codePointAt(0); out += CTRL_RANGES.some((r) => c >= r[0] && c <= r[1]) ? ' ' : ch; }
+    return out.replace(/ {2,}/g, ' ').trim();
+  }
+
+  // 画像内に入れる文字情報。date: 書き出し日時の文字列、mode: 'place' | 'power' | 'temp'
+  function pngInfo(design, ev, opts) {
+    const o = opts || {}; const C = CF();
+    const fmt = (key, label, unit, digits) => {
+      const c = C.cellOf(key, design, ev);
+      if (!isNum(c.value)) return { label, text: `${label}: —(${c.reason || '値なし'})` };
+      const tag = [c.kindText, c.confText && c.confText !== '—' ? `確度:${c.confText}` : ''].filter(Boolean).join('・');
+      return { label, text: `${label}: ${fix(c.value, digits)} ${unit}${tag ? ` [${tag}]` : ''}` };
+    };
+    return {
+      title: sanitizeText(design && design.name != null ? design.name : ''),
+      subtitle: `${PNG_MODE_TEXT[o.mode] || PNG_MODE_TEXT.place}${o.noData ? '(データなし)' : ''}${o.date ? ` / ${o.date}` : ''}`,
+      values: [fmt('st', 'ST', 'pt', 0), fmt('mt', 'MT', 'pt', 0), fmt('area', 'ダイ面積', 'mm²', 1), fmt('power', '電力(推定)', 'W', 1), fmt('tj', '温度 Tj(推定)', '℃', 0)],
+      note: PNG_NOTE,
+    };
+  }
+
+  // wrapText の結果を maxLines 行までにし、超えた分は最終行の末尾を「…」に置き換える(「…」込みで maxW 以内)
+  function wrapLimited(measure, text, maxW, maxLines) {
+    const lines = wrapText(measure, text, maxW);
+    if (lines.length <= maxLines) return lines;
+    const out = lines.slice(0, maxLines);
+    let last = Array.from(out[maxLines - 1]);
+    while (last.length && measure(last.join('') + '…') > maxW) last.pop();
+    out[maxLines - 1] = last.join('') + '…';
+    return out;
+  }
+
+  // 文字を maxW 以内に折り返す(measure(text) → 幅)。1 文字ずつ数えるので日本語でも使える。空文字は []
+  function wrapText(measure, text, maxW) {
+    const lines = []; let cur = '';
+    Array.from(String(text == null ? '' : text)).forEach((ch) => {
+      if (cur && measure(cur + ch) > maxW) { lines.push(cur); cur = ch; } else cur += ch;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // 出力幅と文字サイズ。srcW: 元画像の幅(px)。不正なら { ok:false, reason }
+  function pngMetrics(srcW) {
+    if (!isNum(srcW) || srcW < 1) return { ok: false, reason: 'ダイ図の大きさが取得できません' };
+    const width = Math.round(Math.min(PNG.MAX_WIDTH, Math.max(PNG.MIN_WIDTH, srcW)));
+    const scale = Math.min(2, Math.max(0.8, width / PNG.BASE_WIDTH));
+    const r = (v) => Math.round(v * scale);
+    return { ok: true, width, scale, pad: r(24), gap: r(12), fontTitle: r(22), font: r(15), fontSmall: r(13), lineH: r(22), titleH: r(32) };
+  }
+
+  // 縦方向の配置。in: { srcW, srcH, titleLines(省略時 1), legendRows, valueLines, noteLines }(行数)。高さが上限を超えたらダイ図を高さに合わせて縮小する(縮小後の幅が最小幅(900-2*pad)未満になる場合だけ { ok:false, reason })
+  function pngLayout(m, inp) {
+    if (!m || !m.ok) return { ok: false, reason: (m && m.reason) || '配置を計算できません' };
+    if (!isNum(inp.srcW) || !isNum(inp.srcH) || inp.srcW < 1 || inp.srcH < 1) return { ok: false, reason: 'ダイ図の大きさが取得できません' };
+    let imgW = m.width - 2 * m.pad; let imgH = Math.max(1, Math.round(imgW * inp.srcH / inp.srcW));
+    let y = m.pad;
+    const title = { y }; y += Math.max(1, inp.titleLines | 0) * m.titleH;
+    const subtitle = { y }; y += m.lineH + m.gap;
+    const imageY = y; y += imgH + m.gap;
+    const legend = { y }; y += Math.max(0, inp.legendRows | 0) * m.lineH + ((inp.legendRows | 0) > 0 ? m.gap : 0);
+    const values = { y }; y += Math.max(0, inp.valueLines | 0) * m.lineH + m.gap;
+    const note = { y }; y += Math.max(0, inp.noteLines | 0) * m.lineH + m.pad;
+    if (y > PNG.MAX_HEIGHT) { // 縦長: 高さに合わせてダイ図を縮小(中央寄せ)。縮小しすぎる(幅が最小幅未満)なら失敗
+      const newH = imgH - (y - PNG.MAX_HEIGHT);
+      const newW = Math.round(newH * inp.srcW / inp.srcH);
+      if (newH < 1 || newW < PNG.MIN_WIDTH - 2 * m.pad) return { ok: false, reason: `画像が大きすぎます(縦長のため縮小すると幅が ${Math.max(0, newW)}px になります。下限 ${PNG.MIN_WIDTH - 2 * m.pad}px)` };
+      const shift = imgH - newH;
+      imgW = newW; imgH = newH;
+      legend.y -= shift; values.y -= shift; note.y -= shift; y = PNG.MAX_HEIGHT;
+    }
+    const image = { x: m.pad + Math.round((m.width - 2 * m.pad - imgW) / 2), y: imageY, w: imgW, h: imgH };
+    return { ok: true, width: m.width, height: y, title, subtitle, image, legend, values, note };
+  }
+
+  const api = { safeFileName, csvCell, toCsv, toJson, resultRows, toSummaryText, HEADER, PNG, PNG_NOTE, pngInfo, sanitizeText, wrapText, wrapLimited, pngMetrics, pngLayout };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.exporter = api;
   if (node) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

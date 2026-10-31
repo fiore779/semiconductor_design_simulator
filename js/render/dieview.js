@@ -57,6 +57,7 @@
 
   const NOTE_TEXT = '模式図(コア別面積は未取得のため等分)';
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
+  const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', other: 'その他' };
   const KIND_NAMES = { power: '電力密度', temp: '温度' };
 
   // テクスチャ用の 2 つ目のシェーダ(ヒートマップの矩形)。属性位置は bindAttribLocation で固定する。
@@ -74,7 +75,7 @@
   const GL_ERROR_TEXT = 'WebGL が使えません。ブラウザの設定(ハードウェアアクセラレーション)を確認するか、別のブラウザでお試しください。ダイビューは表示できません。';
 
   function emptyApi() {
-    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, destroy() {} };
+    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, captureCanvas() { return null; }, destroy() {} };
   }
 
   function createDieView(container, handlers) {
@@ -792,6 +793,36 @@
         updateAria(); invalidate();
       },
       fit() { if (cssW) doFit(); },
+      // PNG 書き出し用(設計書 §9)。選択枠とホバー表示を外して同期で再描画し、同じ処理の中で GL と 2D のラベルを
+      // オフスクリーン canvas に合成して返す(preserveDrawingBuffer に頼らない)。失敗・描画不可なら null。
+      // 戻り値: { canvas, mode:'place'|'power'|'temp', noData, legend:[{ text, color:'#rrggbb' }] }(凡例は種別色分け時だけ。ヒートマップ・出所色分けの凡例は画像内に描かれている)
+      // maxWidth: 出力の最大幅(px。既定 2400)。元が大きければ drawImage で縮小したサイズのオフスクリーンだけを作る。
+      // データ無しのヒートマップ(画面はグレーアウト)は mode にその種別、noData:true、legend は空を返す。
+      captureCanvas(maxWidth) {
+        let lost = false;
+        try { lost = !!(gl.isContextLost && gl.isContextLost()); } catch (e) { lost = true; }
+        if (destroyed || glLost || lost || !cssW || !design.dies.length) return null;
+        const selSaved = selection; const hoverSaved = hover;
+        try {
+          selection = []; hover = null;
+          draw();
+          const cv = doc.createElement('canvas');
+          const lim = maxWidth > 0 ? maxWidth : 2400; const k = Math.min(1, lim / glCanvas.width);
+          cv.width = Math.max(1, Math.round(glCanvas.width * k)); cv.height = Math.max(1, Math.round(glCanvas.height * k));
+          const c = cv.getContext('2d');
+          if (!c) return null;
+          c.drawImage(glCanvas, 0, 0, cv.width, cv.height); c.drawImage(labelCanvas, 0, 0, cv.width, cv.height);
+          const heatOn = heatActive(); const noDataEarly = viewMode !== 'place' && !heatOn;
+          const legend = [];
+          if (!heatOn && !noDataEarly && !originOn()) {
+            const seen = {};
+            design.dies.forEach((d) => d.blocks.forEach((b) => { seen[blockColorKey(b)] = true; }));
+            Object.keys(KIND_LEGEND).forEach((k) => { if (seen[k]) legend.push({ text: KIND_LEGEND[k], color: pal()[k] }); });
+          }
+          const noData = viewMode !== 'place' && !heatOn;
+          return { canvas: cv, mode: viewMode, noData, legend };
+        } catch (e) { return null; } finally { selection = selSaved; hover = hoverSaved; invalidate(); }
+      },
       destroy() {
         if (destroyed) return;
         destroyed = true;

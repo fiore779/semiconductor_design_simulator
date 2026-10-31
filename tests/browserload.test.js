@@ -267,6 +267,90 @@ test('ダイアログ: isOpen が開閉に追従し、書き出しはボタン�
   assert.strictEqual(ui.dialogs.isOpen(), false);
 });
 
+// ---- PNG 書き出し(canvas は記録するスタブ) ----
+function pngStub(ctx, opt) {
+  const o = opt || {}; const log = { texts: [], draws: [], outs: [], blobs: [], clicks: 0, revoked: [] };
+  ctx.Blob = class { constructor(parts, op) { this.parts = parts; this.type = op && op.type; log.blobs.push(this); } };
+  ctx.URL = { createObjectURL: () => 'blob:png', revokeObjectURL: (u) => log.revoked.push(u) };
+  ctx.setTimeout = (fn) => { fn(); return 0; };
+  ctx.document.createElement = (t) => {
+    const n = new FakeNode(t);
+    if (t === 'a') n.click = () => { log.clicks++; };
+    if (t === 'canvas') {
+      n.width = 0; n.height = 0; log.outs.push(n);
+      n.getContext = () => (o.no2d ? null : { measureText: (s) => ({ width: String(s).length * 8 }), fillText: (s) => log.texts.push(s), fillRect() {}, strokeRect() {}, drawImage: (...a) => log.draws.push(a) });
+      if (!o.noToBlob) n.toBlob = (cb, type) => { n.blobType = type; cb(o.nullBlob ? null : new ctx.Blob(['png'], { type })); };
+    }
+    return n;
+  };
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  return { log, body };
+}
+const flush = () => new Promise((r) => setImmediate(r));
+
+test('PNG 書き出し: ダイ図+凡例+主要値+概算の注記を描いて toBlob(image/png) し、既存の download で保存(DOM スタブ)', async () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const { log, body } = pngStub(ctx);
+  const d = DS.fromPreset(c.presets[0], { mode: 'reproduce' }); const ev = evaluate(d, c);
+  const src = new FakeNode('canvas'); src.width = 7000; src.height = 3000; // 巨大な元画像(高 DPR を想定)
+  ui.exportpanel.openExport({ design: d, ev, notify() {}, captureDie: () => ({ canvas: src, mode: 'place', legend: [{ text: 'P/高性能コア', color: '#2f5fb3' }, { text: 'L3 キャッシュ', color: '#d9962b' }] }) });
+  const btn = findAll(body, (n) => n.tag === 'button' && n.textContent === 'PNG(ダイ図)で保存')[0];
+  assert.ok(btn, 'PNG ボタンがある');
+  btn.listeners.click();
+  await flush();
+  const out = log.outs[0];
+  assert.ok(out.width <= 2400 && out.width >= 900, `幅 ${out.width}`);
+  assert.strictEqual(out.blobType, 'image/png');
+  assert.ok(log.draws.some((a) => a[0] === src), '元のダイ図を drawImage する');
+  const txt = log.texts.join('\n');
+  assert.ok(txt.includes(d.name) && txt.includes('ST:') && txt.includes('MT:') && txt.includes('ダイ面積') && txt.includes('電力(推定)') && txt.includes('温度'));
+  assert.ok(txt.includes('P/高性能コア') && txt.includes('L3 キャッシュ'), '凡例');
+  assert.ok(txt.includes('性能・面積は概算。電力・温度は推定(確度:低)。ブロック配置は模式図。'), '注記が画像内にある');
+  assert.strictEqual(log.clicks, 1);
+  assert.ok(log.revoked.includes('blob:png'), 'objectURL を revoke');
+  assert.ok(body.textContent.includes('PNG で保存しました') && body.textContent.includes('.diagram.png'));
+  ui.dialogs.close();
+});
+
+test('PNG 書き出し: ダイ図なし・2D 不可・toBlob なし/null・高すぎる画像は ok:false の理由を画面に出し、他の書き出しは使える(DOM スタブ)', async () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const d = DS.fromPreset(c.presets[0], { mode: 'reproduce' }); const ev = evaluate(d, c);
+  const okSrc = () => { const s = new FakeNode('canvas'); s.width = 1000; s.height = 500; return { canvas: s, mode: 'place', legend: [] }; };
+  const tall = () => { const s = new FakeNode('canvas'); s.width = 1000; s.height = 90000; return { canvas: s, mode: 'place', legend: [] }; };
+  const cases = [
+    [{}, () => null, 'ダイ図を取得できません'],
+    [{ no2d: true }, okSrc, '2D canvas'],
+    [{ noToBlob: true }, okSrc, 'toBlob'],
+    [{ nullBlob: true }, okSrc, '変換に失敗'],
+    [{}, tall, '大きすぎ'],
+  ];
+  for (const [opt, cap, want] of cases) {
+    const { log, body } = pngStub(ctx, opt);
+    ui.exportpanel.openExport({ design: d, ev, notify() {}, captureDie: cap });
+    findAll(body, (n) => n.tag === 'button' && n.textContent === 'PNG(ダイ図)で保存')[0].listeners.click();
+    await flush();
+    const msg = findAll(body, (n) => n.attrs && n.attrs.role === 'status')[0];
+    assert.ok(msg.textContent.includes('✗ PNG を書き出せませんでした') && msg.textContent.includes(want), `${want}: ${msg.textContent}`);
+    assert.strictEqual(log.clicks, 0, 'ダウンロードしない');
+    // 他の書き出しは使えるまま
+    findAll(body, (n) => n.tag === 'button' && n.textContent === '結果を CSV で保存')[0].listeners.click();
+    assert.strictEqual(log.clicks, 1);
+    ui.dialogs.close();
+  }
+  // captureDie が無い(ダイビュー不可)場合も同様
+  const { body } = pngStub(ctx);
+  ui.exportpanel.openExport({ design: d, ev, notify() {} });
+  findAll(body, (n) => n.tag === 'button' && n.textContent === 'PNG(ダイ図)で保存')[0].listeners.click();
+  await flush();
+  assert.ok(body.textContent.includes('ダイ図を取得できません'));
+  ui.dialogs.close();
+});
+
 // ---- プリセット一覧(グループ化) ----
 test('プリセット一覧: 98 行・27 見出し・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
   const ctx = loadAll(stubDoc());
