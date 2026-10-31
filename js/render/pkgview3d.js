@@ -47,6 +47,9 @@
 
   const GL_ERROR_TEXT = 'WebGL が使えません。ブラウザの設定(ハードウェアアクセラレーション)を確認するか、別のブラウザでお試しください。ダイビューは表示できません。';
   const NOTE_3D = '3D は模式図。形状・厚みは実物と異なります';
+  const FPM = isNode ? require('../model/floorplan.js') : (root.SDS && root.SDS.model && root.SDS.model.floorplan);
+  // 実物風フロアプランのダイがあれば、縮尺の根拠の注記(なければ null)
+  const scaleNote = (d) => { const die = d && d.dies && d.dies.find((x) => x.layout); return die && FPM ? FPM.scaleText(die.layout) : null; };
   const EDIT_HINT = '編集は 2D 表示で行います(3D では選択のみ)';
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
   const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', npu: 'NPU', other: 'その他' };
@@ -416,14 +419,21 @@
       }
       // 注記(模式図であること / 編集は 2D で)
       c.font = FONT; c.textAlign = 'left'; c.fillStyle = P.note;
-      c.fillText(NOTE_3D, x, y);
-      if (!capturing) c.fillText(EDIT_HINT, x, y - 18);
+      let yy = y; c.fillText(NOTE_3D, x, yy);
+      const sc = scaleNote(design); // 実物風フロアプランの縮尺の根拠(あれば)
+      if (sc) { // 狭い画面では折り返す(下の行から上へ積む)
+        const maxW = Math.max(120, cssW - 32 - 220); const ls = []; let cur2 = '';
+        Array.from(sc).forEach((ch) => { if (c.measureText(cur2 + ch).width > maxW) { ls.push(cur2); cur2 = ch; } else cur2 += ch; });
+        if (cur2) ls.push(cur2);
+        for (let i = ls.length - 1; i >= 0; i--) { yy -= 18; c.fillText(ls[i], x, yy); }
+      }
+      if (!capturing) { yy -= 18; c.fillText(EDIT_HINT, x, yy); }
       if (heatOn && heat.note && design.dies.length) {
         const maxW = Math.max(120, cssW - 32 - 200);
         const lines = []; let cur = '';
         Array.from(String(heat.note)).forEach((ch) => { if (c.measureText(cur + ch).width > maxW) { lines.push(cur); cur = ch; } else cur += ch; });
         if (cur) lines.push(cur);
-        const base = y - (capturing ? 18 : 36);
+        const base = yy - 18;
         for (let i = 0; i < lines.length; i++) c.fillText(lines[i], x, base - (lines.length - 1 - i) * 16);
       }
       if (heatOn) drawHeatOverlay(c, P, FONT);

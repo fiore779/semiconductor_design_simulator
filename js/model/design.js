@@ -87,7 +87,7 @@
     const FP = floorplanApi();
     const fp = FP && preset.dies && preset.dies.length ? FP.classify(preset, dieRole) : null;
     if (fp) computeIdx = fp.dieIndex;
-    const layout = fp ? { template: fp.template, uncore: fp.uncore, igpu: fp.igpu, npu: fp.npu, units: fp.units } : null;
+    const layout = fp ? FP.toLayout(fp) : null;
     srcDies.forEach((sd, i) => {
       const known = typeof sd.mm2 === 'number';
       const size = known ? dieSize(sd.mm2, layout && i === computeIdx ? FP.aspectOf(layout) : null) : { widthMm: 10, heightMm: 10 };
@@ -98,6 +98,7 @@
       cursorX += die.widthMm + GAP_MM;
       if (i === computeIdx && layout) { die.layout = Object.assign({}, layout); die.blocks = FP.layoutDie(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB, layout); }
       else if (i === computeIdx) die.blocks = layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB);
+      else if (fp && fp.iodGpu && roles[i] === 'uncore' && /IOD/i.test(sd.name)) die.blocks = FP.iodBlocks(die); // Zen 4 以降の IOD は内蔵 GPU(飾り)つき
       else if (roles[i] === 'gpu') die.blocks = oneBlock(die, 'gpu', 'GPU');
       else die.blocks = oneBlock(die, 'uncore', 'SoC / I/O');
       dies.push(die);
@@ -186,7 +187,12 @@
     const d = clone(design);
     const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3'));
     // 実物風テンプレートで作ったダイは、同じテンプレートで作り直す(飾りブロックも含めて)
-    if (die) die.blocks = die.layout && floorplanApi() ? floorplanApi().layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout) : layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
+    if (die) {
+      const FP = floorplanApi();
+      // コア数が元のダイの枠を超えたら、大きさの根拠(scaleBasis)を schematic に落とす
+      if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores);
+      die.blocks = die.layout && FP ? FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout) : layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
+    }
     return d;
   }
 

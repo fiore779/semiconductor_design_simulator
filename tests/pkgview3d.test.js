@@ -233,3 +233,25 @@ test('3D ビュー: setLabels(false) でブロック名・ダイ名・寸法を�
   st.texts = []; view.setLabels(true); runRaf();
   assert.ok(st.texts.includes('ブロック名X') && st.texts.includes('ダイ名Y'));
 });
+
+test('3D ビュー: 実物風フロアプランのダイがあれば、縮尺の根拠の注記を出す(流用は「写真・測定なし」)。無ければ出さない', () => {
+  const a = setup();
+  a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'intel-adl-12900k'))); a.runRaf();
+  assert.ok(a.st.texts.some((t) => t.includes('ダイ写真の目測')));
+  const b = setup();
+  b.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen4-7950x'))); b.runRaf();
+  assert.ok(b.st.texts.some((t) => t.includes('写真・測定なし')));
+  const c = setup();
+  c.view.setDesign(full); c.runRaf();
+  assert.ok(!c.st.texts.some((t) => t.includes('目測') || t.includes('写真・測定なし')));
+});
+
+test('3D ビュー: 縮尺の注記は幅が狭いと折り返され、行ごとに描かれる', () => {
+  const a = setup();
+  a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen4-7950x'))); a.runRaf();
+  const wide = a.st.texts.filter((t) => t.includes('写真・測定なし') || t.includes('流用')).length;
+  assert.ok(wide >= 1);
+  // measureText を幅 10px/字とするスタブなので、800px の画面では 1 行 56 字程度で折り返される。結合すると元の文になる
+  const joined = a.st.texts.join('');
+  assert.ok(joined.includes('このチップの写真・測定なし'));
+});

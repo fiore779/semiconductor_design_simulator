@@ -22,6 +22,7 @@
     const { die, block } = hit;
     el.appendChild(h('p', {}, h('b', { text: block.label }), ` — 種別: ${KIND_NAME[block.kind] || block.kind}${block.coreType ? `(${block.coreType})` : ''} / ダイ: ${die.name}`));
     if (block.schematic) el.appendChild(h('p', { class: 'note', text: '模式図: 大きさと位置は実チップのフロアプランではありません。' }));
+    if (die.layout && root.SDS.model && root.SDS.model.floorplan) el.appendChild(h('p', { class: 'note', text: root.SDS.model.floorplan.scaleText(die.layout) + (die.layout.scaleNote ? `(根拠: ${die.layout.scaleNote})` : '') }));
     if (block.decorative) el.appendChild(h('p', { class: 'note', text: '飾りブロック: 見た目だけで、性能・電力・面積・温度の計算には影響しません。' }));
     const grid = h('div', { class: 'propgrid' });
     [['x', 'x'], ['y', 'y'], ['w', '幅 w'], ['h', '高さ h']].forEach(([f, lab]) => {

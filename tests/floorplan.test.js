@@ -55,7 +55,8 @@ test('全プリセット: コア数・L3 の個数と容量が元のプリセッ
     const d = mk(p);
     assert.strictEqual(coreBlocks(d).length, total(p), `${p.id}: コア数`);
     const l3 = d.dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.kind === 'l3')), []);
-    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? (d.dies.find((x) => x.layout).layout.units) : 1) : 0;
+    const lay = (d.dies.find((x) => x.layout) || {}).layout;
+    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && lay.frame === 'strix-point' ? 2 : 1)) : 0;
     assert.strictEqual(l3.length, want, `${p.id}: L3 ブロック数`);
     const srcDies = p.dies && p.dies.length ? p.dies : [{ mm2: null }];
     assert.strictEqual(d.dies.length, srcDies.length, `${p.id}: ダイ数`);
@@ -82,11 +83,11 @@ test('飾りブロック: Uncore・iGPU・NPU だけが decorative で、コア�
   assert.ok(nDeco > 0);
   // iGPU・NPU の有無は DECOR_FACTS にある SKU だけ。F 付きや不明な SKU には足さない
   const kinds = (id) => mk(id).dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.decorative).map((b) => b.kind)), []).sort();
-  assert.deepStrictEqual(kinds('intel-adl-12900k'), ['gpu', 'uncore']);
-  assert.deepStrictEqual(kinds('amd-strix-hx370'), ['gpu', 'npu', 'uncore']);
+  assert.deepStrictEqual(kinds('intel-adl-12900k'), ['gpu', 'uncore', 'uncore']); // iGPU・Uncore・Platform I/O
+  assert.deepStrictEqual(kinds('amd-strix-hx370'), ['gpu', 'gpu', 'npu'].concat(Array(6).fill('uncore'))); // 写真に合わせた GPU(2 ブロック)・NPU・PHY など
   assert.deepStrictEqual(kinds('amd-kraken-350'), ['gpu', 'npu', 'uncore']);
   assert.deepStrictEqual(kinds('amd-zen1-1800x'), ['uncore']);
-  assert.deepStrictEqual(kinds('amd-zen5-9950x'), []);
+  assert.deepStrictEqual(kinds('amd-zen5-9950x'), ['gpu'].concat(Array(6).fill('uncore'))); // CCD 2 個の上部の帯(各 3)+ IOD の iGPU
 });
 
 test('飾りブロックは評価に影響しない: ブロックを全部取り除いても評価結果は完全に同じ', () => {
@@ -113,21 +114,26 @@ test('ヒートマップ: 飾りブロックの電力はゼロで、総電力は
   });
 });
 
-test('12900K: P コアは L3 の左右に 4 個ずつ縦積み、E コアは 2×2 のクラスタが左右に 1 つずつ、上に Uncore・下に iGPU', () => {
-  const d = mk('intel-adl-12900k'); const die = d.dies[0];
-  const l3 = die.blocks.find((b) => b.kind === 'l3'); const unc = die.blocks.find((b) => b.kind === 'uncore'); const gpu = die.blocks.find((b) => b.kind === 'gpu');
+test('12900K: 横長(約 2:1)。P コア 4 個×2 段、中央に横長の L3 帯、P の右に E クラスタ上下、右端に縦長 iGPU、左に Uncore と Platform I/O。縮尺は調査値どおり', () => {
+  const die = mk('intel-adl-12900k').dies[0];
+  assert.strictEqual(die.layout.scaleBasis, 'photo');
+  assert.ok(Math.abs(die.widthMm / die.heightMm - 1682 / 846) < 0.03, '縦横比 約 2:1'); assert.strictEqual(die.areaMm2, 208);
+  const l3 = die.blocks.find((b) => b.kind === 'l3'); const gpu = die.blocks.find((b) => b.kind === 'gpu');
+  const unc = die.blocks.find((b) => b.label === 'Uncore'); const io = die.blocks.find((b) => b.label === 'Platform I/O');
   const P = die.blocks.filter((b) => b.coreType === 'P'); const Ec = die.blocks.filter((b) => b.coreType === 'E');
-  assert.strictEqual(P.filter((b) => b.x + b.w <= l3.x + 1e-6).length, 4); assert.strictEqual(P.filter((b) => b.x >= l3.x + l3.w - 1e-6).length, 4);
-  assert.strictEqual(Ec.filter((b) => b.x + b.w <= l3.x + 1e-6).length, 4); assert.strictEqual(Ec.filter((b) => b.x >= l3.x + l3.w - 1e-6).length, 4);
-  // 左の P は縦に積まれ(同じ x)、E は P より下
-  const left = P.filter((b) => b.x + b.w <= l3.x + 1e-6);
-  assert.strictEqual(new Set(left.map((b) => b.x)).size, 1);
-  const pBottom = Math.max.apply(null, P.map((b) => b.y + b.h));
-  assert.ok(Ec.every((b) => b.y >= pBottom - 1e-6));
-  assert.ok(unc.y + unc.h <= Math.min.apply(null, P.map((b) => b.y)) + 1e-6);
-  assert.ok(gpu.y >= Math.max.apply(null, Ec.map((b) => b.y + b.h)) - 1e-6);
-  // ダイは縦長(写真の配置に倣う)。面積は公表値のまま
-  assert.ok(die.heightMm > die.widthMm); assert.strictEqual(die.areaMm2, 208);
+  assert.strictEqual(P.length, 8); assert.strictEqual(Ec.length, 8);
+  assert.strictEqual(P.filter((b) => b.y + b.h <= l3.y + 1e-6).length, 4); assert.strictEqual(P.filter((b) => b.y >= l3.y + l3.h - 1e-6).length, 4);
+  assert.ok(l3.w > l3.h * 3, 'L3 は横長');
+  const pRight = Math.max.apply(null, P.map((b) => b.x + b.w));
+  assert.ok(Ec.every((b) => b.x >= pRight - 1e-6));
+  assert.strictEqual(Ec.filter((b) => b.y + b.h <= l3.y + 1e-6).length, 4); assert.strictEqual(Ec.filter((b) => b.y >= l3.y + l3.h - 1e-6).length, 4);
+  assert.ok(gpu.x >= Math.max.apply(null, Ec.map((b) => b.x + b.w)) - 1e-6); assert.ok(gpu.h > gpu.w * 2, 'iGPU は縦長');
+  assert.ok(unc.x + unc.w <= Math.min.apply(null, P.map((b) => b.x)) + 1e-6); assert.ok(io.x + io.w <= unc.x + 1e-6);
+  // 縮尺: P コア ≈ 3.57%(Locuza の 7.43 / 208.08)、E クラスタ ≈ 4.16%、iGPU ≈ 16.1%(許容 ±20%)
+  const dieA = die.widthMm * die.heightMm; const near = (v, t) => Math.abs(v / t - 1) < 0.2;
+  assert.ok(near(P[0].w * P[0].h / dieA, 0.0357));
+  assert.ok(near(Ec.slice(0, 4).reduce((s, b) => s + b.w * b.h, 0) / dieA, 0.0416));
+  assert.ok(near(gpu.w * gpu.h / dieA, 0.161));
 });
 
 test('Zen 5 の 2CCD: CCD ごとに「コア列 | L3 | コア列」で 8 コア、L3 は 2 つ(半分ずつの容量)。ダイは 1 つのまま', () => {
@@ -172,7 +178,7 @@ test('コアが 0 個・L3 なしなど境界でも壊れない(飾りだけ、�
   const die = { id: 'd', widthMm: 10, heightMm: 12 };
   const lay = { template: 'intel-hybrid', uncore: true, igpu: true, npu: false, units: 1 };
   const b0 = FP.layoutDie(die, [], 0, lay);
-  assert.deepStrictEqual(b0.map((b) => b.kind).sort(), ['gpu', 'uncore']);
+  assert.deepStrictEqual(b0.map((b) => b.kind).sort(), ['gpu', 'uncore', 'uncore']);
   const b1 = FP.layoutDie(die, [{ type: 'P', count: 1 }], 0, lay);
   assert.strictEqual(b1.filter((b) => b.kind === 'core').length, 1);
   const b2 = FP.layoutDie(die, [{ type: 'E', count: 3 }], 4, lay);

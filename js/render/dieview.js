@@ -57,6 +57,9 @@
     'void main(){vec4 c=v_col;if(v_str>0.5){float t=mod(gl_FragCoord.x+gl_FragCoord.y,u_period);if(t>=u_period*0.5)c=v_col2;}gl_FragColor=c;}';
 
   const NOTE_TEXT = '模式図(ブロックの大きさ・配置は実チップのものではありません)';
+  const FPM = (typeof module !== 'undefined' && module.exports && typeof require === 'function') ? require('../model/floorplan.js') : (root.SDS && root.SDS.model && root.SDS.model.floorplan);
+  // 実物風フロアプランのダイがあれば、縮尺の根拠の注記
+  const noteText = (d) => { const die = d && d.dies && d.dies.find((x) => x.layout); return die && FPM ? FPM.scaleText(die.layout) : NOTE_TEXT; };
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
   const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', npu: 'NPU', other: 'その他' };
   const KIND_NAMES = { power: '電力密度', temp: '温度' };
@@ -500,7 +503,13 @@
             c.fillStyle = P.note; c.textAlign = 'left';
             for (let i = 0; i < lines.length; i++) c.fillText(lines[i], x, y - 22 - (lines.length - 1 - i) * 16);
           }
-        } else if (anySchematic) { c.fillStyle = P.note; c.fillText(NOTE_TEXT, x, y - 22); }
+        } else if (anySchematic) { // 注記は狭い画面では折り返す(縮尺バーの上へ、下から積む)
+          c.fillStyle = P.note; c.textAlign = 'left';
+          const maxW = Math.max(120, cssW - 32 - 200); const ls = []; let cur2 = '';
+          Array.from(noteText(design)).forEach((ch) => { if (c.measureText(cur2 + ch).width > maxW) { ls.push(cur2); cur2 = ch; } else cur2 += ch; });
+          if (cur2) ls.push(cur2);
+          for (let i = 0; i < ls.length; i++) c.fillText(ls[i], x, y - 22 - (ls.length - 1 - i) * 16);
+        }
       }
       if (heatOn) drawHeatOverlay(c, P, FONT);
       else if (oInfo) drawOriginLegend(c, P, FONT, oInfo);
