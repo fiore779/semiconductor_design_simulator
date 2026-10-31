@@ -90,7 +90,7 @@
     return gb.kind === '中央値' ? '件数が少ない(n≤2)' : '個別投稿の中央値';
   }
 
-  // ファミリー単位のグループ化。[ { vendor, family, items } ]。並び: メーカー → グループの最新年の降順 → ファミリー名。
+  // ファミリー単位のグループ化。[ { vendor, family, items } ]。並び: メーカー → グループの最新年の降順 → 同年ならファミリー名の降順(数字は数として比べる。新しい世代が上)。
   // 各グループ内は名前順。family が未定義・空なら 'その他'。
   function groupByFamily(list) {
     const map = new Map();
@@ -104,7 +104,7 @@
     const yearOf = (g) => g.items.reduce((m, p) => (typeof p.year === 'number' && p.year > m ? p.year : m), -Infinity);
     const groups = Array.from(map.values());
     groups.forEach((g) => g.items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja')));
-    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || a.family.localeCompare(b.family, 'ja'));
+    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || b.family.localeCompare(a.family, 'ja', { numeric: true }));
     return groups;
   }
 

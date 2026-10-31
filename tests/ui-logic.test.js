@@ -154,6 +154,16 @@ test('groupByFamily: 並び(メーカー→年の降順→名前)・空リスト
   assert.ok(all.length > 1 && all.length < D.presets.length);
 });
 
+test('groupByFamily: 同じ年のファミリーは新しい世代が上(Zen 5 → Zen 4 → Zen 3+)', () => {
+  const L = [
+    { id: 'a', vendor: 'AMD', family: 'Zen 3+ (Rembrandt-R)', year: 2023, name: 'a' },
+    { id: 'b', vendor: 'AMD', family: 'Zen 4 (Phoenix)', year: 2023, name: 'b' },
+    { id: 'c', vendor: 'AMD', family: 'Zen 5 (Granite Ridge)', year: 2023, name: 'c' },
+    { id: 'd', vendor: 'AMD', family: 'Zen 10 (X)', year: 2023, name: 'd' },
+  ];
+  assert.deepStrictEqual(PL.groupByFamily(L).map((x) => x.family.split(' ')[1]), ['10', '5', '4', '3+']);
+});
+
 test('絞り込み: 命令セット・充実度。server ラベル', () => {
   const all = D.presets;
   const arm = PL.filterPresets(all, { isa: ['arm'] }, gb7ByName);
