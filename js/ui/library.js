@@ -51,6 +51,48 @@
           ci ? h('button', { type: 'button', class: 'btn', disabled: !design || !ci.cloneable || pre.length > 0, title: !ci.cloneable ? ci.reason : (pre.length ? pre[0].text : '複製して発行幅・ROB・L2・クロック・SMT を編集する(自作コア)'), onclick: () => cb.onClone(p) }, '複製して編集') : null));
     }
 
+    // cb: { userCores: usercores.list の結果, onUseUser(entry, count), onDeleteUser(entry), onExportUser(entry), onImportUser(text) }
+    function confirmDelete(entry) {
+      const DG = root.SDS.ui.dialogs;
+      DG.open('ライブラリから削除', h('div', { style: 'padding:10px 14px' },
+        h('p', { text: `「${entry.def.name}」をユーザーライブラリから削除します。設計に追加済みのブロックは変わりません。元に戻せません(JSON を書き出していれば取り込み直せます)。` }),
+        h('div', { class: 'btnrow' },
+          h('button', { type: 'button', class: 'btn primary', onclick: () => { DG.close(); cb.onDeleteUser(entry); } }, '削除する'),
+          h('button', { type: 'button', class: 'btn', onclick: () => DG.close() }, 'やめる'))));
+    }
+    function userBox() {
+      const st = cb.userCores || { ok: false, reason: '保存状態を取得できません' };
+      const cores = st.ok ? st.cores : [];
+      const box = h('div', { class: 'lib-custom lib-user' }, h('h3', { text: `ユーザーライブラリの自作コア(${cores.length} 件)` }),
+        h('p', { class: 'note', text: 'ブラウザ(localStorage)に保存した自作コアです。「設計に追加」するたびに定義が設計へコピーされ、以後は独立します(ライブラリを削除・変更しても追加済みのブロックは変わりません)。同名のコアを登録すると「名前 (2)」の別のコアとして追加されます。性能は基準コアの補正を借りた推定(確度:低)。' }));
+      if (!st.ok) box.appendChild(h('p', { class: 'small err', role: 'note' }, `⚠ ${st.reason}${st.unavailable ? '。保存と取り込みは使えません(JSON 書き出しのみ可)' : ''}`));
+      cores.forEach((e) => {
+        const d = e.def; const idb = `lib-user-${e.id}`;
+        const n = h('input', { id: `${idb}-n`, type: 'text', inputmode: 'numeric', value: '1', autocomplete: 'off', 'aria-label': `${d.name} の個数` });
+        box.appendChild(h('div', { class: 'lib-item' },
+          h('b', { text: d.name }), h('div', { class: 'small', text: `基準: ${d.base.uarch}(${d.base.sourceChip || '出所不明'}) / 登録 ${e.savedAt ? e.savedAt.slice(0, 16).replace('T', ' ') : '日時不明'}` }),
+          h('div', { class: 'lib-add' },
+            h('label', { class: 'small', for: n.id }, '個数 '), n,
+            h('button', { type: 'button', class: 'btn', disabled: !design, onclick: () => { const r = MF.parseCount(n.value); if (!r.ok) { setMsg(r.reason); return; } setMsg(''); cb.onUseUser(e, r.value); } }, '設計に追加'),
+            cb.onExportUser ? h('button', { type: 'button', class: 'btn', onclick: () => cb.onExportUser(e) }, 'JSON 書き出し') : null,
+            h('button', { type: 'button', class: 'btn', onclick: () => confirmDelete(e) }, '削除'))));
+      });
+      if (st.ok && !cores.length) box.appendChild(h('p', { class: 'small', text: '保存したコアはありません。コアエディタの[ライブラリに登録]か、下の JSON 取り込みで追加できます。' }));
+      const file = h('input', { type: 'file', accept: '.json,application/json', id: 'lib-user-file', disabled: !!st.unavailable, 'aria-label': 'ユーザーライブラリの JSON を取り込む',
+        onchange: (ev) => {
+          const f = ev.target.files && ev.target.files[0]; if (!f) return;
+          const max = (root.SDS.model.usercores && root.SDS.model.usercores.MAX_IMPORT_CHARS) || 1000000;
+          if (f.size > max) { setMsg(`ファイルが大きすぎます(上限 ${max} バイト)`); ev.target.value = ''; return; }
+          const rd = new FileReader();
+          rd.onload = () => { cb.onImportUser(String(rd.result)); };
+          rd.onerror = () => setMsg('ファイルを読めませんでした');
+          rd.readAsText(f);
+          ev.target.value = '';
+        } });
+      box.appendChild(h('div', { class: 'lib-add' }, h('label', { class: 'small', for: 'lib-user-file' }, 'JSON 取り込み(通信なし) '), file));
+      return box;
+    }
+
     function refresh() {
       const res = MF.filterParts(parts, filter);
       clear(listEl);
@@ -75,6 +117,8 @@
         cb.onEditDef ? h('div', { class: 'lib-add' }, h('button', { type: 'button', class: 'btn', onclick: () => cb.onEditDef(d) }, 'この定義を元に編集')) : null)));
       el.appendChild(box);
     }
+    // ユーザーライブラリ(localStorage 'sds.userCores')の自作コア。設計に追加するたびに定義を設計へコピーする(以後は独立)
+    if (cb.onUseUser && CF()) el.appendChild(userBox());
     el.appendChild(msgEl);
     el.appendChild(countEl);
     el.appendChild(listEl);

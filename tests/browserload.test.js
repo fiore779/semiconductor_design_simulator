@@ -47,7 +47,7 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   const ui = ctx.SDS && ctx.SDS.ui;
   ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
-  ['design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
+  ['design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
 });
 
@@ -299,4 +299,52 @@ test('プリセット一覧: 98 行・27 見出し・初期は全て閉じる・
     assert.strictEqual(new Set(got).size, 98);
     assert.strictEqual([...got].sort().join(','), Array.from(c.presets, (p) => p.id).sort().join(','));
   } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
+});
+
+test('ユーザーライブラリ: コアエディタの[ライブラリに登録][JSON 書き出し]は入力エラー時に拒否し、部品ライブラリの自作コア節が描画・操作できる(DOM スタブ)', () => {
+  const ctx = loadAll(stubDoc());
+  const { makeContext } = ctx.SDS.model.evaluate; const BL = ctx.SDS.model.blocklib; const ui = ctx.SDS.ui; const UC = ctx.SDS.model.usercores;
+  const c = makeContext();
+  const parts = BL.build(c.presets, ctx.SDS_DATA.blocklibAreas, c.nodes);
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  const def = ui.coreform.cloneInfo(BL.get(parts, 'core:amd-zen1-1800x:P'), c.uarch, ctx.SDS_DATA.blocklibAreas).def;
+  const calls = [];
+  ui.coreeditor.openCoreEditor({ def, nodes: c.nodes, toNodeId: 'gf-14', evalCtx: { cal: c.cal, uarch: c.uarch, presets: c.presets, nodes: c.nodes } },
+    { onAdd() { return { ok: true }; }, onRegister(d) { calls.push(['reg', d]); return { ok: true, message: '登録しました' }; }, onExport(d) { calls.push(['exp', d]); return { ok: false, reason: '書き出し失敗' }; } });
+  const byId = (id) => findAll(body, (n) => n.attrs && n.attrs.id === id)[0];
+  const btn = (label) => findAll(body, (n) => n.tag === 'button' && n.textContent === label)[0];
+  const rob = byId('ce-rob');
+  rob.value = '5'; rob.listeners.input({ target: rob });
+  btn('ライブラリに登録').listeners.click(); btn('JSON 書き出し').listeners.click();
+  assert.strictEqual(calls.length, 0); assert.ok(body.textContent.includes('入力にエラーがあります'));   // 入力エラー時は拒否
+  rob.value = '300'; rob.listeners.input({ target: rob });
+  btn('ライブラリに登録').listeners.click();
+  assert.strictEqual(calls.length, 1); assert.strictEqual(calls[0][1].params.rob, 300); assert.ok(body.textContent.includes('登録しました'));
+  btn('JSON 書き出し').listeners.click();
+  assert.strictEqual(calls.length, 2); assert.ok(body.textContent.includes('書き出し失敗'));
+  ui.dialogs.close();
+  // 部品ライブラリの自作コア節
+  const st = { m: {}, getItem(k) { return k in this.m ? this.m[k] : null; }, setItem(k, v) { this.m[k] = v; } };
+  assert.ok(UC.add(st, def).ok);
+  const used = []; const dels = []; const imps = [];
+  const d0 = ctx.SDS.model.design.fromScratch({ name: 't', widthMm: 40, heightMm: 40, nodeId: 'gf-14', entry: 'new' });
+  const lib = new FakeNode('div');
+  const cb = () => ({ onAdd() {}, onUseUser(e, n) { used.push([e, n]); }, onDeleteUser(e) { dels.push(e); }, onExportUser() {}, onImportUser(t) { imps.push(t); }, userCores: UC.list(st) });
+  ui.library.renderLibrary(lib, d0, parts, cb(), '', c.nodes, { uarch: c.uarch, areas: ctx.SDS_DATA.blocklibAreas });
+  assert.ok(lib.textContent.includes('ユーザーライブラリの自作コア(1 件)') && lib.textContent.includes('設計に追加') && lib.textContent.includes('JSON 取り込み'));
+  findAll(lib, (n) => n.tag === 'button' && n.textContent === '設計に追加')[0].listeners.click();
+  assert.strictEqual(used.length, 1); assert.strictEqual(used[0][1], 1);
+  findAll(lib, (n) => n.tag === 'button' && n.textContent === '削除')[0].listeners.click();   // 確認ダイアログ(dialogs)。window.confirm は使わない
+  assert.strictEqual(dels.length, 0); assert.ok(body.textContent.includes('削除します'));
+  findAll(body, (n) => n.tag === 'button' && n.textContent === 'やめる')[0].listeners.click();
+  assert.strictEqual(dels.length, 0);
+  findAll(lib, (n) => n.tag === 'button' && n.textContent === '削除')[0].listeners.click();
+  findAll(body, (n) => n.tag === 'button' && n.textContent === '削除する')[0].listeners.click();
+  assert.strictEqual(dels.length, 1);
+  // localStorage が使えないとき: 理由と「JSON 書き出しのみ可」を出し、取り込みは無効
+  const lib2 = new FakeNode('div');
+  ui.library.renderLibrary(lib2, d0, parts, Object.assign(cb(), { userCores: UC.list(null) }), '', c.nodes, { uarch: c.uarch, areas: ctx.SDS_DATA.blocklibAreas });
+  assert.ok(lib2.textContent.includes('JSON 書き出しのみ可'));
+  assert.strictEqual(findAll(lib2, (n) => n.attrs && n.attrs.id === 'lib-user-file')[0].disabled, true);
 });

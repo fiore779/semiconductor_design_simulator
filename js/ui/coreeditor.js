@@ -14,6 +14,7 @@
 
   // env: { def(coredef.clone の結果), nodes, toNodeId(設計のプロセス。null 可), evalCtx: { cal, uarch, presets, nodes } }
   // cb: { onAdd(def, count) → { ok, reason } }  成功したらダイアログを閉じるのは呼び出し側
+  //     onRegister(def) → { ok, reason, message }(ユーザーライブラリへ登録。無ければボタンを出さない)、onExport(def) → { ok, reason, message }(JSON 書き出し)
   function openCoreEditor(env, cb) {
     const CDm = root.SDS.model.coredef;
     const DG = root.SDS.ui.dialogs;
@@ -25,6 +26,7 @@
     const comboEl = h('p', { class: 'small warn-note', role: 'note', hidden: true });
     const nameErr = h('p', { class: 'err pmsg', role: 'alert', hidden: true });
     const addMsg = h('p', { class: 'err pmsg', role: 'alert', hidden: true });
+    const okMsg = h('p', { class: 'small pmsg', role: 'status', hidden: true });
     const setText = (el, t, prefix) => { el.textContent = t ? `${prefix || ''}${t}` : ''; el.hidden = !t; };
 
     // ---- 左: 基準コア ----
@@ -133,23 +135,41 @@
         setText(r.errEl, ''); r.input.removeAttribute('aria-invalid');
       });
     }
+    // 入力欄にエラーが残っていれば拒否(追加・登録・書き出しで共通)。okMsg は成功の知らせをいったん消す
+    function inputsOk() {
+      setText(okMsg, ''); setText(addMsg, '');
+      const bad = CF.FIELDS.find((f) => rows[f.key].input.getAttribute('aria-invalid')) || (nameI.getAttribute('aria-invalid') ? { label: '名前' } : null);
+      if (bad) { setText(addMsg, `${bad.label}の入力にエラーがあります。直すか、基準に戻してください`, '✗ '); return false; }
+      return true;
+    }
     const actions = h('div', { class: 'actions' },
       h('button', { type: 'button', class: 'btn', onclick: () => { def = CDm.reset(def); syncInputs(); setText(addMsg, ''); refresh(); } }, '基準に戻す'),
       h('label', { for: 'ce-count', class: 'small', text: '個数' }), countI,
       h('button', { type: 'button', class: 'btn primary', onclick: () => {
         const pc = MF.parseCount(countI.value);
         if (!pc.ok) { setText(addMsg, pc.reason, '✗ '); return; }
-        const bad = CF.FIELDS.find((f) => rows[f.key].input.getAttribute('aria-invalid')) || (nameI.getAttribute('aria-invalid') ? { label: '名前' } : null);
-        if (bad) { setText(addMsg, `${bad.label}の入力にエラーがあります。直すか、基準に戻してください`, '✗ '); return; }
+        if (!inputsOk()) return;
         const res = cb.onAdd(def, pc.value);
         if (res && res.ok === false) setText(addMsg, res.reason, '✗ ');
       } }, 'ダイに追加'),
+      cb.onRegister ? h('button', { type: 'button', class: 'btn', title: 'ブラウザのユーザーライブラリ(localStorage)に保存する。ライブラリからは新しい定義として設計に追加できる', onclick: () => {
+        if (!inputsOk()) return;
+        const res = cb.onRegister(def);
+        if (res && res.ok === false) setText(addMsg, res.reason, '✗ ');
+        else setText(okMsg, (res && res.message) || 'ライブラリに登録しました');
+      } }, 'ライブラリに登録') : null,
+      cb.onExport ? h('button', { type: 'button', class: 'btn', title: 'このコア定義を JSON ファイルに書き出す(ライブラリと同じ形式。localStorage が使えなくても使える)', onclick: () => {
+        if (!inputsOk()) return;
+        const res = cb.onExport(def);
+        if (res && res.ok === false) setText(addMsg, res.reason, '✗ ');
+        else setText(okMsg, (res && res.message) || 'JSON を書き出しました');
+      } }, 'JSON 書き出し') : null,
       h('button', { type: 'button', class: 'btn', onclick: () => DG.close() }, '閉じる'));
 
     refresh();
     DG.open('コアエディタ(自作コア・確度:低)', h('div', { class: 'coreeditor' },
       h('p', { class: 'note', text: '既存コアを複製し、発行幅・ROB・L2 容量・クロック・SMT を変えた自作コアを作ります。結果は基準コアの補正を借りた推定で、確度は常に低です。' }),
-      h('div', { class: 'ce-grid' }, left, middle, right), addMsg, actions));
+      h('div', { class: 'ce-grid' }, left, middle, right), addMsg, okMsg, actions));
   }
 
   root.SDS.ui.coreeditor = { openCoreEditor, NOT_OUTPUT };

@@ -111,7 +111,7 @@
     $('library').hidden = !mix; $('mixpanel').hidden = !mix; $('params').hidden = mix;
     const pl = document.querySelector('.partslist'); if (pl) pl.hidden = mix;
     if (!mix) { clear($('library')); clear($('mixpanel')); return; }
-    LB.renderLibrary($('library'), design, libraryParts(), { onAdd: onAddPart, onClone: onCloneCore, onEditDef: onEditCoreDef }, libMsg, ctx.nodes, { uarch: ctx.uarch, areas: (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || [] });
+    LB.renderLibrary($('library'), design, libraryParts(), Object.assign({ onAdd: onAddPart, onClone: onCloneCore, onEditDef: onEditCoreDef }, userLibCb()), libMsg, ctx.nodes, { uarch: ctx.uarch, areas: (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || [] });
     MP.renderMix($('mixpanel'), design, lastEval, { onDieSize: onDieSizeEdit, onClock: onBlockClockEdit, onFitDie }, mixMsgs, ctx.nodes);
   }
   function renderParamsPanel() {
@@ -285,7 +285,7 @@
   }
   // ---- 自作コア(D。設計書 §3.7.4) ----
   function openEditorFor(def) {
-    CE.openCoreEditor({ def, nodes: ctx.nodes, toNodeId: (design.mix && design.mix.nodeId) || null, evalCtx: { cal: ctx.cal, uarch: ctx.uarch, presets: ctx.presets, nodes: ctx.nodes } }, { onAdd: onAddCore });
+    CE.openCoreEditor({ def, nodes: ctx.nodes, toNodeId: (design.mix && design.mix.nodeId) || null, evalCtx: { cal: ctx.cal, uarch: ctx.uarch, presets: ctx.presets, nodes: ctx.nodes } }, { onAdd: onAddCore, onRegister: onRegisterCore, onExport: onExportCore });
   }
   function onCloneCore(part) {
     if (!design || !isMix()) return;
@@ -306,6 +306,47 @@
     DG.close();
     notify(`${label}しました。`, 'info');
     return { ok: true };
+  }
+  // ---- ユーザーライブラリ(自作コアの保存。localStorage 'sds.userCores'。設計書 §3.7.4) ----
+  function userStorage() { try { return window.localStorage || null; } catch (e) { return null; } }
+  function userLibCb() {
+    const UC = S.model.usercores; if (!UC) return {};
+    return { userCores: UC.list(userStorage()), onUseUser: onUseUserCore, onDeleteUser: onDeleteUserCore, onExportUser: onExportUserCore, onImportUser: onImportUserCores };
+  }
+  function onRegisterCore(def) {
+    const r = S.model.usercores.add(userStorage(), def);
+    if (!r.ok) return r;
+    renderMixPanels();
+    const m = r.renamed.length ? `ライブラリに「${r.entry.def.name}」として登録しました(同名があったため名前を変えています)` : `ライブラリに「${r.entry.def.name}」を登録しました`;
+    notify(m + '。', 'info');
+    return { ok: true, message: m };
+  }
+  function onExportCore(def) {
+    const r = S.model.usercores.exportCore(def);
+    if (!r.ok) return r;
+    try { const n = S.ui.exporter.safeFileName(def.name, '.sdscore.json'); S.ui.exportpanel.download(r.text, n, 'application/json'); return { ok: true, message: `JSON を書き出しました(${n})` }; }
+    catch (e) { return { ok: false, reason: `書き出せませんでした: ${e.message}` }; }
+  }
+  // ライブラリ行の[JSON 書き出し]: 失敗は理由を画面(libMsg)に出して再描画、成功は通知
+  function onExportUserCore(entry) {
+    const r = onExportCore(entry.def);
+    if (!r.ok) { libMsg = `書き出せませんでした: ${r.reason}`; renderMixPanels(); return; }
+    libMsg = ''; notify(`${r.message}。`, 'info');
+  }
+  // 使うたびに設計へコピー(以後は独立)。onAddCore と同じ経路(addPart・履歴)
+  function onUseUserCore(entry, count) {
+    const res = onAddCore(JSON.parse(JSON.stringify(entry.def)), count);
+    if (!res.ok) { libMsg = res.reason; renderMixPanels(); }
+  }
+  function onDeleteUserCore(entry) {
+    const r = S.model.usercores.remove(userStorage(), entry.id);
+    if (!r.ok) libMsg = r.reason; else { libMsg = ''; notify(`ライブラリから「${entry.def.name}」を削除しました。`, 'info'); }
+    renderMixPanels();
+  }
+  function onImportUserCores(text) {
+    const r = S.model.usercores.importText(userStorage(), text);
+    if (!r.ok) { libMsg = `取り込めませんでした: ${r.reason}`; renderMixPanels(); return; }
+    libMsg = ''; notify(`${r.entries.length} 個のコアをライブラリに取り込みました。`, 'info'); renderMixPanels();
   }
   function onFitDie() {
     if (!design || !isMix()) return;
