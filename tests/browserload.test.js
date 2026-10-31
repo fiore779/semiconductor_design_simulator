@@ -228,6 +228,22 @@ test('比較・書き出し: script が登録され、比較ダイアログ(3 �
   const t = body.textContent;
   assert.ok(t.includes('設計の比較') && t.includes('元のプリセット') && t.includes('差(現在 − 比較先)') && t.includes('編集後') && t.includes('[予測]'));
   assert.ok(!t.includes('undefined') && !t.includes('NaN'));
+  assert.ok(t.includes('比較先A') && t.includes('比較先B') && t.includes('(なし'), '比較先の枠が 2 つある');
+  assert.ok(!t.includes('比較先B(差は'), '既定は 1 対 1(比較先 B は「なし」)');
+  // 3 列: 比較先 B に「履歴の最初の状態」を選ぶ(別の設計)と、列が 3 つになる。同じ指定を選ぶと重複の注意が出て列は増えない
+  const findId = (n, id) => (n.attrs && n.attrs.id === id ? n : (n.children || []).reduce((f, c) => f || findId(c, id), null));
+  ctx.SDS.ui.dialogs.close(); body.children = [];
+  ui.comparepanel.openCompare({ design: d, ev, presets: c.presets, baseline: DS.fromPreset(c.presets[1]), evaluate: (x) => evaluate(x, c) });
+  const src2 = findId(body, 'cmp-src2'); assert.ok(src2 && src2.listeners && src2.listeners.change, '比較先 B の選択がある');
+  src2.listeners.change({ target: { value: 'history' } });
+  const t3 = body.textContent;
+  assert.ok(t3.includes('比較先A(差は 現在 − 比較先A)') && t3.includes('比較先B(差は 現在 − 比較先B)') && t3.includes('比較先どうしの差は出しません'));
+  assert.ok(!t3.includes('undefined') && !t3.includes('NaN'));
+  src2.listeners.change({ target: { value: 'origin' } });
+  const t4 = body.textContent;
+  assert.ok(t4.includes('重複して並べません') && !t4.includes('比較先B(差は'));
+  src2.listeners.change({ target: { value: 'none' } });
+  assert.ok(!body.textContent.includes('重複して並べません') && body.textContent.includes('差(現在 − 比較先)'));
   // 混合設計: 元のプリセットは選べない(選択肢は無効)。履歴の最初の状態が既定になり、電力・温度は「—(理由)」
   ctx.SDS.ui.dialogs.close(); body.children = [];
   const mix = DS.fromScratch({ name: '混合', widthMm: 20, heightMm: 20, nodeId: 'tsmc-n4' });

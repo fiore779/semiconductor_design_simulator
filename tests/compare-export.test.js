@@ -227,3 +227,99 @@ test('PNG: タイトルの制御文字・双方向制御文字は空白に置換
   assert.deepStrictEqual(EX.wrapLimited(measure, 'あ'.repeat(15), 100, 2), ['あ'.repeat(10), 'あ'.repeat(5)]);
   assert.ok(EX.pngInfo(d, evalOf(d), { mode: 'power', noData: true }).subtitle.includes('電力密度ヒートマップ(推定)(データなし)'));
 });
+
+// ---- 3 設計の比較(現在 + 比較先 最大 2) ----
+test('3 列比較: 差は各比較先ごとに 現在−比較先。比較先どうしの差は持たない。1 対 1 と同じ値になる', () => {
+  const cur = design.fromPreset(P('intel-rpl-13900k'), { mode: 'reproduce' });
+  const A = side(cur);
+  const b1 = side(design.fromPreset(P('amd-zen4-7950x'), { mode: 'reproduce' }));
+  const b2 = side(design.fromPreset(P('intel-rpl-13700k'), { mode: 'reproduce' }));
+  const rows = CF.compareMulti(A, [b1, b2]);
+  assert.strictEqual(rows.length, CF.ROWS.length);
+  const one1 = CF.compareRows(A, b1); const one2 = CF.compareRows(A, b2);
+  rows.forEach((r, i) => {
+    assert.strictEqual(r.others.length, 2);
+    assert.strictEqual(r.others[0].abs, one1[i].abs); assert.strictEqual(r.others[1].abs, one2[i].abs);
+    assert.strictEqual(r.others[0].pct, one1[i].pct); assert.strictEqual(r.others[1].pct, one2[i].pct);
+    assert.ok(!('abs' in r) && !('b' in r));
+  });
+  const st = rows.find((r) => r.key === 'st');
+  assert.strictEqual(st.others[0].abs, st.a.value - b1.ev.st.score);
+  assert.strictEqual(st.others[1].abs, st.a.value - b2.ev.st.score);
+  assert.ok(CF.diffText(CF.pairRow(st, 1)).includes('pt'));
+  assert.ok(st.others[0].cell.pub && st.others[1].cell.pub, '未編集 B は公開値との差が出る');
+  const notes = CF.compareNotesMulti(A, [b1, b2]);
+  assert.ok(notes.some((t) => t.includes('比較先どうしの差は出しません')));
+});
+
+test('3 列比較: 比較先 1 つだけなら compareRows と同じ。比較先 0 / 3 以上でも壊れない', () => {
+  const A = side(design.fromPreset(P('intel-rpl-13900k')));
+  const b = side(design.fromPreset(P('amd-zen4-7950x')));
+  const one = CF.compareRows(A, b);
+  const m = CF.compareMulti(A, [b]);
+  m.forEach((r, i) => { assert.strictEqual(r.others.length, 1); assert.strictEqual(CF.diffText(CF.pairRow(r, 0)), CF.diffText(one[i])); });
+  assert.deepStrictEqual(CF.compareNotesMulti(A, [b]), CF.compareNotes(A, b));
+  assert.strictEqual(CF.compareMulti(A, []).every((r) => r.others.length === 0), true);
+  assert.strictEqual(CF.compareMulti(A, [b, b, b])[0].others.length, 2);
+});
+
+test('3 列比較: 比較先の解決(未選択・なし・エラー・重複)', () => {
+  const d = design.fromPreset(P('intel-rpl-13900k'), { mode: 'reproduce' });
+  const args = { presets: D.presets, baseline: d };
+  let r = CF.resolveTargets([{ key: 'origin' }, { key: 'none' }], d, args);
+  assert.strictEqual(r.targets.length, 1); assert.strictEqual(r.errors.length, 0); assert.strictEqual(r.duplicates.length, 0);
+  r = CF.resolveTargets([{ key: 'origin' }, { key: 'history' }], d, args);
+  assert.strictEqual(r.targets.length, 1, '履歴の最初が元のプリセットと同じ設計なら重複');
+  const base2 = design.fromPreset(P('amd-zen4-7950x'));
+  r = CF.resolveTargets([{ key: 'origin' }, { key: 'history' }], d, { presets: D.presets, baseline: base2 });
+  assert.strictEqual(r.targets.length, 2, '別の設計なら 2 つ並ぶ');
+  // 同じ種類・同じプリセットの重複 → 2 つ目は除く
+  r = CF.resolveTargets([{ key: 'preset', presetId: 'amd-zen4-7950x' }, { key: 'preset', presetId: 'amd-zen4-7950x' }], d, args);
+  assert.strictEqual(r.targets.length, 1); assert.deepStrictEqual(r.duplicates.map((x) => x.index), [1]);
+  // 元のプリセットと「別のプリセット」で同じプリセットを選んだ場合も同じ設計なので重複
+  r = CF.resolveTargets([{ key: 'origin' }, { key: 'preset', presetId: 'intel-rpl-13900k' }], d, args);
+  assert.strictEqual(r.targets.length, 1); assert.strictEqual(r.duplicates.length, 1);
+  // プリセット未選択はエラー(理由つき)。もう一方は有効
+  r = CF.resolveTargets([{ key: 'preset', presetId: '' }, { key: 'origin' }], d, args);
+  assert.strictEqual(r.targets.length, 1); assert.strictEqual(r.errors[0].index, 0); assert.ok(r.errors[0].reason);
+  // 履歴なし
+  r = CF.resolveTargets([{ key: 'history' }], d, { presets: D.presets });
+  assert.strictEqual(r.targets.length, 0); assert.strictEqual(r.errors.length, 1);
+  // 3 つ目は無視、空指定は何も返さない
+  assert.strictEqual(CF.resolveTargets([{ key: 'origin' }, { key: 'history' }, { key: 'origin' }], d, { presets: D.presets, baseline: base2 }).targets.length, 2);
+  assert.strictEqual(CF.resolveTargets([], d, args).targets.length, 0);
+});
+
+test('3 列比較: 値なし(混合)は各列で「—(理由)」、編集済み/未編集で公開値の差が分かれ、比較先名が理由に入る', () => {
+  const orig = design.fromPreset(P('intel-rpl-13900k'), { mode: 'improve' });
+  const e = design.setClock(orig, orig.cfg.cores[0].type, 6.2);
+  assert.ok(e.ok, e.reason);
+  const mix = design.fromScratch({ name: 'mix', widthMm: 20, heightMm: 20, nodeId: 'tsmc-n4' });
+  const A = side(e.design); const B1 = side(design.fromPreset(P('intel-rpl-13900k'), { mode: 'reproduce' })); const B2 = side(mix);
+  const rows = CF.compareMulti(A, [B1, B2]);
+  const st = rows.find((r) => r.key === 'st'); const pw = rows.find((r) => r.key === 'power');
+  assert.strictEqual(st.a.pub, null); assert.ok(st.others[0].cell.pub); assert.strictEqual(st.others[1].cell.pub, null);
+  assert.ok(st.others[0].abs > 0);
+  assert.strictEqual(pw.others[1].abs, null);
+  assert.ok(pw.others[1].diffReason.includes('比較先B'));
+  assert.ok(CF.diffText(CF.pairRow(pw, 1)).startsWith('—('));
+  assert.ok(CF.valueText(pw.others[1].cell, pw).startsWith('—('));
+  const area = rows.find((r) => r.key === 'area');
+  assert.strictEqual(area.others[1].kindMismatch, true); assert.strictEqual(area.others[0].kindMismatch, false);
+  const notes = CF.compareNotesMulti(A, [B1, B2]);
+  assert.ok(notes.some((t) => t.startsWith('現在は編集後')) && notes.some((t) => t.startsWith('比較先Bは混合設計')));
+  rows.forEach((r) => r.others.forEach((o) => { if (o.abs == null) assert.ok(o.diffReason); }));
+});
+
+test('3 列比較: 全プリセットを比較先 A・B にしても例外にならない', () => {
+  const A = side(design.fromPreset(P('intel-rpl-13900k')));
+  const ps = D.presets.slice(0, 12).map((p) => side(design.fromPreset(p)));
+  for (let i = 0; i + 1 < ps.length; i++) CF.compareMulti(A, [ps[i], ps[i + 1]]).forEach((r) => r.others.forEach((o, k) => { CF.diffText(CF.pairRow(r, k)); CF.valueText(o.cell, r); CF.pubText(o.cell, r); }));
+});
+
+test('書き出し(CSV/JSON/要約)に比較は含まれない(3 列対応は不要)', () => {
+  const d = design.fromPreset(P('intel-rpl-13900k'));
+  const ev = evalOf(d);
+  const csv = EX.toCsv(EX.resultRows(d, ev)); const txt = EX.toSummaryText(d, ev, {}); const json = EX.toJson(d);
+  [csv, txt, json].forEach((o) => assert.ok(!o.includes('比較先') && !o.includes('差(現在')));
+});
