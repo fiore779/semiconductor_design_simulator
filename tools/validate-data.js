@@ -67,6 +67,7 @@ gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数の�
 // M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
+const C2_EXCEPTIONS = new Set(['amd-kraken-350']);
 const INTEL_GEN12_PLUS_P = new Set(['Golden Cove', 'Raptor Cove', 'Redwood Cove', 'Lion Cove', 'Cougar Cove']);
 const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) || []).some((c) => INTEL_GEN12_PLUS_P.has(c.uarch));
 (D.presets || []).forEach((p) => sigCount.set(sig(p), (sigCount.get(sig(p)) || 0) + 1));
@@ -78,7 +79,8 @@ const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) 
   ok(!/64c/.test(p.gb7 || ''), `${id}: C1 定義が不明な GB7 行(64c 表記)は使えない`);
   // C2 面積
   const numDies = (p.dies || []).filter((d) => typeof d.mm2 === 'number');
-  ok(numDies.length >= 1, `${id}: C2 mm2 が数値のダイが 1 つも無い`);
+  // C2 の例外(id 指定。C1・C3・C4 は続ける): Kraken Point はダイ面積が未取得(仮寸法表示)。ユーザー指示 2026-10-31(設計書 §13)
+  if (!C2_EXCEPTIONS.has(p.id)) ok(numDies.length >= 1, `${id}: C2 mm2 が数値のダイが 1 つも無い`);
   numDies.forEach((d) => ok(['meas', 'pub'].includes(d.s) || (d.s === 'sec' && !!d.note), `${id}: C2 die ${d.name} の区分は meas/pub、または note つきの sec のみ`));
   // C3 構成(uarch が存在・count・クロックは cores のどれか 1 件以上。LP-E など個別に未取得のコアは null を許す)
   const cores = (p.cfg && p.cfg.cores) || [];

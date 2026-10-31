@@ -316,6 +316,14 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "AMD",
+  "name": "Kraken Point: Ryzen AI 7 350(2.0GHz, 8c)",
+  "single": 2116,
+  "multi": 11354,
+  "kind": "チャート(検索要約・原ページ未確認)",
+  "n": null
+ },
+ {
+  "group": "AMD",
   "name": "Cezanne: Ryzen 7 5800U(1.9GHz, 8c)",
   "single": 1505,
   "multi": 6368,

@@ -162,6 +162,15 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false,
   });
   P.push({
+    id: 'amd-kraken-350', name: 'Ryzen AI 7 350', vendor: 'AMD', family: 'Kraken Point', isa: 'x86', kind: 'mobile-pc', year: 2025, addedIn: 'M5b',
+    gb7: 'Kraken Point: Ryzen AI 7 350(2.0GHz, 8c)',
+    dies: [die('Kraken Point (モノリシック)', null, null, 'tsmc-n4', '面積は未取得(195 mm² は出典不明の DB サイトのみのため採用しない)。プロセスは TSMC N4P([二次] Wikipedia)だが nodes.js には N4 のみのため N4 で代用')],
+    power: { base: pw(28, 'sec', 'cTDP 15〜54W'), peak: null, range: { minW: 15, maxW: 54 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'C', uarch: 'Zen 5c', count: 4, smt: 2, baseGHz: null, boostGHz: 3.5 }], l3MB: 16, l3Note: '合計 16MB は [二次] Wikipedia・Notebookcheck。TechPowerUp 等は 8MB(検索要約・原ページ未確認)とし食い違う。Zen 5 側 / Zen 5c 側の内訳は未取得', memory: 'DDR5-5600 / LPDDR5X-8000' },
+    calib: false,
+    notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック・ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照',
+  });
+  P.push({
     id: 'amd-strixhalo-395', name: 'Ryzen AI Max+ 395', vendor: 'AMD', family: 'Strix Halo', isa: 'x86', kind: 'mobile-pc', year: 2025,
     gb7: 'Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)',
     dies: [die('Zen 5 CCD ×2', 134.2, 'meas', 'tsmc-n4', '67.1 mm² × 2'), die('SoC/iGPU ダイ', 307.6, 'meas', 'tsmc-n4')],

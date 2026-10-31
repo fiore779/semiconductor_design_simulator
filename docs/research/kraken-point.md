@@ -76,6 +76,7 @@ W400(Ryzen AI 400 = Gorgon Point、2026-01-05 発売)には Kraken Point と同�
 | プロセス | TSMC N4P FinFET | [二次] W300 共通項目。NBC350/NBC340「4 nm」[二次] |
 | パッケージ | FP8(BGA) | [二次] W300 共通項目、NBC350/NBC340「FP8」 |
 | トランジスタ数 | **未取得** | NBC350・NBC340 とも記載なし。TechPowerUp は「unknown」とされる: 検索要約(原ページ未確認、TPU は取得不可) |
+| ダイ名「モノリシック」(プリセットの die 名) | プロジェクトの推論 | 出典で明示されたものではない。W300 が全 SKU を FP8 の単一 BGA パッケージ(APU)として記載していること、TH-CES が単一ダイ(CCX 数のみ未確定)を前提に書いていることからの推論 [推定] |
 | ダイ面積(Krackan Point) | **未取得** | 信頼できる出典なし。下の候補値は採用しない |
 | ダイ面積(Krackan Point 2) | **未取得** | HH330 はダイに言及なし |
 | ダイ写真・フロアプラン注釈 | **未取得** | Tom's Hardware(TH-CES)は「the final layout will be confirmed once die-shots become available」と書いた [二次]。その後のダイ写真・注釈は検索で見つからず |

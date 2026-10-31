@@ -21,7 +21,7 @@ test('テンプレート判定: 代表的なプリセットが想定どおりの
     'intel-adl-12900k': 'intel-hybrid', 'intel-rpl-14900k': 'intel-hybrid', 'intel-rpl-14700hx': 'intel-hybrid',
     'intel-adl-12100': 'x86-mono', 'amd-zen1-1800x': 'x86-mono', 'amd-zen1-1200': 'x86-mono',
     'amd-zen5-9950x': 'amd-chiplet', 'amd-zen3-5600x': 'amd-chiplet', 'amd-zen4-7700': 'amd-chiplet', 'amd-strixhalo-395': 'amd-chiplet',
-    'amd-strix-hx370': 'amd-apu', 'amd-zen4-7840hs': 'amd-apu', 'amd-raven-2400g': 'amd-apu',
+    'amd-strix-hx370': 'amd-apu', 'amd-kraken-350': 'amd-apu', 'amd-zen4-7840hs': 'amd-apu', 'amd-raven-2400g': 'amd-apu',
     'intel-arl-285k': 'x86-tile', 'intel-lnl-268v': 'x86-tile', 'intel-ptl-x9-388h': 'x86-tile',
     'apple-m1': 'other', 'qc-8elite': 'other', 'amd-epyc-7401': 'other', 'nv-orin-agx': 'other', 'amd-zen3-5800x': 'other',
   };
@@ -39,6 +39,7 @@ test('全プリセット: テンプレートごとの件数(Kraken Point など�
   assert.strictEqual(sum, presets.length);
   FP.TEMPLATE_IDS.forEach((t) => assert.ok(n[t] > 0, `${t} に当たるプリセットが無い`));
   assert.ok(n.other > 0);
+  assert.strictEqual(n['amd-apu'], 7, 'amd-apu: Kraken Point 追加後の件数');
 });
 
 test('全プリセット: ブロックはダイ内に収まり、重ならず、検証の警告が無い', () => {
@@ -83,6 +84,7 @@ test('飾りブロック: Uncore・iGPU・NPU だけが decorative で、コア�
   const kinds = (id) => mk(id).dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.decorative).map((b) => b.kind)), []).sort();
   assert.deepStrictEqual(kinds('intel-adl-12900k'), ['gpu', 'uncore']);
   assert.deepStrictEqual(kinds('amd-strix-hx370'), ['gpu', 'npu', 'uncore']);
+  assert.deepStrictEqual(kinds('amd-kraken-350'), ['gpu', 'npu', 'uncore']);
   assert.deepStrictEqual(kinds('amd-zen1-1800x'), ['uncore']);
   assert.deepStrictEqual(kinds('amd-zen5-9950x'), []);
 });

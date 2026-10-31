@@ -275,7 +275,7 @@ test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(
 // 2026-10-30(M6 第 4 段): 12700K・13700K・14700K・12600K・13600K・14600K・14700HX・12100 の ST/MT を更新
 // 2026-10-31(M6 第 5 段): Zen 3 デスクトップ 2 件(5600X・5950X)を追加(初回値。GB7 との差は設計書 §5.3.0)
 // 2026-10-31(M6 第 5 段 E5): Snapdragon 8cx Gen 3(qc-8cx-gen3)を追加(初回値 [1188.55, 5554.659]。GB7 1315/6722 との差は ST -9.6% / MT -17.4%。設計書 §5.3.0)。Oryon Performance の l2KB を 3072→2048 に修正(8 Elite 系 3 件の MT のみ下がる。qc-8elite 10605.004→10554.884、qc-8elite-gen5 10958.045→10906.818、qc-8elite-x-gen6 11892.725→11837.519。ST・校正は不変。設計書 §5.3.0)
-const BASE_M5B = {"intel-adl-12700k":[2233.933,15865.836],"intel-rpl-13700k":[2479.912,19228.654],"intel-rpl-14700k":[2529.022,21154.291],"intel-lnl-258v":[2346.851,null],"amd-zenplus-2600x":[1405.2,6649.851],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,11589.846],"amd-zen3-5800u":[1971.261,7905.687],"qc-7gen3":[1054.755,3169.268],"qc-7gen4":[null,null],"qc-7gen1":[924.637,2956.526],"qc-720g":[567.715,1457.096],"qc-8elite-x-gen6":[2108.635,11837.519],"intel-adl-12600k":[2222.641,13511.327],"intel-rpl-13600k":[2336.44,16206.201],"intel-ptl-x9-386h":[2730.829,16763.524],"intel-arl-275hx":[2700.37,null],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[733.317,2494.332],"qc-4gen2":[733.317,1744.831],"intel-rpl-14600k":[2423.698,16651.752],"intel-rpl-14700hx":[2529.022,14310.769],"intel-adl-12100":[1938.147,7402.868],"intel-lnl-256v":[2346.851,null],"intel-ptl-x9-378h":[2782.876,17120.624],"intel-ptl-x7-358h":[2678.643,16129.293],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2112.419,8393.862],"amd-zen3-5600x":[2112.146,10372.049],"amd-zen3-5950x":[2239.59,19789.438],"qc-8cx-gen3":[1188.55,5554.659]};
+const BASE_M5B = {"intel-adl-12700k":[2233.933,15865.836],"intel-rpl-13700k":[2479.912,19228.654],"intel-rpl-14700k":[2529.022,21154.291],"intel-lnl-258v":[2346.851,null],"amd-zenplus-2600x":[1405.2,6649.851],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,11589.846],"amd-zen3-5800u":[1971.261,7905.687],"qc-7gen3":[1054.755,3169.268],"qc-7gen4":[null,null],"qc-7gen1":[924.637,2956.526],"qc-720g":[567.715,1457.096],"qc-8elite-x-gen6":[2108.635,11837.519],"intel-adl-12600k":[2222.641,13511.327],"intel-rpl-13600k":[2336.44,16206.201],"intel-ptl-x9-386h":[2730.829,16763.524],"intel-arl-275hx":[2700.37,null],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[733.317,2494.332],"qc-4gen2":[733.317,1744.831],"intel-rpl-14600k":[2423.698,16651.752],"intel-rpl-14700hx":[2529.022,14310.769],"intel-adl-12100":[1938.147,7402.868],"intel-lnl-256v":[2346.851,null],"intel-ptl-x9-378h":[2782.876,17120.624],"intel-ptl-x7-358h":[2678.643,16129.293],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2112.419,8393.862],"amd-zen3-5600x":[2112.146,10372.049],"amd-zen3-5950x":[2239.59,19789.438],"qc-8cx-gen3":[1188.55,5554.659],"amd-kraken-350":[2694.581,9508.475]};
 test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
   const added = D.presets.filter((p) => p.addedIn === 'M5b');
   assert.deepStrictEqual(added.map((p) => p.id).sort(), Object.keys(BASE_M5B).sort());
@@ -285,6 +285,27 @@ test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分�
     const got = [r.st.ok ? +r.st.score.toFixed(3) : null, r.mt.ok ? +r.mt.score.toFixed(3) : null];
     assert.deepStrictEqual(got, BASE_M5B[p.id], p.id);
   });
+});
+
+// 2026-10-31: Kraken Point(Ryzen AI 7 350。addedIn:'M5b'。C2 の例外)。初回値 ST 2694.581 / MT 9508.475(公表 GB7 2116 / 11354 との差は ST +27.3% / MT -16.3%。補正で合わせない)。
+// GB7 は検索要約(原ページ未確認)。ダイ面積は未取得、Zen 5c の baseGHz が未取得のため電力モデルは校正できない(公表値の範囲のみ)
+test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。面積は未取得のまま歩留まりも未取得、電力は推定できない', () => {
+  const p = D.presets.find((x) => x.id === 'amd-kraken-350');
+  assert.strictEqual(p.addedIn, 'M5b'); assert.strictEqual(p.calib, false);
+  const d = design.fromPreset(p);
+  assert.strictEqual(d.dies[0].areaKnown, false);
+  const r = E.evaluate(d, ctx);
+  assert.deepStrictEqual([+r.st.score.toFixed(3), +r.mt.score.toFixed(3)], [2694.581, 9508.475]);
+  assert.deepStrictEqual([r.st.published, r.mt.published], [2116, 11354]);
+  assert.ok(/原ページ未確認/.test(r.st.publishedKind));
+  assert.ok(Math.abs(r.st.errPct - 27.34) < 0.01 && Math.abs(r.mt.errPct + 16.25) < 0.01);
+  assert.strictEqual(r.area.totalMm2, null); assert.strictEqual(r.area.yield, null);
+  assert.strictEqual(r.power.published.base.w, 28); assert.deepStrictEqual(r.power.published.range, { minW: 15, maxW: 54 });
+  assert.strictEqual(r.powerModel.ok, false);
+  // 再現度パネル: 公開値が検索要約(原ページ未確認)なら注記が付き、判定(✗)は変わらない
+  const rows = require('../js/ui/reproduce.js').reproductionRows(r);
+  const st = rows.find((x) => /シングル/.test(x.label)); const mt = rows.find((x) => /マルチ/.test(x.label));
+  [st, mt].forEach((x) => { assert.strictEqual(x.verdict, 'ng'); assert.ok(x.note.includes('公開値は検索要約(原ページ未確認)'), x.note); });
 });
 
 test('M5b 波1: 追加分を足しても校正(σ・γ・uarch ごとの u・uIsa)は既存 65 件だけの場合と完全に一致する', () => {

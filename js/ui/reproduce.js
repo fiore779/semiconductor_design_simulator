@@ -18,6 +18,7 @@
     if (isMt && r.fallback) { row.verdict = 'gray'; row.note = '仮の IPC を含むため信頼できない(判定しない)'; if (r.mixedClock) add(MIXED_TEXT); return row; }
     const ok = Math.abs(r.errPct) <= tol * 100;
     row.verdict = ok ? 'ok' : 'ng';
+    if (/原ページ未確認|検索要約/.test(r.publishedKind || '')) add('公開値は検索要約(原ページ未確認)');
     if (r.isCalibSample) add('校正に使った代表 SKU のため、一致して当然(検証ではない)');
     else if (r.inUCalSet) add('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
     else if (r.calibNotUsedForMt) add('ST の補正には使ったが、MT の σ の合わせには使っていない');
