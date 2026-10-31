@@ -178,5 +178,26 @@
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: create }, '作成'), h('button', { type: 'button', class: 'btn', onclick: close }, 'キャンセル'))));
   }
 
-  root.SDS.ui.dialogs = { openNew, openPresets, openMix, open, close, isOpen };
+  // ---- 設定(元に戻す/やり直す、プリセット呼び出しの 2 つだけ) ----
+  // cb: getState() → { canUndo, canRedo, pos, total }, onUndo(), onRedo(), onOpenPresets()
+  function openSettings(cb) {
+    const status = h('p', { class: 'small', role: 'status', 'aria-live': 'polite' });
+    const undoBtn = h('button', { type: 'button', class: 'btn', id: 'set-undo', onclick: () => { cb.onUndo(); refresh(undoBtn); } }, '↶ 元に戻す(Ctrl+Z)');
+    const redoBtn = h('button', { type: 'button', class: 'btn', id: 'set-redo', onclick: () => { cb.onRedo(); refresh(redoBtn); } }, '↷ やり直す(Ctrl+Y)');
+    const presetBtn = h('button', { type: 'button', class: 'btn primary', id: 'set-preset', onclick: () => cb.onOpenPresets() }, 'プリセットを呼び出す');
+    function refresh(pressed) {
+      const st = cb.getState();
+      undoBtn.disabled = !st.canUndo; redoBtn.disabled = !st.canRedo;
+      status.textContent = st.total > 0 ? `履歴の位置: ${st.pos} / ${st.total}` : '履歴はまだありません。';
+      // 押したボタンが無効になったら、フォーカスを失わないよう残りの有効なボタンへ移す
+      if (pressed && pressed.disabled) { const alt = pressed === undoBtn ? redoBtn : undoBtn; (alt.disabled ? presetBtn : alt).focus(); }
+    }
+    refresh();
+    open('設定', h('div', {},
+      h('div', { class: 'actions' }, undoBtn, redoBtn),
+      status,
+      h('div', { class: 'actions' }, presetBtn)));
+  }
+
+  root.SDS.ui.dialogs = { openNew, openPresets, openMix, openSettings, open, close, isOpen };
 })(window);

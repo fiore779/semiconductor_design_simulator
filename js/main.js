@@ -453,6 +453,16 @@
     });
   }
 
+  function openSettings() {
+    DG.openSettings({
+      getState() {
+        const l = history.list(); const cur = l.findIndex((x) => x.current);
+        return { canUndo: history.canUndo(), canRedo: history.canRedo(), pos: cur < 0 ? 0 : cur, total: l.length - 1 };
+      },
+      onUndo: undo, onRedo: redo, onOpenPresets: openPresets,
+    });
+  }
+
   // ---- 表示切替 ----
   function setMode(m) {
     viewMode = m;
@@ -466,6 +476,7 @@
   // ---- イベント ----
   $('m-new').addEventListener('click', openNew);
   $('m-preset').addEventListener('click', openPresets);
+  $('m-settings').addEventListener('click', openSettings);
   $('m-open').addEventListener('click', () => $('fileinput').click());
   $('fileinput').addEventListener('change', onFile);
   $('m-save').addEventListener('click', save);

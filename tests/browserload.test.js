@@ -448,3 +448,35 @@ test('ユーザーライブラリ: コアエディタの[ライブラリに登�
   assert.ok(lib2.textContent.includes('JSON 書き出しのみ可'));
   assert.strictEqual(findAll(lib2, (n) => n.attrs && n.attrs.id === 'lib-user-file')[0].disabled, true);
 });
+
+test('設定ダイアログ: ボタンが有効で、undo/redo が既存関数を呼び、disabled が履歴に追従し、プリセット導線が呼ばれる(DOM スタブ)', () => {
+  assert.ok(/<button[^>]*id="m-settings"(?![^>]*disabled)[^>]*>設定<\/button>/.test(html), '設定ボタンが有効でない');
+  assert.ok(!html.includes('設定(未実装)'));
+  const ctx = loadAll(stubDoc());
+  const ui = ctx.SDS.ui;
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  FakeNode.prototype.focus = function () { this.focused = true; };
+  try {
+    const st = { pos: 1, total: 2 }; const calls = [];
+    ui.dialogs.openSettings({
+      getState: () => ({ canUndo: st.pos > 0, canRedo: st.pos < st.total, pos: st.pos, total: st.total }),
+      onUndo() { calls.push('undo'); st.pos--; }, onRedo() { calls.push('redo'); st.pos++; },
+      onOpenPresets() { calls.push('presets'); },
+    });
+    const byId = (id) => findAll(body, (n) => n.attrs && n.attrs.id === id)[0];
+    assert.ok(ui.dialogs.isOpen());
+    assert.strictEqual(byId('set-undo').disabled, false); assert.strictEqual(byId('set-redo').disabled, false);
+    assert.ok(body.textContent.includes('履歴の位置: 1 / 2'));
+    byId('set-undo').listeners.click();   // 連続で押せる
+    assert.deepStrictEqual(calls, ['undo']);
+    assert.strictEqual(byId('set-undo').disabled, true); assert.strictEqual(byId('set-redo').disabled, false);
+    assert.ok(body.textContent.includes('履歴の位置: 0 / 2'));
+    assert.strictEqual(byId('set-redo').focused, true);   // 無効になったらフォーカスを残りへ
+    byId('set-redo').listeners.click(); byId('set-redo').listeners.click();
+    assert.deepStrictEqual(calls, ['undo', 'redo', 'redo']);
+    assert.strictEqual(byId('set-redo').disabled, true); assert.strictEqual(byId('set-undo').disabled, false);
+    byId('set-preset').listeners.click();
+    assert.deepStrictEqual(calls, ['undo', 'redo', 'redo', 'presets']);
+  } finally { delete FakeNode.prototype.focus; ctx.SDS.ui.dialogs.close(); }
+});
