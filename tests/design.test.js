@@ -145,7 +145,7 @@ test('setL3: 正常系と異常系。帯の高さが変わるときだけ再配�
   const r0 = design.setL3(d, 0); assert.ok(r0.ok); assert.strictEqual(r0.relaid, true);
   assert.ok(!r0.design.dies.some((x) => x.blocks.some((b) => b.kind === 'l3')));
   const r2 = design.setL3(design.setL3(d, 100).design, 110); assert.strictEqual(r2.relaid, false);
-  assert.ok(r2.design.dies.some((x) => x.blocks.some((b) => b.label === "L3 110MB")));
+  assert.ok(r2.design.dies.some((x) => x.blocks.some((b) => b.label === "L3 55MB")));
   [-1, 513, NaN, Infinity].forEach((x) => { const e = design.setL3(d, x); assert.strictEqual(e.ok, false); assert.ok(e.reason.includes('L3')); });
 });
 

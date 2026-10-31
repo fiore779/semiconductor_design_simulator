@@ -1,14 +1,22 @@
 // 設計データ(設計書 §7)。プリセットから「ダイ+ブロック」の編集用データを作る。UI・WebGL に依存しない純関数。
 //
 // 注意: プリセットにはコア別・ブロック別の面積(§2.3)がほとんど無いので、**ブロックの大きさと配置は模式図**
-// (コアはダイの面積を等分、L3 は容量に比例した帯)。実チップのフロアプランではない。各ブロックに
+// (x86 の主要な種類は js/model/floorplan.js の実物風テンプレート=「コア列 | L3 | コア列」・上に Uncore・下に iGPU。
+// それ以外は、コアはダイの面積を等分、L3 は容量に比例した帯)。実チップのフロアプランではない。各ブロックに
 // `schematic: true` を付け、UI は「模式図」と明示する。ダイ全体の面積は実測/公表/二次の区分つきで保持する。
+// 飾りブロック(`decorative: true`。Uncore・iGPU・NPU)は見た目だけで、性能・電力・面積・温度の計算に影響しない。
 (function (root) {
   'use strict';
 
   const SCHEMA = 1;
   const ASPECT = 1.4; // ダイの縦横比(面積から幅×高さを作るための仮の値。実チップの寸法ではない)
   const GAP_MM = 2;   // ダイ間の隙間(表示用)
+
+  function floorplanApi() {
+    if (root.SDS && root.SDS.model && root.SDS.model.floorplan) return root.SDS.model.floorplan;
+    if (typeof require === 'function') return require('./floorplan.js');
+    return null;
+  }
 
   // ダイの役割を名前から推定する(模式図の割り当て用)
   function dieRole(name) {
@@ -18,8 +26,8 @@
   }
 
   // 面積 mm² から幅・高さ(表示用の仮の寸法)
-  function dieSize(mm2) {
-    const w = Math.sqrt(mm2 * ASPECT);
+  function dieSize(mm2, aspect) {
+    const w = Math.sqrt(mm2 * (aspect || ASPECT));
     return { widthMm: w, heightMm: mm2 / w };
   }
 
@@ -53,6 +61,20 @@
     return [{ id: `${die.id}-${kind}`, kind, label, x: m, y: m, w: die.widthMm - m * 2, h: die.heightMm - m * 2, schematic: true }];
   }
 
+  // dies[ci](CCD)を上段、ほかのダイを下段の中央に並べ直す。最後に x の最小を 0 に揃える。
+  function arrangeChiplet(dies, ci) {
+    const top = dies.filter((d, i) => i === ci); const rest = dies.filter((d, i) => i !== ci);
+    let x = 0; top.forEach((d) => { d.x = x; d.y = 0; x += d.widthMm + GAP_MM; });
+    const topW = Math.max(0, x - GAP_MM); const topH = Math.max.apply(null, top.map((d) => d.heightMm));
+    if (rest.length) {
+      const restW = rest.reduce((s, d) => s + d.widthMm, 0) + GAP_MM * (rest.length - 1);
+      let rx = topW / 2 - restW / 2; const ry = topH + Math.max(4, topH * 0.45);
+      rest.forEach((d) => { d.x = rx; d.y = ry; rx += d.widthMm + GAP_MM; });
+    }
+    const minX = Math.min.apply(null, dies.map((d) => d.x));
+    dies.forEach((d) => { d.x -= minX; });
+  }
+
   // プリセット → 設計。面積が未取得のダイは areaKnown:false の仮寸法(10×10mm)で置く。
   function fromPreset(preset, opts) {
     const o = opts || {};
@@ -61,19 +83,27 @@
     const roles = srcDies.map((d) => dieRole(d.name));
     let computeIdx = roles.indexOf('compute');
     if (computeIdx < 0) computeIdx = 0;
+    // 実物風テンプレート(判定できなければ null = 従来の配置)。ダイの面積は変えず、縦横比だけテンプレートで決める
+    const FP = floorplanApi();
+    const fp = FP && preset.dies && preset.dies.length ? FP.classify(preset, dieRole) : null;
+    if (fp) computeIdx = fp.dieIndex;
+    const layout = fp ? { template: fp.template, uncore: fp.uncore, igpu: fp.igpu, npu: fp.npu, units: fp.units } : null;
     srcDies.forEach((sd, i) => {
       const known = typeof sd.mm2 === 'number';
-      const size = known ? dieSize(sd.mm2) : { widthMm: 10, heightMm: 10 };
+      const size = known ? dieSize(sd.mm2, layout && i === computeIdx ? FP.aspectOf(layout) : null) : { widthMm: 10, heightMm: 10 };
       const die = {
         id: `die${i}`, name: sd.name, nodeId: sd.nodeId || null, areaMm2: known ? sd.mm2 : null, areaSource: known ? sd.s : null,
         areaKnown: known, areaNote: sd.note || null, x: cursorX, y: 0, widthMm: size.widthMm, heightMm: size.heightMm, blocks: [],
       };
       cursorX += die.widthMm + GAP_MM;
-      if (i === computeIdx) die.blocks = layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB);
+      if (i === computeIdx && layout) { die.layout = Object.assign({}, layout); die.blocks = FP.layoutDie(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB, layout); }
+      else if (i === computeIdx) die.blocks = layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB);
       else if (roles[i] === 'gpu') die.blocks = oneBlock(die, 'gpu', 'GPU');
       else die.blocks = oneBlock(die, 'uncore', 'SoC / I/O');
       dies.push(die);
     });
+    // AMD チップレット: CCD は横並び(上)、IOD などほかのダイは CCD の下側中央に別ダイとして置く(基板上の見た目の配置。面積は変えない)
+    if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx);
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
     return {
@@ -155,7 +185,8 @@
   function relayoutCompute(design) {
     const d = clone(design);
     const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3'));
-    if (die) die.blocks = layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
+    // 実物風テンプレートで作ったダイは、同じテンプレートで作り直す(飾りブロックも含めて)
+    if (die) die.blocks = die.layout && floorplanApi() ? floorplanApi().layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout) : layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
     return d;
   }
 
@@ -198,6 +229,16 @@
     const old = d.cfg.l3MB || 0;
     d.cfg.l3MB = mb;
     if (old === mb) return { ok: true, design: d, relaid: false };
+    // 実物風テンプレートのダイは L3 の大きさが容量で変わらないので、あるまま(0 でない同士)なら位置は動かさず、ラベルだけ更新
+    if (old > 0 && mb > 0 && d.dies.some((die) => die.layout && die.blocks.some((b) => b.kind === 'l3'))) {
+      const FP = floorplanApi();
+      d.dies.forEach((die) => {
+        if (!die.layout || !FP) return;
+        const fresh = FP.layoutDie(die, d.cfg.cores, mb, die.layout);
+        die.blocks.forEach((b) => { if (b.kind === 'l3') { const f = fresh.find((x) => x.id === b.id); if (f) b.label = f.label; } });
+      });
+      return { ok: true, design: d, relaid: false };
+    }
     // 帯の高さ(割合)が同じなら位置は動かさず、ラベルだけ更新。違えば再配置
     if (old > 0 && mb > 0 && l3Frac(old) === l3Frac(mb)) {
       d.dies.forEach((die) => die.blocks.forEach((b) => { if (b.kind === 'l3') b.label = `L3 ${mb}MB`; }));
@@ -522,6 +563,11 @@
       if (die.widthMm > MAX_SIZE_MM || die.heightMm > MAX_SIZE_MM) return `${t}: 寸法が大きすぎます(上限 ${MAX_SIZE_MM} mm)`;
       if (die.areaMm2 != null && !(isNum(die.areaMm2) && die.areaMm2 > 0)) return `${t}: areaMm2 は正の数か null にしてください`;
       if (!Array.isArray(die.blocks)) return `${t}: blocks が配列ではありません`;
+      if (die.layout != null) {
+        const FP = floorplanApi();
+        const lb = FP ? FP.checkLayout(die.layout) : null;
+        if (lb) return `${t}: ${lb}`;
+      }
       total += die.blocks.length;
       if (die.blocks.length > MAX_BLOCKS || total > MAX_BLOCKS) return `ブロックが多すぎます(上限 ${MAX_BLOCKS} 個)`;
       for (let j = 0; j < die.blocks.length; j++) {
@@ -534,6 +580,9 @@
         for (const k of ['x', 'y', 'w', 'h']) if (!isNum(b[k])) return `${u}: ${k} が有限の数ではありません`;
         if (!(b.w > 0 && b.h > 0)) return `${u}: 幅・高さは 0 より大きい値にしてください`;
         for (const k of ['kind', 'coreType', 'uarch']) if (b[k] != null && typeof b[k] !== 'string') return `${u}: ${k} が文字列ではありません`;
+        if (b.decorative != null && typeof b.decorative !== 'boolean') return `${u}: decorative は true か false にしてください`;
+        if (b.decorative != null && d.origin && d.origin.mode === 'mix') return `${u}: 混合設計のブロックに decorative は付けられません`;
+        if (b.decorative === true && !(b.kind === 'uncore' || b.kind === 'gpu' || b.kind === 'npu')) return `${u}: 飾りブロックにできるのは Uncore・iGPU・NPU(kind が uncore / gpu / npu)だけです`;
       }
     }
     const mixBad = checkMix(d);

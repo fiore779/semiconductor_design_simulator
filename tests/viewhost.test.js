@@ -27,7 +27,7 @@ function setup(opt) {
     if (o['fail' + kind]) { stage.textContent = 'WebGL が使えません。(スタブ)'; return { available: false, destroy() {} }; }
     const v = { kind, stage, handlers, calls: [], available: true };
     const rec = (n) => (...a) => { v.calls.push([n, ...a]); };
-    ['setDesign', 'setSelection', 'setViewMode', 'setColorMode', 'setHeatmap', 'fit', 'setCameraPreset', 'setIhsMode'].forEach((n) => { v[n] = rec(n); });
+    ['setDesign', 'setSelection', 'setViewMode', 'setColorMode', 'setHeatmap', 'fit', 'setCameraPreset', 'setIhsMode', 'setLabels'].forEach((n) => { v[n] = rec(n); });
     v.captureCanvas = (w) => ({ kind, w });
     v.destroy = () => { log.destroyed.push(v); };
     log.made.push(v);
@@ -151,4 +151,27 @@ test('captureCanvas は現在のビューに委譲する(3D のときも 2D の�
   assert.strictEqual(container.children.length, 0);
   assert.ok(log.destroyed.some((v) => v.kind === '2d'));
   assert.strictEqual(host.captureCanvas(), null);
+});
+
+test('ラベルの表示切替(既定は表示): 3D ビューに伝わり、保存され、3D を作り直したときも復元される。壊れた保存値は既定に戻る', () => {
+  const st = memStore();
+  const { host, log, container, btn } = setup({ storage: st });
+  assert.strictEqual(log.made[0].calls.filter((c) => c[0] === 'setLabels').pop()[1], true);
+  const chk = findAll(container, (n) => n.attrs && n.attrs.id === 'vh-labels')[0];
+  assert.strictEqual(chk.checked, true);
+  chk.checked = false; chk.listeners.change({ target: chk });
+  assert.strictEqual(log.made[0].calls.filter((c) => c[0] === 'setLabels').pop()[1], false);
+  assert.strictEqual(st.m['sds.view.labels'], '0'); assert.strictEqual(host.getLabels(), false);
+  btn('2d').listeners.click(); btn('3d').listeners.click();
+  assert.strictEqual(log.made[2].calls.filter((c) => c[0] === 'setLabels').pop()[1], false);
+  // 保存済みの値から始まる / 壊れた値は既定(表示)
+  const b = setup({ storage: memStore({ 'sds.view.labels': '0' }) });
+  assert.strictEqual(b.host.getLabels(), false);
+  const c = setup({ storage: memStore({ 'sds.view.labels': 'zzz' }) });
+  assert.strictEqual(c.host.getLabels(), true);
+  // storage が例外を投げても動く
+  const bad = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } };
+  const e = setup({ storage: bad });
+  assert.strictEqual(e.host.getLabels(), true);
+  e.host.setLabels(false); assert.strictEqual(e.host.getLabels(), false);
 });

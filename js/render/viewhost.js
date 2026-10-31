@@ -1,13 +1,14 @@
 // ダイビュー領域の 3D 表示 / 2D 編集の切替(設計書 §8.1)。dieview(2D)と pkgview3d(3D)のどちらか一方だけを生き物として保持し、
 // 切替時に作り直して、設計・選択・表示モード・色分け・ヒートマップの状態を引き継ぐ(履歴・自動保存には関与しない)。
 // 公開 API は dieview と同じ(setDesign / setSelection / setViewMode / setColorMode / setHeatmap / fit / captureCanvas / destroy)に、
-// setDimension / getDimension を足したもの。既定は 3D。表示設定(3D/2D・蓋の表示)は localStorage に任意で保存する(失敗しても無視)。
+// setDimension / getDimension を足したもの。既定は 3D。表示設定(3D/2D・蓋の表示・3D のラベル表示)は localStorage に任意で保存する(失敗しても無視)。
 (function (root) {
   'use strict';
 
   const isNode = typeof module !== 'undefined' && module.exports && typeof require === 'function';
   const LS_DIM = 'sds.view.dimension';
   const LS_IHS = 'sds.view.ihs';
+  const LS_LABELS = 'sds.view.labels'; // '1' 表示(既定)/ '0' 非表示
   const BAR_H = 36;
   const IHS_LABELS = { solid: '表示', glass: '半透明', off: '非表示' };
   const HINT_3D = 'ドラッグ=回転 / ホイール=拡大縮小 / 右ドラッグ・Shift+ドラッグ=移動 / 矢印キー=回転、+ −=拡大縮小';
@@ -31,6 +32,7 @@
     // ---- 状態(切替で引き継ぐもの)----
     let dim = load(LS_DIM, ['3d', '2d'], '3d');
     let ihsMode = load(LS_IHS, ['solid', 'glass', 'off'], 'glass');
+    let labelsOn = load(LS_LABELS, ['1', '0'], '1') === '1';
     let design = { dies: [] }; let selection = []; let viewMode = 'place'; let colorMode = 'kind'; let heat = null;
     let cur = null; let destroyed = false;
 
@@ -71,6 +73,13 @@
     set(ihsLabel, { whiteSpace: 'nowrap' });
     ihsLabel.appendChild(ihsSel);
     camGroup.appendChild(ihsLabel);
+    // ラベル(ブロック名・ダイ名・寸法)の表示切替。切ると物だけが見える
+    const lblChk = mk('input', '', { type: 'checkbox', id: 'vh-labels', class: 'vh-labels', 'aria-label': 'ラベル(ブロック名・ダイ名・寸法)を表示' });
+    lblChk.checked = labelsOn;
+    const lblLabel = mk('label', 'ラベル ', { class: 'small', for: 'vh-labels' });
+    set(lblLabel, { whiteSpace: 'nowrap' });
+    lblLabel.appendChild(lblChk);
+    camGroup.appendChild(lblLabel);
     const hint = mk('span', '', { class: 'small vh-hint' });
     set(hint, { minWidth: '0' });
     const status = mk('span', '', { class: 'small vh-status', role: 'status' });
@@ -88,7 +97,7 @@
       btn2.setAttribute('aria-pressed', dim === '2d' ? 'true' : 'false');
       camGroup.style.display = dim === '3d' ? 'inline-flex' : 'none';
       hint.textContent = dim === '3d' ? HINT_3D : HINT_2D;
-      ihsSel.value = ihsMode; layout();
+      ihsSel.value = ihsMode; lblChk.checked = labelsOn; layout();
     }
 
     // ---- ビューの作成と状態の引き継ぎ ----
@@ -106,6 +115,7 @@
       if (!v || v.available === false) { if (v && v.destroy) { try { v.destroy(); } catch (e) { /* 無視 */ } } return false; }
       cur = v;
       if (d === '3d' && v.setIhsMode) v.setIhsMode(ihsMode);
+      if (d === '3d' && v.setLabels) v.setLabels(labelsOn);
       v.setDesign(design); v.setColorMode(colorMode); v.setSelection(selection); v.setViewMode(viewMode); v.setHeatmap(heat);
       return true;
     }
@@ -143,6 +153,12 @@
       if (cur && cur.setIhsMode) cur.setIhsMode(v);
     });
 
+    lblChk.addEventListener('change', (e) => {
+      const on = e && e.target && typeof e.target.checked === 'boolean' ? e.target.checked : lblChk.checked;
+      labelsOn = !!on; save(LS_LABELS, labelsOn ? '1' : '0');
+      if (cur && cur.setLabels) cur.setLabels(labelsOn);
+    });
+
     return {
       available: true,
       setDesign(d) { design = d && d.dies ? d : { dies: [] }; if (cur) cur.setDesign(design); },
@@ -153,6 +169,8 @@
       fit() { if (cur) cur.fit(); },
       captureCanvas(w) { return cur && cur.captureCanvas ? cur.captureCanvas(w) : null; },
       setDimension, getDimension() { return dim; },
+      setLabels(on) { labelsOn = on !== false; lblChk.checked = labelsOn; save(LS_LABELS, labelsOn ? '1' : '0'); if (cur && cur.setLabels) cur.setLabels(labelsOn); },
+      getLabels() { return labelsOn; },
       destroy() {
         if (destroyed) return;
         destroyed = true; destroyCur();

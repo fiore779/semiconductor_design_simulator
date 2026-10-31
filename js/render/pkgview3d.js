@@ -49,7 +49,7 @@
   const NOTE_3D = '3D は模式図。形状・厚みは実物と異なります';
   const EDIT_HINT = '編集は 2D 表示で行います(3D では選択のみ)';
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
-  const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', other: 'その他' };
+  const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', npu: 'NPU', other: 'その他' };
   const KIND_NAMES = { power: '電力密度', temp: '温度' };
   const LIGHT_DIR = [-0.45, 0.85, 0.5];
   const STRIDE = G.VERTEX_FLOATS * 4;
@@ -65,7 +65,7 @@
   function emptyApi() {
     return {
       available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, captureCanvas() { return null; }, destroy() {},
-      setCameraPreset() {}, setIhsMode() {}, getIhsMode() { return 'glass'; },
+      setCameraPreset() {}, setIhsMode() {}, getIhsMode() { return 'glass'; }, setLabels() {}, getLabels() { return true; },
     };
   }
 
@@ -106,6 +106,7 @@
     let viewMode = 'place';
     let colorMode = 'kind';
     let ihsMode = 'glass';
+    let labelsOn = true; // ブロック名・ダイ名・寸法のラベルの表示(false で物だけが見える。注記・凡例は常に表示)
     let heat = null;
     const heatTex = new Map();
     let cam = null; let camSig = null;
@@ -271,7 +272,7 @@
       if (k === 'coreLP') return mix(base, WHITE, 0.6);
       if (k === 'l3') return mix(base, WHITE, 0.2);
       if (k === 'gpu') return mix(base, BLACK, 0.35);
-      if (k === 'uncore') return mix(base, [0.5, 0.5, 0.5], 0.55);
+      if (k === 'uncore' || k === 'npu') return mix(base, [0.5, 0.5, 0.5], 0.55);
       return mix(base, [0.5, 0.5, 0.5], 0.3);
     }
     const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -374,15 +375,19 @@
         const vp = G.cameraMatrices(cam, aspect()).vp;
         const prj = (p) => G.project(vp, p, cssW, cssH);
         const bh = scene.blockH; const dieTop = scene.dieTop;
-        design.dies.forEach((die) => {
-          // ダイ名と寸法(設計データの mm)。手前の縁の外側に置くと隠れやすいので、奥の縁の上に出す
-          const pn = prj([die.x + die.widthMm / 2, dieTop, die.y]);
-          if (pn.visible) {
+        (labelsOn ? design.dies : []).forEach((die) => { // ラベル非表示のときは何も出さず、物だけを見せる
+          // ダイ名と寸法(設計データの mm)。ダイの 4 隅を画面に投影し、画面上でいちばん上の縁のさらに上(=ダイの外側)に出して、ブロックに重ならないようにする
+          const cs = [prj([die.x, dieTop, die.y]), prj([die.x + die.widthMm, dieTop, die.y]), prj([die.x, dieTop, die.y + die.heightMm]), prj([die.x + die.widthMm, dieTop, die.y + die.heightMm])];
+          if (cs.every((p) => p.visible)) {
+            const topY = Math.min.apply(null, cs.map((p) => p.y));
+            const midX = (Math.min.apply(null, cs.map((p) => p.x)) + Math.max.apply(null, cs.map((p) => p.x))) / 2;
             c.textAlign = 'center'; c.fillStyle = P.text; c.font = 'bold 13px sans-serif';
             const nm = (die.name || die.id) + (die.areaKnown === false ? '(面積未取得・仮寸法)' : '');
-            c.fillText(nm, pn.x, pn.y - 20);
+            c.lineJoin = 'round'; c.lineWidth = 3; c.strokeStyle = P.bg;
+            c.strokeText(nm, midX, topY - 22); c.fillText(nm, midX, topY - 22);
             c.font = FONT; c.fillStyle = P.note;
-            c.fillText(`${die.widthMm.toFixed(2)} × ${die.heightMm.toFixed(2)} mm`, pn.x, pn.y - 6);
+            const dim = `${die.widthMm.toFixed(2)} × ${die.heightMm.toFixed(2)} mm`;
+            c.strokeText(dim, midX, topY - 8); c.fillText(dim, midX, topY - 8);
           }
           c.font = FONT;
           die.blocks.forEach((b) => {
@@ -626,6 +631,8 @@
         resetCamera(name === 'top' || name === 'side' ? name : 'oblique');
       },
       setIhsMode(m) { ihsMode = G.IHS_MODES.indexOf(m) >= 0 ? m : 'glass'; sceneDirty = true; updateAria(); invalidate(); },
+      setLabels(on) { labelsOn = on !== false; invalidate(); },
+      getLabels() { return labelsOn; },
       getIhsMode() { return ihsMode; },
       getCamera() { return cam ? Object.assign({}, cam) : null; }, // 読み取り専用の写し(テスト・診断用)
       // PNG 書き出し用。dieview.captureCanvas と同じ形({ canvas, mode, noData, legend })。選択・ホバー・編集案内を外して同期で再描画し、

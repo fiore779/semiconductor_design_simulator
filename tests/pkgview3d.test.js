@@ -219,3 +219,17 @@ test('3D ビュー: 基板種別やダイ寸法が変わっても向きは保ち
   assert.ok(b.yaw === a.yaw && b.pitch === a.pitch);
   assert.ok(b.dist > a.dist && b.target[0] > a.target[0]);
 });
+
+test('3D ビュー: setLabels(false) でブロック名・ダイ名・寸法を描かず、true に戻すと描く。注記は残る', () => {
+  const { view, runRaf, st } = setup();
+  const d = { dies: [{ id: 'd', name: 'ダイ名Y', x: 0, y: 0, widthMm: 10, heightMm: 10, blocks: [{ id: 'b1', x: 0, y: 0, w: 10, h: 10, kind: 'core', label: 'ブロック名X' }] }] };
+  view.setDesign(d); runRaf();
+  assert.strictEqual(view.getLabels(), true);
+  assert.ok(st.texts.includes('ブロック名X')); assert.ok(st.texts.includes('ダイ名Y')); assert.ok(st.texts.some((t) => t.includes('10.00 × 10.00 mm')));
+  st.texts = []; view.setLabels(false); runRaf();
+  assert.strictEqual(view.getLabels(), false);
+  assert.ok(!st.texts.includes('ブロック名X')); assert.ok(!st.texts.includes('ダイ名Y')); assert.ok(!st.texts.some((t) => t.includes('mm')));
+  assert.ok(st.texts.some((t) => t.includes('3D は模式図')), '注記は残る');
+  st.texts = []; view.setLabels(true); runRaf();
+  assert.ok(st.texts.includes('ブロック名X') && st.texts.includes('ダイ名Y'));
+});

@@ -17,14 +17,14 @@
     light: {
       bg: '#eef0f3', dieFill: '#fbfbf8', dieEdge: '#3b4250',
       unknownA: '#fff1d6', unknownB: '#e8c27a',
-      coreP: '#2f5fb3', coreE: '#8fb6ea', coreLP: '#bcd5f3', l3: '#d9962b', gpu: '#3a9a6a', uncore: '#8a7bb8', other: '#9aa0a6',
+      coreP: '#2f5fb3', coreE: '#8fb6ea', coreLP: '#bcd5f3', l3: '#d9962b', gpu: '#3a9a6a', uncore: '#8a7bb8', npu: '#c0709a', other: '#9aa0a6',
       blockEdge: '#1c2430', sel: '#e8590c', handleFill: '#ffffff',
       text: '#1c2430', textOnDark: '#ffffff', note: '#4a5260', overlay: '#eef0f3', pill: '#ffffff',
     },
     dark: {
       bg: '#14171c', dieFill: '#222831', dieEdge: '#aab2c0',
       unknownA: '#3a3220', unknownB: '#7a6030',
-      coreP: '#4c7fd6', coreE: '#7da2d8', coreLP: '#a3bde2', l3: '#c98a2e', gpu: '#3fae7a', uncore: '#9a8bc8', other: '#7a8088',
+      coreP: '#4c7fd6', coreE: '#7da2d8', coreLP: '#a3bde2', l3: '#c98a2e', gpu: '#3fae7a', uncore: '#9a8bc8', npu: '#c27ba8', other: '#7a8088',
       blockEdge: '#0b0d10', sel: '#ff8a3d', handleFill: '#14171c',
       text: '#e6e9ee', textOnDark: '#ffffff', note: '#aab2c0', overlay: '#14171c', pill: '#2a303a',
     },
@@ -39,6 +39,7 @@
     if (b.kind === 'l3') return 'l3';
     if (b.kind === 'gpu') return 'gpu';
     if (b.kind === 'uncore') return 'uncore';
+    if (b.kind === 'npu') return 'npu';
     if (b.kind === 'core') {
       const t = String(b.coreType || '');
       if (/^LP/i.test(t)) return 'coreLP';
@@ -55,9 +56,9 @@
     'uniform float u_period;varying vec4 v_col;varying vec4 v_col2;varying float v_str;' +
     'void main(){vec4 c=v_col;if(v_str>0.5){float t=mod(gl_FragCoord.x+gl_FragCoord.y,u_period);if(t>=u_period*0.5)c=v_col2;}gl_FragColor=c;}';
 
-  const NOTE_TEXT = '模式図(コア別面積は未取得のため等分)';
+  const NOTE_TEXT = '模式図(ブロックの大きさ・配置は実チップのものではありません)';
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
-  const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', other: 'その他' };
+  const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', npu: 'NPU', other: 'その他' };
   const KIND_NAMES = { power: '電力密度', temp: '温度' };
 
   // テクスチャ用の 2 つ目のシェーダ(ヒートマップの矩形)。属性位置は bindAttribLocation で固定する。
@@ -280,7 +281,7 @@
       if (k === 'coreLP') return { col: mix(base, WHITE, 0.6) };
       if (k === 'l3') return { col: base, col2: mix(base, WHITE, 0.45), stripe: 'kind' };
       if (k === 'gpu') return { col: base, col2: mix(base, BLACK, 0.35), stripe: 'kind' };
-      if (k === 'uncore') return { col: mix(base, [0.5, 0.5, 0.5], 0.55) };
+      if (k === 'uncore' || k === 'npu') return { col: mix(base, [0.5, 0.5, 0.5], 0.55) };
       return { col: mix(base, [0.5, 0.5, 0.5], 0.3) };
     }
     const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];

@@ -52,7 +52,7 @@
       <ul class="small">
         <li>コア</li><li>キャッシュ</li><li>SoC</li><li>I/O</li>
       </ul>
-      <p class="note">ブロックの大きさと配置は<b>模式図</b>です。実チップのフロアプランではありません。</p>
+      <p class="note">ブロックの配置は現実の CPU のレイアウトに倣った<b>模式図</b>で、大きさは実測ではありません。実チップのフロアプランではありません。Uncore・iGPU・NPU は見た目だけの「飾り」で、計算に影響しません。</p>
       </div>
       <section id="library" aria-label="部品ライブラリ" hidden></section>
       <section id="mixpanel" aria-label="混合設計" hidden></section>
@@ -101,6 +101,7 @@
 <script src="js/sim/power.js"></script>
 <script src="js/sim/thermal.js"></script>
 <script src="js/sim/heatmap.js"></script>
+<script src="js/model/floorplan.js"></script>
 <script src="js/model/design.js"></script>
 <script src="js/model/blocklib.js"></script>
 <script src="js/model/coredef.js"></script>

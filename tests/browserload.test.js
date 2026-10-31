@@ -47,7 +47,7 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   const ui = ctx.SDS && ctx.SDS.ui;
   ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
-  ['design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
+  ['floorplan', 'design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
   // 3D パッケージビュー(依存順: mat4 → pkggeom → pkgview3d → viewhost。pkgview3d は dieview の後)
   ['mat4', 'pkggeom', 'pkgview3d'].forEach((m) => assert.ok(ctx.SDS.render[m], `SDS.render.${m} が登録されていない`));

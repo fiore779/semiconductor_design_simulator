@@ -170,3 +170,32 @@ test('designBounds は buildScene の bounds と同じで、半径は正', () =>
   assert.deepStrictEqual(G.designBounds(d), G.buildScene(d, {}).bounds);
   assert.ok(G.designBounds(d).radius > 0);
 });
+
+test('初期カメラは基板〜蓋の外接直方体が画面いっぱい(NDC 0.93 以内)に収まり、球で見積もった距離より近い', () => {
+  const { D } = require('./helpers');
+  const design = require('../js/model/design.js');
+  ['intel-adl-12900k', 'amd-zen5-9950x', 'apple-m1'].forEach((id) => {
+    const d = design.fromPreset(D.presets.find((p) => p.id === id));
+    const b = G.designBounds(d);
+    assert.ok(b.box);
+    [['top', 1.6], ['oblique', 1.6], ['oblique', 0.8], ['side', 1.6]].forEach(([pr, asp]) => {
+      const cam = G.createCamera(b, asp, pr);
+      if (asp > 1 && pr !== 'side') assert.ok(cam.dist < G.fitDistance(b.radius, G.FOV, asp), `${id} ${pr}: 球より近い`); // 横長の画面では従来(球)より近づく
+      const m = G.cameraMatrices(cam, asp);
+      let worst = 0;
+      [b.box.x0, b.box.x1].forEach((x) => [b.box.y0, b.box.y1].forEach((y) => [b.box.z0, b.box.z1].forEach((z) => {
+        const p = require('../js/render/mat4.js').transformPoint(m.vp, [x, y, z]); worst = Math.max(worst, Math.abs(p[0]), Math.abs(p[1]));
+      })));
+      assert.ok(worst <= 0.93 + 1e-6, `${id} ${pr}: ${worst}`);
+      if (pr !== 'side') assert.ok(worst > 0.8, `${id} ${pr}: 余白が大きすぎる ${worst}`);
+    });
+  });
+});
+
+test('createCamera: 外接直方体が球の 1.5 倍の距離でも収まらないときは、従来の球の距離に落ちる', () => {
+  const b = { cx: 0, cy: 0, cz: 0, radius: 1, box: { x0: -1000, x1: 1000, y0: -1, y1: 1, z0: -1000, z1: 1000 } };
+  const cam = G.createCamera(b, 1.5, 'oblique');
+  assert.strictEqual(cam.dist, G.fitDistance(1, G.FOV, 1.5));
+  const b2 = { cx: 0, cy: 0, cz: 0, radius: 1 }; // box なしも球
+  assert.strictEqual(G.createCamera(b2, 1.5, 'top').dist, G.fitDistance(1, G.FOV, 1.5));
+});

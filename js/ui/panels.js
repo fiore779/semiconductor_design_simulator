@@ -4,7 +4,7 @@
   const { h, clear } = root.SDS.ui.dom;
   const WN = root.SDS.ui.warnings;
 
-  const KIND_NAME = { core: 'コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'SoC / I/O' };
+  const KIND_NAME = { core: 'コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'SoC / I/O', npu: 'NPU' };
 
   function findBlock(design, id) {
     for (const d of design.dies) { const b = d.blocks.find((x) => x.id === id); if (b) return { die: d, block: b }; }
@@ -22,6 +22,7 @@
     const { die, block } = hit;
     el.appendChild(h('p', {}, h('b', { text: block.label }), ` — 種別: ${KIND_NAME[block.kind] || block.kind}${block.coreType ? `(${block.coreType})` : ''} / ダイ: ${die.name}`));
     if (block.schematic) el.appendChild(h('p', { class: 'note', text: '模式図: 大きさと位置は実チップのフロアプランではありません。' }));
+    if (block.decorative) el.appendChild(h('p', { class: 'note', text: '飾りブロック: 見た目だけで、性能・電力・面積・温度の計算には影響しません。' }));
     const grid = h('div', { class: 'propgrid' });
     [['x', 'x'], ['y', 'y'], ['w', '幅 w'], ['h', '高さ h']].forEach(([f, lab]) => {
       const id = `prop-${f}`;

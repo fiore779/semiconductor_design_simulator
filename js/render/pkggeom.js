@@ -139,7 +139,10 @@
     const sub = substrateSize(dies, design && design.package && design.package.substrateId);
     const dieT = dieThickness(dies); const bh = blockHeight(dieT);
     const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T;
-    return { cx: sub.cx, cy: (ihsTop - sub.thickness) / 2, cz: sub.cz, radius: 0.5 * Math.sqrt(sub.w * sub.w + sub.d * sub.d + (ihsTop + sub.thickness) * (ihsTop + sub.thickness)) };
+    return {
+      cx: sub.cx, cy: (ihsTop - sub.thickness) / 2, cz: sub.cz, radius: 0.5 * Math.sqrt(sub.w * sub.w + sub.d * sub.d + (ihsTop + sub.thickness) * (ihsTop + sub.thickness)),
+      box: { x0: sub.x0, x1: sub.x1, z0: sub.z0, z1: sub.z1, y0: -sub.thickness, y1: ihsTop }, // 基板〜蓋の外接直方体(初期カメラを画面いっぱいに合わせる用)
+    };
   }
 
   // 設計(dies を持つオブジェクト)から描画用の頂点を作る。
@@ -299,9 +302,25 @@
   }
 
   // bounds: { cx, cy, cz, radius }。preset: 'top' | 'oblique'(既定)| 'side'
+  // 外接直方体 box の 8 頂点がすべて画面(NDC の ±fill)に収まる最小の距離を二分探索で求める。bounds.box が無ければ球で見積もる(従来の余裕のある距離)。
+  function fitBoxDistance(cam, box, aspect, fill) {
+    const corners = [];
+    [box.x0, box.x1].forEach((x) => [box.y0, box.y1].forEach((y) => [box.z0, box.z1].forEach((z) => corners.push([x, y, z]))));
+    const fits = (dist) => {
+      const m = cameraMatrices(Object.assign({}, cam, { dist }), aspect);
+      return corners.every((c) => { const r = M.transformPoint(m.vp, c); return r[3] > 0 && Math.abs(r[0]) <= fill && Math.abs(r[1]) <= fill; });
+    };
+    let lo = cam.radius * 0.3; let hi = cam.dist * 1.5;
+    if (!fits(hi)) return cam.dist;
+    for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
+    return hi;
+  }
+
   function createCamera(bounds, aspect, preset) {
     const p = PRESETS[preset] || PRESETS.oblique;
-    return { yaw: p.yaw, pitch: p.pitch, dist: fitDistance(bounds.radius, FOV, aspect || 1), target: [bounds.cx, bounds.cy, bounds.cz], fov: FOV, radius: bounds.radius };
+    const cam = { yaw: p.yaw, pitch: p.pitch, dist: fitDistance(bounds.radius, FOV, aspect || 1), target: [bounds.cx, bounds.cy, bounds.cz], fov: FOV, radius: bounds.radius };
+    if (bounds.box) cam.dist = fitBoxDistance(cam, bounds.box, aspect || 1, 0.93);
+    return cam;
   }
 
   // ドラッグの px から回転(1px = 0.008 rad)。右へドラッグ → 物体が右へ回る(カメラは左へ)。pitch は真横〜真上に制限。

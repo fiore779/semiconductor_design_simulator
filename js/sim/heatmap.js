@@ -37,7 +37,7 @@
     ((design && design.dies) || []).forEach((die) => (die.blocks || []).forEach((b) => {
       const area = Math.max(0, (b.w || 0) * (b.h || 0));
       let wt;
-      if (area <= 0) wt = 0;
+      if (area <= 0 || b.decorative === true) wt = 0; // 飾りブロック(Uncore・iGPU・NPU の模式)は電力を受け持たない
       else if (b.kind === 'core') wt = w.core[b.coreType] != null ? w.core[b.coreType] : w.coreOther;
       else if (b.kind === 'l3') wt = w.l3PerMm2 * area;
       else if (b.kind === 'gpu') wt = w.gpuPerMm2 * area;
