@@ -66,7 +66,7 @@
 | A14(#3) | 0.85 | 上: GPU、中: System cache、CPU 1(P)2 と L2、CPU 2(E)4 と L2、下: NPU | ラベルのみで枠が粗く、面積比は読まない |
 | M2 Pro(#5) | 1.51 | 上中央: P コア 8(4×2)と中央の共有 L2、左上: E コア 4、右: Media Engine ×2・NPU。下: GPU 19(中央)とその左右に SLC、左右端に LPDDR5 | GPU 約 22%、SLC 約 8%、P コア+L2 約 13%、E コア 約 2%、NPU 約 3%、Media 約 5%、LPDDR5 約 11% |
 | M3(#6) | 1.18 | 上: GPU 10・GPU MISC(上端に LPDDR5)。中: P コア(上 2・下 2)と P-core cache、SLC、E コア 4・AMX。左下: NPU、右: Display Engine、下: Thunderbolt | GPU 約 27%、P コア+cache 約 16%、SLC 約 4%、E コア 約 5%、NPU 約 2%、LPDDR5 約 7% |
-| M3 Pro(#6) | 0.89 | 上: GPU 18・GPU MISC と SLC。中右: P コア 6(上 2・下 4)と P-core cache、E コア 6・AMX、NPU。左: Display Engine ×2。左右端に LPDDR5 | GPU 約 34%、SLC 約 3%、P コア+cache 約 13%、E コア 約 3%、NPU 約 1%、LPDDR5 約 8% |
+| M3 Pro(#6) | 0.83(枠 284×344 = 0.826。旧記載 0.89 は根拠なしの誤りで 2026-11-01 に訂正) | 上: GPU 18・GPU MISC と SLC。中右: P コア 6(上 2・下 4)と P-core cache、E コア 6・AMX、NPU。左: Display Engine ×2。左右端に LPDDR5 | GPU 約 34%、SLC 約 3%、P コア+cache 約 13%、E コア 約 3%、NPU 約 1%、LPDDR5 約 8% |
 | M3 Max(#6) | 0.96 | 上: P コア 12(上 8・下 4)と P-core cache、左上に NPU・E コア 4、右上に Display Engine、上端に I/O・Thunderbolt。下: GPU 40・GPU MISC と左右の SLC、左右端に LPDDR5 | GPU 約 35%、SLC 約 9%、P コア+cache 約 10%、E コア 約 1.5%、NPU 約 1.5%、LPDDR5 約 12% |
 | M4(#7) | 0.97 | 上: GPU 10・GPU MISC(上端・左右に LPDDR5X)。中左: CPU Perf 1・2、Perf CPU cache、Perf 3・4(左端に Neural Engine)。中央: SLC、E コア 6・Eco CPU cache。右: Media Engines、Display Engine。下: Thunderbolt ×4・I/O | GPU 約 21%、P コア 約 7.5%+Perf cache 約 4%、E コア+cache 約 4%、SLC 約 4.5%、NPU 約 3.5%、Media 約 2%、Display 約 3%、Thunderbolt 約 6% |
 | M5(#8。#9 も同じ配置) | 1.055(#9 も 1.056) | 上 2 段: GPU 10(6+4)と中央の G17G・L2(上端・右に LPDDR5X PHY)。中左: S-core 2(上)・8MiB L2 ×2・S-core 2(下)、S-core AMX。中央: 16MiB SLC(4 枚)、E-core 6・6MiB L2・E-core AMX。左下: ANE 8・ANE cache。右: ProRes RAW・Media・Decode/Encode Engine・ISP。下: DSP・Display Engine・Secure Enclave、下端に TB4 ×4・PCIe・USB3・CSI | GPU 約 25%、S コア(4、private L2 込み)約 9%、8MiB L2 ×2 約 4%、E コア+L2+AMX 約 5%、SLC 約 5%、ANE 約 4%、メディア/ISP/コーデック群 約 20%、Memory PHY 約 6%、下端の TB4・I/O 約 10% |
@@ -87,10 +87,10 @@
 | apple-m1ultra | M1 Ultra | 864 mm²(sec。M1 Max ×2) | P16+E4 | **同じダイの流用**: #1 の M1 Max ×2。外形は #2 | 0.43 → 19.3×44.8 mm(#2 と一致) | **reuse**(M1 Max の配置を上下に 2 つ。接合部の帯は #2 で確認できる) |
 | apple-m2 | M2 | 153.2 mm²(meas) | P4(Avalanche)+E4 | **直接**: #4 | 1.09 → 12.95×11.83 mm。#4 の注記は 155.25 mm²(Apple の縮尺換算 ~141.70) | **photo**(低解像度のため大まかな配置) |
 | apple-m2pro | M2 Pro | 294.7 mm²(meas) | P8+E4 | **直接**: #5 | 1.51 → 21.11×13.96 mm | **photo** |
-| apple-m2max | M2 Max | 485.6 mm²(sec。NamuWiki のみ) | P8+E4 | **なし**。ユーザー申告「M2 Pro を縦に 2 倍」→ #5 の拡大 | 幅を M2 Pro と同じ 21.11 mm とすると高さ 23.0 mm(縦横比 0.92、M2 Pro の 1.65 倍の高さ) | **reuse**(#5 の上部=CPU・NPU・Media をそのまま、下部=GPU・SLC・LPDDR を 2 段に。M1 Pro→M1 Max の関係(#1)を手本に) |
+| apple-m2max | M2 Max | 485.6 mm²(sec。NamuWiki のみ) | P8+E4 | **写真なし**。根拠は **Apple 公表の M2 Pro → M2 Max の比較**(GPU コア 19→38 で 2 倍、メモリ帯域 200→400GB/s で 2 倍、CPU コア数は同じ、メディアエンジンのエンコード 1→2、トランジスタ 400 億→670 億。ユーザー提示、[公表])。当初のユーザー申告「M2 Pro を縦に 2 倍」は、この公表の比較で「GPU 側が 2 倍」の意味と確定 | 幅を M2 Pro と同じ 21.11 mm とすると高さ 23.0 mm(縦横比 0.92、M2 Pro の 1.65 倍の高さ)。実装は GPU 領域 2 倍 + Media 追加分の帯で 0.914 | **reuse**(#5 の CPU・NPU・Media の上部をそのまま、GPU・SLC・LPDDR を縦に 2 倍。下に面積合わせの Media 追加分の帯は模式。M2 Max 自身の写真なし) |
 | apple-m2ultra | M2 Ultra | 971.2 mm²(sec。推定 ×2) | P16+E8 | **なし**。M2 Max ×2(ユーザー申告) | M2 Max の外形 ×2(縦に 2 つ) | **reuse**(M2 Max の reuse をさらに流用。根拠は二重の流用で弱い) |
 | apple-m3 | M3 | 152.5 mm²(meas) | P4+E4 | **直接**: #6 | 1.18 → 13.42×11.37 mm | **photo** |
-| apple-m3pro | M3 Pro | 219.2 mm²(meas) | (空) | **直接**: #6 | 0.885 → 13.93×15.74 mm | **photo**(コア構成はプリセットが空。画像は P6+E6・GPU 18) |
+| apple-m3pro | M3 Pro | 219.2 mm²(meas) | (空) | **直接**: #6 | 0.826(枠の比。旧 0.885 は誤り)→ 13.46×16.29 mm | **photo**(コア構成はプリセットが空。画像は P6+E6・GPU 18)。**実装では、寸法注記のある M1 Pro・M1 Max・Ultra 以外の縦横比は写真の枠の比に揃えた**(M2 1.107、M3 1.20、A14 0.821、A15 0.660、M3 Max 0.954 など。本表の他行の旧い値は目測の丸め) |
 | apple-m3max | M3 Max | 477.1 mm²(sec。NamuWiki のみ) | (空) | **直接**: #6 | 0.96 → 21.39×22.31 mm | **photo**(画像は P12+E4・GPU 40) |
 | apple-m4 | M4 | 169.4 mm²(meas) | P4+E6 | **直接**: #7 | 0.97 → 12.82×13.21 mm。画像内の "1.28mm x1,21mm" とは合わない(→ (c)) | **photo** |
 | apple-m4pro | M4 Pro | 325 mm²(sec) | P10+E4 | **なし**(ユーザー申告: 画像なし) | — | **schematic のまま**(M3 Pro・M2 Pro の配置の流用は世代も構成も違うので勧めない) |
@@ -123,12 +123,15 @@
 2. **M4 の画像内の寸法 "Die zise: 1.28mm x1,21mm"(#7)** は単位が誤り(1.5 mm² になる)。12.8×12.1 mm の意味だとしても 154.9 mm² でプリセットの 169.4 mm² と合わず、縦横比 1.06 も画像の 0.97(縦長)と合わない(向きを入れ替えても 0.95)。転記しない。
 3. **M1 Max の縦横比**: #2 の注記 19.3×22.4(0.86)と #1 の画像の比 0.92 が 7% ずれる。#2 の注記を優先(面積 432 mm² とも一致)。
 4. **面積の差**(プリセットは変えない): M1 はプリセット 123.0 に対し画像の注記 118 / 118.91。M1 Pro は 253.2 に対し 245。M2 は 153.2 に対し 155.25(Apple の縮尺換算では ~141.70)。A15 は 110.1 に対し 107.68。
-5. **ユーザー申告「M2 Max = M2 Pro を縦に 2 倍」の裏付け**: 画像での裏付けは無い。M1 世代では #1・#2 で、M1 Max は M1 Pro の上部(CPU・NPU・Media)を残して GPU・SLC・メモリ部分を下に足した構成と確認でき、高さは 12.9→22.4 mm(1.74 倍で、2 倍ではない)。M2 もプリセット面積の比は 485.6 / 294.7 = 1.65 で、**文字どおり「縦 2 倍」ではなく「GPU 側を 2 段に」の意味と読むのが妥当**(要ユーザー確認)。M2/M3 Ultra = Max ×2 は M1 Ultra(#2)と同じ構成で整合する。
+5. **「M2 Max = M2 Pro を縦に 2 倍」の裏付け(2026-11-01 更新)**: 画像での裏付けは無いが、**Apple 公表の比較(GPU 19→38、帯域 2 倍、CPU 同じ、エンコード 1→2、トランジスタ 400→670 億)が根拠**で、「GPU 側を 2 倍」の意味と確定した。以下は更新前の分析(参考):M1 世代では #1・#2 で、M1 Max は M1 Pro の上部(CPU・NPU・Media)を残して GPU・SLC・メモリ部分を下に足した構成と確認でき、高さは 12.9→22.4 mm(1.74 倍で、2 倍ではない)。M2 もプリセット面積の比は 485.6 / 294.7 = 1.65 で、**文字どおり「縦 2 倍」ではなく「GPU 側を 2 段に」の意味と読むのが妥当**(要ユーザー確認)。M2/M3 Ultra = Max ×2 は M1 Ultra(#2)と同じ構成で整合する。
 6. **M5 Max の構成**: プリセットのコア構成(super 6 + performance 12)は #10 の M5 Pro CPU タイル(P-Core 6 + M-Core 12)と数が一致するが、呼び名が違う(プリセット super / performance、画像 P / M)。#12 の想像図は M5 Max を接合した 2 層で描くが、実ダイ写真ではない。
 7. **#10・#11 は手書き注釈**(透かし「@高通吧」)。クロック(4.61 / 4.38GHz)・コア名(Sotra-P / Sotra-M)などは公表値と照合していない。ANE のコア数は判読しきれない。
 8. **出典は全件が推定**(上の「出典の推定」)。特に 2026 年の X の 3 件(ExoticSpice101 / HiEq_2005 / handleym99)と #8〜#11 の対応は決められない。#12・#13・#14 は一覧に URL が無い。
 9. **`image-1793455459066.jpg`(#15)は Apple ではなく Intel の 8P+8E**。寸法 1682×846 が `HY_ADL` の基準枠と一致するので、user-images.md で「ファイルは残っていない」とした 12900K の注釈写真である可能性が高い(要ユーザー確認。確認できれば user-images.md の記述を「ファイルあり」に直せる)。
 10. 拡張子と中身の違い: #3・#6・#15 は WebP(拡張子は jpg / png)。
+
+11. **`HT2YKyUXsAA60ya.jpg`(2026-11-01 に追加。#16)**: SemiAnalysis の透かし。P-Core 4 + S-Core 2 + E-core 6、GPU 12 コア、縦横比 約 1.14。**チップ名の記載なし**。M6 の可能性があるが確定できず、M6 のプリセットも無いので**使わず記録のみ**(M5 の #8 とはコア構成が違う)。
+12. **実装(2026-11-01)**: photo 12 件(M1・M1 Pro・M1 Max・M2・M2 Pro・M3・M3 Pro・M3 Max・M4・M5・A14・A15)と reuse 3 件(M1 Ultra・M2 Max・M2 Ultra)を `floorplan.js` の `apple-soc` で実装した。M2 Max の根拠はユーザー提示の Apple 公表の比較(GPU コア 19→38 など。user-images.md)で、配置は M2 Pro の reuse。座標の読み取りは各画像の表示ピクセルから(±5〜10%)。
 
 ## (d) 足りない画像
 

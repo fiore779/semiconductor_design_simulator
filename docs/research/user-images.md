@@ -31,5 +31,22 @@
 - 12900K の注釈つきダイ写真(TechPowerUp のレビューの画像、上の表の「会話に貼付」の行)は**会話にだけ存在し、ファイルは無い**。ユーザーが会話に貼った画像から目測した座標が `HY_ADL`(1682×846)で、`arch2.jpg` から測ったものではない(arch2.jpg は 13900K で、別の画像)。
 - したがって 12900K 系(Alder Lake-S 8P+8E)の `photo` は「会話に貼られた 12900K の写真の目測」が根拠で、リポジトリ内に再確認できる画像ファイルは無い。
 
+## Apple シリコンの画像の受領(2026-11-01。詳細は `apple-images.md`。区分は [二次]。出典は全件「推定・要ユーザー確認」)
+
+| プリセットへの使い方 | 画像(`C:\LocalAI\画像`) | 備考 |
+|---|---|---|
+| M1・M1 Pro・M1 Max(photo)、M1 Ultra(reuse) | `FCBl1gcWEAUOdRw.jpg`(Locuza 注釈)、縦横比・外形は `Figure3_M1_family_chip_photo_comparison_20220516-1-1024x592.png` の寸法注記 | M1 Max は注記 19.3×22.4 mm(0.86)を優先。Ultra は Max を上下 2 つ(0.43) |
+| M2・A15(photo) | `69502024-a55e-4ceb-bbd4-0cf1193153d8_1024x421.jpg`(中身 WebP でなく JPEG。Locuza / SemiAnalysis 注釈) | 低解像度で大まかな配置 |
+| M2 Pro(photo) | `FmsTp7NWIAAfVjB.jpg`(High Yield 注釈) | |
+| M2 Max(reuse)、M2 Ultra(reuse) | **M2 Max 自身の写真なし**。M2 Pro の配置を土台にした模式 | 根拠: ユーザーが提示した Apple 公表の比較(M2 Pro → M2 Max: GPU コア 最大 19→38 で 2 倍、メモリ帯域 200→400GB/s で 2 倍、CPU コア 最大 12 で同じ、メディアエンジン ビデオエンコード・ProRes エンコード 1→2 で 2 倍、トランジスタ 400 億→670 億)。[公表]。GPU・SLC・メモリ PHY を縦に 2 倍、CPU 側は同じにし、面積合わせの Media 追加分の帯を下に足した(帯の大きさは模式) |
+| M3・M3 Pro・M3 Max(photo) | `A3QSjPxt4oYcYuy8i6kRtX-1200-80.jpg`(中身 WebP。High Yield 注釈) | M3 Pro・M3 Max はプリセットにコア構成が無く、コアの枠は「構成未取得」の飾り |
+| M4(photo) | `GQmKpHhWwAAMHfw.jpg`(Frederic_Orange 注釈) | 画像内の寸法注記 "1.28mm x1,21mm" は単位が誤りで使わない |
+| M5(photo) | `HS9wa9vbgAAb2Mm.jpg`("Apple Silicon M5 \| TSMC N3P")。`HT9pyHnWYAAM3HY.jpg`(ファイル名は "m6"。semianalysis の透かし)は **M5 の配置とほぼ一致する別画像 = M5 として記録**(座標は #8 を使用) | |
+| A14(photo) | `CfQArDx7gRsAo3U5xpXsTC-750-80.png`(中身 WebP。A14 & M1 Die Photos) | 低解像度・ラベルのみ |
+| **今回は使わず記録のみ** | `HT2YKyUXsAA60ya.jpg`(SemiAnalysis の透かし。P-Core 4 + S-Core 2 + E-core 6、GPU 12 コア、縦横比 約 1.14。**チップ名の記載なし**) | **M6 の可能性があるが確定できず、M6 のプリセットも無い**ので使っていない。確定したら `apple-images.md` の対応表に足す |
+| 使わない | `0_xSrDbHu5rDBXfqDp.jpg`(M5 Max/Ultra の想像図)、`l_tm1989_m1pro_max_05.jpg`・`tm1989_m1pro_max_13.jpg`(Apple の模式図)、`HJ2AUyOakAAixSS.jpg`・`HJ2AUyNaIAEinLl.jpg`(M5 Pro のタイル。プリセット無し)、`image-1793455459066.jpg`(Apple ではなく Intel の 12900K 系) | |
+
+プリセットの面積は変えない(画像の面積注記との小差は `apple-images.md` の (c) に記録)。出典 URL はファイル名・透かし・X の投稿 ID からの**推定**で、確定ではない。
+
 ## ユーザーの補足
 - Zen 3(5950X)と Zen 4 / Zen 5(7950X・9950X)は構造が同じ。ただし Zen 4 以降は IO ダイに iGPU が加わる(ユーザー談。調査メモでの裏付けは別途)。

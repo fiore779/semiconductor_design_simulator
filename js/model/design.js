@@ -194,13 +194,15 @@
   // コアまたは L3 のブロックを持つダイ(最初の1つ)だけを作り直す。戻り値は新しい設計。
   function relayoutCompute(design) {
     const d = clone(design);
-    const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3'));
+    const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3')) || d.dies.find((x) => x.layout); // コア構成が空の Apple(M3 Pro・M3 Max)は飾りだけなので layout で探す
     // 実物風テンプレートで作ったダイは、同じテンプレートで作り直す(飾りブロックも含めて)
     if (die) {
       const FP = floorplanApi();
       // コア数が元のダイの枠を超えたら、大きさの根拠(scaleBasis)を schematic に落とす
-      if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores);
-      die.blocks = die.layout && FP ? FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout) : layoutCompute(die, d.cfg.cores, d.cfg.l3MB);
+      if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores, d.cfg.l3MB);
+      // 根拠なしに落ちた Apple(apple-soc で schematic)は、写真の枠を使わず従来の配置にする(layout は注記のために残す)
+      const legacy = !die.layout || !FP || (die.layout.template === 'apple-soc' && die.layout.scaleBasis === 'schematic');
+      die.blocks = legacy ? layoutCompute(die, d.cfg.cores, d.cfg.l3MB) : FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout);
     }
     return d;
   }
@@ -245,10 +247,11 @@
     d.cfg.l3MB = mb;
     if (old === mb) return { ok: true, design: d, relaid: false };
     // 実物風テンプレートのダイは L3 の大きさが容量で変わらないので、あるまま(0 でない同士)なら位置は動かさず、ラベルだけ更新
-    if (old > 0 && mb > 0 && d.dies.some((die) => die.layout && die.blocks.some((b) => b.kind === 'l3'))) {
+    const tpl = (die) => die.layout && !(die.layout.template === 'apple-soc' && die.layout.scaleBasis === 'schematic'); // 根拠なしに落ちた Apple は従来の配置(下の帯の高さの分岐)
+    if (old > 0 && mb > 0 && d.dies.some((die) => tpl(die) && die.blocks.some((b) => b.kind === 'l3'))) {
       const FP = floorplanApi();
       d.dies.forEach((die) => {
-        if (!die.layout || !FP) return;
+        if (!tpl(die) || !FP) return;
         const fresh = FP.layoutDie(die, d.cfg.cores, mb, die.layout);
         die.blocks.forEach((b) => { if (b.kind === 'l3') { const f = fresh.find((x) => x.id === b.id); if (f) b.label = f.label; } });
       });
