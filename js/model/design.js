@@ -194,7 +194,7 @@
   // コアまたは L3 のブロックを持つダイ(最初の1つ)だけを作り直す。戻り値は新しい設計。
   function relayoutCompute(design) {
     const d = clone(design);
-    const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3')) || d.dies.find((x) => x.layout); // コア構成が空の Apple(M3 Pro・M3 Max)は飾りだけなので layout で探す
+    const die = d.dies.find((x) => x.blocks.some((b) => b.kind === 'core' || b.kind === 'l3')) || d.dies.find((x) => x.layout); // コア構成が空の設計(以前の M3 Pro・M3 Max の保存データなど)は飾りだけなので layout で探す
     // 実物風テンプレートで作ったダイは、同じテンプレートで作り直す(飾りブロックも含めて)
     if (die) {
       const FP = floorplanApi();
@@ -715,7 +715,7 @@
     if (!c || typeof c !== 'object' || Array.isArray(c)) return `${name}: 形式が違います`;
     if (!Array.isArray(c.cores)) return `${name}: cores が配列ではありません`;
     if (c.cores.length > MAX_DIES) return `${name}: コア種別が多すぎます`;
-    // 注意: コア種別が空でも通す(apple-m3pro / m3max はコア構成が未取得で cores が空。拒否すると保存した設計が開けなくなる)
+    // 注意: コア種別が空でも通す(以前の apple-m3pro / m3max はコア構成が未取得で cores が空だった〔2026-11-01 に追記済み〕。拒否すると、そのとき保存した設計が開けなくなる)
     if (!isNum(c.l3MB) || c.l3MB < 0 || c.l3MB > 512) return `${name}: l3MB は 0〜512 MB の有限の数にしてください`;
     const types = new Set();
     for (let i = 0; i < c.cores.length; i++) {

@@ -53,10 +53,15 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   m('apple-m3', 'M3', 2023, 'M3', [die('M3', 152.5, 'meas', 'tsmc-n3b')],
     [{ type: 'P', count: 4, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
     { power: { base: null, peak: null, range: null, single: pw(5.5, 'meas', 'シングル時 CPU(powermetrics。チップ特定が曖昧)') } });
-  m('apple-m3pro', 'M3 Pro', 2023, 'M3 Pro', [die('M3 Pro', 219.2, 'meas', 'tsmc-n3b')], [],
-    { power: { base: null, peak: pw(25, 'meas', 'マルチ時 CPU 約24〜27W'), range: null } });
-  m('apple-m3max', 'M3 Max', 2023, 'M3 Max', [die('M3 Max', 477.1, 'sec', 'tsmc-n3b', 'NamuWiki のみ')], [],
-    { power: { base: null, peak: pw(56, 'meas', 'CPU マルチ最大。チップ全体約78W'), range: null } });
+  // M3 Pro・M3 Max(2026-11-01 にコア数とクロックを追記。docs/research/m3-pro-max.md)。uarch は M3 無印と同じく書かない(M3 系 P/E コアの幅・ROB・遅延が未取得で、A16 の Everest/Sawtooth を借りる根拠が無いため)。ST/MT は「uarch 未指定」で計算不能のまま
+  m('apple-m3pro', 'M3 Pro', 2023, 'M3 Pro', [die('M3 Pro', 219.2, 'meas', 'tsmc-n3b')],
+    [{ type: 'P', count: 6, maxGHz: 4.05 }, { type: 'E', count: 6, maxGHz: 2.75 }],
+    { power: { base: null, peak: pw(25, 'meas', 'マルチ時 CPU 約24〜27W'), range: null },
+      notes: '12 コア版(6P+6E)。11 コア版(5P+6E)もあり、12 コア版とした判断は [推定](GB7 の注記「12c」・フロアプランの枠 P6/E6・電力 27W の注記から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia「Apple silicon」・Notebookcheck。Apple は非公表)。GPU 18 コア(11 コア版は 14)・メモリ帯域 150GB/s・トランジスタ 370 億は [公表]。L2 は P 16MB(6 コア共有)/ E 4MB、SLC 12MB(Wikipedia・Notebookcheck。LowEndMac は P 32MB・SLC 24MB で食い違うが、出典が Wikipedia で読み違えとみられるため採らない)。uarch(幅・ROB・遅延)は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
+  m('apple-m3max', 'M3 Max', 2023, 'M3 Max', [die('M3 Max', 477.1, 'sec', 'tsmc-n3b', 'NamuWiki のみ。2 つ目の出典は未取得(検索要約では 477 が多数だが 503・600〜700 mm² の記述もあり、原典は未確認)')],
+    [{ type: 'P', count: 12, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
+    { power: { base: null, peak: pw(56, 'meas', 'CPU マルチ最大。チップ全体約78W'), range: null },
+      notes: '16 コア版(12P+4E)。14 コア版(10P+4E)もあり、16 コア版とした判断は [推定](GB7 の注記「16c」・フロアプランの枠 P12/E4・電力 56W が 16 コア版の値から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia・Notebookcheck。Apple は非公表)。GPU 40 コア(14 コア版は 30)・メモリ帯域 400GB/s(14 コア版は 300)・トランジスタ 920 億は [公表]。L2 は P 32MB(16MB × 2 クラスタは [推定])/ E 4MB、SLC 48MB([二次] Wikipedia。LowEndMac の出典も Wikipedia で独立した出典ではない)。ダイ面積 477.1mm² は NamuWiki のみで 2 つ目の出典が無い。uarch は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
   m('apple-m4', 'M4', 2024, 'M4', [die('M4', 169.4, 'meas', 'tsmc-n3e')],
     [{ type: 'P', count: 4, maxGHz: 4.4 }, { type: 'E', count: 6, maxGHz: 2.85 }]);
   m('apple-m4pro', 'M4 Pro', 2024, 'M4 Pro', [die('M4 Pro', 325, 'sec', 'tsmc-n3e', '約320〜330(TechInsights が解析済みだが面積は未確認)')],

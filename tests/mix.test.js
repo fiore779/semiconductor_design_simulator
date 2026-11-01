@@ -317,9 +317,9 @@ test('M5b 波1: 追加分を足しても校正(σ・γ・uarch ごとの u・uIs
   assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));
 });
 
-test('M5b 波1: 部品ライブラリの既存 173 件は追加前と同じ(追加分の部品が増えるだけ)', () => {
+test('M5b 波1: 部品ライブラリの既存 177 件は追加前と同じ(追加分の部品が増えるだけ。173 件は M3 Pro・M3 Max のコア追記 +4 件の前、2026-11-01)', () => {
   const before = BL.build(D.presets.filter((p) => !p.addedIn), areas, D.nodes);
-  assert.strictEqual(before.length, 173);
+  assert.strictEqual(before.length, 177);
   const byId = new Map(parts.map((p) => [p.id, p]));
   before.forEach((p) => assert.deepStrictEqual(byId.get(p.id), p, p.id));
   assert.ok(parts.length > 173);
@@ -472,4 +472,15 @@ test('errCause: Kraken Point だけ調査済みの原因説明が再現度パネ
   const h = rows('amd-strix-hx370');
   assert.ok(/原因: モデルの限界か入力データ不足\(未調査\)/.test(h[0].note));
   assert.strictEqual(+E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-kraken-350')), ctx).st.score.toFixed(3), 2694.581);
+});
+
+// 2026-11-01: M3 Pro・M3 Max にコア数とクロックだけを追記(uarch なし)。ST/MT は計算不能のまま、理由が「コアなし」→「uarch 未指定」に変わる。他の全プリセットは不変(BASE で確認済み)
+test('M3 Pro・M3 Max: コア数とクロックがあり、ST/MT は uarch 未指定で計算できないまま', () => {
+  [['apple-m3pro', 6, 6], ['apple-m3max', 12, 4]].forEach(([id, nP, nE]) => {
+    const p = D.presets.find((x) => x.id === id);
+    assert.deepStrictEqual(p.cfg.cores.map((c) => [c.type, c.count, c.maxGHz, c.uarch]), [['P', nP, 4.05, undefined], ['E', nE, 2.75, undefined]], id);
+    const r = E.evaluate(design.fromPreset(p), ctx);
+    assert.strictEqual(r.st.ok, false, id); assert.strictEqual(r.st.reason, 'uarch 未指定', id);
+    assert.strictEqual(r.mt.ok, false, id); assert.strictEqual(r.mt.reason, 'P コア: uarch 未指定', id);
+  });
 });

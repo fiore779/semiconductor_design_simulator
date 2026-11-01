@@ -64,15 +64,16 @@ test('Apple: 飾りの種類(GPU・NPU・SLC・メディア・PHY・I/O)と、�
   assert.ok(Math.abs(frac(mk('apple-m4').dies[0], (b) => b.coreType === 'P') / 0.0188 - 1) < 0.25);
 });
 
-test('Apple: M3 Pro・M3 Max はプリセットにコア構成が無いので、コアの枠は「構成未取得」の飾りで描く(コアのブロックは作らない)', () => {
-  ['apple-m3pro', 'apple-m3max'].forEach((id) => {
-    const d = mk(id); assert.strictEqual(cores(d).length, 0, id);
-    const slots = d.dies[0].blocks.filter((b) => /構成未取得/.test(b.label));
-    assert.ok(slots.length >= 10 && slots.every((b) => b.decorative && b.kind === 'uncore'), id);
-    assert.deepStrictEqual(design.validate(d), [], id);
+test('Apple: M3 Pro(P6・E6)・M3 Max(P12・E4)はプリセットのコア構成(2026-11-01 追記)どおり、枠に実コアのブロックが入る(「構成未取得」の飾りは出ない)', () => {
+  [['apple-m3pro', 6, 6], ['apple-m3max', 12, 4]].forEach(([id, nP, nE]) => {
+    const d = mk(id); const cs = cores(d);
+    assert.strictEqual(cs.length, nP + nE, id);
+    assert.strictEqual(cs.filter((b) => b.coreType === 'P').length, nP, id);
+    assert.strictEqual(cs.filter((b) => b.coreType === 'E').length, nE, id);
+    assert.strictEqual(d.dies[0].blocks.filter((b) => /構成未取得/.test(b.label)).length, 0, id);
+    assert.deepStrictEqual(design.validate(d), [], id); // ダイ内に収まり重ならない
+    assert.strictEqual(d.dies[0].layout.scaleBasis, 'photo', id);
   });
-  assert.strictEqual(mk('apple-m3pro').dies[0].blocks.filter((b) => /P コア/.test(b.label)).length, 6);
-  assert.strictEqual(mk('apple-m3max').dies[0].blocks.filter((b) => /P コア/.test(b.label)).length, 12);
 });
 
 test('Apple: M2 Max は M2 Pro の配置が土台(CPU 側は同じ・GPU の領域が 2 倍)、Ultra は Max の配置を上下に 2 つ(ダイは 1 つのまま)', () => {
