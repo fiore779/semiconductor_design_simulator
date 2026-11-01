@@ -37,6 +37,8 @@
     if (kind === 'st' && ctx.cal && ctx.cal.uFixed) { const tc = S.perf.topCore(preset.cfg.cores || []); const uf = tc && ctx.cal.uFixed[tc.uarch]; base.inUCalSet = !!(uf && !preset.calib && gb7 && typeof gb7.single === 'number' && !(uf.excluded || []).includes(preset.id)); } // 標本から除外した SKU(14700HX)は学習内ではない
     const pubVal = gb7 ? (kind === 'st' ? gb7.single : gb7.multi) : null;
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
+    // 調査済みの誤差の原因説明(プリセットの errCause。再現度パネルの「原因」欄で未調査の定型文の代わりに出す)
+    base.causeNote = (preset.errCause && preset.errCause[kind]) || null;
     const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch, stOpts) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);
     if (kind === 'mt') Object.assign(base, { mixedClock: false, uncalibrated: [], threads: null });
     if (!r.ok) { base.reason = r.reason || '計算できません'; return base; }

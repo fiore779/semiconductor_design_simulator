@@ -460,3 +460,16 @@ test('混合 Golden Cove×4: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、1MB 
   assert.strictEqual(out[30].mt.l3Floor, false); assert.strictEqual(out[4].mt.noL3, false);
   assert.ok(out[0].mt.score <= out[1].mt.score && out[1].mt.score <= out[4].mt.score && out[4].mt.score <= out[30].mt.score);
 });
+
+// 2026-11-01: Kraken Point の ST/MT 誤差の原因説明(errCause。設計書 §5.3.3 I)。再現度パネルの原因欄が未調査の定型文の代わりに調査結果を出す。他のプリセットは従来の文
+test('errCause: Kraken Point だけ調査済みの原因説明が再現度パネルに出る。数値は変えない', () => {
+  const RP = require('../js/ui/reproduce.js');
+  const rows = (id) => RP.reproductionRows(E.evaluate(design.fromPreset(D.presets.find((x) => x.id === id), { mode: 'reproduce' }), ctx));
+  const k = rows('amd-kraken-350');
+  assert.ok(/原因\(調査済み\).*0\.90.*0\.92.*§5\.3\.3 I/.test(k[0].note), k[0].note);
+  assert.ok(/原因\(調査済み\).*0\.802/.test(k[1].note), k[1].note);
+  assert.ok(!/未調査/.test(k[0].note + k[1].note));
+  const h = rows('amd-strix-hx370');
+  assert.ok(/原因: モデルの限界か入力データ不足\(未調査\)/.test(h[0].note));
+  assert.strictEqual(+E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-kraken-350')), ctx).st.score.toFixed(3), 2694.581);
+});

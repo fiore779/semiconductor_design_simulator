@@ -168,6 +168,10 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     power: { base: pw(28, 'sec', 'cTDP 15〜54W'), peak: null, range: { minW: 15, maxW: 54 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'C', uarch: 'Zen 5c', count: 4, smt: 2, baseGHz: null, boostGHz: 3.5 }], l3MB: 16, l3Note: '合計 16MB は [二次] Wikipedia・Notebookcheck。TechPowerUp 等は 8MB(検索要約・原ページ未確認)とし食い違う。Zen 5 側 / Zen 5c 側の内訳は未取得', memory: 'DDR5-5600 / LPDDR5X-8000' },
     calib: false,
+    errCause: {
+      st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 実測 0.92(2567/2784)と相対値は実測と一致するが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
+      mt: '公開値(11354)は検索要約で原ページ未確認。54W 級の帯係数 0.65 では過小(一致する係数は 0.802)。HX 370 も同じ向き(-24.4%)。設計書 §5.3.3 H',
+    },
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック・ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照',
   });
   P.push({
