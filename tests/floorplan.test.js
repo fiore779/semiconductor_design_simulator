@@ -85,7 +85,7 @@ test('飾りブロック: Uncore・iGPU・NPU だけが decorative で、コア�
   const kinds = (id) => mk(id).dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.decorative).map((b) => b.kind)), []).sort();
   assert.deepStrictEqual(kinds('intel-adl-12900k'), ['gpu', 'uncore', 'uncore']); // iGPU・Uncore・Platform I/O
   assert.deepStrictEqual(kinds('amd-strix-hx370'), ['gpu', 'gpu', 'npu'].concat(Array(6).fill('uncore'))); // 写真に合わせた GPU(2 ブロック)・NPU・PHY など
-  assert.deepStrictEqual(kinds('amd-kraken-350'), ['gpu', 'npu', 'uncore']);
+  assert.deepStrictEqual(kinds('amd-kraken-350'), ['gpu', 'gpu', 'npu'].concat(Array(6).fill('uncore'))); // Strix の配置の流用
   assert.deepStrictEqual(kinds('amd-zen1-1800x'), ['uncore']);
   assert.deepStrictEqual(kinds('amd-zen5-9950x'), ['gpu'].concat(Array(6).fill('uncore'))); // CCD 2 個の上部の帯(各 3)+ IOD の iGPU
 });

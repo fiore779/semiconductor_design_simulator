@@ -62,8 +62,8 @@
   }
 
   // dies[ci](CCD)を上段、ほかのダイを下段の中央に並べ直す。最後に x の最小を 0 に揃える。
-  function arrangeChiplet(dies, ci) {
-    const top = dies.filter((d, i) => i === ci); const rest = dies.filter((d, i) => i !== ci);
+  function arrangeChiplet(dies, ci, extra) {
+    const top = dies.filter((d, i) => i === ci); const rest = dies.filter((d, i) => i !== ci).concat(extra || []);
     let x = 0; top.forEach((d) => { d.x = x; d.y = 0; x += d.widthMm + GAP_MM; });
     const topW = Math.max(0, x - GAP_MM); const topH = Math.max.apply(null, top.map((d) => d.heightMm));
     if (rest.length) {
@@ -71,8 +71,9 @@
       let rx = topW / 2 - restW / 2; const ry = topH + Math.max(4, topH * 0.45);
       rest.forEach((d) => { d.x = rx; d.y = ry; rx += d.widthMm + GAP_MM; });
     }
-    const minX = Math.min.apply(null, dies.map((d) => d.x));
-    dies.forEach((d) => { d.x -= minX; });
+    const all = dies.concat(extra || []);
+    const minX = Math.min.apply(null, all.map((d) => d.x));
+    all.forEach((d) => { d.x -= minX; });
   }
 
   // プリセット → 設計。面積が未取得のダイは areaKnown:false の仮寸法(10×10mm)で置く。
@@ -90,7 +91,9 @@
     const layout = fp ? FP.toLayout(fp) : null;
     srcDies.forEach((sd, i) => {
       const known = typeof sd.mm2 === 'number';
-      const size = known ? dieSize(sd.mm2, layout && i === computeIdx ? FP.aspectOf(layout) : null) : { widthMm: 10, heightMm: 10 };
+      const lay = layout && i === computeIdx ? FP.aspectOf(layout) : null;
+      // 面積が未取得のダイは仮寸法(10×10 mm。実寸ではない)。実物風テンプレートのダイは枠の縦横比で仮の 100 mm² 相当にする(面積は null のまま)
+      const size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
       const die = {
         id: `die${i}`, name: sd.name, nodeId: sd.nodeId || null, areaMm2: known ? sd.mm2 : null, areaSource: known ? sd.s : null,
         areaKnown: known, areaNote: sd.note || null, x: cursorX, y: 0, widthMm: size.widthMm, heightMm: size.heightMm, blocks: [],
@@ -104,16 +107,22 @@
       dies.push(die);
     });
     // AMD チップレット: CCD は横並び(上)、IOD などほかのダイは CCD の下側中央に別ダイとして置く(基板上の見た目の配置。面積は変えない)
-    if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx);
+    // 飾りの IO ダイ(評価に影響しないよう dies には入れず、別欄 decorDies に持つ)
+    let decorDies = null;
+    if (layout && layout.template === 'amd-chiplet' && fp.decorIod) {
+      const D = FP.DECOR_IOD; const w = Math.sqrt(D.areaMm2 * D.aspect);
+      decorDies = [{ id: 'decor0', kind: 'iod', label: D.label, x: 0, y: 0, widthMm: w, heightMm: D.areaMm2 / w, areaMm2: D.areaMm2, sizeBasis: Object.assign({}, D.sizeBasis) }];
+    }
+    if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || []);
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
-    return {
+    return Object.assign({
       schema: SCHEMA, name: o.name || preset.name,
       origin: { mode, base: preset.id, parts: [] },
       locks: { params: mode === 'reproduce' },
       presetId: preset.id, dies,
       cfg, baseCfg: clone(cfg), package: defaultPackage(preset),
-    };
+    }, decorDies ? { decorDies } : {});
   }
 
   // ---- パッケージ設定(冷却・基板・電力制限)。環境の設定でチップの設計ではないので、ロック(A 再現)の対象外 ----
@@ -590,6 +599,14 @@
         if (b.decorative != null && d.origin && d.origin.mode === 'mix') return `${u}: 混合設計のブロックに decorative は付けられません`;
         if (b.decorative === true && !(b.kind === 'uncore' || b.kind === 'gpu' || b.kind === 'npu')) return `${u}: 飾りブロックにできるのは Uncore・iGPU・NPU(kind が uncore / gpu / npu)だけです`;
       }
+    }
+    if (d.decorDies != null) {
+      if (d.origin && d.origin.mode === 'mix') return '混合設計に decorDies は付けられません';
+      // 飾りの IO ダイを許すのは、AMD チップレット(CCD)のテンプレートを使う設計だけ(Zen 3 の CCD 単独のプリセット)
+      if (!d.dies.some((x) => x && x.layout && x.layout.template === 'amd-chiplet')) return 'decorDies を付けられるのは AMD チップレット(CCD)の設計だけです';
+      const FP = floorplanApi();
+      const bad = FP ? FP.checkDecorDies(d.decorDies, ids) : 'decorDies を検証できません';
+      if (bad) return bad;
     }
     const mixBad = checkMix(d);
     if (mixBad) return mixBad;

@@ -33,7 +33,8 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   assert.strictEqual(basis('amd-zen3-5950x'), 'photo'); assert.strictEqual(basis('amd-zen3-5600x'), 'photo');
   assert.strictEqual(basis('amd-zen5-9950x'), 'survey'); assert.strictEqual(basis('intel-rpl-14900k'), 'photo');
   assert.strictEqual(basis('amd-zen4-7950x'), 'reuse'); assert.strictEqual(basis('amd-strix-hx370'), 'photo');
-  ['amd-raven-2400g', 'amd-zen3-5800u', 'amd-zen3p-7735hs', 'amd-zen4-7840hs', 'amd-kraken-350'].forEach((id) => assert.strictEqual(basis(id), 'schematic', id));
+  ['amd-raven-2400g', 'amd-zen3-5800u', 'amd-zen3p-7735hs', 'amd-zen4-7840hs'].forEach((id) => assert.strictEqual(basis(id), 'schematic', id));
+  assert.strictEqual(basis('amd-kraken-350'), 'reuse');
   assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'schematic');
   assert.strictEqual(basis('apple-m1'), null);
   assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('写真・測定なし')); assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('流用'));
@@ -126,4 +127,24 @@ test('編集でコア数が元のダイの枠を超えたら、根拠を schemat
   assert.strictEqual(ed('amd-zen5-9950x', 'P', 16).layout.scaleBasis, 'survey');
   assert.strictEqual(ed('amd-zen5-9950x', 'P', 20).layout.scaleBasis, 'schematic');
   assert.ok(FP.fits(null, []) && FP.afterEdit(null, []) === null);
+});
+
+test('Kraken Point: Strix Point の写真の配置の流用(reuse)。Zen 5 ×4・Zen 5c ×4 の 1 段ずつ、L3 は 1 ブロック(内訳未取得)、GPU は Strix の半分の面積、NPU は同じ。ダイ面積は未取得のまま', () => {
+  const d = mk('amd-kraken-350'); const die = d.dies[0]; const s = mk('amd-strix-hx370').dies[0];
+  assert.strictEqual(die.layout.scaleBasis, 'reuse'); assert.ok(die.layout.scaleNote.includes('このチップの写真・実測ではない')); assert.ok(die.layout.scaleNote.includes('根拠にしておらず'));
+  assert.strictEqual(die.areaMm2, null); assert.strictEqual(die.areaKnown, false); // 仮寸法のまま(面積は未取得)
+  assert.ok(Math.abs(die.widthMm / die.heightMm - 1858 / 905) < 0.01);
+  assert.strictEqual(die.blocks.filter((b) => b.coreType === 'P').length, 4); assert.strictEqual(die.blocks.filter((b) => b.coreType === 'C').length, 4);
+  const l3 = die.blocks.filter((b) => b.kind === 'l3'); assert.strictEqual(l3.length, 1); assert.strictEqual(l3[0].label, 'L3 16MB');
+  const frac = (x, dd, sel) => dd.blocks.filter(sel).reduce((a, b) => a + b.w * b.h, 0) / (dd.widthMm * dd.heightMm);
+  const isGpu = (b) => b.kind === 'gpu';
+  // GPU の面積(frame に対する比 × frame の大きさ)は Strix の半分(8CU / 16CU)
+  const gk = frac(null, die, isGpu) * 1858 * 905; const gs = frac(null, s, isGpu) * 1858 * 1200;
+  assert.ok(Math.abs(gk / gs - 0.5) < 0.05, String(gk / gs));
+  const npuk = die.blocks.find((b) => b.kind === 'npu'); const npus = s.blocks.find((b) => b.kind === 'npu');
+  assert.ok(Math.abs((npuk.w * npuk.h * 1858 * 905 / (die.widthMm * die.heightMm)) / (npus.w * npus.h * 1858 * 1200 / (s.widthMm * s.heightMm)) - 1) < 0.01);
+  assert.deepStrictEqual(design.validate(d), []);
+  // 編集で枠を超える(Zen 5c 5 個)と schematic に落ちる
+  const u = design.unlock(d); const r = design.setCoreCount(u, 'C', 6); assert.ok(r.ok);
+  assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'schematic'); assert.deepStrictEqual(design.validate(r.design), []);
 });

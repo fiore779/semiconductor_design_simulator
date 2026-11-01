@@ -255,3 +255,14 @@ test('3D ビュー: 縮尺の注記は幅が狭いと折り返され、行ごと
   const joined = a.st.texts.join('');
   assert.ok(joined.includes('このチップの写真・測定なし'));
 });
+
+test('3D ビュー: 飾りの IO ダイのラベルと「大きさは AMD 公表値 125mm²(参考。評価には含まない)」の注記を出す。ラベル非表示ではラベルを消し、aria に飾りの数が入る', () => {
+  const a = setup();
+  a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5950x'))); a.runRaf();
+  assert.ok(a.st.texts.includes('IOD(飾り・面積は参考)'));
+  assert.ok(a.st.texts.join('').includes('125mm²'));
+  assert.ok(a.canvas().attrs['aria-label'].includes('飾りの IO ダイ 1 個'));
+  a.st.texts = []; a.view.setLabels(false); a.runRaf();
+  assert.ok(!a.st.texts.includes('IOD(飾り・面積は参考)'));
+  assert.ok(a.st.texts.join('').includes('125mm²'), '注記は残る');
+});

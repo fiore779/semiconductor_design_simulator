@@ -129,13 +129,17 @@
   };
   const COL = {
     subSide: [0.55, 0.45, 0.22], metalSide: [0.15, 0.16, 0.19], underfill: [0.38, 0.27, 0.12], capBody: [0.30, 0.20, 0.13], capGold: [0.86, 0.68, 0.22],
-    ihs: [0.80, 0.82, 0.85], sel: [0.91, 0.35, 0.05], frameWhite: [1, 1, 1],
+    ihs: [0.80, 0.82, 0.85], sel: [0.91, 0.35, 0.05], frameWhite: [1, 1, 1], iod: [0.10, 0.36, 0.42], iodSide: [0.06, 0.20, 0.24],
   };
   const withA = (c, a) => [c[0], c[1], c[2], a === undefined ? 1 : a];
 
+  // 飾りの IO ダイ(design.decorDies。評価に影響しない見た目だけのダイ)。基板サイズ・蓋・ダイの厚み・カメラの外接には含める。選択・光線交差の対象外。
+  const decorOf = (design) => (design && Array.isArray(design.decorDies) ? design.decorDies : []);
+  const DECOR_H = 0.7; // 飾りダイの高さ(通常のダイの厚みに対する比)
+
   // 描画対象全体の外接球(カメラの注視点・距離・パンの制限に使う)。頂点は作らない。
   function designBounds(design) {
-    const dies = (design && design.dies) || [];
+    const dies = ((design && design.dies) || []).concat(decorOf(design));
     const sub = substrateSize(dies, design && design.package && design.package.substrateId);
     const dieT = dieThickness(dies); const bh = blockHeight(dieT);
     const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T;
@@ -157,12 +161,13 @@
   function buildScene(design, opts) {
     const o = opts || {};
     const dies = (design && design.dies) || [];
+    const decor = decorOf(design); const allDies = dies.concat(decor); // 基板・蓋・厚みは飾りのダイも含めて決める
     const sel = new Set(o.selection || []);
     const heatIds = new Set(o.heatDieIds || []);
     const ihsMode = IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass';
     const substrateId = design && design.package && design.package.substrateId;
-    const sub = substrateSize(dies, substrateId);
-    const dieT = dieThickness(dies); const bh = blockHeight(dieT);
+    const sub = substrateSize(allDies, substrateId);
+    const dieT = dieThickness(allDies); const bh = blockHeight(dieT);
     const dieTop = UF_H + dieT;
     const colorOf = o.colorOf || (() => [0.6, 0.6, 0.6]);
     const dieTopColor = o.dieTopColor || (() => [0.82, 0.83, 0.86]);
@@ -207,8 +212,18 @@
       });
     });
 
+    // 飾りの IO ダイ: 通常のダイより少し低い、濃い青緑の直方体(ブロックなし)
+    decor.forEach((d) => {
+      const x0 = d.x; const z0 = d.y; const x1 = d.x + d.widthMm; const z1 = d.y + d.heightMm; const h = dieT * DECOR_H;
+      [[0.9, 0.16], [0.5, 0.14], [0.2, 0.12]].forEach((s) => {
+        const e = s[0] * Math.max(0.4, dieT);
+        shadow.quad([x0 - e, 0.004, z1 + e], [x1 + e, 0.004, z1 + e], [x1 + e, 0.004, z0 - e], [x0 - e, 0.004, z0 - e], [0, 1, 0], withA([0, 0, 0], s[1]), MAT.SHADOW);
+      });
+      opaque.box(x0, 0, z0, x1, h, z1, withA(COL.iodSide), MAT.METAL, null, { topColor: withA(COL.iod), topMat: MAT.SILICON });
+    });
+
     // ヒートスプレッダ(蓋)と、その外側のコンデンサ
-    const ihs = ihsRect(dies, sub);
+    const ihs = ihsRect(allDies, sub);
     const caps = capacitorLayout(sub, ihs);
     caps.forEach((c) => {
       const hl = c.axis === 'x' ? c.len / 2 : c.wid / 2; const hw = c.axis === 'x' ? c.wid / 2 : c.len / 2;
@@ -241,7 +256,7 @@
       opaque: opaque.toFloat32(), shadow: shadow.toFloat32(), glass: glass.toFloat32(), heatQuads,
       sub, ihs, caps, dieT, blockH: bh, dieTop, ihsTop,
       bounds: designBounds(design),
-      counts: { dies: dies.length, blocks: dies.reduce((s, d) => s + d.blocks.length, 0), caps: caps.length },
+      counts: { dies: dies.length, decor: decor.length, blocks: dies.reduce((s, d) => s + d.blocks.length, 0), caps: caps.length },
     };
   }
 
@@ -265,7 +280,7 @@
   function pickTop(ray, dies, opts) {
     const o = opts || {};
     const sel = new Set(o.selection || []);
-    const dieT = dieThickness(dies); const bh = blockHeight(dieT); const dieTop = UF_H + dieT;
+    const dieT = dieThickness(dies.concat(o.decor || [])); const bh = blockHeight(dieT); const dieTop = UF_H + dieT; // 飾りのダイは選択対象外(厚みの計算にだけ含める)
     let best = null;
     const consider = (t, type, die, blockId) => {
       if (t === null || t === undefined || !(t >= 0)) return;
@@ -384,7 +399,7 @@
 
   const api = {
     FOV, PITCH_MIN, PITCH_MAX, VERTEX_FLOATS, MAT, UF_H, IHS_MODES, SUBSTRATE_STYLE, PRESETS, COL,
-    diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, createMesh, buildScene,
+    decorOf, DECOR_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, createMesh, buildScene,
     rayBox, pickTop, fitDistance, createCamera, orbit, zoom, pan, eyeOf, cameraAxes, cameraMatrices, screenRay, project,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.pkggeom = api;

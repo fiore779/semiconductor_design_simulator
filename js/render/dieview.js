@@ -59,7 +59,11 @@
   const NOTE_TEXT = '模式図(ブロックの大きさ・配置は実チップのものではありません)';
   const FPM = (typeof module !== 'undefined' && module.exports && typeof require === 'function') ? require('../model/floorplan.js') : (root.SDS && root.SDS.model && root.SDS.model.floorplan);
   // 実物風フロアプランのダイがあれば、縮尺の根拠の注記
-  const noteText = (d) => { const die = d && d.dies && d.dies.find((x) => x.layout); return die && FPM ? FPM.scaleText(die.layout) : NOTE_TEXT; };
+  const noteText = (d) => {
+    const die = d && d.dies && d.dies.find((x) => x.layout);
+    const a = die && FPM ? FPM.scaleText(die.layout) : NOTE_TEXT; const b = d && FPM ? FPM.decorNote(d.decorDies) : null;
+    return b ? `${a}。${b}` : a;
+  };
   const HEAT_TEXT = 'このモードは推定できません(理由は下の注記を参照)';
   const KIND_LEGEND = { coreP: 'P/高性能コア', coreE: 'E コア', coreLP: 'LP-E コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'アンコア', npu: 'NPU', other: 'その他' };
   const KIND_NAMES = { power: '電力密度', temp: '温度' };
@@ -247,8 +251,9 @@
     const pal = () => PALETTES[palName];
 
     // ---- fit ----
-    function designSig(d) { return d.dies.map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|'); }
-    function doFit() { view = geom.fit(design.dies, cssW, cssH, 48); invalidate(); }
+    const decorOf = (d) => (d && Array.isArray(d.decorDies) ? d.decorDies : []);
+    function designSig(d) { return d.dies.concat(decorOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|'); }
+    function doFit() { view = geom.fit(design.dies.concat(decorOf(design)), cssW, cssH, 48); invalidate(); }
     function maybeAutoFit() {
       if (cssW === 0 || !design.dies.length) { if (design.dies.length) fitSig = 'pending'; return; }
       const sig = designSig(design);
@@ -336,6 +341,11 @@
       const heatOn = heatActive();
       const oInfo = originOn() ? originInfo() : null;
       const heatQuads = []; // [{ tex, r }]
+      // 飾りの IO ダイ: 薄く出すだけ(編集・選択・ヒットテストの対象外)
+      decorOf(design).forEach((d) => {
+        const r = geom.screenRect(view, geom.dieWorldRect(d));
+        rect(r.x, r.y, r.w, r.h, rgba('#1f7a85', 0.32)); outline(r, 1, rgba('#1f7a85', 0.75));
+      });
       design.dies.forEach((die) => {
         const r = geom.screenRect(view, geom.dieWorldRect(die));
         const ht = heatOn ? heatTex.get(die.id) : null;
@@ -441,6 +451,10 @@
       const heatOn = heatActive();
       const oInfo = originOn() ? originInfo() : null;
 
+      decorOf(design).forEach((d) => { // 飾りの IO ダイのラベル(ダイの下側)
+        const r = geom.screenRect(view, geom.dieWorldRect(d));
+        c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT; c.fillText(d.label, r.x + 6, r.y + 14); // ダイの内側(縮尺バー・注記と重ならない)
+      });
       design.dies.forEach((die) => {
         const r = geom.screenRect(view, geom.dieWorldRect(die));
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = 'bold 13px sans-serif';
@@ -493,6 +507,7 @@
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT;
         c.fillText(`${mm >= 1 ? mm : mm.toFixed(Math.max(0, -Math.floor(Math.log10(mm))))} mm`, x + px + 8, y - 4);
         if (heatOn) {
+          let heatLines = 0;
           if (heat.note) { // 注記は折り返して縮尺バーの上へ(下から積む)
             const maxW = Math.max(120, cssW - 32 - 200);
             const lines = []; let cur = '';
@@ -502,7 +517,10 @@
             if (cur) lines.push(cur);
             c.fillStyle = P.note; c.textAlign = 'left';
             for (let i = 0; i < lines.length; i++) c.fillText(lines[i], x, y - 22 - (lines.length - 1 - i) * 16);
+            heatLines = lines.length;
           }
+          const dn = FPM ? FPM.decorNote(design.decorDies) : null; // ヒートマップ表示中も飾りの IOD の注記は消さない
+          if (dn) { c.fillStyle = P.note; c.textAlign = 'left'; c.fillText(dn, x, y - 22 - heatLines * 16); }
         } else if (anySchematic) { // 注記は狭い画面では折り返す(縮尺バーの上へ、下から積む)
           c.fillStyle = P.note; c.textAlign = 'left';
           const maxW = Math.max(120, cssW - 32 - 200); const ls = []; let cur2 = '';
