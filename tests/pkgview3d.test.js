@@ -57,8 +57,9 @@ test('3D ビュー: 作成すると role=img と aria-label が付き、設計�
   view.setDesign(preset());
   assert.ok(runRaf() > 0);
   assert.ok(canvas().attrs['aria-label'].includes('編集は 2D 表示で'));
-  assert.ok(st.texts.some((t) => t.includes('3D は模式図。形状・厚みは実物と異なります')), '模式図の注記');
-  assert.ok(st.texts.some((t) => t.includes('編集は 2D 表示で')), '編集案内');
+  assert.ok(view.getNotes().some((t) => t.includes('3D は模式図。形状・厚みは実物と異なります')), '模式図の注記(canvas の外の DOM に出す)');
+  assert.ok(!st.texts.some((t) => t.includes('3D は模式図')), '注記は canvas には描かない');
+  assert.ok(view.getNotes().some((t) => t.includes('編集は 2D 表示で')), '編集案内(DOM の注記)');
 });
 
 test('3D ビュー: 蓋の表示モードで描くものが変わる(非表示 < 半透明)。setViewMode / setColorMode / setHeatmap は例外にならない', () => {
@@ -229,7 +230,7 @@ test('3D ビュー: setLabels(false) でブロック名・ダイ名・寸法を�
   st.texts = []; view.setLabels(false); runRaf();
   assert.strictEqual(view.getLabels(), false);
   assert.ok(!st.texts.includes('ブロック名X')); assert.ok(!st.texts.includes('ダイ名Y')); assert.ok(!st.texts.some((t) => t.includes('mm')));
-  assert.ok(st.texts.some((t) => t.includes('3D は模式図')), '注記は残る');
+  assert.ok(view.getNotes().some((t) => t.includes('3D は模式図')), '注記は残る');
   st.texts = []; view.setLabels(true); runRaf();
   assert.ok(st.texts.includes('ブロック名X') && st.texts.includes('ダイ名Y'));
 });
@@ -237,32 +238,36 @@ test('3D ビュー: setLabels(false) でブロック名・ダイ名・寸法を�
 test('3D ビュー: 実物風フロアプランのダイがあれば、縮尺の根拠の注記を出す(流用は「写真・測定なし」)。無ければ出さない', () => {
   const a = setup();
   a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'intel-adl-12900k'))); a.runRaf();
-  assert.ok(a.st.texts.some((t) => t.includes('ダイ写真の目測')));
+  assert.ok(a.view.getNotes().some((t) => t.includes('目測')));
   const b = setup();
   b.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen4-7950x'))); b.runRaf();
-  assert.ok(b.st.texts.some((t) => t.includes('写真・測定なし')));
+  assert.ok(b.view.getNotes().some((t) => t.includes('写真・測定なし')));
   const c = setup();
   c.view.setDesign(full); c.runRaf();
-  assert.ok(!c.st.texts.some((t) => t.includes('目測') || t.includes('写真・測定なし')));
+  assert.ok(!c.view.getNotes().some((t) => t.includes('目測') || t.includes('写真・測定なし')));
 });
 
-test('3D ビュー: 縮尺の注記は幅が狭いと折り返され、行ごとに描かれる', () => {
+test('3D ビュー: 注記(縮尺の根拠・編集案内・ヒートマップの注意)は canvas に重ねず getNotes で返し、PNG 書き出し(captureCanvas)の画像にだけ描く(編集案内は除く)', () => {
   const a = setup();
   a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen4-7950x'))); a.runRaf();
-  const wide = a.st.texts.filter((t) => t.includes('写真・測定なし') || t.includes('流用')).length;
-  assert.ok(wide >= 1);
-  // measureText を幅 10px/字とするスタブなので、800px の画面では 1 行 56 字程度で折り返される。結合すると元の文になる
-  const joined = a.st.texts.join('');
-  assert.ok(joined.includes('このチップの写真・測定なし'));
+  const notes = a.view.getNotes();
+  assert.ok(notes.length >= 3 && notes.some((t) => t.includes('写真・測定なし')));
+  assert.ok(!a.st.texts.some((t) => notes.some((n) => t.includes(n.slice(0, 8)) && t.length > 8)), '画面の canvas には注記を描かない');
+  a.st.texts = []; a.st.capturing = true;
+  const cap = a.view.captureCanvas(800); a.st.capturing = false;
+  assert.ok(cap && cap.canvas);
+  const drawn = a.st.texts.join('');
+  assert.ok(drawn.includes('3D は模式図') && drawn.includes('このチップの写真・測定なし'), 'PNG には注記を描く');
+  assert.ok(!drawn.includes('編集は 2D 表示で行います'), 'PNG に編集案内は入れない');
 });
 
 test('3D ビュー: 飾りの IO ダイのラベルと「大きさは AMD 公表値 125mm²(参考。評価には含まない)」の注記を出す。ラベル非表示ではラベルを消し、aria に飾りの数が入る', () => {
   const a = setup();
   a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5950x'))); a.runRaf();
   assert.ok(a.st.texts.includes('IOD(飾り・面積は参考)'));
-  assert.ok(a.st.texts.join('').includes('125mm²'));
+  assert.ok(a.view.getNotes().join('').includes('125mm²'));
   assert.ok(a.canvas().attrs['aria-label'].includes('飾りの IO ダイ 1 個'));
   a.st.texts = []; a.view.setLabels(false); a.runRaf();
   assert.ok(!a.st.texts.includes('IOD(飾り・面積は参考)'));
-  assert.ok(a.st.texts.join('').includes('125mm²'), '注記は残る');
+  assert.ok(a.view.getNotes().join('').includes('125mm²'), '注記は残る');
 });

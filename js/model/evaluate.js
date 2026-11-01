@@ -34,7 +34,7 @@
     base.calibNotUsedForMt = kind === 'mt' && !!preset.calib && !base.isCalibSample;
     // 校正済み定数 uCal(複数 SKU の中央値。§5.3.0 M6 第 4 段)で ST を出す uarch の SKU は、その中央値の学習に使われている(代表ではないが、誤差は検証にならない)
     base.inUCalSet = false;
-    if (kind === 'st' && ctx.cal && ctx.cal.uFixed) { const tc = S.perf.topCore(preset.cfg.cores || []); base.inUCalSet = !!(tc && ctx.cal.uFixed[tc.uarch] && !preset.calib && gb7 && typeof gb7.single === 'number'); }
+    if (kind === 'st' && ctx.cal && ctx.cal.uFixed) { const tc = S.perf.topCore(preset.cfg.cores || []); const uf = tc && ctx.cal.uFixed[tc.uarch]; base.inUCalSet = !!(uf && !preset.calib && gb7 && typeof gb7.single === 'number' && !(uf.excluded || []).includes(preset.id)); } // 標本から除外した SKU(14700HX)は学習内ではない
     const pubVal = gb7 ? (kind === 'st' ? gb7.single : gb7.multi) : null;
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
     const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch, stOpts) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);

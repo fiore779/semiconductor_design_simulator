@@ -10,7 +10,7 @@ const { createDieView } = dieview;
 
 function setup(opt) {
   const o = opt || {};
-  const st = { lens: [], raf: [], handlers: {}, lost: false, outs: [], throwDraw: false };
+  const st = { texts: [], lens: [], raf: [], handlers: {}, lost: false, outs: [], throwDraw: false };
   const gl = new Proxy({}, { get(t, k) {
     if (k === 'isContextLost') return () => st.lost;
     if (k === 'getExtension') return () => null;
@@ -21,6 +21,7 @@ function setup(opt) {
   } });
   const ctx2d = new Proxy({}, { get(t, k) {
     if (k === 'measureText') return () => ({ width: 10 });
+    if (k === 'fillText') return (s) => { st.texts.push(String(s)); };
     if (k === 'createLinearGradient') return () => ({ addColorStop() {} });
     return () => {};
   }, set() { return true; } });
@@ -99,4 +100,28 @@ test('captureCanvas: コンテキスト喪失・ダイ 0 個では null。デー
   const e = createDieView(box, {});
   assert.strictEqual(e.available, false);
   assert.strictEqual(e.captureCanvas(), null);
+});
+
+test('2D: 注記は getNotes で返して canvas には描かない。PNG(captureCanvas)のときだけ画像に描く。ヒートマップ中はヒートマップの注意と飾りの IOD の注記も出る', () => {
+  const { st, view, runRaf } = setup();
+  const d12 = design.fromPreset(D.presets.find((p) => p.id === 'intel-adl-12900k'));
+  view.setDesign(d12); runRaf();
+  assert.ok(view.getNotes().some((t) => t.includes('目測')), '縮尺の根拠');
+  assert.ok(!st.texts.some((t) => t.includes('目測')), '画面の canvas には描かない');
+  st.texts = []; st.capturing = true;
+  assert.ok(view.captureCanvas(800)); st.capturing = false;
+  assert.ok(st.texts.some((t) => t.includes('目測')), 'PNG には描く');
+  // 飾りの IOD のある設計 + ヒートマップ
+  const d = design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5950x'));
+  view.setDesign(d); view.setViewMode('power');
+  view.setHeatmap({ kind: 'power', dies: d.dies.map((x) => ({ dieId: x.id, nx: 2, ny: 2, values: [1, 2, 3, 4], cellMm: 1 })), legend: { min: 0, max: 1, unit: 'W/mm²', uniform: false, label: '' }, note: 'ヒートマップの注意X' });
+  runRaf();
+  const n = view.getNotes();
+  assert.ok(n.includes('ヒートマップの注意X')); assert.ok(n.some((t) => t.includes('飾りの IOD') && t.includes('125mm²')));
+  assert.ok(!st.texts.some((t) => t.includes('ヒートマップの注意X')), '画面には描かない');
+  st.texts = []; st.capturing = true;
+  assert.ok(view.captureCanvas(800)); st.capturing = false;
+  assert.ok(st.texts.some((t) => t.includes('ヒートマップの注意X')) && st.texts.some((t) => t.includes('飾りの IOD')), 'PNG には両方描く');
+  // ダイ無しは注記なし
+  view.setDesign({ dies: [] }); assert.deepStrictEqual(view.getNotes(), []);
 });

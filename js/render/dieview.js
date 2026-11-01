@@ -83,7 +83,7 @@
   const GL_ERROR_TEXT = 'WebGL が使えません。ブラウザの設定(ハードウェアアクセラレーション)を確認するか、別のブラウザでお試しください。ダイビューは表示できません。';
 
   function emptyApi() {
-    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, captureCanvas() { return null; }, destroy() {} };
+    return { available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, captureCanvas() { return null; }, destroy() {}, getNotes() { return []; } };
   }
 
   function createDieView(container, handlers) {
@@ -121,6 +121,7 @@
 
     // ---- 状態 ----
     let design = { dies: [] };
+    let capturing = false; // PNG 書き出し中だけ、注記を画像に描く(画面では canvas の外の DOM に出す。getNotes)
     let selection = [];
     let viewMode = 'place';
     let view = { x: 0, y: 0, zoom: 10 };
@@ -506,7 +507,7 @@
         c.moveTo(x, y - 4); c.lineTo(x, y); c.lineTo(x + px, y); c.lineTo(x + px, y - 4); c.stroke();
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT;
         c.fillText(`${mm >= 1 ? mm : mm.toFixed(Math.max(0, -Math.floor(Math.log10(mm))))} mm`, x + px + 8, y - 4);
-        if (heatOn) {
+        if (!capturing) { /* 注記は canvas の外(ビュー下の DOM)に出す */ } else if (heatOn) {
           let heatLines = 0;
           if (heat.note) { // 注記は折り返して縮尺バーの上へ(下から積む)
             const maxW = Math.max(120, cssW - 32 - 200);
@@ -821,6 +822,16 @@
         updateAria(); invalidate();
       },
       fit() { if (cssW) doFit(); },
+      // 画面の注記(ビューの下に DOM で出す文)。PNG には従来どおり captureCanvas が画像に描く
+      getNotes() {
+        const n = [];
+        if (!design.dies.length) return n;
+        if (heatActive()) {
+          if (heat.note) n.push(String(heat.note));
+          const dn = FPM ? FPM.decorNote(design.decorDies) : null; if (dn) n.push(dn);
+        } else if (design.dies.some((d) => d.blocks.some((b) => b.schematic))) n.push(noteText(design));
+        return n;
+      },
       // PNG 書き出し用(設計書 §9)。選択枠とホバー表示を外して同期で再描画し、同じ処理の中で GL と 2D のラベルを
       // オフスクリーン canvas に合成して返す(preserveDrawingBuffer に頼らない)。失敗・描画不可なら null。
       // 戻り値: { canvas, mode:'place'|'power'|'temp', noData, legend:[{ text, color:'#rrggbb' }] }(凡例は種別色分け時だけ。ヒートマップ・出所色分けの凡例は画像内に描かれている)
@@ -832,7 +843,7 @@
         if (destroyed || glLost || lost || !cssW || !design.dies.length) return null;
         const selSaved = selection; const hoverSaved = hover;
         try {
-          selection = []; hover = null;
+          selection = []; hover = null; capturing = true;
           draw();
           const cv = doc.createElement('canvas');
           const lim = maxWidth > 0 ? maxWidth : 2400; const k = Math.min(1, lim / glCanvas.width);
@@ -849,7 +860,7 @@
           }
           const noData = viewMode !== 'place' && !heatOn;
           return { canvas: cv, mode: viewMode, noData, legend };
-        } catch (e) { return null; } finally { selection = selSaved; hover = hoverSaved; invalidate(); }
+        } catch (e) { return null; } finally { selection = selSaved; hover = hoverSaved; capturing = false; invalidate(); }
       },
       destroy() {
         if (destroyed) return;

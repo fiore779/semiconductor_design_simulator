@@ -232,8 +232,8 @@ test('楽観: ST の確度が落ちるのはクロックを上げたときだけ
 });
 
 test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さい L3 は下限)', () => {
-  // 2026-10-30(M6 第 4 段): Golden Cove の専用 u(112.3)導入で更新。旧値 0:[1696.09,14773.73] 1:[1882.25,14773.73] 4:[2079.46,14773.73] 30:[2227.63,17654.36]
-  const exp = { 0: [1774.11, 15252.54], 1: [1968.84, 15252.54], 4: [2175.13, 15252.54], 30: [2330.12, 18196.59] };
+  // 2026-10-30(M6 第 4 段): Golden Cove の専用 u(112.3)導入で更新(2026-11-01: 14700HX を標本から外して u=112.7、値を更新)。旧値 0:[1696.09,14773.73] 1:[1882.25,14773.73] 4:[2079.46,14773.73] 30:[2227.63,17654.36]
+  const exp = { 0: [1780.43, 15291.32], 1: [1975.86, 15291.32], 4: [2182.87, 15291.32], 30: [2338.42, 18240.5] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -245,10 +245,11 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   assert.strictEqual(rs[30].mt.noL3, false);
 });
 
-test('inUCalSet: Golden/Raptor 11 件の ST だけ true(代表ではない学習内)。ISA 代用・代表・MT は false', () => {
+test('inUCalSet: Golden/Raptor 10 件の ST だけ true(代表ではない学習内)。標本から除外した 14700HX・ISA 代用・代表・MT は false', () => {
   const ids = D.presets.filter((p) => ev(p.id).st.inUCalSet).map((p) => p.id).sort();
-  assert.strictEqual(ids.length, 11);
-  assert.ok(ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
+  assert.strictEqual(ids.length, 10);
+  assert.ok(!ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
+  assert.strictEqual(ev('intel-rpl-14700hx').st.inUCalSet, false); // 学習に使っていない(検証に使える)
   assert.strictEqual(ev('intel-arl-265k').st.inUCalSet, false);
   assert.strictEqual(ev('intel-adl-12900k').mt.inUCalSet, false);
   assert.strictEqual(ev('intel-adl-12900k').st.isCalibSample, false);
@@ -261,4 +262,33 @@ test('l3Ccds: design.setL3 → evaluate の経路。編集した合計が 1 CCD 
   assert.strictEqual(big.st.l3Ccds, 2); assert.ok(big.st.score >= base.st.score);
   const zero = E.evaluate(design.setL3(impD('amd-zen3-5950x'), 0).design, ctx);
   assert.strictEqual(zero.st.noL3, true); assert.strictEqual(zero.st.l3Ccds, null);
+});
+
+// ---- MT 持続クロック係数(mtClockInfo)の注記(2026-11-01) ----
+test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partial / none)。clockInfo.factor は帯の係数で、掛けなかったコア(boost 未取得で base)がある場合は partial', () => {
+  const perfM = require('../js/sim/perf.js');
+  assert.strictEqual(ev('amd-zen3-5800u').mt.clockInfo.applied, 'all');
+  assert.strictEqual(ev('intel-adl-12900k').mt.clockInfo.applied, 'none'); // pc は係数 1.0
+  const p = JSON.parse(JSON.stringify(D.presets.find((x) => x.id === 'intel-mtl-185h')));
+  const e = p.cfg.cores.find((g) => g.type === 'E'); delete e.boostGHz; delete e.maxGHz; e.baseGHz = e.baseGHz || 1.5;
+  const r = perfM.mtScore(p, ctx.cal, ctx.uarch, null);
+  assert.ok(r.ok); assert.strictEqual(r.clockInfo.applied, 'partial');
+  assert.strictEqual(r.clockInfo.factor, 0.76); // 帯の係数(掛けなかったコアがあっても factor は帯のまま)
+  assert.ok(r.clockFactor === 0.76 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
+});
+
+test('改良 B(編集後): MT の係数は元のチップの公表電力で決まり、コア数・クロックを編集しても帯は変わらない(clockInfo の band・powerW・factor が元と同じ)', () => {
+  ['amd-zen3-5800u', 'intel-mtl-185h', 'amd-kraken-350'].forEach((id) => {
+    const base = ev(id).mt.clockInfo;
+    const u = design.unlock(design.fromPreset(D.presets.find((p) => p.id === id)));
+    const t = u.cfg.cores[0].type;
+    let d = design.setCoreCount(u, t, Math.max(1, u.cfg.cores[0].count - 1)).design;
+    d = design.setClock(d, t, 4.0).design;
+    const r = E.evaluate(d, ctx);
+    assert.ok(r.edited && r.mt.ok, id);
+    const c = r.mt.clockInfo;
+    assert.strictEqual(c.band, base.band, id); assert.strictEqual(c.powerW, base.powerW, id);
+    assert.strictEqual(c.factor, base.factor, id); assert.strictEqual(c.source, base.source, id);
+    assert.strictEqual(c.fallback, false);
+  });
 });

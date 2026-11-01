@@ -175,3 +175,50 @@ test('ラベルの表示切替(既定は表示): 3D ビューに伝わり、保�
   assert.strictEqual(e.host.getLabels(), true);
   e.host.setLabels(false); assert.strictEqual(e.host.getLabels(), false);
 });
+
+test('注記は canvas の外(ビュー下の DOM)に出る。ビューの getNotes を反映し、設計・表示モード・ヒートマップの変更と 2D/3D 切替で更新され、空なら隠れる。破棄で片付く', () => {
+  const st = memStore();
+  const notesByKind = { '3d': ['3D は模式図', '編集は 2D'], '2d': ['模式図(2D)'] };
+  let calls = 0;
+  const { host, container, btn, log } = setup({ storage: st });
+  const noteEl = () => findAll(container, (n) => n.attrs && n.attrs.class && n.attrs.class.includes('vh-notes'))[0] || findAll(container, (n) => n.className && n.className.includes('vh-notes'))[0];
+  // スタブのビューに getNotes を生やす(作り直しのたびに最新の内容を返す)
+  log.made.forEach((v) => { v.getNotes = () => { calls++; return notesByKind[v.kind]; }; });
+  host.setDesign(D1);
+  const el = noteEl();
+  assert.ok(el, '注記の要素がある');
+  assert.deepStrictEqual(el.children.map((c) => c.textContent), ['3D は模式図', '編集は 2D']);
+  assert.notStrictEqual(el.style.display, 'none');
+  // 注記は stage(canvas の親)の外にある
+  const stage = findAll(container, (n) => n.className === 'vh-stage')[0];
+  assert.ok(stage && !findAll(stage, (n) => n === el).length);
+  // 内容が空になると隠れる
+  notesByKind['3d'] = []; host.setViewMode('power');
+  assert.strictEqual(el.style.display, 'none'); assert.strictEqual(el.children.length, 0);
+  notesByKind['3d'] = ['x']; host.setHeatmap({ kind: 'power', dies: [] });
+  assert.deepStrictEqual(el.children.map((c) => c.textContent), ['x']);
+  assert.ok(calls > 0);
+  host.destroy();
+  assert.ok(!findAll(container, (n) => n === el).length, '破棄で片付く');
+});
+
+test('2D/3D の切替(setDimension)で注記が更新され、ビューの下端(stage.style.bottom)が注記の高さに合う。空なら 0', () => {
+  const { host, container, btn, log } = setup({ storage: memStore() });
+  const notes = { '3d': ['3D の注記'], '2d': [] };
+  const patch = () => log.made.forEach((v) => { if (!v.getNotes) v.getNotes = () => notes[v.kind]; });
+  patch(); host.setDesign(D1);
+  const el = findAll(container, (n) => n.className && n.className.includes('vh-notes'))[0];
+  const stage = findAll(container, (n) => n.className === 'vh-stage')[0];
+  el.offsetHeight = 44; host.setDesign(D1); notes['3d'] = ['3D の注記', '2 行目']; host.setViewMode('temp');
+  assert.deepStrictEqual(el.children.map((c) => c.textContent), ['3D の注記', '2 行目']);
+  assert.strictEqual(stage.style.bottom, '44px');
+  // 2D へ: 注記なし → 隠れて下端 0
+  btn('2d').listeners.click(); patch(); host.setViewMode('place');
+  assert.strictEqual(el.style.display, 'none'); assert.strictEqual(stage.style.bottom, '0px');
+  // 2D に注記が出れば、そのぶん下端が上がる
+  notes['2d'] = ['2D の注記']; el.offsetHeight = 30; host.setViewMode('power');
+  assert.deepStrictEqual(el.children.map((c) => c.textContent), ['2D の注記']); assert.strictEqual(stage.style.bottom, '30px');
+  // 3D へ戻すと 3D の注記に更新される
+  btn('3d').listeners.click(); patch(); host.setViewMode('place');
+  assert.deepStrictEqual(el.children.map((c) => c.textContent), ['3D の注記', '2 行目']);
+});

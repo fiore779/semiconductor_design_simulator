@@ -85,12 +85,28 @@
     const status = mk('span', '', { class: 'small vh-status', role: 'status' });
     set(status, { whiteSpace: 'nowrap', flex: '0 0 auto' });
     bar.appendChild(dimGroup); bar.appendChild(camGroup); bar.appendChild(hint); bar.appendChild(status);
-    container.appendChild(bar); container.appendChild(stage);
+    // 注記(模式図・縮尺の根拠・編集は 2D で・ヒートマップの注意)は、canvas に重ねず、ビューの下に DOM で出す(折り返しは DOM に任せる)
+    const notesEl = mk('div', '', { class: 'small vh-notes', role: 'note', 'aria-label': '表示の注記' });
+    set(notesEl, { position: 'absolute', left: '0', right: '0', bottom: '0', boxSizing: 'border-box', padding: '4px 10px', maxHeight: '38%', overflowY: 'auto', display: 'none', lineHeight: '1.45' });
+    container.appendChild(bar); container.appendChild(stage); container.appendChild(notesEl);
 
     // バーは狭いと折り返して高くなる。ビュー領域の上端を実際の高さに合わせる
-    function layout() { const h = Math.max(BAR_H, Math.ceil(bar.offsetHeight || 0)); stage.style.top = h + 'px'; }
+    function layout() {
+      const h = Math.max(BAR_H, Math.ceil(bar.offsetHeight || 0)); stage.style.top = h + 'px';
+      stage.style.bottom = (notesEl.style.display === 'none' ? 0 : Math.ceil(notesEl.offsetHeight || 0)) + 'px';
+    }
+    function updateNotes() {
+      const list = cur && cur.getNotes ? cur.getNotes() : [];
+      const key = JSON.stringify(list);
+      if (key === notesEl._key) return;
+      notesEl._key = key;
+      notesEl.textContent = '';
+      list.forEach((t) => { const p = mk('div', String(t), { class: 'vh-note' }); notesEl.appendChild(p); });
+      notesEl.style.display = list.length ? 'block' : 'none';
+      layout();
+    }
     let barRo = null; let onWinResize = null;
-    if (typeof win.ResizeObserver === 'function') { barRo = new win.ResizeObserver(layout); barRo.observe(bar); }
+    if (typeof win.ResizeObserver === 'function') { barRo = new win.ResizeObserver(layout); barRo.observe(bar); barRo.observe(notesEl); }
     else if (win.addEventListener) { onWinResize = layout; win.addEventListener('resize', onWinResize); }
     function syncBar() {
       btn3.setAttribute('aria-pressed', dim === '3d' ? 'true' : 'false');
@@ -103,7 +119,7 @@
     // ---- ビューの作成と状態の引き継ぎ ----
     const wrapped = {
       onSelect(ids) { selection = (ids || []).slice(); if (H.onSelect) H.onSelect(ids); },
-      onChange(next, info) { if (next && next.dies) design = next; if (H.onChange) H.onChange(next, info); },
+      onChange(next, info) { if (next && next.dies) design = next; updateNotes(); if (H.onChange) H.onChange(next, info); },
     };
     function destroyCur() { if (cur) { try { cur.destroy(); } catch (e) { /* 無視 */ } cur = null; } stage.textContent = ''; }
     // d のビューを作る。作れたら true(状態を引き継ぐ)。作れなければ false(エラー文は stage に出ている)。
@@ -117,6 +133,7 @@
       if (d === '3d' && v.setIhsMode) v.setIhsMode(ihsMode);
       if (d === '3d' && v.setLabels) v.setLabels(labelsOn);
       v.setDesign(design); v.setColorMode(colorMode); v.setSelection(selection); v.setViewMode(viewMode); v.setHeatmap(heat);
+      updateNotes();
       return true;
     }
 
@@ -161,11 +178,11 @@
 
     return {
       available: true,
-      setDesign(d) { design = d && d.dies ? d : { dies: [] }; if (cur) cur.setDesign(design); },
+      setDesign(d) { design = d && d.dies ? d : { dies: [] }; if (cur) cur.setDesign(design); updateNotes(); },
       setSelection(ids) { selection = (ids || []).slice(); if (cur) cur.setSelection(selection); },
-      setViewMode(m) { viewMode = (m === 'power' || m === 'temp') ? m : 'place'; if (cur) cur.setViewMode(viewMode); },
+      setViewMode(m) { viewMode = (m === 'power' || m === 'temp') ? m : 'place'; if (cur) cur.setViewMode(viewMode); updateNotes(); },
       setColorMode(m) { colorMode = m === 'origin' ? 'origin' : 'kind'; if (cur) cur.setColorMode(colorMode); },
-      setHeatmap(data) { heat = data || null; if (cur) cur.setHeatmap(heat); },
+      setHeatmap(data) { heat = data || null; if (cur) cur.setHeatmap(heat); updateNotes(); },
       fit() { if (cur) cur.fit(); },
       captureCanvas(w) { return cur && cur.captureCanvas ? cur.captureCanvas(w) : null; },
       setDimension, getDimension() { return dim; },
@@ -174,6 +191,7 @@
       destroy() {
         if (destroyed) return;
         destroyed = true; destroyCur();
+        if (notesEl.parentNode) notesEl.parentNode.removeChild(notesEl);
         if (barRo) barRo.disconnect();
         if (onWinResize && win.removeEventListener) win.removeEventListener('resize', onWinResize);
         if (bar.parentNode) bar.parentNode.removeChild(bar);

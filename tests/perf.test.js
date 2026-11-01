@@ -223,20 +223,21 @@ test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(
 });
 
 // ---- M6 第 4 段: Golden Cove / Raptor Cove の校正済み定数 uCal(設計書 §5.3.0) ----
-test('uCal: Golden/Raptor 11 件の SKU 別 u の中央値から再計算した値と一致する(丸め 0.05 以内)・n=11', () => {
+test('uCal: Golden/Raptor 10 件(14700HX を除く)の SKU 別 u の中央値から再計算した値と一致する(丸め 0.05 以内)・n=10', () => {
   const ids = [];
   const us = [];
   D.presets.forEach((p) => {
     const c = F.topCore(p.cfg.cores || []);
     if (!c || !/^(Golden|Raptor) Cove$/.test(c.uarch) || !p.gb7 || !gb7ByName[p.gb7]) return;
+    if ((D.uarch[c.uarch].uCal.excluded || []).includes(p.id)) return; // uCal.excluded の SKU は標本から除外(14700HX。モバイル GB7 チャートの偏りによる外れ値。2026-11-01)
     const r = F.stScore(p, { u: { [c.uarch]: 1 } }, D.uarch);
     ids.push(p.id); us.push(gb7ByName[p.gb7].single / r.score);
   });
   const s = us.slice().sort((a, b) => a - b); const n = s.length;
   const median = n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
-  assert.strictEqual(n, 11, ids.join(',') + ' — GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す');
+  assert.strictEqual(n, 10, ids.join(',') + ' — GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す');
   ['Golden Cove', 'Raptor Cove'].forEach((k) => {
-    assert.strictEqual(D.uarch[k].uCal.n, 11);
+    assert.strictEqual(D.uarch[k].uCal.n, 10);
     assert.ok(Math.abs(D.uarch[k].uCal.u - median) < 0.05, `${k}: ${D.uarch[k].uCal.u} vs ${median}。uCal の u・n・date・basis を見直し、設計書 §5.3.0 の表を作り直す`);
     assert.ok(D.uarch[k].uCal.date && D.uarch[k].uCal.basis);
   });
@@ -244,13 +245,13 @@ test('uCal: Golden/Raptor 11 件の SKU 別 u の中央値から再計算した�
 
 test('uCal: rep 校正で Golden/Raptor に u が入り、calib・n・usedPresets・uIsa には影響しない', () => {
   const c = cal();
-  assert.strictEqual(c.u['Golden Cove'], 112.3); assert.strictEqual(c.u['Raptor Cove'], 112.3);
+  assert.strictEqual(c.u['Golden Cove'], 112.7); assert.strictEqual(c.u['Raptor Cove'], 112.7);
   assert.deepStrictEqual(Object.keys(c.uFixed).sort(), ['Golden Cove', 'Raptor Cove']);
   assert.strictEqual(c.n['Golden Cove'], undefined); assert.strictEqual(c.usedPresets['Golden Cove'], undefined);
   assert.ok(Math.abs(c.uIsa.x86 - 107.36091595190973) < 1e-9); // ISA 平均は代表だけで決まるので不変
   assert.ok(!D.presets.some((p) => p.calib && /^(Golden|Raptor) Cove$/.test((F.topCore(p.cfg.cores) || {}).uarch)));
   const r = F.stScore(preset('intel-adl-12900k'), c, D.uarch);
-  assert.strictEqual(r.corrSource, 'uarch'); assert.strictEqual(r.corr, 112.3);
+  assert.strictEqual(r.corrSource, 'uarch'); assert.strictEqual(r.corr, 112.7);
 });
 
 test('uCal: 代表の u がある uarch には定数より代表を優先する', () => {

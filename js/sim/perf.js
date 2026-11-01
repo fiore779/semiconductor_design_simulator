@@ -133,7 +133,7 @@
     const uFixed = {};
     Object.keys(uarchDb).forEach((name) => {
       const c = uarchDb[name].uCal;
-      if (c && typeof c.u === 'number' && u[name] == null) { u[name] = c.u; uFixed[name] = { u: c.u, n: c.n, date: c.date }; }
+      if (c && typeof c.u === 'number' && u[name] == null) { u[name] = c.u; uFixed[name] = { u: c.u, n: c.n, date: c.date, excluded: Array.isArray(c.excluded) ? c.excluded.slice() : [] }; }
     });
     const uIsa = {}; Object.keys(isaSamples).forEach((k) => { uIsa[k] = geo(isaSamples[k]); });
     // isValidation: 'rep' は代表で合わせて別 SKU で検証できる。'all' は全 SKU に合わせるので、その誤差は検証にならない(再現モード用)
@@ -207,7 +207,7 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo, threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
+    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, { applied: detail.length && detail.every((d) => d.clockFactor !== 1) ? 'all' : detail.some((d) => d.clockFactor !== 1) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。

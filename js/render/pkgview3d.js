@@ -72,7 +72,7 @@
   function emptyApi() {
     return {
       available: false, setDesign() {}, setSelection() {}, setViewMode() {}, setColorMode() {}, setHeatmap() {}, fit() {}, captureCanvas() { return null; }, destroy() {},
-      setCameraPreset() {}, setIhsMode() {}, getIhsMode() { return 'glass'; }, setLabels() {}, getLabels() { return true; },
+      setCameraPreset() {}, setIhsMode() {}, getIhsMode() { return 'glass'; }, setLabels() {}, getLabels() { return true; }, getNotes() { return []; },
     };
   }
 
@@ -433,24 +433,25 @@
           });
         });
       }
-      // 注記(模式図であること / 編集は 2D で)
-      c.font = FONT; c.textAlign = 'left'; c.fillStyle = P.note;
-      let yy = y; c.fillText(NOTE_3D, x, yy);
-      const sc = scaleNote(design); // 実物風フロアプランの縮尺の根拠(あれば)
-      if (sc) { // 狭い画面では折り返す(下の行から上へ積む)
-        const maxW = Math.max(120, cssW - 32 - 220); const ls = []; let cur2 = '';
-        Array.from(sc).forEach((ch) => { if (c.measureText(cur2 + ch).width > maxW) { ls.push(cur2); cur2 = ch; } else cur2 += ch; });
-        if (cur2) ls.push(cur2);
-        for (let i = ls.length - 1; i >= 0; i--) { yy -= 18; c.fillText(ls[i], x, yy); }
-      }
-      if (!capturing) { yy -= 18; c.fillText(EDIT_HINT, x, yy); }
-      if (heatOn && heat.note && design.dies.length) {
-        const maxW = Math.max(120, cssW - 32 - 200);
-        const lines = []; let cur = '';
-        Array.from(String(heat.note)).forEach((ch) => { if (c.measureText(cur + ch).width > maxW) { lines.push(cur); cur = ch; } else cur += ch; });
-        if (cur) lines.push(cur);
-        const base = yy - 18;
-        for (let i = 0; i < lines.length; i++) c.fillText(lines[i], x, base - (lines.length - 1 - i) * 16);
+      // 注記(模式図であること / 縮尺の根拠 / 編集は 2D で)は、画面では canvas の外(ビューの下の DOM。getNotes)に出す。PNG 書き出し(capturing)のときだけ画像に描く
+      if (capturing) {
+        c.font = FONT; c.textAlign = 'left'; c.fillStyle = P.note;
+        let yy = y; c.fillText(NOTE_3D, x, yy);
+        const sc = scaleNote(design); // 実物風フロアプランの縮尺の根拠(あれば)
+        if (sc) { // 狭い画面では折り返す(下の行から上へ積む)
+          const maxW = Math.max(120, cssW - 32 - 220); const ls = []; let cur2 = '';
+          Array.from(sc).forEach((ch) => { if (c.measureText(cur2 + ch).width > maxW) { ls.push(cur2); cur2 = ch; } else cur2 += ch; });
+          if (cur2) ls.push(cur2);
+          for (let i = ls.length - 1; i >= 0; i--) { yy -= 18; c.fillText(ls[i], x, yy); }
+        }
+        if (heatOn && heat.note && design.dies.length) {
+          const maxW = Math.max(120, cssW - 32 - 200);
+          const lines = []; let cur = '';
+          Array.from(String(heat.note)).forEach((ch) => { if (c.measureText(cur + ch).width > maxW) { lines.push(cur); cur = ch; } else cur += ch; });
+          if (cur) lines.push(cur);
+          const base = yy - 18;
+          for (let i = 0; i < lines.length; i++) c.fillText(lines[i], x, base - (lines.length - 1 - i) * 16);
+        }
       }
       if (heatOn) drawHeatOverlay(c, P, FONT);
       else if (oInfo) drawOriginLegend(c, P, FONT, oInfo);
@@ -658,6 +659,13 @@
       },
       setIhsMode(m) { ihsMode = G.IHS_MODES.indexOf(m) >= 0 ? m : 'glass'; sceneDirty = true; updateAria(); invalidate(); },
       setLabels(on) { labelsOn = on !== false; invalidate(); },
+      // 画面の注記(ビューの下に DOM で出す文)。PNG には従来どおり captureCanvas が画像に描く
+      getNotes() {
+        const n = [NOTE_3D]; const sc = scaleNote(design); if (sc) n.push(sc);
+        n.push(EDIT_HINT);
+        if (heatActive() && heat.note && design.dies.length) n.push(String(heat.note));
+        return n;
+      },
       getLabels() { return labelsOn; },
       getIhsMode() { return ihsMode; },
       getCamera() { return cam ? Object.assign({}, cam) : null; }, // 読み取り専用の写し(テスト・診断用)

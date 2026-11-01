@@ -65,6 +65,13 @@ gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数の�
 });
 
 // M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
+// uCal.excluded(校正の標本から除外した preset id)は実在すること(typo で inUCalSet が狂わないように)
+Object.keys(D.uarch || {}).forEach((name) => {
+  const c = D.uarch[name].uCal;
+  if (!c || c.excluded == null) return;
+  ok(Array.isArray(c.excluded), `uarch ${name}.uCal.excluded が配列でない`);
+  (Array.isArray(c.excluded) ? c.excluded : []).forEach((id) => ok((D.presets || []).some((p) => p.id === id), `uarch ${name}.uCal.excluded の id「${id}」が presets に無い`));
+});
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
 const C2_EXCEPTIONS = new Set(['amd-kraken-350']);

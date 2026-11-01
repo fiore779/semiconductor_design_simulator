@@ -7,7 +7,7 @@
 //   brPenalty  = 分岐ミスペナルティ(サイクル。µop キャッシュ命中時)。
 //   l1dKB / l1dLat / l2KB / l2Lat / l3Lat = L1D 容量・遅延、L2 容量(コアあたり)・遅延、L3 遅延。
 //   mshr       = 同時ミス処理数(fill buffer / ミスキュー)。
-//   uCal       = 校正済みの ST 補正 u(定数)。{ u, n, date, basis }。代表(calib:true)1 件ではなく、複数 SKU の中央値で決めた値(設計書 §5.3.0 M6 第 4 段)。
+//   uCal       = 校正済みの ST 補正 u(定数)。{ u, n, date, basis, excluded? }(excluded = 標本から除外した preset id の配列。inUCalSet を false にする)。代表(calib:true)1 件ではなく、複数 SKU の中央値で決めた値(設計書 §5.3.0 M6 第 4 段)。
 //                calib フラグ(校正の代表)とは別で、代表の u がある uarch はそちらを優先。GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも tests/perf.test.js の再計算テストが落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す。
 //   smt        = 1 or 2。vecBits = ベクトル幅(bit)。
 window.SDS_DATA = window.SDS_DATA || {};
@@ -25,8 +25,8 @@ window.SDS_DATA.uarch = (function () {
     'Zen 5': u({ decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, l3Lat: 46, smt: 2, vecBits: 512, note: 'モバイルは256bit。L3 遅延は Strix Point 実測(モバイル品)' }),
     'Zen 5c': u({ decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, smt: 2, vecBits: 256, note: 'Zen 5 と同アーキテクチャ。差はクロックと L3 容量。ROB 等は Zen 5 に準じるが Zen 5c 個別は未取得' }),
     // ---- Intel ----
-    'Golden Cove': u({ uCal: { u: 112.3, n: 11, date: '2026-10-30', basis: 'Golden Cove 4 件+Raptor Cove 7 件(14700HX 含む)の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.30(14700HX を除くと 112.74)。u は SKU 別に 95.7〜116.4。両 uarch の個別中央値は 111.7 と 112.3 でほぼ同じため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 1280, smt: 2, vecBits: 256, note: 'AVX-512 は公式非対応' }),
-    'Raptor Cove': u({ uCal: { u: 112.3, n: 11, date: '2026-10-30', basis: 'Golden Cove 4 件+Raptor Cove 7 件(14700HX 含む)の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.30(14700HX を除くと 112.74)。u は SKU 別に 95.7〜116.4。両 uarch の個別中央値は 111.7 と 112.3 でほぼ同じため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 2048, smt: 2, vecBits: 256, note: 'Golden Cove の値を準用(Chips and Cheese は差を L2 容量と L2 遅延 +1 サイクルとだけ記載。幅・ROB の差の記載はない)' }),
+    'Golden Cove': u({ uCal: { u: 112.7, n: 10, date: '2026-11-01', excluded: ['intel-rpl-14700hx'], basis: 'Golden Cove 4 件+Raptor Cove 6 件の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.74(13700K 112.304 と 12600K 113.177 の平均 112.7405。丸めて 112.7)。14700HX(u=95.7。モバイル GB7 チャートの偏りによる外れ値と文書で分析済み)は標本から除外(2026-11-01。含めた中央値は 112.30)。u は 109.4〜116.4。両 uarch の個別中央値は Golden Cove 111.75・Raptor Cove 113.12 で差 1.2%(1 uarch 4〜6 件のばらつきの範囲)のため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 1280, smt: 2, vecBits: 256, note: 'AVX-512 は公式非対応' }),
+    'Raptor Cove': u({ uCal: { u: 112.7, n: 10, date: '2026-11-01', excluded: ['intel-rpl-14700hx'], basis: 'Golden Cove 4 件+Raptor Cove 6 件の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.74(13700K 112.304 と 12600K 113.177 の平均 112.7405。丸めて 112.7)。14700HX(u=95.7。モバイル GB7 チャートの偏りによる外れ値と文書で分析済み)は標本から除外(2026-11-01。含めた中央値は 112.30)。u は 109.4〜116.4。両 uarch の個別中央値は Golden Cove 111.75・Raptor Cove 113.12 で差 1.2%(1 uarch 4〜6 件のばらつきの範囲)のため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 2048, smt: 2, vecBits: 256, note: 'Golden Cove の値を準用(Chips and Cheese は差を L2 容量と L2 遅延 +1 サイクルとだけ記載。幅・ROB の差の記載はない)' }),
     'Gracemont': u({ decodeWidth: 6, rob: 256, l1dLat: 3, l2KB: 512, l2Lat: 17, vecBits: 128, note: 'デコード6(3×2クラスタ)。rename 幅は未取得なので上限は decodeWidth を使う。L2 は 2MB/4コア共有 → コアあたり 512KB に換算' }),
     'Crestmont': u({ decodeWidth: 6, rob: 256, l1dLat: 3, l2Lat: 20, vecBits: 128, note: 'rename 幅は未取得(設計書 §2.7.1 は 6-wide と記載。デコード幅として扱い、上限は decodeWidth)。L2 容量は未取得' }),
     'Redwood Cove': u({ decodeWidth: 6, l2KB: 2048, l2Lat: 16, smt: 2, vecBits: 256, note: 'rename 幅は未取得(デコード6のみ)' }),
