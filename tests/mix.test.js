@@ -469,8 +469,11 @@ test('errCause: Kraken Point だけ調査済みの原因説明が再現度パネ
   assert.ok(/原因\(調査済み\).*0\.90.*0\.92.*§5\.3\.3 I/.test(k[0].note), k[0].note);
   assert.ok(/原因\(調査済み\).*0\.802/.test(k[1].note), k[1].note);
   assert.ok(!/未調査/.test(k[0].note + k[1].note));
+  // 2026-11-01: モバイルの各 SKU(HX 370・395・5800U・7735HS・Panther Lake)にも errCause(設計書 §5.3.3 J)
   const h = rows('amd-strix-hx370');
-  assert.ok(/原因: モデルの限界か入力データ不足\(未調査\)/.test(h[0].note));
+  assert.ok(/原因\(調査済み\).*§5\.3\.3 J/.test(h[0].note), h[0].note);
+  const z = rows('amd-zen4-7840hs'); // errCause なしで ST が許容外のものは従来の文のまま
+  assert.ok(/原因: モデルの限界か入力データ不足\(未調査\)/.test(z[0].note), z[0].note);
   assert.strictEqual(+E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-kraken-350')), ctx).st.score.toFixed(3), 2694.581);
 });
 

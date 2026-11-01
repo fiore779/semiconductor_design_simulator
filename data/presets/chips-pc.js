@@ -73,6 +73,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'intel-ptl-x9-388h', name: 'Core Ultra X9 388H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026,
     gb7: 'Panther Lake: Core Ultra X9 388H(2.1GHz, 16c)',
+    errCause: { st: 'チャートが「直近25件の中央値」で、母集団の偏りがほぼ無い(推定 ÷ チャート 0.995〜1.067)ため、残り +5.5〜+7.6% が原因未特定。Panther Lake の k は Lion Cove(265K)の代用で根拠が弱い。DRAM(LPDDR5X-9600)の遅延は未取得。設計書 §5.3.3 J' },
     dies: [die('Compute タイル', 115.1, 'meas', 'intel-18a', '他のタイルの寸法は未取得')],
     power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 5.1 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: null, boostGHz: null }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 18, memory: 'LPDDR5X-9600 / DDR5-7200, 2ch' },
@@ -156,6 +157,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-strix-hx370', name: 'Ryzen AI 9 HX 370', vendor: 'AMD', family: 'Strix Point', isa: 'x86', kind: 'mobile-pc', year: 2024,
     gb7: 'Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)',
+    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: '帯係数 0.65 が過小(一致する係数は 0.905)。Zen 5c の混在した SoC の持続クロックの可能性(未検証)。設計書 §5.3.3 H' },
     dies: [die('Strix Point (モノリシック)', 225.6, 'meas', 'tsmc-n4')],
     power: { base: pw(28, 'sec', 'cTDP 15〜54W'), peak: null, range: { minW: 15, maxW: 54 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.1 }, { type: 'C', uarch: 'Zen 5c', count: 8, smt: 2, baseGHz: null, boostGHz: 3.3 }], l3MB: 24, memory: 'DDR5-5600 / LPDDR5X-8000' },
@@ -169,7 +171,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'C', uarch: 'Zen 5c', count: 4, smt: 2, baseGHz: null, boostGHz: 3.5 }], l3MB: 16, l3Note: '合計 16MB は [二次] Wikipedia・Notebookcheck。TechPowerUp 等は 8MB(検索要約・原ページ未確認)とし食い違う。Zen 5 側 / Zen 5c 側の内訳は未取得', memory: 'DDR5-5600 / LPDDR5X-8000' },
     calib: false,
     errCause: {
-      st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 実測 0.92(2567/2784)と相対値は実測と一致するが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
+      st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 掲載の Geekbench Browser 転載 0.92(2567 は Framework 13、2784 は HX 370 のミニ PC。各 1 件で [二次])と相対値は近いが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
       mt: '公開値(11354)は検索要約で原ページ未確認。54W 級の帯係数 0.65 では過小(一致する係数は 0.802)。HX 370 も同じ向き(-24.4%)。設計書 §5.3.3 H',
     },
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック・ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照',
@@ -177,6 +179,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-strixhalo-395', name: 'Ryzen AI Max+ 395', vendor: 'AMD', family: 'Strix Halo', isa: 'x86', kind: 'mobile-pc', year: 2025,
     gb7: 'Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)',
+    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2616(チャート 2423 の 1.079 倍))で、誤差の約半分を説明する。残りは +7.1% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で Strix Halo 約 140ns〔GPU 負荷なしの基準〕([二次])で、これを入れても ST は約 -3.2% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 93% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J' },
     dies: [die('Zen 5 CCD ×2', 134.2, 'meas', 'tsmc-n4', '67.1 mm² × 2'), die('SoC/iGPU ダイ', 307.6, 'meas', 'tsmc-n4')],
     power: { base: null, peak: null, range: { minW: 45, maxW: 120 } }, // 設定範囲のみ公表(二次)。基本電力は未取得
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 3.0, boostGHz: 5.1 }], l3MB: 64, l3Ccds: 2, memory: 'LPDDR5X, 256bit' },
@@ -246,6 +249,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-zen3-5800u', name: 'Ryzen 7 5800U', vendor: 'AMD', family: 'Zen 3 (Cezanne)', isa: 'x86', kind: 'mobile-pc', year: 2021, addedIn: 'M5b',
     gb7: 'Cezanne: Ryzen 7 5800U(1.9GHz, 8c)',
+    errCause: { st: 'モバイルのチャート平均が最良条件より低い偏りは推定 1.123 倍だが、その根拠の GB6 は Geekbench Browser の転載 1 件(HP ProBook 455 G8)だけで弱い。残り +16.6% は原因未特定で、15W 級(cTDP 10〜25W)の ST が max boost 4.4GHz に届かない可能性が候補だが(未検証)、実クロックは未取得。NBC に GB7 の行がない。DRAM 遅延の差を入れても ST は約 -3%。設計書 §5.3.3 J', mt: '15W 級を別の帯にしていないため(標本 1 件)。設計書 §5.3.3 H' },
     dies: [die('Cezanne', 179.6, 'meas', 'tsmc-n7')],
     power: { base: null, peak: null, range: { minW: 10, maxW: 25 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 1.9, boostGHz: 4.4 }], l3MB: 16, memory: null },
@@ -273,6 +277,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'intel-ptl-x9-386h', name: 'Core Ultra 9 386H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
     gb7: 'Panther Lake: Core Ultra 9 386H(2.1GHz, 16c)',
+    errCause: { st: 'チャートが「直近25件の中央値」で、母集団の偏りがほぼ無い(推定 ÷ チャート 0.995〜1.067)ため、残り +5.5〜+7.6% が原因未特定。Panther Lake の k は Lion Cove(265K)の代用で根拠が弱い。DRAM(LPDDR5X-9600)の遅延は未取得。設計書 §5.3.3 J' },
     dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
     power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 2.1, boostGHz: 4.9 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.6, boostGHz: 3.7 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.6, boostGHz: 3.5 }], l3MB: 18, memory: null },
@@ -324,6 +329,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-zen3p-7735hs', name: 'Ryzen 7 7735HS', vendor: 'AMD', family: 'Zen 3+ (Rembrandt-R)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
     gb7: 'Zen 4 モバイル(Rembrandt-R): Ryzen 7 7735HS(3.2GHz, 8c)',
+    errCause: { st: 'モバイルのチャート平均が最良条件より低い偏り(GB6 ラボ値からの推定で 1.089 倍)で誤差の 4 割強を説明する。残り +11.6% は原因未特定。L3 16MB は入力済み(Cezanne/Rembrandt は 8 コア 1 クラスタ)。DRAM 遅延は一定 85ns で、LPDDR/DDR5 の差を仮に +25ns としても ST は約 -3%(Zen 3 系は L3 が小さくメモリ項が大きいので感度は高いが、足りない)。推定の基準は 5800X の GB6 比(DDR4 のデスクトップ)で、GB6 は Geekbench Browser の転載を含む。設計書 §5.3.3 J' },
     dies: [die('Rembrandt-R', 208.7, 'meas', 'tsmc-n6', 'Kurnal の実測 12.84×16.25mm')],
     power: { base: null, peak: null, range: { minW: 35, maxW: 54 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 3.2, boostGHz: 4.75 }], l3MB: 16, memory: null },
@@ -366,6 +372,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'intel-ptl-x9-378h', name: 'Core Ultra X9 378H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
     gb7: 'Panther Lake: Core Ultra X9 378H(2.0GHz, 16c)',
+    errCause: { st: 'チャートが「直近25件の中央値」で、母集団の偏りがほぼ無い(推定 ÷ チャート 0.995〜1.067)ため、残り +5.5〜+7.6% が原因未特定。Panther Lake の k は Lion Cove(265K)の代用で根拠が弱い。DRAM(LPDDR5X-9600)の遅延は未取得。設計書 §5.3.3 J' },
     dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
     power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.6, boostGHz: 3.8 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.6, boostGHz: 3.6 }], l3MB: 18, memory: null },
@@ -374,6 +381,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'intel-ptl-x7-358h', name: 'Core Ultra X7 358H', vendor: 'Intel', family: 'Panther Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
     gb7: 'Panther Lake: Core Ultra X7 358H(1.9GHz, 16c)',
+    errCause: { st: 'チャートが「直近25件の中央値」で、母集団の偏りがほぼ無い(推定 ÷ チャート 0.995〜1.067)ため、残り +5.5〜+7.6% が原因未特定。Panther Lake の k は Lion Cove(265K)の代用で根拠が弱い。DRAM(LPDDR5X-9600)の遅延は未取得。設計書 §5.3.3 J' },
     dies: [die('Compute タイル', 115.1, 'sec', 'intel-18a', '388H と同じ 4P+8E+4LP-E のコンピュートタイルを流用。他のタイルの寸法は未取得')],
     power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 1.9, boostGHz: 4.8 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.5, boostGHz: 3.5 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.5, boostGHz: 3.3 }], l3MB: 18, memory: null },

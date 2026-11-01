@@ -94,12 +94,12 @@ W400(Ryzen AI 400 = Gorgon Point、2026-01-05 発売)には Kraken Point と同�
 | SKU | シングル | マルチ | 区分・出典 |
 |---|---|---|---|
 | Ryzen AI 7 350 | 2116 | 11354 | Geekbench Browser のプロセッサチャート: **検索要約(原ページ未確認)**。ページは 403 で取得不可。要約は「Geekbench 7 CPU scores are calibrated against a baseline score of 2,500 (Ryzen 7 7700)」の文言があったとする |
-| Ryzen AI 7 350 | 2567 | 14103 | [実測] NBC350「Geekbench 7.0」欄。Framework Laptop 13 (FRANMGCP07)、RAM 31GB の 1 件のみ |
-| Ryzen AI 5 340 | 2598 | 10657 | [実測] NBC340「Geekbench 7.0」欄。Framework Laptop 13 (FRANMGCP05)、RAM 14GB の 1 件のみ |
+| Ryzen AI 7 350 | 2567 | 14103 | [二次] NBC350「Geekbench 7.0」欄(2026-11-01 訂正: NBC の測定ではなく Geekbench Browser の投稿の転載。nbc-gb7-mobile.md)。Framework Laptop 13 (FRANMGCP07)、RAM 31GB の 1 件のみ |
+| Ryzen AI 5 340 | 2598 | 10657 | [二次] NBC340「Geekbench 7.0」欄(同上の訂正の可能性。転載か未確認)。Framework Laptop 13 (FRANMGCP05)、RAM 14GB の 1 件のみ |
 | Ryzen AI 5 340 | 約 2246 | 約 9412 | CPU-monkey: **検索要約(原ページ未確認)**。要約自体が「レイアウトが崩れていてラベルの対応が不確か」としている |
 | Ryzen AI 5 330 | 未取得 | 未取得 | NBC330R に GB7 なし |
 | (比較)Ryzen AI 9 HX 370 | 2350 | 15014 | プロジェクトの gb7-scores.js(チャート、2026-10-25 収集) |
-| (比較)Ryzen AI 9 HX 370 | 2784 | 17515 | [実測] NBC370「Geekbench 7.0」欄。Micro Computer (HK) AI Series の 1 件のみ |
+| (比較)Ryzen AI 9 HX 370 | 2784 | 17515 | [二次] NBC370「Geekbench 7.0」欄(2026-11-01 訂正: Geekbench Browser の転載。機体は Meigao F8BAC のミニ PC)。Micro Computer (HK) AI Series の 1 件のみ |
 
 読み方の注意: Notebookcheck の GB7 は 1 件ずつで、HX 370 では Geekbench チャート値より ST +18%・MT +17% 高い。Kraken の Notebookcheck 値をそのままチャート値の代わりに使うと高めに出る。350 の比(NBC 同士で 350/HX370 = ST 0.92・MT 0.81、チャート同士(350 は検索要約)で ST 0.90・MT 0.76)はおおむね揃う。
 
