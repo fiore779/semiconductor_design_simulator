@@ -113,6 +113,7 @@
       const D = FP.DECOR_IOD; const w = Math.sqrt(D.areaMm2 * D.aspect);
       decorDies = [{ id: 'decor0', kind: 'iod', label: D.label, x: 0, y: 0, widthMm: w, heightMm: D.areaMm2 / w, areaMm2: D.areaMm2, sizeBasis: Object.assign({}, D.sizeBasis) }];
     }
+    if (layout && layout.template === 'x86-tile' && FP.tileDecor) decorDies = FP.tileDecor(layout, dies[computeIdx], preset.id); // Panther Lake: GPU・Platform タイルの飾り(Kurnal 全体図の相対位置。推定)
     if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || []);
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
@@ -641,10 +642,10 @@
     }
     if (d.decorDies != null) {
       if (d.origin && d.origin.mode === 'mix') return '混合設計に decorDies は付けられません';
-      // 飾りの IO ダイを許すのは、AMD チップレット(CCD)のテンプレートを使う設計だけ(Zen 3 の CCD 単独のプリセット)
-      if (!d.dies.some((x) => x && x.layout && x.layout.template === 'amd-chiplet')) return 'decorDies を付けられるのは AMD チップレット(CCD)の設計だけです';
+      // 飾りのダイを許すのは、AMD チップレット(CCD。kind iod。Zen 3 の CCD 単独のプリセット)と Intel タイル型(x86-tile。kind gpu-tile / platform-tile。Panther Lake)のテンプレートを使う設計だけ。kind とテンプレートの対応は checkDecorDies が検査する
+      if (!d.dies.some((x) => x && x.layout && (x.layout.template === 'amd-chiplet' || x.layout.template === 'x86-tile'))) return 'decorDies を付けられるのは AMD チップレット(CCD)・Intel タイル型の設計だけです';
       const FP = floorplanApi();
-      const bad = FP ? FP.checkDecorDies(d.decorDies, ids) : 'decorDies を検証できません';
+      const bad = FP ? FP.checkDecorDies(d.decorDies, ids, d.dies.map((x) => x && x.layout && x.layout.template)) : 'decorDies を検証できません';
       if (bad) return bad;
     }
     const mixBad = checkMix(d);

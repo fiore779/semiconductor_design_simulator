@@ -266,7 +266,7 @@ test('3D ビュー: 飾りの IO ダイのラベルと「大きさは AMD 公表
   a.view.setDesign(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5950x'))); a.runRaf();
   assert.ok(a.st.texts.includes('IOD(飾り・面積は参考)'));
   assert.ok(a.view.getNotes().join('').includes('125mm²'));
-  assert.ok(a.canvas().attrs['aria-label'].includes('飾りの IO ダイ 1 個'));
+  assert.ok(a.canvas().attrs['aria-label'].includes('飾りのダイ 1 個'));
   a.st.texts = []; a.view.setLabels(false); a.runRaf();
   assert.ok(!a.st.texts.includes('IOD(飾り・面積は参考)'));
   assert.ok(a.view.getNotes().join('').includes('125mm²'), '注記は残る');

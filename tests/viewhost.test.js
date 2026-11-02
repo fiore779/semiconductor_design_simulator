@@ -49,9 +49,9 @@ test('既定は 3D 表示。3D ビューだけが作られ、切替ボタンの 
   assert.deepStrictEqual(log.made.map((v) => v.kind), ['3d']);
   assert.strictEqual(btn('3d').attrs['aria-pressed'], 'true'); assert.strictEqual(btn('2d').attrs['aria-pressed'], 'false');
   const cams = findAll(container, (n) => n.attrs && n.attrs['data-cam']);
-  assert.deepStrictEqual(cams.map((n) => n.textContent), ['上から', '斜め', '横から', 'リセット']);
-  cams[0].listeners.click(); cams[3].listeners.click();
-  assert.deepStrictEqual(log.made[0].calls.filter((c) => c[0] === 'setCameraPreset').map((c) => c[1]), ['top', 'reset']);
+  assert.deepStrictEqual(cams.map((n) => n.textContent), ['上から', '斜め', '横から', '下から', 'リセット']);
+  cams[0].listeners.click(); cams[3].listeners.click(); cams[4].listeners.click();
+  assert.deepStrictEqual(log.made[0].calls.filter((c) => c[0] === 'setCameraPreset').map((c) => c[1]), ['top', 'bottom', 'reset']);
 });
 
 test('2D へ切り替えると設計・選択・表示モード・色分け・ヒートマップを引き継ぎ、3D は破棄される。戻すと 2D 側の編集結果も引き継ぐ', () => {

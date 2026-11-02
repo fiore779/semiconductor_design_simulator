@@ -34,17 +34,31 @@
   // 飾りの IO ダイ(design.decorDies。dies には入れない=評価に影響しない)。IOD のデータが無い Zen 3 の CCD 単独のプリセット(5600X・5950X)に、
   // パッケージ写真(5950x.jpg)に倣って CCD の下側中央に表示する。大きさは AMD 公表の Zen 3 cIOD 125 mm²(GF 12nm。AMD の Zen 3 発表資料 = block-areas.md の AMD-Z3)、縦横比は写真の目測。
   const DECOR_IOD = { areaMm2: 125, aspect: 1.4, label: 'IOD(飾り・面積は参考)', sizeBasis: { s: 'pub', source: 'AMD Zen 3 発表資料の cIOD(GF 12nm)125 mm²(docs/research/block-areas.md の AMD-Z3)', note: '縦横比 1.4 は 5950x.jpg(パッケージ写真)の IOD の外形を画像から読んだ目測。評価には含まない' } };
+  // Compute タイルの写真の枠に、全体図の相対位置の飾りのタイル(GPU・Platform)がある場合の飾りのダイ(座標は Compute のダイを基準。寸法は二次資料の mm 値、なければ Compute の面積に全体図の px 比を当てた[推定]。評価には含まない)
+  function tileDecor(layout, die, presetId) {
+    const TF = layout && layout.template === 'x86-tile' ? TILE_FRAMES[layout.frame] : null;
+    if (!TF || !TF.tiles.length || !die || !(die.areaMm2 > 0)) return null;
+    const s = die.widthMm / (TF.box[2] - TF.box[0]);
+    const skip = (TILE_MAP[presetId] && TILE_MAP[presetId].skip) || [];
+    return TF.tiles.filter((t) => skip.indexOf(t[1]) < 0).map((t) => {
+      const w = t[7] || (t[5] - t[3]) * s; const h = t[8] || (t[6] - t[4]) * s;
+      return { id: t[0], kind: t[1], label: t[2], x: r4(die.x + (t[3] - TF.box[0]) * s), y: r4(die.y + (t[4] - TF.box[1]) * s), widthMm: r4(w), heightMm: r4(h), areaMm2: r4(w * h),
+        sizeBasis: { s: t[7] ? 'sec' : 'est', source: t[7] ? `Kurnal の寸法 ${t[7]}×${t[8]} mm〔幅×高さ。向きは全体図に合わせた〕(Tom's Hardware 2026-03 の引用経由。[二次])。位置は Kurnal 全体図(dh0gWbF8gG9AXfQw.jpg。出典は推定)の目測[推定]` : 'Kurnal 全体図の相対比を Compute タイルの面積に当てはめた[推定]', note: '評価・面積合計には含まない。実測面積ではない' } };
+    });
+  }
   const MAX_DECOR = 4; const MAX_DECOR_TEXT = 300;
   // 画面の注記。「AMD 公表値」は sizeBasis.s が pub のときだけ。面積が無くても「飾り・評価には含まない」は出す
   const decorNote = (decor) => {
     const d = decor && decor[0]; if (!d) return null;
+    if (decor.some((x) => x.kind !== 'iod')) return '飾りのタイル(GPU・Platform)は見た目だけ。寸法は二次資料(Kurnal)、位置は全体図の目測の推定(参考。評価・面積合計には含まない)';
     if (typeof d.areaMm2 !== 'number') return '飾りの IOD は見た目だけで、大きさは参考(評価には含まない)';
     const who = d.sizeBasis && d.sizeBasis.s === 'pub' ? 'AMD 公表値' : '参考値';
     return `飾りの IOD の大きさは ${who} ${d.areaMm2}mm²、縦横比は写真の目測(参考。評価には含まない)`;
   };
 
   // 飾りダイの検証。問題があれば日本語の理由、なければ null。ids: 設計内の既存 id の Set(重複検出。呼び出し側が追加する)
-  function checkDecorDies(list, ids) {
+  // templates: 設計内のダイの layout.template の配列(あれば kind との対応を検査: iod は amd-chiplet、gpu-tile / platform-tile は x86-tile)
+  function checkDecorDies(list, ids, templates) {
     if (!Array.isArray(list)) return 'decorDies が配列ではありません';
     if (list.length > MAX_DECOR) return `飾りのダイが多すぎます(${list.length} 個。上限 ${MAX_DECOR})`;
     for (let i = 0; i < list.length; i++) {
@@ -52,7 +66,8 @@
       if (!d || typeof d !== 'object' || Array.isArray(d)) return `${t}: 形式が違います`;
       if (typeof d.id !== 'string' || !d.id) return `${t}: id が文字列ではありません`;
       if (ids) { if (ids.has(d.id)) return `${t}: id「${d.id}」が重複しています`; ids.add(d.id); }
-      if (d.kind !== 'iod') return `${t}: kind は iod にしてください`;
+      if (['iod', 'gpu-tile', 'platform-tile'].indexOf(d.kind) < 0) return `${t}: kind は iod / gpu-tile / platform-tile のどれかにしてください`;
+      if (Array.isArray(templates) && templates.indexOf(d.kind === 'iod' ? 'amd-chiplet' : 'x86-tile') < 0) return `${t}: kind「${d.kind}」は ${d.kind === 'iod' ? 'AMD チップレット(amd-chiplet)' : 'Intel タイル型(x86-tile)'}の設計だけに付けられます`;
       if (typeof d.label !== 'string' || d.label.length > 80) return `${t}: label は 80 文字以内の文字列にしてください`;
       for (const k of ['x', 'y']) if (!(typeof d[k] === 'number' && isFinite(d[k]) && Math.abs(d[k]) <= 10000)) return `${t}: ${k} が有限の数ではありません`;
       for (const k of ['widthMm', 'heightMm']) if (!(typeof d[k] === 'number' && isFinite(d[k]) && d[k] > 0 && d[k] <= 1000)) return `${t}: ${k} は 0 より大きく 1000 以下の数にしてください`;
@@ -248,7 +263,7 @@
   // big = P コア枠(順に埋める)、small = E コア枠(クラスタ順)、lp = LP-E コア枠、l3 = L3 帯(1 ブロック)、deco = 飾り(kind: g=GPU n=NPU u=その他。計算除外)。
   // コア数が枠より少なければ空き枠のまま、多ければ fits() が false になり根拠を schematic に落とす。
   const quad = (x, y, w, h) => [[x, y, w / 2, h / 2], [x + w / 2, y, w / 2, h / 2], [x, y + h / 2, w / 2, h / 2], [x + w / 2, y + h / 2, w / 2, h / 2]];
-  const tf = (box, nom, big, small, lp, l3, deco) => ({ box, aspect: (box[2] - box[0]) / (box[3] - box[1]), nom, big, small, lp, l3, deco });
+  const tf = (box, nom, big, small, lp, l3, deco, tiles) => ({ box, aspect: (box[2] - box[0]) / (box[3] - box[1]), nom, big, small, lp, l3, deco, tiles: tiles || [] });
   const TILE_FRAMES = {
     // Meteor Lake Compute タイル(MTL_annotated.jpg 13000×6470 の表示 2000×995 で目測。Compute は左上 [510,297,862,618]、下は IO タイル)。P 6 + E 4 コア×2 クラスタ。LP-E 2 は写真では SoC タイル側
     'mtl-compute': tf([510, 297, 862, 618], { p: 6, e: 8, lp: 2 },
@@ -265,22 +280,25 @@
         ['phy', 'LPDDR5X PHY', 'u', 585, 716, 925, 40], ['media', 'Media Engine', 'u', 720, 757, 305, 160], ['slc-l', 'SLC', 'u', 1030, 757, 50, 160], ['mc', 'メモリコントローラ', 'u', 1082, 757, 100, 160], ['slc-r', 'SLC', 'u', 1185, 757, 48, 160],
         ['gpu', 'GPU(Xe2-LPG 8)', 'g', 405, 762, 235, 552], ['gpu-l2a', 'GPU L2', 'g', 642, 767, 76, 148], ['unslice', 'Unslice・Interconnect', 'u', 642, 918, 76, 245], ['gpu-l2b', 'GPU L2', 'g', 642, 1165, 76, 150],
         ['npu', 'NPU', 'n', 722, 952, 212, 362], ['npu-c', 'NPU 制御・L2', 'n', 938, 955, 42, 200], ['display', 'Display Engine', 'u', 940, 1160, 240, 150], ['ipu', 'IPU', 'u', 1237, 1212, 285, 100]]),
-    // Panther Lake Compute タイル(panther-lake-computex26-die-annotated.jpg 971×1717)。Cougar Cove P 4(2×2)、Darkmont E 4(L2 を挟む)+「Cluster 4 E-Cores」4、LP-E 4、L3、NPU・メディア・ディスプレイほか
-    'ptl-compute': tf([10, 25, 955, 1700], { p: 4, e: 8, lp: 4 },
-      [[115, 920, 275, 235], [115, 1160, 275, 235], [595, 915, 275, 235], [595, 1155, 275, 235]],
-      [[78, 1405, 105, 100], [268, 1405, 105, 100], [78, 1578, 105, 112], [268, 1578, 105, 112]].concat(quad(610, 1400, 305, 290)), quad(200, 535, 310, 300), [403, 920, 180, 700], [
-        ['d2d-t', 'Die to die(D2D)', 'u', 20, 28, 930, 22], ['d2d-l', 'D2D', 'u', 10, 533, 40, 595], ['media', 'Media Engines', 'u', 22, 60, 488, 252], ['display', 'Display Engine', 'u', 25, 322, 485, 192], ['ipu', 'IPU', 'u', 58, 530, 132, 298],
-        ['npu-a', 'NPU', 'n', 560, 75, 385, 140], ['npu-b', 'NPU', 'n', 560, 215, 315, 375], ['msc', 'メモリサイドキャッシュ', 'u', 585, 600, 285, 300], ['ddr', 'DDR コントローラ', 'u', 880, 225, 70, 1160], ['ic', 'Interconnect', 'u', 60, 845, 515, 55],
-        ['l2-v', 'L2', 'u', 190, 1405, 72, 290], ['l2-a', 'L2', 'u', 80, 1522, 110, 53], ['l2-b', 'L2', 'u', 262, 1522, 118, 53]]),
+    // Panther Lake Compute タイル(Kurnal の全体図 dh0gWbF8gG9AXfQw.jpg 2501×2000 の表示 2000×1599 で目測。Compute は [85,428,1328,1130]。panther-lake-computex26-die-annotated.jpg は同じタイルを 90° 回して反転した向きで、縦横比 0.564 の逆数 1.77 と一致し、L3・NPU・P・E の相対位置も対応)。
+    // Cougar Cove P 4(上 2・下 2)、Darkmont E 4×2 クラスタ(左端の上下)、Darkmont LPE 4(中央)、L3 18MiB(6MiB×3)、NPU 5th、メモリコントローラ・MSC、Display?・Media?。右に GPU タイル(Xe3 12 コア)、下に Platform タイル(飾りのダイで表す)
+    'ptl-compute': tf([85, 428, 1328, 1130], { p: 4, e: 8, lp: 4 },
+      [[325, 497, 165, 203], [325, 848, 165, 205], [493, 497, 170, 203], [493, 848, 170, 205]],
+      quad(97, 462, 225, 235).concat(quad(97, 848, 225, 235)), quad(727, 765, 225, 225), [152, 700, 513, 148], [
+        ['phy', 'LPDDR5x / DDR5 PHY', 'u', 325, 432, 848, 45], ['mc', 'メモリコントローラ・メモリサイドキャッシュ', 'u', 665, 497, 240, 203], ['npu', 'NPU(5th。NCE ×3)', 'n', 915, 497, 345, 222],
+        ['display', 'Display Engine?', 'u', 985, 760, 108, 360], ['media', 'Media Engine?', 'u', 1108, 760, 190, 360], ['soc-gpu', 'SoC to GPU', 'u', 1302, 432, 22, 320], ['soc-iod', 'SoC to IOD', 'u', 510, 1095, 470, 30]],
+      // GPU タイル(Xe3 12 コア)と Platform タイルの飾りのダイ: 位置は Kurnal 全体図の目測(Compute の px を mm に換算)、寸法は設計書の調査表の Kurnal 寸法(GPU 8.14×6.78、I/O 12.44×4.00 mm。二次)。全体図の面積比(0.48・0.43)と 1% 以内で一致
+      [['decor0', 'gpu-tile', 'GPU タイル(Xe3 12 コア。飾り・位置は推定)', 1343, 428, 1938, 1138, 6.78, 8.14], ['decor1', 'platform-tile', 'Platform タイル(飾り・位置は推定)', 250, 1135, 1340, 1480, 12.44, 4.0]]),
   };
   const TILE_SRC = {
     'mtl-compute': 'MTL_annotated.jpg(Meteor Lake。作者表記なし。チップ名は画像内の Redwood Cove / Crestmont / Xe-LPG とファイル名から)。P 6 + E 4 コア×2 クラスタ。LP-E 2 は写真では SoC タイル側にあるが、コアのブロックは Compute タイルのダイに置く仕様なので、右端の SoC Tile Interconnect の帯の上に模式で重ねた(実際の位置ではない)',
     'arl-compute': 'arrow lake cpudie al3.jpg(Arrow Lake の Compute タイルの拡大注釈。ARL_LQ_annotated.jpg の左のタイルと同じ配置。作者表記なし)。P #1〜#8、E クラスタ #1〜#4(各 4 コア)、中央に L3 とリングエージェントの帯',
     'lnl-compute': 'LNL_Package_Annotated.jpg(Lunar Lake のパッケージ注釈。作者表記なし)。Compute タイル(P 4・LP-E 4・L3・GPU・NPU・メディアが一枚)',
-    'ptl-compute': 'panther-lake-computex26-die-annotated.jpg(Panther Lake の Compute タイル。Computex 2026 の画像とファイル名にある)。P 4・Darkmont E 4+E クラスタ 4・LP-E 4・L3・NPU・メディアなど',
+    'ptl-compute': 'Kurnal の Panther Lake 全体図 dh0gWbF8gG9AXfQw.jpg と panther-lake-computex26-die-annotated.jpg(同じ Compute タイル。縦横比 1.77 が一致)。P 4・Darkmont E 4×2 クラスタ・LPE 4・L3 18MiB・NPU・メディアなど',
   };
   const tm = (frame, basis, extra) => ({ frame, basis, src: TILE_SRC[frame] + (extra ? `。${extra}` : '') });
-  const PTL_NOTE = 'ユーザー申告で Xe3 4 コア版の写真。X モデルの GPU(Xe3 12 コア)は写真に無く、このプリセットには GPU タイルも無い(描かない)。Compute タイルの縦横比・寸法を X モデルの 115.1mm² に当てはめてよいかは未確認で、比率は目安(確度低)';
+  const PTL_NOTE = '写真は Compute タイル(Kurnal 全体図の向き)。画像に縮尺の注記はなく、Compute の 115.1mm² はプリセット値(Kurnal・二次)を当てはめた。GPU(12Xe)・Platform タイルの飾りのダイの寸法も Kurnal の二次値で独立した検証なし、位置は目測の推定';
+  const PTL_REUSE = '388H と同じ 4P+8E+4LP-E の Compute タイルの流用(プリセット側の注記に従う。258V・256V と同じ基準)。';
   const TILE_MAP = {
     'intel-mtl-185h': tm('mtl-compute', 'photo'),
     'intel-arl-285k': tm('arl-compute', 'photo'),
@@ -289,10 +307,11 @@
     'intel-lnl-268v': tm('lnl-compute', 'photo'),
     'intel-lnl-258v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
     'intel-lnl-256v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
-    'intel-ptl-x9-388h': tm('ptl-compute', 'reuse', PTL_NOTE),
-    'intel-ptl-x9-386h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
-    'intel-ptl-x9-378h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
-    'intel-ptl-x7-358h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
+    'intel-ptl-x9-388h': tm('ptl-compute', 'photo', PTL_NOTE),
+    // 386H は GPU が 4Xe(プリセットの notes)。12Xe の GPU タイルは出さない(4Xe の寸法は二次資料なし)。Platform タイルのみ
+    'intel-ptl-x9-386h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE + '。386H の GPU は 4Xe のため GPU タイルは出さない'), { skip: ['gpu-tile'] }),
+    'intel-ptl-x9-378h': tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE),
+    'intel-ptl-x7-358h': tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE),
   };
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。
   const CCD_RECIPES = {
@@ -598,7 +617,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, APPLE_FRAMES, TILE_FRAMES, classify, toLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

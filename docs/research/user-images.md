@@ -77,7 +77,10 @@
 | `arrow lake cpudie al3.jpg` | 3231×1816 | Arrow Lake Compute タイルの拡大(P #1〜#8、E クラスタ #1〜#4) | 285K(photo)、265K・275HX(reuse) |
 | `Intel-Arrow-Lake-8P+16E-Tiles-Die-Shot.jpg` | 2075×1130 | パッケージ上のタイル配置+注釈写真 | 3D 配置は現状維持(記録のみ) |
 | `LNL_Package_Annotated.jpg` | 6742×6850 | Lunar Lake パッケージ(Compute・Platform Controller・LPDDR5X) | 268V(photo)、258V・256V(reuse) |
-| `panther-lake-computex26-die-annotated.jpg` | 971×1717 | Panther Lake(おそらく Xe3 4 コア版。ユーザー申告) | 388H・386H・378H・358H(すべて reuse。X モデルの GPU は含まれない) |
+| `panther-lake-computex26-die-annotated.jpg` | 971×1717 | Panther Lake の Compute タイル(Kurnal 全体図の Compute を回して反転した向き) | 388H(photo)、386H・378H・358H(reuse。「Xe3 4 コア版」とした 2026-11-03 の当初の解釈は誤りで、ユーザーの説明により訂正) |
+| `dh0gWbF8gG9AXfQw.jpg`(Kurnal) | 2501×2000 | Panther Lake の全体図(Compute・12Xe の GPU・Platform の 3 タイル) | ptl-compute の枠(横向き)と、12Xe の GPU(388H・378H・358H)・Platform タイル(386H 含む 4 件)の飾りのダイ(decorDies) |
+| `1lgodfRzmK0H3DUG.jpg`(SemiAnalysis) | 1142×960 | 4P+4LPE 系の小さい Compute タイル(非 X 向けと推定) | プリセット無し。記録のみ |
+| `zsALH81651iOGldG.jpg`(SemiAnalysis) | 2409×960 | Xe3 4 コアの GPU タイル(左)と 12 コアの GPU タイル(右) | 縦横比の相互確認。4 コア版は記録のみ |
 | `Wildcat-lake-computex26-series3-die-annotated.jpg` | 1182×1427 | Wildcat Lake | プリセット無し。記録のみ |
 | `863ef392-…_1024x674.jpg` | 1024×674 | Raptor Lake/Redwood Cove の die shot(Locuza) | コア内部の参考のみ |
 

@@ -128,7 +128,7 @@ test('カメラ: プリセット・回転の制限・ズームの制限・パン
   const top = G.createCamera(bounds, 1.5, 'top'); const side = G.createCamera(bounds, 1.5, 'side'); const ob = G.createCamera(bounds, 1.5);
   assert.strictEqual(top.pitch, G.PITCH_MAX); assert.strictEqual(side.pitch, G.PITCH_MIN);
   assert.ok(near(ob.pitch, 0.62) && near(ob.yaw, 0.6)); assert.deepStrictEqual(ob.target, [10, 0, 5]); assert.ok(ob.dist > ob.radius);
-  assert.ok(G.orbit(ob, 1e6, 1e6).pitch <= G.PITCH_MAX); assert.ok(G.orbit(ob, 0, -1e6).pitch >= G.PITCH_MIN);
+  assert.ok(G.orbit(ob, 1e6, 1e6).pitch <= G.PITCH_MAX); assert.ok(G.orbit(ob, 0, -1e6).pitch >= -G.PITCH_MAX); assert.ok(G.orbit(ob, 0, -1e6).pitch < 0, '真下まで回せる'); assert.strictEqual(G.PRESETS.bottom.pitch, -G.PITCH_MAX); assert.ok(near(G.orbit(ob, -1e4, 0).yaw, ob.yaw + 80), 'yaw は無制限');
   assert.ok(near(G.orbit(ob, 100, 0).yaw, ob.yaw - 0.8)); assert.ok(near(ob.yaw, 0.6), '元は変更されない');
   assert.ok(near(G.zoom(ob, 1e-6).dist, ob.radius * 0.2)); assert.ok(near(G.zoom(ob, 1e6).dist, ob.radius * 8));
   assert.ok(near(G.zoom(ob, 0.5).dist, ob.dist * 0.5));

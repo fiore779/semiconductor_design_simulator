@@ -292,7 +292,7 @@
       const selText = names.length === 0 ? '選択中のブロックはありません' : names.length <= 3 ? `選択中: ${names.join('、')}` : `選択中: ${names.length} 個のブロック`;
       const ihsText = ihsMode === 'solid' ? '蓋を表示' : ihsMode === 'glass' ? '蓋は半透明' : '蓋は非表示';
       const mode = heatActive() ? `${KIND_NAMES[heat.kind]}のヒートマップ。` : viewMode !== 'place' ? '' : (originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : '');
-      glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りの IO ダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
+      glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りのダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
     }
 
     // ---- シーン(頂点)の作り直し ----
@@ -382,8 +382,9 @@
         const vp = G.cameraMatrices(cam, aspect()).vp;
         const prj = (p) => G.project(vp, p, cssW, cssH);
         const bh = scene.blockH; const dieTop = scene.dieTop;
-        // 飾りの IO ダイのラベル(ダイの下側。CCD のブロックに重ならない)
-        if (labelsOn) G.decorOf(design).forEach((d) => {
+        // 飾りのダイ(IOD・GPU・Platform タイル)のラベル(ダイの下側。CCD のブロックに重ならない)
+        const showLabels = labelsOn && cam.pitch >= 0; // 下から見ているときは、上面のラベルを出さない(裏から透けて見えるため)
+        if (showLabels) G.decorOf(design).forEach((d) => {
           const hh = scene.dieT * G.DECOR_H;
           const cs = [prj([d.x, hh, d.y]), prj([d.x + d.widthMm, hh, d.y]), prj([d.x, hh, d.y + d.heightMm]), prj([d.x + d.widthMm, hh, d.y + d.heightMm])];
           if (!cs.every((p) => p.visible)) return;
@@ -394,7 +395,7 @@
           c.font = FONT; c.fillStyle = P.note; const dim = `${d.widthMm.toFixed(2)} × ${d.heightMm.toFixed(2)} mm`;
           c.strokeText(dim, midX, botY + 29); c.fillText(dim, midX, botY + 29);
         });
-        (labelsOn ? design.dies : []).forEach((die) => { // ラベル非表示のときは何も出さず、物だけを見せる
+        (showLabels ? design.dies : []).forEach((die) => { // ラベル非表示のときは何も出さず、物だけを見せる
           // ダイ名と寸法(設計データの mm)。ダイの 4 隅を画面に投影し、画面上でいちばん上の縁のさらに上(=ダイの外側)に出して、ブロックに重ならないようにする
           const cs = [prj([die.x, dieTop, die.y]), prj([die.x + die.widthMm, dieTop, die.y]), prj([die.x, dieTop, die.y + die.heightMm]), prj([die.x + die.widthMm, dieTop, die.y + die.heightMm])];
           if (cs.every((p) => p.visible)) {
@@ -655,7 +656,7 @@
       // 'top'(上から)| 'oblique'(斜め)| 'side'(横から)| 'reset'(斜め + 全体表示)
       setCameraPreset(name) {
         if (!cssW) return;
-        resetCamera(name === 'top' || name === 'side' ? name : 'oblique');
+        resetCamera(name === 'top' || name === 'side' || name === 'bottom' ? name : 'oblique');
       },
       setIhsMode(m) { ihsMode = G.IHS_MODES.indexOf(m) >= 0 ? m : 'glass'; sceneDirty = true; updateAria(); invalidate(); },
       setLabels(on) { labelsOn = on !== false; invalidate(); },

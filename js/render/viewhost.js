@@ -60,7 +60,7 @@
     dimGroup.appendChild(btn3); dimGroup.appendChild(btn2);
     const camGroup = mk('span', '', { role: 'group', 'aria-label': 'カメラ' });
     set(camGroup, { display: 'inline-flex', gap: '4px', alignItems: 'center', flex: '0 0 auto' });
-    const camBtns = [['上から', 'top'], ['斜め', 'oblique'], ['横から', 'side'], ['リセット', 'reset']].map((p) => {
+    const camBtns = [['上から', 'top'], ['斜め', 'oblique'], ['横から', 'side'], ['下から', 'bottom'], ['リセット', 'reset']].map((p) => {
       const b = mk('button', p[0], { type: 'button', class: 'btn vh-cam', 'data-cam': p[1] });
       b.addEventListener('click', () => { if (cur && cur.setCameraPreset) cur.setCameraPreset(p[1]); });
       camGroup.appendChild(b);

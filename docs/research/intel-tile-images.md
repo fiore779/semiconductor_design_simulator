@@ -16,7 +16,10 @@
 | `arrow lake cpudie al3.jpg` | 3231×1816 | Arrow Lake の Compute タイルの拡大。P #1〜#8、Skymont E クラスタ #1〜#4(各 4 コア。内部に 1.5MB L2 ×2)、中央に Ring Agent + L3 Cache Tags の帯(上下に 2×1.5MB の L3 計 12 ブロック) | **285K の主な根拠**(photo) |
 | `Intel-Arrow-Lake-8P+16E-Tiles-Die-Shot.jpg` | 2075×1130 | 左: パッケージ上のタイル配置(Compute N3B が右上の縦長、IO N6 が左、Filler 2、SoC N6 が下に横長、GPU N5 がさらに下)。右: 同じ注釈写真(横向き) | タイル配置は 3D 表示の参考(実装は現状維持。(d))。タイル面積比 Compute : SoC : GPU ≈ 1 : 0.74 : 0.19 がプリセット(117.4 : 86.6 : 23.1)と一致 |
 | `LNL_Package_Annotated.jpg` | **6742×6850**(依頼文では 13000×6470) | Lunar Lake のパッケージ。上に LPDDR5X 2 個、下に Compute タイル(P 4、Skymont LP-E 4、L3 12MB の Ring Stop、Xe2-LPG 8、NPU、Media、Display、IPU、メモリコントローラ、SLC 4MB ×2)、その下に Platform Controller タイル | 268V の Compute タイル(photo) |
-| `panther-lake-computex26-die-annotated.jpg` | 971×1717 | Panther Lake の Compute タイル(縦長)。Cougar Cove P 4(2×2)、Darkmont 4(L2 を挟む)+「4 E-Cores」クラスタ、Cluster Low Power 4 E-Core、L3、NPU、Media、Display、メモリサイドキャッシュ、IPU、D2D、DDR コントローラ | 388H の Compute タイル(**reuse**。下の制約) |
+| `panther-lake-computex26-die-annotated.jpg`(WebP) | 971×1717 | Panther Lake の Compute タイル(縦長)。Cougar Cove P 4(2×2)、Darkmont 4(L2 を挟む)+「4 E-Cores」クラスタ、Cluster Low Power 4 E-Core、L3、NPU、Media、Display、メモリサイドキャッシュ、IPU、D2D、DDR コントローラ。**Kurnal 全体図の Compute タイルを 90° 回して反転した向き**(縦横比 0.564 の逆数 1.773 = 全体図の 1.771 と一致。L3・NPU・P・E の相対位置も対応) | 388H・386H・378H・358H の Compute タイル(photo) |
+| `dh0gWbF8gG9AXfQw.jpg`(JPEG。2501×2000。Kurnal の注釈。透かし @Kurnal) | 2501×2000 | **Panther Lake の全体図**。Compute タイル(横向き。Cougar Cove P ×4、Darkmont E 4×2 クラスタ、Darkmont LPE ×4、L3 18MiB(6MiB×3)、NPU 5th(NCE ×3)、メモリコントローラ・MSC 4MB×2、Display?・Media?、128bit LPDDR5x/DDR5 PHY)、右に GPU タイル(Xe3 Core ×12 + Render Slice ×2 + GPU L2 8MiB ×2)、下に IO/Platform タイル(PCIe5・TBT5 ×2・USB・WiFi/BT)。**12Xe = X モデルの全体図で、4P+8E+4LPE と整合** | ptl-compute の枠(横向き)と、GPU・Platform タイルの飾りのダイの位置 |
+| `1lgodfRzmK0H3DUG.jpg`(JPEG。1142×960。SemiAnalysis) | 1142×960 | 別の小さな Compute タイル(Cougar Cove ×4、Darkmont ×4(L2 1.5MB ×2 を共有)、6MB L3 ×2、NPU 5(NCE ×2)、4MB MSC ×2、LPDDR5X-7467/DDR-6400 PHY)。**4P+4LPE 系の非 X 向けと推定(未確認)** | プリセット無し(325 は面積・構成とも未取得)。**記録のみ** |
+| `zsALH81651iOGldG.jpg`(JPEG。2409×960。SemiAnalysis) | 2409×960 | 左: Xe3 4 コアの GPU タイル(非 X 向け)、右: Xe3 12 コアの GPU タイル(X 向け)。右は縦横比 1.20(Kurnal 全体図の GPU タイル 0.838 を回した向きと一致) | 12Xe の GPU タイルの縦横比の相互確認。4 コア版は記録のみ |
 | `Wildcat-lake-computex26-series3-die-annotated.jpg` | 1182×1427 | Wildcat Lake(Cougar Cove 2、Darkmont 4、L3、Xe 2、NPU、メモリサイドキャッシュ) | **プリセットが無いので反映せず記録のみ**(新プリセットは作らない) |
 | `863ef392-…_1024x674.jpg`(参考) | 1024×674 | Meteor Lake ではなく Raptor Lake/Redwood Cove(Locuza の die shot、撮影 Nicolas Derumigny / comptoir-hardware)。ブロック名は Redwood Cove P 1 + 4x Crestmont E | コア内部の参考のみ。タイル全体の配置には使わない |
 
@@ -32,8 +35,8 @@
 | 同 | 同 | intel-arl-275hx(HX が同じ Compute タイルかは検索要約で未確認) | reuse |
 | `lnl-compute` | 1.899(1145×603) | intel-lnl-268v(139.6 mm² → 約 16.3×8.6 mm) | photo |
 | 同 | 同 | intel-lnl-258v・256v(プリセット側が「268V と同じタイルを流用」) | reuse |
-| `ptl-compute` | 0.564(945×1675) | intel-ptl-x9-388h(115.1 mm² → 約 8.1×14.3 mm) | **reuse**(下の制約) |
-| 同 | 同 | intel-ptl-x9-386h・x9-378h・x7-358h(プリセット側が「388H と同じ…を流用」) | reuse |
+| `ptl-compute`(Kurnal 全体図の向き) | 1.771(1243×702。設計書の調査表の Kurnal 寸法 14.32×8.04 mm = 1.781 と 0.6% で一致) | intel-ptl-x9-388h(115.1 mm² → 約 14.28×8.06 mm) | photo |
+| 同 | 同 | intel-ptl-x9-386h・x9-378h・x7-358h(プリセット側が「388H と同じ…を流用」。LNL の 258V・256V と同じ基準で、写真が 388H のタイルなので) | reuse |
 
 Wildcat Lake: プリセット無し。反映せず。
 
@@ -44,16 +47,18 @@ Wildcat Lake: プリセット無し。反映せず。
 | mtl-compute | P コア 1 個 約 8%(6 個)、E クラスタ 約 10.7%(2 個)、L3 帯 約 21%(L3 1.5MB×16 + リングストップ) |
 | arl-compute | P コア 約 4.4%(8 個)、E クラスタ 約 5.7%(4 個)、L3 + リングエージェントの帯 約 26% |
 | lnl-compute | P コア 約 3.3%(4 個)、LP-E クラスタ 約 5.2%、L3 約 5.2%、GPU 約 19%、NPU 約 11%、Media 約 7%、Display 約 5% |
-| ptl-compute | P コア 約 4.1%(4 個)、Darkmont クラスタ 約 3%、E クラスタ(4 コア)約 5.6%、LP-E クラスタ 約 5.9%、L3 約 8%、NPU 約 11%、Media 約 7.7% |
+| ptl-compute | P コア 1 個 約 3.8%(4 個)、Darkmont クラスタ 約 6.1%(2 個)、LPE クラスタ 約 5.8%、L3 18MiB 約 8.7%、NPU 約 8.8%、Media 約 7.8%、Display 約 4.5% |
 
 面積注記が画像に無いので、プリセットの面積との差の記録は無し(縦横比だけを写真から採用)。
 
-## Panther Lake 画像の制約(ユーザー申告 2026-11-03)
+## Panther Lake: 前回の誤解の訂正と全体図(2026-11-03)
 
-`panther-lake-computex26-die-annotated.jpg` は、おそらく **Xe3 が 4 コアのモデル(X モデルではない)** のダイ。X9/X7(388H・386H・378H・358H。Xe3 12 コア)の GPU には使えない。
-- 使うのはコア領域の配置(Cougar Cove P / Darkmont E / LP-E / L3 / NPU 等の相対配置)の目安だけ。X モデルの GPU(Xe3 12 コア)は写真に無く、このプリセットには GPU タイルも無いので描かない。
-- 4 件とも scaleBasis は **reuse**(別 SKU の写真の流用。当初案の 388H = photo を変更)。scaleNote に「ユーザー申告で Xe3 4 コア版の写真。X モデルの GPU(Xe3 12 コア)は写真に無く、このプリセットには GPU タイルも無い(描かない)。Compute タイルの縦横比は目安」と明記。
-- 画像のダイ寸法・縦横比(0.564)を X モデルの Compute タイル面積 115.1 mm² にそのまま当てはめてよいかは**未確認**。比率は目安で、確度は低い。
+- **訂正**: 当初「`panther-lake-computex26-die-annotated.jpg` はおそらく Xe3 4 コア版のダイで X モデルには使えない」と記録したが、**誤り**。ユーザーの説明では、最初に保存した画像は Compute タイルで、全体図(Kurnal)も取得できた。4P+8E+4LP-E の Compute タイルとして H 系 4 件(388H・386H・378H・358H)に使える。
+- 全体図(`dh0gWbF8gG9AXfQw.jpg`)の Compute タイルとは、縦横比(1.771 と 1/0.564 = 1.773)と L3・NPU・P・E の相対位置で照合し、同じタイル(向きが違うだけ)と判断した。枠は全体図の向き(横長)で作った。
+- **scaleBasis**: 388H = **photo**、386H・378H・358H = **reuse**(プリセットが「388H と同じタイルの流用」と注記。LNL の 258V・256V と同じ基準)。**画像に縮尺の注記はない**。Compute の 115.1 mm² はプリセット値(Kurnal・二次)を当てはめた。GPU・Platform の寸法も Kurnal の二次値で、独立した検証なし。位置は目測の推定。
+- **GPU は SKU で違う**(設計書の Wikipedia 表・`chips-pc.js` の notes): 388H・378H・358H = Arc B390(**12 Xe**)、386H = **4 Xe**。12Xe の GPU タイルの飾りは 388H・378H・358H だけに付け、386H は Platform タイルのみ(4Xe の GPU タイルは寸法の二次資料が無いので出さない。記録のみ)。
+- **GPU タイル・Platform タイルは飾りのダイ**(`design.decorDies`。kind は gpu-tile / platform-tile。dies に入れず、評価・面積合計に含まない。Zen 3 の cIOD と同じ仕組みを `x86-tile` にも許した)。位置は全体図の目測(GPU は Compute の右、Platform は下)で**推定**。寸法は設計書の調査表の Kurnal 値(GPU 6.78×8.14 mm〔表の 8.14×6.78 を全体図の向きに合わせた〕、Platform 12.44×4.00 mm。二次。Tom’s Hardware 2026-03 の引用経由で独立でない)。全体図の px から出した面積比(GPU 0.484・Platform 0.431)は、その寸法から出る 0.480・0.432 と 1% 以内で一致。
+- **非 X 向けの 4P+4LPE 系**(`1lgodfRzmK0H3DUG.jpg`・`zsALH81651iOGldG.jpg` の左の 4Xe の GPU タイル): プリセット(Core Ultra 5 325)は面積・構成とも未取得のため**反映せず記録のみ**。**非 X 向けの全体像は未取得で、部分画像(Compute タイル・GPU タイル)のみ記録した**。画像の出典・チップ名は推定・要ユーザー確認。
 
 ## (d) 実装の方針と未対応
 

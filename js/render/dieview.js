@@ -452,7 +452,7 @@
       const heatOn = heatActive();
       const oInfo = originOn() ? originInfo() : null;
 
-      decorOf(design).forEach((d) => { // 飾りの IO ダイのラベル(ダイの下側)
+      decorOf(design).forEach((d) => { // 飾りのダイ(IOD・GPU・Platform タイル)のラベル(ダイの内側)
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT; c.fillText(d.label, r.x + 6, r.y + 14); // ダイの内側(縮尺バー・注記と重ならない)
       });

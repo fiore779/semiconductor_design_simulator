@@ -15,9 +15,10 @@ const byId = (id) => D.presets.find((p) => p.id === id);
 const mk = (id) => design.fromPreset(byId(id));
 const IDS = ['amd-zen3-5600x', 'amd-zen3-5950x'];
 
-test('対象は IOD のデータが無い Zen 3 の CCD 単独のプリセットだけ(5600X・5950X)。IOD のダイがあるもの・Zen 4 以降・そのほかには付かない', () => {
+test('飾りのダイが付くのは、IOD のデータが無い Zen 3 の CCD 単独(5600X・5950X。IOD)と Panther Lake(GPU・Platform タイル)だけ。ほかには付かない', () => {
   const have = D.presets.filter((p) => mk(p.id).decorDies).map((p) => p.id).sort();
-  assert.deepStrictEqual(have, IDS.slice().sort());
+  const PTL = ['intel-ptl-x9-388h', 'intel-ptl-x9-386h', 'intel-ptl-x9-378h', 'intel-ptl-x7-358h']; // Intel Panther Lake の GPU・Platform タイル(飾り)
+  assert.deepStrictEqual(have, IDS.concat(PTL).sort());
   assert.ok(!mk('amd-zen4-7700').decorDies); assert.ok(!mk('amd-zen5-9950x').decorDies); assert.ok(!mk('intel-adl-12900k').decorDies);
   const d = mk('amd-zen3-5950x'); const x = d.decorDies[0];
   assert.strictEqual(d.dies.length, byId('amd-zen3-5950x').dies.length); // ダイ数は変わらない

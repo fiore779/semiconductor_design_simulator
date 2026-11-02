@@ -177,7 +177,7 @@
 
     // 基板
     const sc = SUB_COLORS[sub.id] || SUB_COLORS.organic;
-    opaque.box(sub.x0, -sub.thickness, sub.z0, sub.x1, 0, sub.z1, withA(sc), MAT.SUB_SIDE, null, { topColor: withA(sc), topMat: MAT.SUB_TOP, sideColor: withA(COL.subSide) });
+    opaque.box(sub.x0, -sub.thickness, sub.z0, sub.x1, 0, sub.z1, withA(sc), MAT.SUB_SIDE, { bottom: true }, { topColor: withA(sc), topMat: MAT.SUB_TOP, sideColor: withA(COL.subSide) });
 
     dies.forEach((die) => {
       const x0 = die.x; const z0 = die.y; const x1 = die.x + die.widthMm; const z1 = die.y + die.heightMm;
@@ -309,7 +309,7 @@
 
   // ---- オービットカメラ ----
   // cam: { yaw, pitch, dist, target:[x,y,z], fov, radius }(radius: 対象の外接球の半径。ズームの上下限に使う)
-  const PRESETS = { top: { yaw: 0, pitch: PITCH_MAX }, oblique: { yaw: 0.6, pitch: 0.62 }, side: { yaw: 0, pitch: PITCH_MIN } };
+  const PRESETS = { top: { yaw: 0, pitch: PITCH_MAX }, oblique: { yaw: 0.6, pitch: 0.62 }, side: { yaw: 0, pitch: PITCH_MIN }, bottom: { yaw: 0, pitch: -PITCH_MAX } };
 
   function fitDistance(radius, fov, aspect) {
     const half = Math.min(fov / 2, Math.atan(Math.tan(fov / 2) * Math.max(aspect, 0.05)));
@@ -338,9 +338,9 @@
     return cam;
   }
 
-  // ドラッグの px から回転(1px = 0.008 rad)。右へドラッグ → 物体が右へ回る(カメラは左へ)。pitch は真横〜真上に制限。
+  // ドラッグの px から回転(1px = 0.008 rad)。右へドラッグ → 物体が右へ回る(カメラは左へ)。pitch は真下〜真上(±90°)まで動かせる(基板の下面も見える)。yaw は無制限(360°)。
   function orbit(cam, dxPx, dyPx) {
-    return Object.assign({}, cam, { yaw: cam.yaw - dxPx * 0.008, pitch: clamp(cam.pitch + dyPx * 0.008, PITCH_MIN, PITCH_MAX) });
+    return Object.assign({}, cam, { yaw: cam.yaw - dxPx * 0.008, pitch: clamp(cam.pitch + dyPx * 0.008, -PITCH_MAX, PITCH_MAX) });
   }
 
   // 距離を factor 倍(< 1 で近づく)。対象の外接球の半径の 0.2 倍〜8 倍に制限。
