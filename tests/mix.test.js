@@ -490,3 +490,41 @@ test('M3 系・A17 Pro: P コアは Everest 2nd gen(Everest から u を借り�
   });
   assert.deepStrictEqual([D.uarch['Everest'].width, D.uarch['Everest'].rob, D.uarch['Everest 2nd gen'].width, D.uarch['Everest 2nd gen'].rob, D.uarch['Everest 2nd gen'].uFrom], [8, 274, 9, 321, 'Everest']);
 });
+
+// 2026-11-02: 再現度パネルの参考値(gb7Ref。判定外)。設計書 §5.3.3 J-7
+test('参考値: HX 370・Kraken・A17 Pro の行に強い区分の順で最大 2 件。判定と差は公開値のままで、参考値には判定を付けない', () => {
+  const RP = require('../js/ui/reproduce.js');
+  const ev = (id) => E.evaluate(design.fromPreset(D.presets.find((x) => x.id === id), { mode: 'reproduce' }), ctx);
+  const rows = (id) => RP.reproductionRows(ev(id));
+  const hx = rows('amd-strix-hx370');
+  assert.strictEqual(hx[0].refs.length, 2); assert.strictEqual(hx[1].refs.length, 1); // MT の推定は無い
+  assert.ok(/^参考\(判定外\): 2,784\(Meigao F8BAC.*・転載\)$/.test(hx[0].refs[0].text), hx[0].refs[0].text);
+  assert.ok(/2,567.*推定/.test(hx[0].refs[1].text));
+  assert.ok(Math.abs(hx[0].refs[0].diffPct - (2780.417 / 2784 - 1) * 100) < 0.01);
+  assert.strictEqual(hx[0].verdict, 'ng'); assert.ok(Math.abs(hx[0].diffPct - 18.32) < 0.01); // 公開値 2350 に対する従来の判定と差
+  assert.ok(hx[0].refs.every((x) => !('verdict' in x)));
+  const kr = rows('amd-kraken-350');
+  assert.ok(/Framework Laptop 13.*転載/.test(kr[0].refs[0].text) && /2,567/.test(kr[0].refs[0].text));
+  const a17 = rows('apple-a17pro');
+  assert.strictEqual(a17[0].refs.length, 1); assert.ok(/2,688.*個別投稿/.test(a17[0].refs[0].text));
+  assert.ok(Math.abs(a17[0].refs[0].diffPct - 5.1) < 0.1); // 参考との差(判定ではない)。公開値との差 +11.8% は別に残る
+  assert.ok(Math.abs(a17[0].diffPct - 11.8) < 0.1);
+  assert.deepStrictEqual(rows('amd-zen5-9700x')[0].refs, []); // 参考値なし
+});
+
+test('参考値: 3 件以上あっても最大 2 件(個別投稿 → 転載 → 推定の順)。編集後の設計には出ない。評価値は参考値の有無で変わらない', () => {
+  const p = D.presets.find((x) => x.id === 'amd-strix-hx370'); const keep = p.gb7Ref;
+  const before = E.evaluate(design.fromPreset(p), ctx);
+  p.gb7Ref = [{ st: 1, mt: 1, device: 'a', kind: '推定', source: '', note: '' }, { st: 2, mt: 2, device: 'b', kind: '転載', source: '', note: '' }, { st: 3, mt: 3, device: 'c', kind: '個別投稿', source: '', note: '' }, { st: 'x', device: 'd', kind: '転載' }];
+  try {
+    const r = E.evaluate(design.fromPreset(p), ctx);
+    assert.deepStrictEqual(r.st.refs.map((x) => x.kind), ['個別投稿', '転載']);
+    assert.deepStrictEqual([r.st.score, r.mt.score, r.st.errPct, r.mt.errPct], [before.st.score, before.mt.score, before.st.errPct, before.mt.errPct]);
+    p.gb7Ref = undefined; const r0 = E.evaluate(design.fromPreset(p), ctx); assert.deepStrictEqual(r0.st.refs, []);
+    assert.deepStrictEqual([r0.st.score, r0.mt.score, r0.st.errPct], [before.st.score, before.mt.score, before.st.errPct]);
+  } finally { p.gb7Ref = keep; }
+  const u = design.unlock(design.fromPreset(p)); const e = design.setCoreCount(u, 'P', 2); assert.ok(e.ok);
+  const re = E.evaluate(e.design, ctx); assert.strictEqual(re.edited, true); assert.deepStrictEqual(re.st.refs, []);
+  // gb7Ref の値は区分・件数ごとに型を固定: 数値でないものは出ない
+  D.presets.filter((x) => x.gb7Ref).forEach((x) => x.gb7Ref.forEach((g) => { assert.ok(['個別投稿', '転載', '推定'].includes(g.kind), x.id); assert.ok(typeof g.device === 'string' && g.device && typeof g.source === 'string' && g.source, x.id); assert.ok(typeof g.st === 'number' || typeof g.mt === 'number', x.id); }));
+});

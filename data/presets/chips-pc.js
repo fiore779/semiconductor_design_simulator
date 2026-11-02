@@ -389,4 +389,71 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 1.9, boostGHz: 4.8 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.5, boostGHz: 3.5 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.5, boostGHz: 3.3 }], l3MB: 18, memory: null },
     calib: false, notes: 'クロック・L3・電力は Wikipedia「Panther Lake (microprocessor)」の表(取得日 2026-10-29)',
   });
+  // 参考値(判定外)。再現度パネルに公開値と並べて出す。値は docs/research/nbc-gb7-mobile.md・kraken-point.md のものだけ(新たな取得・推測なし)。評価・判定には使わない(設計書 §5.3.3 J-7)
+  const GB7_REF = {
+    'amd-strix-hx370': [
+      { st: 2784, mt: 17515, device: 'Meigao F8BAC(ミニ PC。ノート PC ではない)', kind: '転載', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-9-HX-370-Processor-Benchmarks-and-Specs.836729.0.html', note: 'Notebookcheck が載せる Geekbench Browser の投稿 v7/cpu/694162 の転載(1 件)。電力設定・日付は取得不可。デスクトップでも NBC 転載はチャートより約 5% 高い選び方の偏りがある' },
+      { st: 2567, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-9-HX-370-Processor-Benchmarks-and-Specs.836729.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。MT は同じコア数のデスクトップの対が無く推定なし' },
+    ],
+    'amd-kraken-350': [
+      { st: 2567, mt: 14103, device: 'Framework Laptop 13', kind: '転載', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-7-350-Processor-Benchmarks-and-Specs.949825.0.html', note: 'Notebookcheck が載せる Geekbench Browser の投稿 v7/cpu/682130 の転載(1 件)。電力設定・日付は取得不可' },
+      { st: 2547, mt: 13772, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-7-350-Processor-Benchmarks-and-Specs.949825.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。GB6 ラボ n=15' },
+    ],
+    'amd-strixhalo-395': [
+      { st: 2698, mt: 23028, device: 'Asus ROG Flow Z13 GZ302EA', kind: '転載', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-Max-395-Processor-Benchmarks-and-Specs.942323.0.html', note: 'Geekbench Browser の投稿 v7/cpu/621559 の転載(1 件)' },
+      { st: 2616, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-AI-Max-395-Processor-Benchmarks-and-Specs.942323.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。MT の推定は GB6 の出典リンクなしのため載せない' },
+    ],
+    'amd-zen4-7840hs': [
+      { st: 2409, mt: 14749, device: 'Lenovo 82Y9', kind: '転載', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-7840HS-Processor-Benchmarks-and-Specs.680876.0.html', note: 'Geekbench Browser の投稿 v7/cpu/656877 の転載(2 件のうち高い方。もう 1 件は Lenovo 82XT 2304 / 13204)' },
+      { st: 2335, mt: 12932, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-7840HS-Processor-Benchmarks-and-Specs.680876.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。GB6 ラボ n=15' },
+    ],
+    'amd-zen3p-7735hs': [
+      { st: 1897, mt: 9377, device: 'MSI Bravo 15 C7VE', kind: '転載', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-7735HS-Processor-Benchmarks-and-Specs.681410.0.html', note: 'Geekbench Browser の投稿 v7/cpu/728639 の転載(1 件)' },
+      { st: 1892, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-7735HS-Processor-Benchmarks-and-Specs.681410.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は 5800X の値。MT の推定は GB6 が転載のため載せない' },
+    ],
+    'amd-zen3-5800u': [
+      { st: 1690, mt: 8880, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-5800U-Processor-Benchmarks-and-Specs.510374.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**根拠が弱い**: 5800U の GB6 は Geekbench Browser の転載 1 件(HP ProBook 455 G8)だけ。NBC に GB7 の行は無い' },
+    ],
+    'intel-mtl-185h': [
+      { st: 2222, mt: 14628, device: 'Geekom IT13 Max(ミニ PC。PL2 70W / PL1 40W)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-185H-Processor-Benchmarks-and-Specs.783353.0.html', note: 'Notebookcheck のレビュー(2026-08-10)の測定 [実測]。ミニ PC で、ノート PC の電力設定とは違う' },
+      { st: 2187, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-185H-Processor-Benchmarks-and-Specs.783353.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は Raptor Cove(14700K)の代用で弱い' },
+    ],
+    'intel-rpl-14700hx': [
+      { st: 2579, mt: 19414, device: 'Lenovo 83JE', kind: '転載', source: 'https://www.notebookcheck.net/Intel-Core-i7-14700HX-Processor-Benchmarks-and-Specs.790522.0.html', note: 'Geekbench Browser の投稿 v7/cpu/300855 の転載(1 件)' },
+      { st: 2533, mt: 17173, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-i7-14700HX-Processor-Benchmarks-and-Specs.790522.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。GB6 ラボ n=7' },
+    ],
+    'intel-lnl-256v': [
+      { st: 2504, mt: 11349, device: 'Acer Revo Box RB102-LNL(ミニ PC。PL2 37W / PL1 30W)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-256V-Processor-Benchmarks-and-Specs.892554.0.html', note: 'Notebookcheck のレビュー(2026-09-08)の測定 [実測]' },
+      { st: 2446, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-256V-Processor-Benchmarks-and-Specs.892554.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は Arrow Lake 265K の値' },
+    ],
+    'intel-lnl-258v': [
+      { st: 2433, mt: 10821, device: 'Lenovo ThinkPad X9-15 Aura(PL2 37W / PL1 25W)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-258V-Processor-Benchmarks-and-Specs.892883.0.html', note: 'Notebookcheck のレビュー(2025-02-25 公開。GB7 公開前のため後から測り直したとみられる)の測定 [実測]' },
+      { st: 2443, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-258V-Processor-Benchmarks-and-Specs.892883.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は Arrow Lake 265K の値' },
+    ],
+    'intel-lnl-268v': [
+      { st: 2586, mt: 11552, device: 'Dell Pro 14 Premium PA14250', kind: '転載', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-268V-Processor-Benchmarks-and-Specs.883668.0.html', note: 'Geekbench Browser の投稿 v7/cpu/642325 の転載(1 件)' },
+      { st: 2523, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-7-268V-Processor-Benchmarks-and-Specs.883668.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は Arrow Lake 265K の値' },
+    ],
+    'intel-arl-275hx': [
+      { st: 2810, mt: 24763, device: 'Lenovo Legion Pro 7i 16 Gen 10(PL2 201W / PL1 156W)', kind: '転載', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-275HX-Processor-Benchmarks-and-Specs.943094.0.html', note: '測定元が不明(リンク先は lenovo.com の製品ページ)' },
+      { st: 2715, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-275HX-Processor-Benchmarks-and-Specs.943094.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は 265K の値' },
+    ],
+    'intel-ptl-x7-358h': [
+      { st: 2576, mt: 17804, device: 'Minisforum M2 Pro(ミニ PC。PL2 65W / PL1 45W)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X7-358H-Processor-Benchmarks-and-Specs.1196614.0.html', note: 'Notebookcheck のレビュー(2026-09-16)の測定 [実測]' },
+      { st: 2539, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X7-358H-Processor-Benchmarks-and-Specs.1196614.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**弱い**: k は 265K の代用。チャートが直近25件の中央値で偏りがほぼ無い' },
+    ],
+    'intel-ptl-x9-378h': [
+      { st: 2457, mt: 15980, device: 'HP OmniBook Ultra 14-kd0xxx', kind: '転載', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X9-378H-Processor-Benchmarks-and-Specs.1273309.0.html', note: 'Geekbench Browser の投稿 v7/cpu/253653 の転載(1 件)' },
+      { st: 2586, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X9-378H-Processor-Benchmarks-and-Specs.1273309.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**弱い**: k は 265K の代用、GB6 は転載 1 件' },
+    ],
+    'intel-ptl-x9-386h': [
+      { st: 2657, mt: 18852, device: 'Asus ROG Zephyrus G16 GU606AW(PL2 70W / PL1 70W)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-386H-Processor-Benchmarks-and-Specs.1196560.0.html', note: 'Notebookcheck のレビュー(2026-09-07)の測定 [実測]' },
+      { st: 2564, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-9-386H-Processor-Benchmarks-and-Specs.1196560.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**弱い**: k は 265K の代用' },
+    ],
+    'intel-ptl-x9-388h': [
+      { st: 2668, mt: 18114, device: 'Asus Zenbook Duo UX8407AA', kind: '転載', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X9-388H-Processor-Benchmarks-and-Specs.1148259.0.html', note: 'Geekbench Browser の投稿 v7/cpu/260699 の転載(2 件のうち高い方。もう 1 件は 2598 / 17491)' },
+      { st: 2682, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/Intel-Core-Ultra-X9-388H-Processor-Benchmarks-and-Specs.1148259.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**弱い**: k は 265K の代用、GB6 ラボ n=2' },
+    ],
+  };
+  P.forEach((p) => { if (GB7_REF[p.id]) p.gb7Ref = GB7_REF[p.id]; });
 })();

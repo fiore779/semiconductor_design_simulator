@@ -25,6 +25,17 @@
 
   const pct = (sim, pub) => (typeof pub === 'number' && pub > 0 && typeof sim === 'number' ? (sim / pub - 1) * 100 : null);
 
+  // 参考値の区分の強さ(小さいほど強い)。表示は強い順に最大 REF_MAX 件
+  const REF_RANK = { '個別投稿': 0, '転載': 1, '推定': 2 };
+  const REF_MAX = 2;
+  function refList(preset, kind) {
+    const a = Array.isArray(preset && preset.gb7Ref) ? preset.gb7Ref : [];
+    return a.filter((x) => x && typeof x[kind] === 'number' && x[kind] > 0)
+      .map((x, i) => ({ i, value: x[kind], device: String(x.device || ''), kind: String(x.kind || ''), source: String(x.source || ''), note: String(x.note || '') }))
+      .sort((p, q) => ((REF_RANK[p.kind] != null ? REF_RANK[p.kind] : 9) - (REF_RANK[q.kind] != null ? REF_RANK[q.kind] : 9)) || p.i - q.i)
+      .slice(0, REF_MAX).map((x) => ({ value: x.value, device: x.device, kind: x.kind, source: x.source, note: x.note, diffPct: null }));
+  }
+
   function evalPerf(kind, preset, ctx, gb7, stOpts) {
     const S = sims();
     const base = { ok: false, score: null, confidence: null, corrSource: null, fallback: false, reason: null, published: null, publishedKind: null, errPct: null, isCalibSample: false };
@@ -39,6 +50,8 @@
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
     // 調査済みの誤差の原因説明(プリセットの errCause。再現度パネルの「原因」欄で未調査の定型文の代わりに出す)
     base.causeNote = (preset.errCause && preset.errCause[kind]) || null;
+    // 参考値(判定外。最良条件に近い個別実測・転載・推定。プリセットの gb7Ref。強い区分を先に最大 2 件)。判定・errPct には使わない
+    base.refs = refList(preset, kind);
     const r = kind === 'st' ? S.perf.stScore(preset, ctx.cal, ctx.uarch, stOpts) : S.perf.mtScore(preset, ctx.cal, ctx.uarch, null);
     if (kind === 'mt') Object.assign(base, { mixedClock: false, uncalibrated: [], threads: null });
     if (!r.ok) { base.reason = r.reason || '計算できません'; return base; }
@@ -53,6 +66,7 @@
       base.corrSources = r.detail.map((d) => d.corrSource);
       base.corrFroms = r.detail.map((d) => d.corrFrom || d.corrSource);
     }
+    base.refs.forEach((x) => { x.diffPct = pct(r.score, x.value); });
     if (pubVal == null) base.reason = '公開値が未取得のため比較できません';
     return base;
   }
@@ -355,7 +369,7 @@
     if (edited) {
       result.edited = true;
       // 編集後の設計に公開値は無い: 公開値との差は出さず、元のチップの値は basePublished に残す
-      [st, mt].forEach((r) => { r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
+      [st, mt].forEach((r) => { r.refs = []; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
       area.recomputedReason = 'コア別面積は未取得のため編集では再計算しない';
       result.power.recomputed = false;
       result.warnings.push({ level: 'warn', text: '編集後の数値は予測です。公開値ではありません' });

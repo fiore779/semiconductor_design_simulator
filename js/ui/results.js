@@ -258,7 +258,7 @@
     RP.reproductionRows(ev).forEach((r) => {
       const pubTxt = r.published == null ? '未取得' : (typeof r.published === 'number' ? r.published.toLocaleString('ja-JP', { maximumFractionDigits: 1 }) : r.published);
       tb.appendChild(h('tr', { class: `v-${r.verdict}` },
-        h('td', { text: r.label }), h('td', { text: pubTxt }),
+        h('td', { text: r.label }), h('td', {}, h('span', { text: pubTxt }), ...(r.refs || []).map((x) => h('div', { class: 'small ref', title: `${x.source} ${x.note}`, 'data-ref': x.kind }, x.text, x.diffPct == null ? '' : ` / 参考との差 ${diff(x.diffPct)}(判定ではない)`))),
         h('td', { text: r.sim == null ? '—' : r.sim.toLocaleString('ja-JP', { maximumFractionDigits: 1 }) }),
         h('td', { text: r.diffPct == null ? '—' : diff(r.diffPct) }),
         h('td', {}, h('b', { text: RP.VERDICT_TEXT[r.verdict] }), r.note ? h('div', { class: 'small', text: r.note }) : null)));

@@ -171,4 +171,20 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'mt-9400': 'Cortex-X925 の代表(Dimensity 9400)。機種中央値 n=4',
   };
   P.forEach((p) => { if (reps[p.id]) { p.calib = true; p.calibNote = reps[p.id]; } });
+  // 参考値(判定外)。再現度パネルに公開値と並べて出す。値は docs/research/apple-uarch.md・nbc-gb7-mobile.md のものだけ(設計書 §2.4 の Notebookcheck 併記と同じ)。評価・判定には使わない(設計書 §5.3.3 J-7)
+  const GB7_REF = {
+    'apple-a16': [{ st: 2394, mt: 6643, device: 'iPhone 14 Pro Max D74AP(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A16-Bionic-Processor-Benchmarks-and-Specs.652742.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。中央値 2352 / 6373(機種 n=4)との差 +1.8% / +4.2%' }],
+    'apple-a17pro': [{ st: 2688, mt: 7209, device: 'iPad mini 7 J410AP と iPhone 15 Pro Max D84AP(2 件の平均)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A17-Pro-Processor-Benchmarks-and-Specs.756287.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。2683 / 7184 と 2692 / 7233 の平均' }],
+    'apple-a18': [{ st: 2804, mt: 7602, device: 'iPhone 16e V59AP(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A18-Processor-Benchmarks-and-Specs.891555.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。' }],
+    'apple-a18pro': [{ st: 3005, mt: 7947, device: 'iPhone 16 Pro(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A18-Pro-Processor-Benchmarks-and-Specs.891556.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。公開値の中央値は n=2 で弱い' }],
+    'apple-a19pro': [{ st: 3211, mt: 9003, device: 'iPhone 17 Pro・Air・17 Pro Max(3 機種の中央値)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A19-Pro-Processor-Benchmarks-and-Specs.1126974.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。ST は iPhone Air、MT は iPhone 17 Pro の値' }],
+    'apple-a20pro': [{ st: 4055, mt: 11622, device: 'iPhone 18 Pro(1 件。notebooksbilliger.de 経由)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-A20-Pro-Processor-Benchmarks-and-Specs.1396010.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。' }],
+    'apple-m3': [{ st: 2902, mt: 11879, device: 'MacBook Pro 14 Nov 2023 Mac15,3(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-M3-Processor-Benchmarks-and-Specs.764609.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。' }],
+    'apple-m3pro': [{ st: 2925, mt: 17582, device: 'MacBook Pro 14 Nov 2023(12 コア版、1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-M3-Pro-12-Core-Processor-Benchmarks-and-Specs.781711.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。' }],
+    'apple-m3max': [{ st: 2831, mt: 25533, device: 'MacBook Pro 16 Nov 2023 Mac15,9(16 コア版、1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-M3-Max-16-Core-Processor-Benchmarks-and-Specs.781712.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。' }],
+    'apple-m4': [{ st: 3416, mt: 16111, device: 'Mac mini 2024 Mac16,10(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-M4-10-cores-Processor-Benchmarks-and-Specs.835975.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。プリセットの公開値のマルチ 13472 は iPad Pro の値(冷却が違う)。この参考値は Mac mini' }],
+    'apple-m5': [{ st: 3525, mt: 15676, device: 'MacBook Air 13 2026 Mac17,3(1 件)', kind: '個別投稿', source: 'https://www.notebookcheck.net/Apple-M5-10-Cores-Processor-Benchmarks-and-Specs.1139129.0.html', note: 'Notebookcheck の仕様ページの GB7(Geekbench Browser の投稿の個別結果、2026-11-02 取得)。プリセットの公開値のマルチ 15273 は iPad Pro の値' }],
+    'qc-8cx-gen3': [{ st: 1442, mt: 6912, device: 'Huawei GK-W7X', kind: '転載', source: 'https://www.notebookcheck.net/Qualcomm-Snapdragon-8cx-Gen-3-Processor-Benchmarks-and-Specs.652916.0.html', note: 'Geekbench Browser の投稿 v7/cpu/149414 の転載(1 件)' }],
+  };
+  P.forEach((p) => { if (GB7_REF[p.id]) p.gb7Ref = GB7_REF[p.id]; });
 })();
