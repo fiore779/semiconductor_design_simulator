@@ -11,11 +11,11 @@ const mk = (id) => design.fromPreset(byId(id));
 const lay = (id) => mk(id).dies[0].layout || null;
 const cores = (d) => d.dies[0].blocks.filter((b) => b.kind === 'core');
 
-const PHOTO = ['apple-m1', 'apple-m1pro', 'apple-m1max', 'apple-m2', 'apple-m2pro', 'apple-m3', 'apple-m3pro', 'apple-m3max', 'apple-m4', 'apple-m5', 'apple-a14', 'apple-a15'];
+const PHOTO = ['apple-m1', 'apple-m1pro', 'apple-m1max', 'apple-m2', 'apple-m2pro', 'apple-m3', 'apple-m3pro', 'apple-m3max', 'apple-m4', 'apple-m5', 'apple-a12', 'apple-a13', 'apple-a14', 'apple-a15', 'apple-a16', 'apple-a17pro', 'apple-a18', 'apple-a18pro', 'apple-a19pro', 'apple-a20pro'];
 const REUSE = ['apple-m1ultra', 'apple-m2max', 'apple-m2ultra'];
-const SCHEM = ['apple-m4pro', 'apple-m5max', 'apple-a12', 'apple-a13', 'apple-a16', 'apple-a17pro', 'apple-a18', 'apple-a18pro', 'apple-a19pro', 'apple-a20pro'];
+const SCHEM = ['apple-m4pro', 'apple-m5max'];
 
-test('Apple: photo 12 件・reuse 3 件はテンプレート apple-soc、残り(M4 Pro・M5 Max・画像なしの A シリーズ)は従来の配置のまま', () => {
+test('Apple: photo 20 件・reuse 3 件はテンプレート apple-soc、残り(M4 Pro・M5 Max。画像なし)は従来の配置のまま', () => {
   PHOTO.forEach((id) => { const l = lay(id); assert.ok(l && l.template === 'apple-soc' && l.scaleBasis === 'photo', id); assert.ok(l.scaleNote.includes('目測') && l.scaleNote.includes('実チップのフロアプランではない'), id); });
   REUSE.forEach((id) => { const l = lay(id); assert.ok(l && l.template === 'apple-soc' && l.scaleBasis === 'reuse', id); });
   SCHEM.forEach((id) => assert.strictEqual(lay(id), null, id));
@@ -27,7 +27,7 @@ test('Apple: photo 12 件・reuse 3 件はテンプレート apple-soc、残り(
 
 test('Apple: ダイ面積は公表値のまま・ダイ数は不変・縦横比は写真(M1 Max は寸法注記 0.86)・ダイ内に収まり重ならない・コア数が一致', () => {
     // 寸法注記のあるもの(M1 Pro 18.9×12.9、M1 Max 19.3×22.4、Ultra 19.3×44.8)だけ注記の比。ほかは写真の枠の比(幅/高さ)
-  const asp = { 'apple-m1': 1.005, 'apple-m1pro': 1.465, 'apple-m1max': 0.86, 'apple-m2': 1.107, 'apple-m2pro': 1.506, 'apple-m3': 1.2, 'apple-m3pro': 0.826, 'apple-m3max': 0.954, 'apple-m4': 0.968, 'apple-m5': 1.055, 'apple-a14': 0.821, 'apple-a15': 0.66, 'apple-m1ultra': 0.43 };
+  const asp = { 'apple-m1': 1.005, 'apple-m1pro': 1.465, 'apple-m1max': 0.86, 'apple-m2': 1.107, 'apple-m2pro': 1.506, 'apple-m3': 1.2, 'apple-m3pro': 0.826, 'apple-m3max': 0.954, 'apple-m4': 0.968, 'apple-m5': 1.055, 'apple-a14': 0.821, 'apple-a15': 0.683, 'apple-a12': 1.183, 'apple-a13': 1.174, 'apple-a16': 0.619, 'apple-a17pro': 0.6485, 'apple-a18': 0.664, 'apple-a18pro': 0.649, 'apple-a19pro': 0.6534, 'apple-a20pro': 0.6478, 'apple-m1ultra': 0.43 };
   PHOTO.concat(REUSE).forEach((id) => {
     const p = byId(id); const d = mk(id); const die = d.dies[0];
     assert.strictEqual(d.dies.length, p.dies.length, id); assert.strictEqual(die.areaMm2, p.dies[0].mm2, id);
@@ -46,7 +46,7 @@ test('Apple: ダイ面積は公表値のまま・ダイ数は不変・縦横比�
 
 test('Apple: 飾りの種類(GPU・NPU・SLC・メディア・PHY・I/O)と、写真で読める配置(M5・M1 Max・M4)', () => {
   const kinds = (id) => new Set(mk(id).dies[0].blocks.filter((b) => b.decorative).map((b) => b.kind));
-  PHOTO.forEach((id) => { const k = kinds(id); assert.ok(k.has('gpu') && k.has('npu') && k.has('uncore'), id); });
+  PHOTO.forEach((id) => { const k = kinds(id); assert.ok(k.has('gpu') && k.has('uncore') && (k.has('npu') || id === 'apple-a17pro'), id); }); // A17 Pro は NPU の注記が写真に無い
   const m5 = mk('apple-m5').dies[0]; const lab = (l) => m5.blocks.filter((b) => b.label === l);
   assert.strictEqual(m5.blocks.filter((b) => b.coreType === 'super').length, 4); assert.strictEqual(m5.blocks.filter((b) => b.coreType === 'E').length, 6);
   assert.ok(lab('SLC').length === 3 && lab('Display Engine').length === 1);
@@ -115,7 +115,7 @@ test('Apple: 保存データの検証(frame の値・units)と保存の往復', 
   assert.strictEqual(bad((d) => { d.dies[0].layout.frame = 'apple-m99'; }).ok, false);
   assert.strictEqual(bad((d) => { d.dies[0].layout.units = 9; }).ok, false);
   assert.strictEqual(design.parse(design.serialize(mk('apple-m5'))).ok, true);
-  assert.ok(FP.TEMPLATE_IDS.includes('apple-soc') && Object.keys(FP.APPLE_FRAMES).length === 13);
+  assert.ok(FP.TEMPLATE_IDS.includes('apple-soc') && Object.keys(FP.APPLE_FRAMES).length === 21);
 });
 
 test('Apple: 改良モードで L3 を足す(setL3 0 → 4MB)と根拠なし(schematic)の従来配置に落ち、L3 ブロックが 1 つ出る。0 に戻して枠内に戻る編集はしない', () => {
@@ -157,4 +157,41 @@ test('checkLayout: template と frame の対応(apple-soc は APPLE_FRAMES、amd
   const d = mk('apple-m1'); d.dies[0].layout.frame = 'strix-point';
   assert.strictEqual(design.parse(JSON.stringify(d)).ok, false);
   const e = mk('apple-m1'); delete e.dies[0].layout.frame; assert.strictEqual(design.parse(JSON.stringify(e)).ok, false);
+});
+
+test('A シリーズ(photo 化 8 件 + A15 の置き換え): 2P+4E のコア、GPU 数、NPU・SLC、LPE の飾り、画像の寸法注記の扱い', () => {
+  const A = ['apple-a12', 'apple-a13', 'apple-a14', 'apple-a15', 'apple-a16', 'apple-a17pro', 'apple-a18', 'apple-a18pro', 'apple-a19pro', 'apple-a20pro'];
+  A.forEach((id) => {
+    const d = mk(id); const die = d.dies[0]; const l = die.layout;
+    assert.strictEqual(l.scaleBasis, 'photo', id); assert.ok(l.scaleNote.includes('出典') && l.scaleNote.includes('推定'), id);
+    assert.strictEqual(die.blocks.filter((b) => b.coreType === 'P').length, 2, id); assert.strictEqual(die.blocks.filter((b) => b.coreType === 'E').length, 4, id);
+    assert.ok(die.blocks.filter((b) => b.kind === 'gpu').length >= 1 && die.blocks.every((b) => b.kind === 'core' || b.decorative), id);
+    assert.strictEqual(die.areaMm2, byId(id).dies[0].mm2, id); // プリセットの面積は変えない
+    assert.ok(die.heightMm > die.widthMm || id === 'apple-a12' || id === 'apple-a13', `${id}: A12・A13 以外は縦長`);
+  });
+  const gpus = (id) => mk(id).dies[0].blocks.filter((b) => b.kind === 'gpu' && !/SL/.test(b.label)).length;
+  assert.strictEqual(gpus('apple-a15'), 5); assert.strictEqual(gpus('apple-a16'), 5); assert.strictEqual(gpus('apple-a17pro'), 6); assert.strictEqual(gpus('apple-a18'), 5); assert.strictEqual(gpus('apple-a18pro'), 6);
+  assert.strictEqual(gpus('apple-a19pro'), 6); assert.strictEqual(gpus('apple-a20pro'), 7);
+  const slc = (id) => mk(id).dies[0].blocks.filter((b) => /^SLC|L3 cache/.test(b.label) && !/Ctrl|Controller/.test(b.label)).length;
+  assert.deepStrictEqual([slc('apple-a15'), slc('apple-a16'), slc('apple-a17pro'), slc('apple-a18'), slc('apple-a19pro'), slc('apple-a20pro')], [2, 2, 2, 2, 4, 3]);
+  // A19 Pro・A20 Pro の LPE コアはプリセットに無いので飾り(コア数に数えない)。寸法 8.03×12.29 / 8.00×12.35 mm はファイル名だけで、画像内に注記なし
+  ['apple-a19pro', 'apple-a20pro'].forEach((id) => {
+    const die = mk(id).dies[0]; const lpe = die.blocks.filter((b) => /LPE/.test(b.label));
+    assert.strictEqual(lpe.length, 1, id); assert.ok(lpe[0].decorative && lpe[0].kind === 'uncore', id);
+    assert.ok(die.layout.scaleNote.includes('ファイル名のみ') && die.layout.scaleNote.includes('画像内に注記なし'), id);
+    assert.ok(die.blocks.filter((b) => b.kind === 'core').length === 6, id);
+  });
+  assert.ok(mk('apple-a20pro').dies[0].layout.scaleNote.includes('チップ名は画像内に無く'));
+  // A15: TechInsights の写真(左がA16 …jpg の右半分)。縦横比 718/1051 = 0.683(プリセット 110.1 mm² → 8.67×12.70 mm)
+  const a15 = mk('apple-a15').dies[0]; assert.ok(a15.layout.scaleNote.includes('TechInsights') && a15.layout.scaleNote.includes('ユーザー申告で A15'));
+  assert.ok(Math.abs(a15.widthMm - 8.67) < 0.05 && Math.abs(a15.heightMm - 12.7) < 0.1);
+  // A16: ダイ縁まで写る a16-hd.jpg の比 0.619 を、注釈つき左半分の 0.671 より優先(理由を note に)
+  const a16 = mk('apple-a16').dies[0]; assert.ok(Math.abs(a16.widthMm / a16.heightMm - 0.619) < 0.005); assert.ok(a16.layout.scaleNote.includes('0.619') && a16.layout.scaleNote.includes('ダイ縁'));
+  // A18 / A18 Pro: 横向きの写真を 90° 回して縦にする。画像内の面積(90 / 105 mm²)との差は記録のみ
+  ['apple-a18', 'apple-a18pro'].forEach((id) => { const n = mk(id).dies[0].layout.scaleNote; assert.ok(n.includes('90° 回転') && n.includes('記録のみ'), id); });
+  // 写真の GPU の上下関係: A18 Pro は回転後に GPU が上側(回転前は左端)、P コアが下側
+  const a18p = mk('apple-a18pro').dies[0]; const gy = Math.max.apply(null, a18p.blocks.filter((b) => b.kind === 'gpu').map((b) => b.y + b.h)); const py = Math.min.apply(null, a18p.blocks.filter((b) => b.coreType === 'P').map((b) => b.y));
+  assert.ok(gy <= py + 1e-6, 'GPU は P コアより上');
+  // 評価はブロックを見ない・編集で枠を超えたら schematic
+  const u = design.unlock(mk('apple-a16')); const r = design.setCoreCount(u, 'P', 3); assert.ok(r.ok); assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'schematic'); assert.deepStrictEqual(design.validate(r.design), []);
 });

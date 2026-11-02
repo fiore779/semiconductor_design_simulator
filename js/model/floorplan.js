@@ -98,6 +98,12 @@
   ST.L3_MODE = 'two';
   const FRAMES = { 'strix-point': ST, 'kraken-point': KR };
   // aspect: 寸法注記などの根拠があるものだけ数を渡す(M1 Pro・M1 Max)。null は枠の比(幅/高さ)
+  // 時計回りに 90° 回す(画像が横向きのとき。左端が上端になる)。写真の座標のまま枠を作り、回して返す
+  const rotCW = (fr) => {
+    const bx = fr.box[0]; const by = fr.box[1]; const H = fr.box[3] - by; const W = fr.box[2] - bx;
+    const rr = (r) => [H - (r[1] - by) - r[3], r[0] - bx, r[3], r[2]];
+    return { box: [0, 0, H, W], aspect: fr.aspect, big: fr.big.map(rr), small: fr.small.map(rr), deco: fr.deco.map((d) => [d[0], d[1], d[2]].concat(rr(d.slice(3, 7)))) };
+  };
   const af = (box, aspect, big, small, deco) => ({ box, aspect: aspect == null ? (box[2] - box[0]) / (box[3] - box[1]) : aspect, big, small, deco });
   const APPLE_FRAMES = {
     // M1(Locuza 注釈 FCBl1gcWEAUOdRw.jpg の左。ダイ 396×394)
@@ -147,9 +153,56 @@
     // A14(CfQArDx7…png の左。ダイ 252×307)
     'apple-a14': af([38, 48, 290, 355], null, [[55, 243, 41, 25], [98, 243, 41, 25]], [[148, 188, 20, 18], [170, 188, 20, 18], [146, 240, 18, 18], [166, 240, 18, 18]], [
       ['gpu', 'GPU', 'g', 58, 80, 150, 68], ['slc', 'システムキャッシュ', 'u', 50, 150, 200, 28], ['npu', 'NPU', 'n', 55, 278, 140, 38], ['ddr-l', 'DDR', 'u', 38, 55, 10, 290], ['ddr-r', 'DDR', 'u', 280, 55, 10, 290]]),
-    // A15(69502024-…1024x421.jpg の右。ダイ 250×379)
-    'apple-a15': af([758, 8, 1008, 387], null, [[778, 248, 45, 45], [823, 248, 45, 45]], [[880, 213, 25, 22], [905, 213, 25, 22], [880, 235, 25, 22], [905, 235, 25, 22]], [
-      ['gpu', 'GPU', 'g', 775, 12, 215, 78], ['slc', 'SLC(32MB)', 'u', 775, 92, 215, 72], ['npu', 'NPU', 'n', 775, 300, 95, 50], ['io', 'I/O PHY', 'u', 758, 365, 250, 22], ['phy-l', 'LPDDR PHY', 'u', 758, 10, 15, 300]]),
+    // A15(左がA16 …jpg の右半分。TechInsights のダイ写真。ダイ 718×1051。スケールバー 2.0 mm = 165 px)
+    'apple-a15': af([738, 45, 1456, 1096], null, [[750, 687, 130, 135], [882, 687, 130, 135]], [[1008, 487, 76, 60], [1008, 560, 76, 58], [1048, 622, 74, 64], [1124, 622, 74, 64]], [
+      ['gpu1', 'GPU', 'g', 790, 57, 155, 105], ['gpu2', 'GPU', 'g', 787, 165, 155, 105], ['gpu-sl', 'GPU SL', 'g', 946, 63, 74, 207], ['gpu3', 'GPU', 'g', 1023, 52, 155, 105], ['gpu4', 'GPU', 'g', 1021, 162, 154, 108], ['gpu5', 'GPU', 'g', 1183, 108, 155, 108],
+      ['slc1', 'SLC(L3 cache)', 'u', 750, 272, 185, 185], ['slc2', 'SLC(L3 cache)', 'u', 1082, 275, 183, 185], ['p-cache1', 'CPU 1 cache', 'u', 750, 552, 90, 133], ['p-sl', 'CPU 1 SL', 'u', 842, 552, 68, 133], ['p-cache2', 'CPU 1 cache', 'u', 912, 552, 90, 133],
+      ['e-sl', 'CPU 2 SL', 'u', 1084, 532, 64, 86], ['e-cache', 'CPU 2 cache', 'u', 1150, 532, 92, 86], ['npu', 'NPU(16)', 'n', 788, 828, 232, 212],
+      ['ddr-l1', 'DDR', 'u', 740, 58, 22, 192], ['ddr-l2', 'DDR', 'u', 740, 828, 22, 168], ['ddr-r1', 'DDR', 'u', 1433, 58, 23, 196], ['ddr-r2', 'DDR', 'u', 1433, 896, 23, 170]]),
+    // A12(A12_575px.jpg。TechInsights のダイ写真 + AnandTech の注釈。ダイ 658×556)
+    'apple-a12': af([10, 10, 668, 566], null, [[183, 337, 87, 110], [183, 447, 87, 110]], [[440, 440, 45, 28], [440, 468, 45, 28], [440, 496, 45, 28], [440, 524, 45, 31]], [
+      ['npu', 'NPU', 'n', 45, 337, 138, 193], ['l2', 'CPU L2(4 バンク)', 'u', 270, 337, 85, 220], ['small-l2', 'Small L2(2 バンク)', 'u', 355, 430, 85, 127], ['slc', 'System Cache(4 スライス)', 'u', 363, 203, 122, 225],
+      ['gpu1', 'GPU', 'g', 485, 140, 175, 190], ['gpu2', 'GPU', 'g', 485, 332, 180, 195], ['ddr1', 'DDR Logic', 'u', 70, 22, 140, 22], ['ddr2', 'DDR Logic', 'u', 487, 22, 140, 22], ['ddr3', 'DDR Logic', 'u', 45, 531, 138, 26], ['ddr4', 'DDR Logic', 'u', 525, 531, 140, 26]]),
+    // A13(A13_die.jpg。TechInsights のダイ写真 + Andrei の注釈。ダイ 660×562)
+    'apple-a13': af([12, 10, 672, 572], null, [[170, 17, 100, 95], [170, 112, 100, 95]], [[190, 262, 48, 48], [190, 310, 48, 50], [310, 262, 50, 48], [310, 310, 50, 50]], [
+      ['npu', 'NPU', 'n', 40, 47, 128, 143], ['big-l2', 'Big L2', 'u', 273, 17, 72, 200], ['small-l2', 'Small L2', 'u', 238, 262, 72, 98], ['slc', 'System Cache', 'u', 368, 17, 112, 342], ['gpu', 'GPU', 'g', 480, 17, 185, 370]]),
+    // A16(左がA16 …jpg の左半分。Angstronomics の注釈。ダイ 733×1096。縦横比は a16-hd.jpg の 0.619)
+    'apple-a16': af([2, 0, 735, 1096], 0.619, [[125, 690, 135, 140], [262, 690, 138, 140]], [[180, 396, 90, 66], [180, 466, 90, 66], [48, 540, 88, 64], [138, 540, 90, 64]], [
+      ['gpu1', 'GPU', 'g', 100, 38, 150, 92], ['gpu2', 'GPU', 'g', 100, 132, 150, 92], ['gpu-sl', 'GPU SL', 'g', 253, 40, 77, 185], ['gpu3', 'GPU', 'g', 333, 32, 152, 92], ['gpu4', 'GPU', 'g', 330, 134, 152, 92], ['gpu5', 'GPU', 'g', 502, 84, 150, 92],
+      ['slc1', 'SLC(12MB)', 'u', 25, 258, 172, 124], ['slc1-c', 'SLC Ctrl', 'u', 200, 256, 48, 126], ['slc2-c', 'SLC Ctrl', 'u', 373, 262, 48, 126], ['slc2', 'SLC(12MB)', 'u', 423, 262, 172, 126],
+      ['l2e', 'L2(4MB)', 'u', 22, 450, 95, 90], ['l2e-c', 'L2 Ctrl', 'u', 118, 450, 60, 90], ['l2p1', 'L2(8MB)', 'u', 20, 607, 188, 76], ['l2p-c', 'L2 Ctrl', 'u', 210, 607, 102, 76], ['l2p2', 'L2(8MB)', 'u', 315, 607, 186, 76],
+      ['npu', 'NPU(16 コア)', 'n', 60, 840, 340, 200], ['lp1', 'LPDDR5', 'u', 3, 28, 50, 175], ['lp2', 'LPDDR5', 'u', 683, 28, 50, 180], ['lp3', 'LPDDR5', 'u', 3, 905, 50, 190], ['lp4', 'LPDDR5', 'u', 683, 905, 50, 190]]),
+    // A17 Pro(A17-Pro-die-shot_3.jpg。ダイ 1133×1747)
+    'apple-a17pro': af([25, 33, 1158, 1780], null, [[217, 1268, 176, 228], [403, 1268, 178, 230]], [[455, 785, 132, 92], [455, 890, 132, 92], [505, 995, 130, 98], [645, 998, 120, 95]], [
+      ['gpu1', 'GPU', 'g', 130, 90, 255, 185], ['gpu2', 'GPU', 'g', 512, 95, 255, 180], ['gpu3', 'GPU', 'g', 768, 85, 252, 180], ['gpu4', 'GPU', 'g', 130, 295, 258, 172], ['gpu5', 'GPU', 'g', 515, 298, 255, 172], ['gpu6', 'GPU', 'g', 780, 285, 248, 172],
+      ['slc1', 'SLC(12MB)', 'u', 48, 480, 272, 252], ['slc2', 'SLC(12MB)', 'u', 548, 482, 275, 252], ['l2e', 'L2(4MB)', 'u', 662, 848, 145, 142], ['l2p1', 'L2(8MB)', 'u', 55, 1103, 265, 150], ['l2p2', 'L2(8MB)', 'u', 488, 1105, 268, 150],
+      ['l2x', 'L2(3MB)', 'u', 42, 858, 172, 115], ['unk1', '小枠(用途の注記なし)', 'u', 50, 745, 205, 100], ['unk2', '小枠(用途の注記なし)', 'u', 48, 980, 215, 110]]),
+    // A18 Pro(HighYield-A18-Pro.jpg の左。ChipWise の写真。横向きなので 90° 回転して縦にする。ダイ 612×375)
+    'apple-a18pro': rotCW(af([8, 115, 620, 490], 0.649, [[436, 175, 95, 75], [436, 250, 95, 72]], [[265, 262, 38, 42], [303, 262, 40, 42], [343, 282, 35, 50], [343, 336, 35, 45]], [
+      ['gpu0', 'GPU', 'g', 22, 148, 70, 80], ['gpu1', 'GPU', 'g', 92, 148, 70, 80], ['gpu2', 'GPU', 'g', 22, 232, 70, 163], ['gpu3', 'GPU', 'g', 92, 232, 70, 163], ['gpu4', 'GPU', 'g', 22, 398, 70, 72], ['gpu5', 'GPU', 'g', 92, 398, 70, 72],
+      ['slc1', 'SLC', 'u', 163, 120, 85, 100], ['slc2', 'SLC', 'u', 165, 308, 78, 100], ['npu', 'NPU(8 コア)', 'n', 248, 120, 132, 82], ['e-cache', 'E-core cache', 'u', 285, 318, 55, 62], ['p-cache1', 'P-core cache', 'u', 382, 120, 52, 112], ['p-cache2', 'P-core cache', 'u', 382, 282, 52, 100]])),
+    // A18(同 右。ダイ 554×367)
+    'apple-a18': rotCW(af([636, 148, 1190, 515], 0.664, [[1032, 205, 90, 80], [1032, 285, 90, 78]], [[862, 292, 38, 38], [902, 292, 38, 38], [940, 318, 35, 38], [940, 368, 35, 35]], [
+      ['gpu0', 'GPU', 'g', 648, 182, 70, 72], ['gpu1', 'GPU', 'g', 718, 182, 66, 72], ['gpu2', 'GPU', 'g', 648, 258, 70, 170], ['gpu3', 'GPU', 'g', 718, 258, 66, 170], ['gpu4', 'GPU', 'g', 648, 432, 70, 64],
+      ['slc1', 'SLC', 'u', 787, 165, 46, 80], ['slc2', 'SLC', 'u', 789, 355, 43, 75], ['npu', 'NPU(8 コア)', 'n', 840, 158, 138, 80], ['e-cache', 'E-core cache', 'u', 893, 350, 45, 62], ['p-cache1', 'P-core cache', 'u', 977, 185, 52, 110], ['p-cache2', 'P-core cache', 'u', 977, 300, 52, 95]])),
+    // A19 Pro(A19 Pro8.03x12.29x0.23mmdieshot.jpg。縮小コピー 1048×1600 で目測。ダイ 1027×1590)
+    'apple-a19pro': af([5, 5, 1032, 1595], 0.6534, [[160, 1180, 190, 235], [350, 1180, 200, 235]], [[365, 722, 120, 73], [375, 835, 105, 85], [435, 940, 128, 75], [565, 940, 125, 75]], [
+      ['gpu1', 'GPU', 'g', 22, 22, 248, 205], ['gpu2', 'GPU', 'g', 22, 235, 252, 190], ['gpu3', 'GPU', 'g', 415, 30, 245, 200], ['gpu4', 'GPU', 'g', 462, 235, 235, 195], ['gpu5', 'GPU', 'g', 660, 30, 255, 200], ['gpu6', 'GPU', 'g', 697, 235, 260, 195], ['gpu-l2', 'GPU L2', 'u', 277, 235, 160, 190],
+      ['slc1', 'SLC(8MiB)', 'u', 85, 430, 250, 128], ['slc2', 'SLC(8MiB)', 'u', 85, 560, 250, 130], ['slc3', 'SLC(8MiB)', 'u', 515, 432, 268, 130], ['slc4', 'SLC(8MiB)', 'u', 515, 565, 268, 125], ['slc-c1', 'SLC Controller', 'u', 337, 432, 55, 258], ['slc-c2', 'SLC Controller', 'u', 460, 432, 55, 258],
+      ['e-amx', 'E-AMX', 'u', 580, 705, 100, 90], ['e-l2', 'E L2(6MiB)', 'u', 583, 800, 190, 130], ['p-amx', 'P-AMX', 'u', 218, 838, 135, 200], ['npu', 'ANE(16)', 'n', 20, 695, 195, 345],
+      ['p-l2a', 'P L2(8MiB)', 'u', 12, 1040, 262, 130], ['p-l2c', 'P Cluster L2(16MiB)', 'u', 278, 1040, 160, 130], ['p-l2b', 'P L2(8MiB)', 'u', 440, 1040, 262, 130],
+      ['lpe', 'LPE コア ×2(プリセットに無い)', 'u', 557, 1258, 85, 100], ['video', 'Video Engine?', 'u', 790, 435, 150, 255], ['media', 'Media Engine?', 'u', 20, 1180, 135, 130], ['isp', 'ISP?', 'u', 705, 985, 190, 185], ['se', 'SE?', 'u', 720, 1290, 190, 120],
+      ['display', 'Display?', 'u', 275, 1440, 260, 150], ['pcie', 'PCIe / ASDCI', 'u', 680, 1435, 350, 160], ['tbt', 'TBT/USB4 PHY ほか', 'u', 920, 25, 100, 200], ['lp-l', 'LPDDR5x', 'u', 8, 430, 72, 262], ['lp-l2', 'LPDDR5x', 'u', 12, 1335, 60, 160],
+      ['lp-r1', 'LPDDR5x', 'u', 975, 230, 50, 170], ['lp-r2', 'LPDDR5x', 'u', 975, 1190, 52, 200], ['dphy', 'Display PHY', 'u', 15, 1520, 110, 60]]),
+    // A20 Pro(A20Pro-8.00x12.35x0.67.jpg。縮小コピー 1034×1600 で目測。ダイ 1025×1585)
+    'apple-a20pro': af([5, 10, 1030, 1595], 0.6478, [[262, 1015, 190, 215], [455, 1015, 190, 215]], [[8, 545, 120, 100], [8, 648, 120, 100], [8, 752, 125, 100], [135, 778, 115, 92]], [
+      ['gpu1', 'GPU', 'g', 15, 40, 252, 160], ['gpu2', 'GPU', 'g', 268, 40, 250, 160], ['gpu3', 'GPU', 'g', 522, 40, 250, 160], ['gpu4', 'GPU', 'g', 775, 40, 150, 160], ['gpu5', 'GPU', 'g', 15, 205, 255, 160], ['gpu6', 'GPU', 'g', 680, 205, 240, 160], ['gpu7', 'GPU', 'g', 15, 370, 255, 160], ['gpu-l2', 'GPU L2(1MiB)', 'u', 385, 212, 283, 92],
+      ['slc1', 'SLC(12MiB)', 'u', 282, 338, 235, 196], ['slc-c1', 'SLC Controller', 'u', 520, 375, 40, 160], ['slc-c2', 'SLC Controller', 'u', 640, 415, 40, 330], ['slc2', 'SLC(12MiB)', 'u', 682, 375, 235, 200], ['slc3', 'SLC(12MiB)', 'u', 682, 577, 235, 193],
+      ['e-amx', 'E-AMX', 'u', 205, 555, 60, 50], ['e-l2', 'E L2(8MiB)', 'u', 190, 628, 245, 135], ['p-amx', 'P-AMX', 'u', 258, 765, 230, 105],
+      ['p-l2a', 'P L2(8MiB)', 'u', 122, 875, 250, 110], ['p-l2c', 'P L2(16MiB)', 'u', 378, 875, 155, 110], ['p-l2b', 'P L2(8MiB)', 'u', 535, 875, 250, 110],
+      ['ane-a', 'ANE', 'n', 8, 865, 112, 320], ['ane-b', 'ANE #1(Cache 2MiB)', 'n', 122, 990, 138, 240], ['ane-c', 'ANE', 'n', 8, 1185, 112, 100], ['ane-d', 'ANE #2(Cache 2MiB)', 'n', 8, 1290, 258, 185],
+      ['lpe', 'LPE コア(プリセットに無い)', 'u', 650, 1118, 85, 70], ['isp', 'ISP?', 'u', 780, 1040, 150, 140], ['se', 'Secure Enclave', 'u', 715, 1195, 280, 260], ['video', 'Video Engine?', 'u', 275, 1240, 438, 230],
+      ['media', 'Media Engine?', 'u', 8, 1480, 370, 112], ['usb', 'USB / Display?', 'u', 385, 1480, 335, 115], ['pcie', 'PCIe / ASDCI', 'u', 722, 1470, 308, 125], ['lp-r', 'LPDDR5X PHY(32bit)×3', 'u', 928, 205, 102, 615]]),
   };
   // M2 Max: M2 Pro の配置を土台に、GPU(と SLC・メモリ PHY)の領域を縦に 2 倍にし、CPU 側は同じ。下に Media(追加分)の帯を足す
   // (Apple 公表の M2 Pro → M2 Max: GPU コア 19→38、メモリ帯域 200→400GB/s、メディアエンジンのエンコード 1→2、CPU コア数は同じ)。面積はプリセットのまま。
@@ -177,7 +230,15 @@
     'apple-m4': { frame: 'apple-m4', basis: 'photo', src: 'GQmKpHhWwAAMHfw.jpg(Frederic_Orange 注釈。出典は推定: https://x.com/Frederic_Orange/status/1804125571670036831)。画像内の寸法注記は単位の誤りなので使わない' },
     'apple-m5': { frame: 'apple-m5', basis: 'photo', src: 'HS9wa9vbgAAb2Mm.jpg("Apple Silicon M5 | TSMC N3P"。作者表記なし。出典は X のユーザー提示 URL のうち推定)。HT9pyHnWYAAM3HY.jpg も同じ配置' },
     'apple-a14': { frame: 'apple-a14', basis: 'photo', src: 'CfQArDx7gRsAo3U5xpXsTC-750-80.png(A14 & M1 Die Photos。出典は推定: Tom’s Hardware の M1 と A14 の floorplan の記事)。低解像度・ラベルのみの大まかな配置' },
-    'apple-a15': { frame: 'apple-a15', basis: 'photo', src: '69502024-…_1024x421.jpg の右(Locuza / SemiAnalysis 注釈。出典は推定)。低解像度で大まかな配置。画像の面積注記 107.68 mm² はプリセット 110.1 と小差(プリセットは変えない)' },
+    'apple-a15': { frame: 'apple-a15', basis: 'photo', src: 'TechInsights のダイ写真(左がA16 02820a31-…_1736x1307.jpg の右半分。チップ名は画像内に無く、ユーザー申告で A15。スケールバー 2.0 mm = 165 px から約 8.7×12.75 mm 以上でプリセットの 110.1 mm² と整合。右端・下端が切れている可能性)。出典は推定: https://www.angstronomics.com/p/apple-a16-die-analysis の画像の右半分' },
+    'apple-a12': { frame: 'apple-a12', basis: 'photo', src: 'A12_575px.jpg(TechInsights のダイ写真 + AnandTech の注釈。出典は推定: https://www.iphoneincanada.ca/2018/10/05/a12-bionic-review/ の転載)。チップ名は画像内に無く、ファイル名と Big 2 + Small 4 の構成から。低解像度でコア 1 個ずつの枠は無く、Big / Small の区画を 2 つ・4 つに分けた推定' },
+    'apple-a13': { frame: 'apple-a13', basis: 'photo', src: 'A13_die.jpg(TechInsights のダイ写真 + Andrei の注釈。出典は推定: https://gadgets-news.ru/apple-a13-bionic/ の転載)。チップ名は画像内に無くファイル名と Lightning / Thunder の表記から。低解像度でコア 1 個ずつの枠は無く、区画を 2 つ・4 つに分けた推定' },
+    'apple-a16': { frame: 'apple-a16', basis: 'photo', src: '左がA16 02820a31-…_1736x1307.jpg の左半分(Angstronomics の注釈 "Photo: TechanaLye / Edit/Marking: Angstronomics"。出典は推定: https://www.angstronomics.com/p/apple-a16-die-analysis)の配置。縦横比は注釈つき左半分の 0.671 ではなく、ダイの四辺のパッド列まで写る a16-hd.jpg(ラベルなしの高解像度写真。左半分との配置比較で A16 と対応づけ)の 0.619 を採用(8% の差。理由: a16-hd はダイ縁まで写る)。注釈画像はぼやけていて境界は粗い' },
+    'apple-a17pro': { frame: 'apple-a17pro', basis: 'photo', src: 'A17-Pro-die-shot_3.jpg(作者表記なし。チップ名は画像内に無く**ファイル名のみ**。出典は推定: https://iphone-mania.jp/news-554645/ だが根拠は弱い)。a17pro.jpg(ラベルなしの高解像度写真)とは配置の比較で対応づけた。NPU の注記が無く、左の小枠 8 個は用途不明の飾りとして描く(NPU とは断定しない)' },
+    'apple-a18': { frame: 'apple-a18', basis: 'photo', src: 'HighYield-A18-Pro.jpg の右(HighYield 注釈 + ChipWise の写真。画像内に出典 https://chipwise.tech/our-portfolio/apple-a18-a18-pro-die-shot/ の記載。横向きなので 90° 回転)。画像内の面積 90 mm² とプリセット 92.4 mm² の差(−2.6%)は記録のみ。縦横比は A18.jpg(ラベルなしの高解像度写真。GPU 5 個の模様と配置比較で A18 と対応づけ)の 0.664' },
+    'apple-a18pro': { frame: 'apple-a18pro', basis: 'photo', src: 'HighYield-A18-Pro.jpg の左(HighYield 注釈 + ChipWise の写真。画像内に出典 https://chipwise.tech/our-portfolio/apple-a18-a18-pro-die-shot/ の記載。横向きなので 90° 回転)。画像内の面積 105 mm² とプリセット 109.7 mm² の差(−4.3%)は記録のみ。縦横比は A18P.jpg(ラベルなしの高解像度写真。GPU 6 個の模様と配置比較で A18 Pro と対応づけ)の 0.649' },
+    'apple-a19pro': { frame: 'apple-a19pro', basis: 'photo', src: 'A19 Pro8.03x12.29x0.23mmdieshot.jpg(Kurnal の透かし。チップ名は画像内に無く、ファイル名と P/E のクロック 4.26 / 2.6 GHz がプリセットと一致することから。寸法 8.03×12.29 mm は**ファイル名のみで画像内に注記なし**。積 98.69 mm² = プリセット 98.7 mm²)。出典は推定: https://kurnal-insights.com/en/dieshot/?m=Apple。ISP? など「?」つきは作者も未確定。LPE コア 2 は飾り(プリセットに無く、コア数に数えない)' },
+    'apple-a20pro': { frame: 'apple-a20pro', basis: 'photo', src: 'A20Pro-8.00x12.35x0.67.jpg(Kurnal の透かし。**チップ名は画像内に無くファイル名のみ**。寸法 8.00×12.35 mm は**ファイル名のみで画像内に注記なし**。積 98.80 mm² = プリセット 98.8 mm²)。出典は推定: https://kurnal-insights.com/en/dieshot/?m=Apple。ISP? など「?」つきは作者も未確定。LPE コアは飾り(プリセットに無く、コア数に数えない)' },
   };
   const FRAME_INFO = {
     'strix-point': { basis: 'photo', note: 'Strix Point(Ryzen AI 9 HX 370)の TechPowerUp 注釈つきダイ写真(1858×1200。X ユーザー @GPUsAreMagic の注釈。AMD の確認はない)の目測。ダイの縦横比は写真の 1.55(実寸 12.06×18.71 mm で 1.55)。Zen 5 ×4 + L3 16MB、Zen 5c ×8 + L3 8MB、GPU・NPU・PHY などは飾り' },
@@ -315,7 +376,7 @@
     for (const k of ['uncore', 'igpu', 'npu']) if (l[k] != null && typeof l[k] !== 'boolean') return `layout.${k} は true か false にしてください`;
     if (l.units != null && !(Number.isInteger(l.units) && l.units >= 1 && l.units <= MAX_UNITS)) return `layout.units は 1〜${MAX_UNITS} の整数にしてください`;
     if (l.scaleBasis != null && SCALE_BASES.indexOf(l.scaleBasis) < 0) return 'layout.scaleBasis は photo / survey / reuse / schematic のどれかにしてください';
-    if (l.scaleNote != null && !(typeof l.scaleNote === 'string' && l.scaleNote.length <= 400)) return 'layout.scaleNote は 400 文字以内の文字列にしてください';
+    if (l.scaleNote != null && !(typeof l.scaleNote === 'string' && l.scaleNote.length <= 600)) return 'layout.scaleNote は 600 文字以内の文字列にしてください';
     if (l.frame != null) {
       if (typeof l.frame !== 'string') return 'layout.frame が文字列ではありません';
       // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)だけ。ほかのテンプレートは frame を持たない
