@@ -9,12 +9,13 @@
 //   mshr       = 同時ミス処理数(fill buffer / ミスキュー)。
 //   uCal       = 校正済みの ST 補正 u(定数)。{ u, n, date, basis, excluded? }(excluded = 標本から除外した preset id の配列。inUCalSet を false にする)。代表(calib:true)1 件ではなく、複数 SKU の中央値で決めた値(設計書 §5.3.0 M6 第 4 段)。
 //                calib フラグ(校正の代表)とは別で、代表の u がある uarch はそちらを優先。GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも tests/perf.test.js の再計算テストが落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す。
+//   uFrom      = 別の uarch の ST 補正 u を借りる名前(同じコア設計の派生。例: Zen 5c → Zen 5)。その uarch に代表の u がなく、借り先に u があるときだけ使う。ISA 平均に落ちる前に試す(2026-11-02。設計書 §5.3.3 K)。
 //   smt        = 1 or 2。vecBits = ベクトル幅(bit)。
 window.SDS_DATA = window.SDS_DATA || {};
 window.SDS_DATA.uarch = (function () {
   const u = (o) => Object.assign({
     decodeWidth: null, width: null, rob: null, brPenalty: null, l1dKB: null, l1dLat: null, l2KB: null, l2Lat: null,
-    l3Lat: null, mshr: null, smt: 1, vecBits: null, inOrder: false, uCal: null, s: 'sec', note: '',
+    l3Lat: null, mshr: null, smt: 1, vecBits: null, inOrder: false, uCal: null, uFrom: null, s: 'sec', note: '',
   }, o);
   return {
     // ---- AMD ----
@@ -23,7 +24,7 @@ window.SDS_DATA.uarch = (function () {
     'Zen 3': u({ rob: 256, l2KB: 512, l2Lat: 12, l3Lat: 46, smt: 2, vecBits: 256, note: '整数発行10/clk。MSHR: L2→L3 最大64、L3→DRAM 最大192' }),
     'Zen 4': u({ decodeWidth: 4, width: 6, rob: 320, l2KB: 1024, l2Lat: 14, smt: 2, vecBits: 512, note: 'AVX-512 は256bit×2で実行。op cache から最大9 macro-op/clk' }),
     'Zen 5': u({ decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, l3Lat: 46, smt: 2, vecBits: 512, note: 'モバイルは256bit。L3 遅延は Strix Point 実測(モバイル品)' }),
-    'Zen 5c': u({ decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, smt: 2, vecBits: 256, note: 'Zen 5 と同アーキテクチャ。差はクロックと L3 容量。ROB 等は Zen 5 に準じるが Zen 5c 個別は未取得' }),
+    'Zen 5c': u({ uFrom: 'Zen 5', decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, smt: 2, vecBits: 256, note: 'Zen 5 と同アーキテクチャ。差はクロックと L3 容量。ROB 等は Zen 5 に準じるが Zen 5c 個別は未取得。ST 補正 u は Zen 5 のものを借りる(uFrom。2026-11-02。根拠〔二次〕: Wikipedia「Zen 5」「Zen 5c は Zen 5 のコンパクトな派生」、同「Zen 4」の Zen 4c の項「L1・L2 は Zen 4 と同容量」、AMD CTO Papermaster「Zen 4c は Zen 4 と同一の機能を約半分のコア面積で提供」〔SemiAnalysis 経由〕。Zen 5c 自体の IPC の実測は未取得。設計書 §5.3.3 K)' }),
     // ---- Intel ----
     'Golden Cove': u({ uCal: { u: 112.7, n: 10, date: '2026-11-01', excluded: ['intel-rpl-14700hx'], basis: 'Golden Cove 4 件+Raptor Cove 6 件の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.74(13700K 112.304 と 12600K 113.177 の平均 112.7405。丸めて 112.7)。14700HX(u=95.7。モバイル GB7 チャートの偏りによる外れ値と文書で分析済み)は標本から除外(2026-11-01。含めた中央値は 112.30)。u は 109.4〜116.4。両 uarch の個別中央値は Golden Cove 111.75・Raptor Cove 113.12 で差 1.2%(1 uarch 4〜6 件のばらつきの範囲)のため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 1280, smt: 2, vecBits: 256, note: 'AVX-512 は公式非対応' }),
     'Raptor Cove': u({ uCal: { u: 112.7, n: 10, date: '2026-11-01', excluded: ['intel-rpl-14700hx'], basis: 'Golden Cove 4 件+Raptor Cove 6 件の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 112.74(13700K 112.304 と 12600K 113.177 の平均 112.7405。丸めて 112.7)。14700HX(u=95.7。モバイル GB7 チャートの偏りによる外れ値と文書で分析済み)は標本から除外(2026-11-01。含めた中央値は 112.30)。u は 109.4〜116.4。両 uarch の個別中央値は Golden Cove 111.75・Raptor Cove 113.12 で差 1.2%(1 uarch 4〜6 件のばらつきの範囲)のため統合' }, width: 6, decodeWidth: 6, rob: 512, l2KB: 2048, smt: 2, vecBits: 256, note: 'Golden Cove の値を準用(Chips and Cheese は差を L2 容量と L2 遅延 +1 サイクルとだけ記載。幅・ROB の差の記載はない)' }),

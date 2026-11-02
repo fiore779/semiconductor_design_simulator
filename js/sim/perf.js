@@ -106,13 +106,16 @@
     if (!r.ok) return { ok: false, reason: r.reason };
     let corr = cal && cal.u && cal.u[core.uarch];
     let corrSource = 'uarch';
+    // 同じコア設計の派生(Zen 5c など)は uarch.js の uFrom で借り先の uarch の u を使う(代表の u が無く借り先にあるときだけ。ISA 平均より先。設計書 §5.3.3 K)
+    let corrUFrom = null;
+    if (corr == null && u && u.uFrom && cal && cal.u && cal.u[u.uFrom] != null) { corr = cal.u[u.uFrom]; corrUFrom = u.uFrom; }
     if (corr == null) { corr = cal && cal.uIsa && cal.uIsa[core.isa || preset.isa]; /* 混合設計ではコアごとの isa(core.isa)を優先。通常のプリセットのコアには isa が無い */ corrSource = 'isa'; }
     const corrFrom = corrSource; // 補正の借り先('uarch' か 'isa')。自作コアでは corrSource を 'clone' にするので別に残す
     if (isClone) corrSource = 'clone';
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     const memActive = !!(mem && mem.active);
     return {
-      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(memActive ? { memory: mem } : {}), corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
+      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
       confidence: isClone || corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -211,7 +214,7 @@
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: applied, clockSource, corrSource: st.corrSource, ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: applied, clockSource, corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // メモリ構成の MT 係数(§5.2.4)。基準構成では 1(厳密)。ST の内部呼び出しには掛けず、ここで 1 回だけ掛ける

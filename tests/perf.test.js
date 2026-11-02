@@ -382,3 +382,19 @@ test('ST の L3: L3 なし(l3MB=0)のとき l3Ccds は null', () => {
   const r = F.stScore(p, cal(), D.uarch);
   assert.strictEqual(r.noL3, true); assert.strictEqual(r.l3Ccds, null);
 });
+
+// 2026-11-02: Zen 5c は uFrom で Zen 5 の ST 補正 u を借りる(設計書 §5.3.3 K)。HX 370・Kraken の MT だけが変わる
+test('uFrom: Zen 5c のコアは Zen 5 の u で評価され(corrUFrom)、ISA 平均には落ちない。代表の u は変わらない', () => {
+  const E = require('../js/model/evaluate.js'); const design = require('../js/model/design.js');
+  const ctx = E.makeContext();
+  assert.strictEqual(D.uarch['Zen 5c'].uFrom, 'Zen 5');
+  const r = E.evaluate(design.fromPreset(D.presets.find((p) => p.id === 'amd-strix-hx370')), ctx);
+  const c = r.mt.detail.find((d) => d.type === 'C');
+  assert.strictEqual(c.corrSource, 'uarch'); assert.strictEqual(c.corrUFrom, 'Zen 5');
+  assert.ok(!r.warnings.some((w) => /MT: 一部のコアは専用の補正がなく/.test(w.text)));
+  assert.strictEqual(ctx.cal.u['Zen 5c'], undefined); // 借りるだけで、Zen 5c 自身の u は作らない
+  // 借り先が無ければ ISA 平均のまま(uFrom の借り先の u を消した校正で)
+  const cal2 = JSON.parse(JSON.stringify(ctx.cal)); delete cal2.u['Zen 5'];
+  const s = F.stScore({ cfg: { cores: [{ type: 'C', uarch: 'Zen 5c', count: 1, boostGHz: 3 }] }, isa: 'x86' }, cal2, D.uarch);
+  assert.strictEqual(s.corrSource, 'isa'); assert.strictEqual(s.corrUFrom, undefined);
+});

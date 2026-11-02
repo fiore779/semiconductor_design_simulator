@@ -159,7 +159,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-strix-hx370', name: 'Ryzen AI 9 HX 370', vendor: 'AMD', family: 'Strix Point', isa: 'x86', kind: 'mobile-pc', year: 2024,
     gb7: 'Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)',
-    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: '帯係数 0.65 が過小(一致する係数は 0.905)。Zen 5c の混在した SoC の持続クロックの可能性(未検証)。設計書 §5.3.3 H' },
+    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: 'Zen 5c(8 個)の ST 補正を Zen 5 の u に揃えて -24.4% → -21.9%(2026-11-02)。残りは、54W 級の帯係数 0.65 に対し公開値と一致する係数が 0.869 で、標本 11 件の中で最も高い側であること(5800U 0.498・7735HS 0.639・14700HX 0.656)。原因は未特定(Zen 5 + Zen 5c の持続クロック、チャートの偏り、並列スケールの切り分けはできていない)。設計書 §5.3.3 K' },
     dies: [die('Strix Point (モノリシック)', 225.6, 'meas', 'tsmc-n4')],
     power: { base: pw(28, 'sec', 'cTDP 15〜54W'), peak: null, range: { minW: 15, maxW: 54 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.1 }, { type: 'C', uarch: 'Zen 5c', count: 8, smt: 2, baseGHz: null, boostGHz: 3.3 }], l3MB: 24, memory: 'DDR5-5600 / LPDDR5X-8000' },
@@ -174,7 +174,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false,
     errCause: {
       st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 掲載の Geekbench Browser 転載 0.92(2567 は Framework 13、2784 は HX 370 のミニ PC。各 1 件で [二次])と相対値は近いが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
-      mt: '公開値(11354)は検索要約で原ページ未確認。54W 級の帯係数 0.65 では過小(一致する係数は 0.802)。HX 370 も同じ向き(-24.4%)。設計書 §5.3.3 H',
+      mt: '公開値(11354)は検索要約で原ページ未確認。Zen 5c の ST 補正を Zen 5 の u に揃えて -16.3% → -14.2%(2026-11-02)。残りは帯係数 0.65 に対し公開値と一致する係数 0.780。HX 370(0.869、-21.9%)と同じ向きで、原因は未特定。設計書 §5.3.3 K',
     },
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック・ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照',
   });
