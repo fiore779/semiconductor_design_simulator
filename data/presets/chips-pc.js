@@ -251,7 +251,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-zen3-5800u', name: 'Ryzen 7 5800U', vendor: 'AMD', family: 'Zen 3 (Cezanne)', isa: 'x86', kind: 'mobile-pc', year: 2021, addedIn: 'M5b',
     gb7: 'Cezanne: Ryzen 7 5800U(1.9GHz, 8c)',
-    errCause: { st: 'モバイルのチャート平均が最良条件より低い偏りは推定 1.123 倍だが、その根拠の GB6 は Geekbench Browser の転載 1 件(HP ProBook 455 G8)だけで弱い。残り +16.6% は原因未特定で、15W 級(cTDP 10〜25W)の ST が max boost 4.4GHz に届かない可能性が候補だが(未検証)、実クロックは未取得。NBC に GB7 の行がない。DRAM 遅延の差を入れても ST は約 -3%。設計書 §5.3.3 J', mt: '15W 級を別の帯にしていないため(標本 1 件)。設計書 §5.3.3 H' },
+    errCause: { st: 'モバイルのチャート平均が最良条件より低い偏りは推定 1.123 倍だが、その根拠の GB6 は Geekbench Browser の転載 1 件(HP ProBook 455 G8)だけで弱い。残り +16.6% は原因未特定で、15W 級(cTDP 10〜25W)の ST が max boost 4.4GHz に届かない可能性が候補だが(未検証)、実クロックは未取得。NBC に GB7 の行がない。DRAM 遅延の差を入れても ST は約 -3%。設計書 §5.3.3 J', mt: '公開値と一致する係数は 0.498 で帯係数 0.65 より低いが、15W 級の標本はこの 1 件だけで、電力と係数の関係は単調ではない(28〜54W 級は 0.639〜0.869)ため帯は増やしていない。MT の +24.1% は ST の過大 +31.0% が主因:MT÷ST の比は 0.947(他の標本は 0.66〜0.94)で、ST の過大を除いた係数は 0.652 と帯係数 0.65 に一致する。チャートの MT(6368)は最良条件の推定(8880、[推定]・GB6 が転載 1 件で弱い)より 3 割低く、推定に対しモデルは -11%。NBC に GB7 の行なし。設計書 §5.3.3 L' },
     dies: [die('Cezanne', 179.6, 'meas', 'tsmc-n7')],
     power: { base: null, peak: null, range: { minW: 10, maxW: 25 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 1.9, boostGHz: 4.4 }], l3MB: 16, memory: null },
