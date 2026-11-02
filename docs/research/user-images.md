@@ -65,3 +65,20 @@
 
 ## ユーザーの補足
 - Zen 3(5950X)と Zen 4 / Zen 5(7950X・9950X)は構造が同じ。ただし Zen 4 以降は IO ダイに iGPU が加わる(ユーザー談。調査メモでの裏付けは別途)。
+
+## Intel タイル型の注釈つきダイ写真の受領(2026-11-03。`C:\LocalAI\画像`。区分 [二次]。出典 URL は未申告=推定・要ユーザー確認)
+
+詳細は [intel-tile-images.md](intel-tile-images.md)。
+
+| 画像 | 実寸 (px) | 内容 | 反映先 |
+|---|---|---|---|
+| `MTL_annotated.jpg` | 13000×6470 | Meteor Lake 全タイル(Compute・SoC・GPU・IO) | 185H の Compute(photo) |
+| `ARL_LQ_annotated.jpg` | 2220×1834 | Arrow Lake 全タイル | 配置の相互確認 |
+| `arrow lake cpudie al3.jpg` | 3231×1816 | Arrow Lake Compute タイルの拡大(P #1〜#8、E クラスタ #1〜#4) | 285K(photo)、265K・275HX(reuse) |
+| `Intel-Arrow-Lake-8P+16E-Tiles-Die-Shot.jpg` | 2075×1130 | パッケージ上のタイル配置+注釈写真 | 3D 配置は現状維持(記録のみ) |
+| `LNL_Package_Annotated.jpg` | 6742×6850 | Lunar Lake パッケージ(Compute・Platform Controller・LPDDR5X) | 268V(photo)、258V・256V(reuse) |
+| `panther-lake-computex26-die-annotated.jpg` | 971×1717 | Panther Lake(おそらく Xe3 4 コア版。ユーザー申告) | 388H・386H・378H・358H(すべて reuse。X モデルの GPU は含まれない) |
+| `Wildcat-lake-computex26-series3-die-annotated.jpg` | 1182×1427 | Wildcat Lake | プリセット無し。記録のみ |
+| `863ef392-…_1024x674.jpg` | 1024×674 | Raptor Lake/Redwood Cove の die shot(Locuza) | コア内部の参考のみ |
+
+拡張子は .jpg だが MTL・ARL_LQ・LNL・Panther Lake・Wildcat Lake・`863ef392-…` の 6 枚は中身が WebP。依頼文の画素数は MTL・ARL_LQ・LNL の 3 枚で入れ替わっていた。実ファイルの寸法を上表に記載。

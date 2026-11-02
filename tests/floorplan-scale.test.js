@@ -35,7 +35,7 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   assert.strictEqual(basis('amd-zen4-7950x'), 'reuse'); assert.strictEqual(basis('amd-strix-hx370'), 'photo');
   ['amd-raven-2400g', 'amd-zen3-5800u', 'amd-zen3p-7735hs', 'amd-zen4-7840hs'].forEach((id) => assert.strictEqual(basis(id), 'schematic', id));
   assert.strictEqual(basis('amd-kraken-350'), 'reuse');
-  assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'schematic');
+  assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'photo');
   assert.strictEqual(basis('apple-m1'), 'photo'); assert.strictEqual(basis('apple-m1ultra'), 'reuse'); assert.strictEqual(basis('apple-m4pro'), null); assert.strictEqual(basis('qc-8elite'), null);
   assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('写真・測定なし')); assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('流用'));
   assert.ok(FP.scaleText({ scaleBasis: 'photo' }).includes('目測'));

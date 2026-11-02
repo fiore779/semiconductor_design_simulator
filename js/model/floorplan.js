@@ -244,6 +244,56 @@
     'strix-point': { basis: 'photo', note: 'Strix Point(Ryzen AI 9 HX 370)の TechPowerUp 注釈つきダイ写真(1858×1200。X ユーザー @GPUsAreMagic の注釈。AMD の確認はない)の目測。ダイの縦横比は写真の 1.55(実寸 12.06×18.71 mm で 1.55)。Zen 5 ×4 + L3 16MB、Zen 5c ×8 + L3 8MB、GPU・NPU・PHY などは飾り' },
     'kraken-point': { basis: 'reuse', note: 'Strix Point(HX 370)のダイ写真の配置を流用し、構成の違い(Zen 5c は 4 個、GPU は 8CU で Strix の半分の面積、L3 は合計 16MB で内訳未取得のため 1 ブロック)を反映した目安。別のダイなので大きさはこのチップの写真・実測ではない。ダイ面積は未取得で仮寸法。ykZo39…jpg(出典・型番とも未確認のパッケージ写真。着色・注釈なし)は根拠にしておらず、その縦横比(約 1.4)とも合わない' },
   };
+  // ---- Intel タイル型(x86-tile)の Compute タイル: 注釈つきダイ写真の目測の枠(写真の表示ピクセル座標。box がダイの外形)----
+  // big = P コア枠(順に埋める)、small = E コア枠(クラスタ順)、lp = LP-E コア枠、l3 = L3 帯(1 ブロック)、deco = 飾り(kind: g=GPU n=NPU u=その他。計算除外)。
+  // コア数が枠より少なければ空き枠のまま、多ければ fits() が false になり根拠を schematic に落とす。
+  const quad = (x, y, w, h) => [[x, y, w / 2, h / 2], [x + w / 2, y, w / 2, h / 2], [x, y + h / 2, w / 2, h / 2], [x + w / 2, y + h / 2, w / 2, h / 2]];
+  const tf = (box, nom, big, small, lp, l3, deco) => ({ box, aspect: (box[2] - box[0]) / (box[3] - box[1]), nom, big, small, lp, l3, deco });
+  const TILE_FRAMES = {
+    // Meteor Lake Compute タイル(MTL_annotated.jpg 13000×6470 の表示 2000×995 で目測。Compute は左上 [510,297,862,618]、下は IO タイル)。P 6 + E 4 コア×2 クラスタ。LP-E 2 は写真では SoC タイル側
+    'mtl-compute': tf([510, 297, 862, 618], { p: 6, e: 8, lp: 2 },
+      [[520, 300, 75, 120], [600, 300, 72, 120], [678, 300, 74, 120], [520, 497, 78, 119], [600, 497, 72, 119], [678, 497, 74, 119]],
+      quad(758, 300, 102, 118).concat(quad(758, 520, 102, 94)), [[824, 422, 36, 48], [824, 472, 36, 48]], [520, 420, 302, 77], []),
+    // Arrow Lake Compute タイル(arrow lake cpudie al3.jpg 3231×1816 の表示 2000×1124。ARL_LQ_annotated.jpg の左のタイルと同配置)。P #1〜#8、E クラスタ #1〜#4(各 4 コア)、中央に L3 + リングエージェントの帯
+    'arl-compute': tf([12, 28, 1975, 1048], { p: 8, e: 16, lp: 0 },
+      [[62, 45, 262, 333], [62, 700, 262, 335], [727, 45, 258, 333], [727, 700, 258, 335], [1017, 45, 258, 333], [1017, 700, 258, 335], [1680, 45, 260, 333], [1680, 730, 260, 305]],
+      quad(352, 45, 346, 333).concat(quad(352, 700, 346, 335), quad(1305, 45, 347, 333), quad(1305, 700, 347, 335)), [], [62, 392, 1773, 296],
+      [['edge', 'リング右端・Fabric ほか', 'u', 1842, 385, 98, 335]]),
+    // Lunar Lake Compute タイル(LNL_Package_Annotated.jpg 6742×6850 の表示 1904×1934。Compute は [380,712,1525,1315]、下は Platform Controller タイル)。P 4、LP-E(Skymont)4、L3 12MB、GPU・NPU・メディアは同じタイル内
+    'lnl-compute': tf([380, 712, 1525, 1315], { p: 4, e: 0, lp: 4 },
+      [[1237, 757, 141, 160], [1382, 757, 138, 160], [1237, 1050, 135, 160], [1382, 1050, 138, 160]], [], quad(990, 968, 190, 187), [1237, 920, 283, 128], [
+        ['phy', 'LPDDR5X PHY', 'u', 585, 716, 925, 40], ['media', 'Media Engine', 'u', 720, 757, 305, 160], ['slc-l', 'SLC', 'u', 1030, 757, 50, 160], ['mc', 'メモリコントローラ', 'u', 1082, 757, 100, 160], ['slc-r', 'SLC', 'u', 1185, 757, 48, 160],
+        ['gpu', 'GPU(Xe2-LPG 8)', 'g', 405, 762, 235, 552], ['gpu-l2a', 'GPU L2', 'g', 642, 767, 76, 148], ['unslice', 'Unslice・Interconnect', 'u', 642, 918, 76, 245], ['gpu-l2b', 'GPU L2', 'g', 642, 1165, 76, 150],
+        ['npu', 'NPU', 'n', 722, 952, 212, 362], ['npu-c', 'NPU 制御・L2', 'n', 938, 955, 42, 200], ['display', 'Display Engine', 'u', 940, 1160, 240, 150], ['ipu', 'IPU', 'u', 1237, 1212, 285, 100]]),
+    // Panther Lake Compute タイル(panther-lake-computex26-die-annotated.jpg 971×1717)。Cougar Cove P 4(2×2)、Darkmont E 4(L2 を挟む)+「Cluster 4 E-Cores」4、LP-E 4、L3、NPU・メディア・ディスプレイほか
+    'ptl-compute': tf([10, 25, 955, 1700], { p: 4, e: 8, lp: 4 },
+      [[115, 920, 275, 235], [115, 1160, 275, 235], [595, 915, 275, 235], [595, 1155, 275, 235]],
+      [[78, 1405, 105, 100], [268, 1405, 105, 100], [78, 1578, 105, 112], [268, 1578, 105, 112]].concat(quad(610, 1400, 305, 290)), quad(200, 535, 310, 300), [403, 920, 180, 700], [
+        ['d2d-t', 'Die to die(D2D)', 'u', 20, 28, 930, 22], ['d2d-l', 'D2D', 'u', 10, 533, 40, 595], ['media', 'Media Engines', 'u', 22, 60, 488, 252], ['display', 'Display Engine', 'u', 25, 322, 485, 192], ['ipu', 'IPU', 'u', 58, 530, 132, 298],
+        ['npu-a', 'NPU', 'n', 560, 75, 385, 140], ['npu-b', 'NPU', 'n', 560, 215, 315, 375], ['msc', 'メモリサイドキャッシュ', 'u', 585, 600, 285, 300], ['ddr', 'DDR コントローラ', 'u', 880, 225, 70, 1160], ['ic', 'Interconnect', 'u', 60, 845, 515, 55],
+        ['l2-v', 'L2', 'u', 190, 1405, 72, 290], ['l2-a', 'L2', 'u', 80, 1522, 110, 53], ['l2-b', 'L2', 'u', 262, 1522, 118, 53]]),
+  };
+  const TILE_SRC = {
+    'mtl-compute': 'MTL_annotated.jpg(Meteor Lake。作者表記なし。チップ名は画像内の Redwood Cove / Crestmont / Xe-LPG とファイル名から)。P 6 + E 4 コア×2 クラスタ。LP-E 2 は写真では SoC タイル側にあるが、コアのブロックは Compute タイルのダイに置く仕様なので、右端の SoC Tile Interconnect の帯の上に模式で重ねた(実際の位置ではない)',
+    'arl-compute': 'arrow lake cpudie al3.jpg(Arrow Lake の Compute タイルの拡大注釈。ARL_LQ_annotated.jpg の左のタイルと同じ配置。作者表記なし)。P #1〜#8、E クラスタ #1〜#4(各 4 コア)、中央に L3 とリングエージェントの帯',
+    'lnl-compute': 'LNL_Package_Annotated.jpg(Lunar Lake のパッケージ注釈。作者表記なし)。Compute タイル(P 4・LP-E 4・L3・GPU・NPU・メディアが一枚)',
+    'ptl-compute': 'panther-lake-computex26-die-annotated.jpg(Panther Lake の Compute タイル。Computex 2026 の画像とファイル名にある)。P 4・Darkmont E 4+E クラスタ 4・LP-E 4・L3・NPU・メディアなど',
+  };
+  const tm = (frame, basis, extra) => ({ frame, basis, src: TILE_SRC[frame] + (extra ? `。${extra}` : '') });
+  const PTL_NOTE = 'ユーザー申告で Xe3 4 コア版の写真。X モデルの GPU(Xe3 12 コア)は写真に無く、このプリセットには GPU タイルも無い(描かない)。Compute タイルの縦横比・寸法を X モデルの 115.1mm² に当てはめてよいかは未確認で、比率は目安(確度低)';
+  const TILE_MAP = {
+    'intel-mtl-185h': tm('mtl-compute', 'photo'),
+    'intel-arl-285k': tm('arl-compute', 'photo'),
+    'intel-arl-265k': tm('arl-compute', 'reuse', '285K の配置を流用(E クラスタ 1 つ無効の SKU。空いた枠は最後のクラスタ)'),
+    'intel-arl-275hx': tm('arl-compute', 'reuse', '285K の配置を流用(HX が同じ Compute タイルなのは検索要約で原ページ未確認)'),
+    'intel-lnl-268v': tm('lnl-compute', 'photo'),
+    'intel-lnl-258v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
+    'intel-lnl-256v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
+    'intel-ptl-x9-388h': tm('ptl-compute', 'reuse', PTL_NOTE),
+    'intel-ptl-x9-386h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
+    'intel-ptl-x9-378h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
+    'intel-ptl-x7-358h': tm('ptl-compute', 'reuse', '388H と同じ 4P+8E+4LP-E の Compute タイルの流用。' + PTL_NOTE),
+  };
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。
   const CCD_RECIPES = {
     'Zen 3': { aspect: 1.516, top: 0.154, core: 0.247, basis: 'photo', note: 'Zen 3 CCD の注釈つきダイ写真(WCCFTech、ユーザー提示)の目測(上部の帯 約15%、コア+L2 約25%、L3 約50%)。面積比は AMD 公表(CCX 68 / CCD 81 mm²)と Locuza(二次)と整合' },
@@ -290,7 +340,11 @@
     const ci = dies.findIndex((d) => role(d.name) === 'compute');
     if (ci < 0) return null;
     const dname = dies[ci].name || '';
-    if (/タイル|tile/i.test(dname)) return Object.assign(base, { template: 'x86-tile', dieIndex: ci });
+    if (/タイル|tile/i.test(dname)) {
+      const tmap = TILE_MAP[preset.id];
+      if (tmap && TILE_FRAMES[tmap.frame]) return Object.assign(base, { template: 'x86-tile', dieIndex: ci, frame: tmap.frame, scaleBasis: tmap.basis, scaleNote: `${tmap.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL は未申告(推定・要ユーザー確認)` });
+      return Object.assign(base, { template: 'x86-tile', dieIndex: ci });
+    }
     if (dies.length !== 1) return null; // 複数ダイで CCD でもタイルでもない(EPYC 等): 従来の配置
     if (preset.vendor === 'Intel') {
       if (hasSmallGroup(preset)) {
@@ -342,7 +396,7 @@
       case 'x86-mono': return 1.1;
       case 'apple-soc': { const a = APPLE_FRAMES[layout.frame]; return a ? a.aspect / u : 1; }
       case 'amd-apu': return FRAMES[layout.frame] ? FRAMES[layout.frame].W / FRAMES[layout.frame].H : 1.1;
-      case 'x86-tile': return 1.2;
+      case 'x86-tile': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1.2;
       case 'amd-chiplet': return (CCD_RECIPES[layout.recipe] || CCD_RECIPES[DEFAULT_RECIPE]).aspect * (u + (u - 1) * CCD_GAP);
       default: return null;
     }
@@ -354,6 +408,7 @@
     const flat = []; (cores || []).forEach((g) => { for (let i = 0; i < (g.count || 0); i++) flat.push(g); });
     const nBig = flat.filter((g) => !isSmall(g.type)).length; const nSmall = flat.length - nBig;
     if (layout.template === 'apple-soc') { const a = APPLE_FRAMES[layout.frame]; const un = layout.units || 1; return !!a && nBig <= a.big.length * un && nSmall <= a.small.length * un; }
+    if (layout.template === 'x86-tile' && TILE_FRAMES[layout.frame]) { const t = TILE_FRAMES[layout.frame]; const nLp = flat.filter((g) => /^LP/i.test(String(g.type || ''))).length; return nBig <= t.big.length && nSmall - nLp <= t.small.length && nLp <= t.lp.length; }
     if (FRAMES[layout.frame]) return nBig <= FRAMES[layout.frame].MAX_BIG && nSmall <= FRAMES[layout.frame].MAX_SMALL;
     if (layout.template === 'intel-hybrid' && layout.slots) return nBig <= layout.slots.p && nSmall <= layout.slots.e;
     if (layout.template === 'amd-chiplet') return flat.length <= 8 * (layout.units || 1);
@@ -379,9 +434,9 @@
     if (l.scaleNote != null && !(typeof l.scaleNote === 'string' && l.scaleNote.length <= 600)) return 'layout.scaleNote は 600 文字以内の文字列にしてください';
     if (l.frame != null) {
       if (typeof l.frame !== 'string') return 'layout.frame が文字列ではありません';
-      // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)だけ。ほかのテンプレートは frame を持たない
+      // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)だけ。x86-tile は TILE_FRAMES(Intel の Compute タイルの写真の枠)。ほかのテンプレートは frame を持たない
       const has = (o) => Object.prototype.hasOwnProperty.call(o, l.frame);
-      if (l.template === 'apple-soc' ? !has(APPLE_FRAMES) : (l.template !== 'amd-apu' || !has(FRAMES))) return `layout.frame「${l.frame}」はテンプレート ${l.template} では使えません`;
+      if (l.template === 'apple-soc' ? !has(APPLE_FRAMES) : l.template === 'x86-tile' ? !has(TILE_FRAMES) : (l.template !== 'amd-apu' || !has(FRAMES))) return `layout.frame「${l.frame}」はテンプレート ${l.template} では使えません`;
     } else if (l.template === 'apple-soc') return 'apple-soc には layout.frame が要ります';
     if (l.recipe != null && !(typeof l.recipe === 'string' && Object.prototype.hasOwnProperty.call(CCD_RECIPES, l.recipe))) return 'layout.recipe が未知です';
     if (l.slots != null) {
@@ -435,6 +490,19 @@
         AF.small.forEach((r, i) => { if (i < s2.length) coreBlock(s2[i], X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy); else if (!flat.length) put(`${ip}eslot${i}`, 'uncore', 'E コア(構成未取得)', X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy, deco); });
         AF.deco.forEach((d) => put(ip + d[0], KIND[d[2]], d[1], X(d[3]), Y(d[4]), d[5] * sx, d[6] * sy, deco));
       }
+      return blocks;
+    }
+    const TF = L.template === 'x86-tile' ? TILE_FRAMES[L.frame] : null;
+    if (TF && L.scaleBasis !== 'schematic' && fits(L, cores)) {
+      // Intel タイル型の Compute タイル: 写真の枠に沿う。コアは P → E(クラスタ順)→ LP-E の順に枠へ。余った枠は空き。飾り・L3 は枠のとおり
+      const sx = W / (TF.box[2] - TF.box[0]); const sy = H / (TF.box[3] - TF.box[1]);
+      const X = (x) => (x - TF.box[0]) * sx; const Y = (y) => (y - TF.box[1]) * sy;
+      const KIND = { g: 'gpu', n: 'npu', u: 'uncore' };
+      const isLp = (g) => /^LP/i.test(String(g.type || ''));
+      const bigs = flat.filter((g) => !isSmall(g.type)); const lps = flat.filter(isLp); const es = flat.filter((g) => isSmall(g.type) && !isLp(g));
+      [[bigs, TF.big], [es, TF.small], [lps, TF.lp]].forEach((pr) => pr[0].forEach((g, i) => { const r = pr[1][i]; coreBlock(g, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy); }));
+      if (hasL3) put(`${die.id}-l3`, 'l3', `L3 ${l3MB}MB`, X(TF.l3[0]), Y(TF.l3[1]), TF.l3[2] * sx, TF.l3[3] * sy);
+      TF.deco.forEach((d) => put(`${die.id}-${d[0]}`, KIND[d[2]], d[1], X(d[3]), Y(d[4]), d[5] * sx, d[6] * sy, deco));
       return blocks;
     }
     const FR = FRAMES[L.frame];
@@ -530,7 +598,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, APPLE_FRAMES, classify, toLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, APPLE_FRAMES, TILE_FRAMES, classify, toLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
