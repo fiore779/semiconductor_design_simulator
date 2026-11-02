@@ -540,6 +540,94 @@ window.SDS_DATA.gb7Scores = [
   "n": 6
  },
  {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A16(NBC)",
+  "single": 2394,
+  "multi": 6643,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A17 Pro(NBC)",
+  "single": 2688,
+  "multi": 7209,
+  "kind": "個別投稿",
+  "n": 2
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A18(NBC)",
+  "single": 2804,
+  "multi": 7602,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A18 Pro(NBC)",
+  "single": 3005,
+  "multi": 7947,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A19 Pro(NBC)",
+  "single": 3211,
+  "multi": 9003,
+  "kind": "個別投稿",
+  "n": 3
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "A20 Pro(NBC)",
+  "single": 4055,
+  "multi": 11622,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "M3(NBC)",
+  "single": 2902,
+  "multi": 11879,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "M3 Pro 12c(NBC)",
+  "single": 2925,
+  "multi": 17582,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "M3 Max 16c(NBC)",
+  "single": 2831,
+  "multi": 25533,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "M4 10c(NBC)",
+  "single": 3416,
+  "multi": 16111,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
+  "group": "Apple(Notebookcheck の各 SoC の仕様ページの GB7。個別の結果、2026-11-02 取得。上の機種中央値を置き換えない併記用)",
+  "name": "M5 10c(NBC)",
+  "single": 3525,
+  "multi": 15676,
+  "kind": "個別投稿",
+  "n": 1
+ },
+ {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "855",
   "single": 836,

@@ -11,7 +11,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   const add = (o) => P.push(Object.assign({ calib: false, power: noPower }, o));
 
   // ---- Apple A シリーズ(2P + 4E) ----
-  const aCores = { 'apple-a12': ['Vortex', 'Tempest'], 'apple-a13': ['Lightning', 'Thunder'], 'apple-a14': ['Firestorm', 'Icestorm'], 'apple-a15': ['Avalanche', 'Blizzard'], 'apple-a16': ['Everest', 'Sawtooth'] };
+  const aCores = { 'apple-a12': ['Vortex', 'Tempest'], 'apple-a13': ['Lightning', 'Thunder'], 'apple-a14': ['Firestorm', 'Icestorm'], 'apple-a15': ['Avalanche', 'Blizzard'], 'apple-a16': ['Everest', 'Sawtooth'], 'apple-a17pro': ['Everest 2nd gen', undefined] };
   const a = (id, name, year, gb7, mm2, nodeId, pClk, eClk, l2, extra) => add(Object.assign({
     id, name, vendor: 'Apple', family: 'A シリーズ', isa: 'arm', kind: 'mobile', year, gb7,
     dies: [die(name, mm2, 'meas', nodeId)],
@@ -22,7 +22,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   a('apple-a14', 'A14', 2020, 'A14', 89.8, 'tsmc-n5', 3.0, 1.82, null);
   a('apple-a15', 'A15', 2021, 'A15', 110.1, 'tsmc-n5', 2.93, 2.02, 'P 12MB / E 4MB');
   a('apple-a16', 'A16', 2022, 'A16', 115.4, 'tsmc-n4', 3.46, null, 'P 16MB / E 4MB');
-  a('apple-a17pro', 'A17 Pro', 2023, 'A17 Pro', 114.0, 'tsmc-n3b', 3.78, 2.11, null, { power: { base: null, peak: pw(14, 'sec', 'CPU ベンチ時(Geekerwan 経由のフォーラム要約)'), range: null } });
+  a('apple-a17pro', 'A17 Pro', 2023, 'A17 Pro', 114.0, 'tsmc-n3b', 3.78, 2.11, null, { power: { base: null, peak: pw(14, 'sec', 'CPU ベンチ時(Geekerwan 経由のフォーラム要約)'), range: null },
+    errCause: { st: '公開値 2527 は機種中央値(n=3)。Notebookcheck の個別値(2 件平均)は 2688 で、これを公開値にすると差は +5.1%(中央値より 6.4% 高い)。P コアは Everest 2nd gen(9 幅・ROB 321。Geekerwan・jia.je の図〔二次〕)で、ST 補正 u は A16 の Everest(8 幅・ROB 274)から借用している(9 幅用の代表は無い)。基本 CPI が幅で決まり、幅 8→9 で ST が約 +12% 動くが、実機の A16→A17 Pro の IPC の伸びは数%(Apple の主張は P コア +10%、クロック込み)で、モデルの形による過大とみられる(調査メモの試算 +11.8%)。E コアが未登録のため MT は計算できない。設計書 §5.3.3 O' } });
   a('apple-a18', 'A18', 2024, 'A18', 92.4, 'tsmc-n3e', 4.05, 2.42, 'P 8MB / E 4MB');
   a('apple-a18pro', 'A18 Pro', 2024, 'A18 Pro', 109.7, 'tsmc-n3e', null, null, 'P 16MB / E 4MB', { power: { base: null, peak: null, range: null, gaming: pw(4.9, 'sec', 'ゲーム時 4.5〜5.3W') } });
   a('apple-a19pro', 'A19 Pro', 2025, 'A19 Pro', 98.7, 'tsmc-n3p', 4.26, 2.6, 'P 16MB / E 6MB', { power: { base: null, peak: pw(13, 'sec', '短時間ピーク。GB6 マルチ約12.1W'), range: null } });
@@ -51,15 +52,16 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     { power: { base: null, peak: pw(36, 'meas', 'CPU のみ最大(powermetrics)。CPU+GPU のチップ約89W'), range: null } });
   m('apple-m2ultra', 'M2 Ultra', 2023, 'M2 Ultra', [die('M2 Max ×2', 971.2, 'sec', 'tsmc-n5', '推定 ×2')], [{ type: 'P', count: 16 }, { type: 'E', count: 8 }]);
   m('apple-m3', 'M3', 2023, 'M3', [die('M3', 152.5, 'meas', 'tsmc-n3b')],
-    [{ type: 'P', count: 4, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
-    { power: { base: null, peak: null, range: null, single: pw(5.5, 'meas', 'シングル時 CPU(powermetrics。チップ特定が曖昧)') } });
+    [{ type: 'P', uarch: 'Everest 2nd gen', count: 4, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
+    { power: { base: null, peak: null, range: null, single: pw(5.5, 'meas', 'シングル時 CPU(powermetrics。チップ特定が曖昧)') },
+      errCause: { st: 'P コアは Everest 2nd gen(9 幅・ROB 321。Geekerwan・jia.je の図〔二次〕)で、ST 補正 u は A16 の Everest(8 幅・ROB 274)から借用している(9 幅用の代表は無い)。基本 CPI が幅で決まり、幅 8→9 で ST が約 +12% 動くが、実機の A16→A17 Pro の IPC の伸びは数%(Apple の主張は P コア +10%、クロック込み)で、モデルの形による過大とみられる(調査メモの試算 +11.8%)。M3 の P が A17 Pro と同じコアという根拠は Geekerwan の図〔二次〕。設計書 §5.3.3 O' } });
   // M3 Pro・M3 Max(2026-11-01 にコア数とクロックを追記。docs/research/m3-pro-max.md)。uarch は M3 無印と同じく書かない(M3 系 P/E コアの幅・ROB・遅延が未取得で、A16 の Everest/Sawtooth を借りる根拠が無いため)。ST/MT は「uarch 未指定」で計算不能のまま
   m('apple-m3pro', 'M3 Pro', 2023, 'M3 Pro', [die('M3 Pro', 219.2, 'meas', 'tsmc-n3b')],
-    [{ type: 'P', count: 6, maxGHz: 4.05 }, { type: 'E', count: 6, maxGHz: 2.75 }],
+    [{ type: 'P', uarch: 'Everest 2nd gen', count: 6, maxGHz: 4.05 }, { type: 'E', count: 6, maxGHz: 2.75 }],
     { power: { base: null, peak: pw(25, 'meas', 'マルチ時 CPU 約24〜27W'), range: null },
       notes: '12 コア版(6P+6E)。11 コア版(5P+6E)もあり、12 コア版とした判断は [推定](GB7 の注記「12c」・フロアプランの枠 P6/E6・電力 27W の注記から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia「Apple silicon」・Notebookcheck。Apple は非公表)。GPU 18 コア(11 コア版は 14)・メモリ帯域 150GB/s・トランジスタ 370 億は [公表]。L2 は P 16MB(6 コア共有)/ E 4MB、SLC 12MB(Wikipedia・Notebookcheck。LowEndMac は P 32MB・SLC 24MB で食い違うが、出典が Wikipedia で読み違えとみられるため採らない)。uarch(幅・ROB・遅延)は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
   m('apple-m3max', 'M3 Max', 2023, 'M3 Max', [die('M3 Max', 477.1, 'sec', 'tsmc-n3b', 'NamuWiki のみ。2 つ目の出典は未取得(検索要約では 477 が多数だが 503・600〜700 mm² の記述もあり、原典は未確認)')],
-    [{ type: 'P', count: 12, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
+    [{ type: 'P', uarch: 'Everest 2nd gen', count: 12, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
     { power: { base: null, peak: pw(56, 'meas', 'CPU マルチ最大。チップ全体約78W'), range: null },
       notes: '16 コア版(12P+4E)。14 コア版(10P+4E)もあり、16 コア版とした判断は [推定](GB7 の注記「16c」・フロアプランの枠 P12/E4・電力 56W が 16 コア版の値から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia・Notebookcheck。Apple は非公表)。GPU 40 コア(14 コア版は 30)・メモリ帯域 400GB/s(14 コア版は 300)・トランジスタ 920 億は [公表]。L2 は P 32MB(16MB × 2 クラスタは [推定])/ E 4MB、SLC 48MB([二次] Wikipedia。LowEndMac の出典も Wikipedia で独立した出典ではない)。ダイ面積 477.1mm² は NamuWiki のみで 2 つ目の出典が無い。uarch は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
   m('apple-m4', 'M4', 2024, 'M4', [die('M4', 169.4, 'meas', 'tsmc-n3e')],
