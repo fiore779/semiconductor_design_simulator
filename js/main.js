@@ -118,7 +118,7 @@
   }
   function renderParamsPanel() {
     if (isMix()) { clear($('params')); return; }
-    PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onUnlock }, paramMsgs);
+    PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onMemory: onMemoryEdit, onMemoryUi: renderParamsPanel, onUnlock }, paramMsgs);
   }
   const peakOf = (d) => { const p = d && ctx.presets.find((q) => q.id === d.presetId); return (p && p.power && p.power.peak) || null; };
   function renderPackagePanel() {
@@ -252,6 +252,17 @@
     if (commit(res.design, label, false)) {
       if (res.relaid) notifyRelaid();
     } else renderParamsPanel();
+  }
+  // メモリ構成の編集(種別・速度。設計書 §5.2.4)。選択肢に無い構成・ロック中は design.js が断る。失敗は欄の下に出す
+  function onMemoryEdit(type, mts, oc) {
+    if (!design) return;
+    const cur = design.cfg && design.cfg.mem;
+    if (cur && cur.type === type && cur.mts === mts && (cur.oc === true) === (oc === true)) { paramMsgs = {}; renderParamsPanel(); return; }
+    const res = DS.setMemory(design, type, mts, oc === true);
+    if (!res.ok) { paramMsgs = { memory: res.reason }; renderParamsPanel(); return; }
+    const MEM = window.SDS.sim.memory;
+    const before = cur ? PF.fmtParamValue({ id: 'memory' }, MEM.label(cur)) : '基準';
+    if (!commit(res.design, PF.editLabel('memory', null, before, MEM.label(oc === true ? { type, mts, oc: true } : { type, mts })), false)) renderParamsPanel();
   }
   // パッケージ設定の編集(冷却・基板・電力制限)。ロックの対象外なので A 再現でも可。失敗は入力欄の下に出して元に戻す
   function onPackageEdit(kind, value) {

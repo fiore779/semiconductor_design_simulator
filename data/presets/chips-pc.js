@@ -35,7 +35,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Raptor Lake Refresh: Core i9-14900K(3.2GHz, 24c)',
     dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13900K と同じダイとして流用(14900K 個別の実測は未取得)')],
     power: { base: pw(125, 'sec', 'PBP'), peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: null, boostGHz: 5.6 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: null, boostGHz: 4.4 }], l3MB: 36, memory: '未取得' },
+    // memory の「2 チャネル」は意図的: 電力モデル(js/sim/power.js の memChannels)が「数字+ch」の表記でチャネル数を読むため、2ch と書くと電力・温度が変わる。メモリ選択機能の追加では電力を変えない方針(設計書 §5.2.4)。電力の注記「メモリチャネル数が未取得」は追加前から出ており、そのまま
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: null, boostGHz: 5.6 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: null, boostGHz: 4.4 }], l3MB: 36, memory: 'DDR5-5600 / DDR4-3200(Intel ARK [公表]。2 チャネル)' },
     calib: false,
   });
   P.push({
@@ -43,7 +44,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Arrow Lake-S: Core Ultra 9 285K(3.7GHz, 24c)',
     dies: [die('Compute タイル', 117.4, 'meas', 'tsmc-n3b'), die('GPU タイル', 23.1, 'meas', 'tsmc-n5'), die('SoC タイル', 86.6, 'meas', 'tsmc-n6'), die('IO タイル', 24.7, 'meas', 'tsmc-n6')],
     power: { base: pw(125, 'sec', 'PBP'), peak: pw(250, 'sec', 'MTP'), range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 3.7, boostGHz: 5.7 }, { type: 'E', uarch: 'Skymont', count: 16, smt: 1, baseGHz: 3.2, boostGHz: 4.6 }], l3MB: 36, l2MBPerP: 3, memory: '未取得' },
+    // memory の「2 チャネル」は意図的: 電力モデル(js/sim/power.js の memChannels)が「数字+ch」の表記でチャネル数を読むため、2ch と書くと電力・温度が変わる。メモリ選択機能の追加では電力を変えない方針(設計書 §5.2.4)。電力の注記「メモリチャネル数が未取得」は追加前から出ており、そのまま
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 3.7, boostGHz: 5.7 }, { type: 'E', uarch: 'Skymont', count: 16, smt: 1, baseGHz: 3.2, boostGHz: 4.6 }], l3MB: 36, l2MBPerP: 3, memory: 'DDR5-6400(Intel ARK [公表]。2 チャネル)' },
     calib: false,
   });
   P.push({
@@ -76,7 +78,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     errCause: { st: 'チャートが「直近25件の中央値」で、母集団の偏りがほぼ無い(推定 ÷ チャート 0.995〜1.067)ため、残り +5.5〜+7.6% が原因未特定。Panther Lake の k は Lion Cove(265K)の代用で根拠が弱い。DRAM(LPDDR5X-9600)の遅延は未取得。設計書 §5.3.3 J' },
     dies: [die('Compute タイル', 115.1, 'meas', 'intel-18a', '他のタイルの寸法は未取得')],
     power: { base: pw(25, 'sec'), peak: pw(80, 'sec', 'MTP は65W または80W(SKU ごとの割当は不明)'), range: { minW: 15, maxW: 80 } },
-    cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 5.1 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: null, boostGHz: null }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 18, memory: 'LPDDR5X-9600 / DDR5-7200, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: null, boostGHz: 5.1 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: null, boostGHz: null }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: null, boostGHz: null }], l3MB: 18, memory: 'LPDDR5X-9600, 2ch' },
     calib: false,
   });
 
@@ -143,7 +145,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 5: Ryzen 7 9700X(3.8GHz, 8c)',
     dies: [die('Zen 5 CCD', 70.2, 'meas', 'tsmc-n4'), die('IOD', null, null, 'tsmc-n6', '面積は未取得')],
     power: { base: pw(65, 'sec', 'TDP。105W まで設定可、PPT 88W'), peak: null, range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 5.5 }], l3MB: 32, l2MBPerCore: 1, memory: 'DDR5, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 5.5 }], l3MB: 32, l2MBPerCore: 1, memory: 'DDR5-5600, 2ch' },
     calib: true, calibNote: 'Zen 5 の代表(8コア 1 CCD、§5.3.1 の例)',
   });
   P.push({
@@ -151,7 +153,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Zen 5: Ryzen 9 9950X(4.3GHz, 16c)',
     dies: [die('Zen 5 CCD ×2', 140.4, 'meas', 'tsmc-n4', '70.2 mm² × 2'), die('IOD', null, null, 'tsmc-n6', '面積は未取得')],
     power: { base: pw(170, 'sec', 'TDP。PPT 230W'), peak: pw(286, 'meas', 'HWBusters(Blender)。他レビューは 260W/220W で幅あり'), range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 4.3, boostGHz: 5.7 }], l3MB: 64, l3Ccds: 2, memory: 'DDR5, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 16, smt: 2, baseGHz: 4.3, boostGHz: 5.7 }], l3MB: 64, l3Ccds: 2, memory: 'DDR5-5600, 2ch' },
     calib: false,
   });
   P.push({

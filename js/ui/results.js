@@ -192,6 +192,11 @@
     if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note'));
     l3Notes(ev.st).forEach((n) => stExtra.push(n));
+    // メモリ構成(設計書 §5.2.4): 基準と違う選択のときだけ、係数が推定であることを示す
+    const memDesc = ev.memory && ev.memory.active && !ev.memory.isRef ? root.SDS.sim.memory.describeParts(ev.memory) : null;
+    const ocNotes = ev.memory && ev.memory.oc ? [root.SDS.sim.memory.OC_WARNING].concat(ev.memory.extrapolated ? [root.SDS.sim.memory.OC_EXTRAPOLATION] : []) : [];
+    if (memDesc) ocNotes.forEach((t) => stExtra.push(note(t, 'warn-note')));
+    if (memDesc) stExtra.push(note(`${memDesc.config}。ST は帯域の寄与(弾性 0.05)と遅延(DRAM 遅延の差し替え)で反映。メモリ構成による係数は推定(確度:低)`, 'warn-note'));
     if (ev.optimistic) stExtra.push(optBand());
     el.appendChild(perfCard(edited ? 'シングル性能 (GB7 ST) 予測(編集後)' : 'シングル性能 (GB7 ST)', ev.st, stExtra, edited));
     // MT
@@ -211,6 +216,8 @@
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note'));
     }
+    if (memDesc && ev.mt.ok) ocNotes.forEach((t) => mtExtra.push(note(t, 'warn-note')));
+    if (memDesc && ev.mt.ok) mtExtra.push(note(`${memDesc.config}。${memDesc.mt}。メモリ構成による係数は推定(確度:低。GB7 の ST 実測は 0 件、帯域と遅延は分離できていない)`, 'warn-note'));
     l3Notes(ev.mt).forEach((n) => mtExtra.push(n));
     el.appendChild(perfCard(edited ? 'マルチ性能 (GB7 MT) 予測(編集後)' : 'マルチ性能 (GB7 MT)', ev.mt, mtExtra, edited));
     // 面積

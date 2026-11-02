@@ -43,6 +43,8 @@
       if (c.pub && r.inUCalSet) c.sub.push('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
       if (c.pub && r.calibNotUsedForMt) c.sub.push('ST の補正には使ったが、MT の σ の合わせには使っていない');
       if (key === 'mt') c.sub.push('MT の確度は常に低');
+      const mm = ev.memory;
+      if (mm && mm.active && !mm.isRef) c.sub.push(`メモリ構成 ${mm.label}(基準 ${mm.refLabel})の係数を掛けています。推定(確度:低)`);
       return c;
     }
     if (key === 'area') {
@@ -161,6 +163,9 @@
     return { name: design ? design.name : '', modeText: mi ? mi.text : '', isMix: !!(ev && ev.isMix), edited: !!(ev && ev.edited) };
   }
 
+  // メモリ構成の表示(選択肢のあるチップだけ。固定・混合は「選択なし」)
+  const memNonRef = (s) => !!(s && s.ev && s.ev.memory && s.ev.memory.active && !s.ev.memory.isRef);
+  const memText = (s) => (s && s.ev && s.ev.memory && s.ev.memory.active ? s.ev.memory.label : '選択なし');
   const pkgText = (d) => { const p = d && d.package; return p ? `冷却 ${p.coolingId} / 基板 ${p.substrateId} / 電力制限 ${p.powerLimitW == null ? 'なし' : p.powerLimitW + ' W'}` : '不明'; };
 
   // 比較の注意(固定の文言と、状況に応じた文言)
@@ -176,6 +181,10 @@
     });
     list.forEach((b, i) => {
       if (pkgText(a.design) !== pkgText(b.design)) n.push(`パッケージ設定が違います(電力・温度の差に影響します)。現在: ${pkgText(a.design)} / ${names[i]}: ${pkgText(b.design)}`);
+    });
+    list.forEach((b, i) => {
+      // 比べる 2 つのどちらかが基準以外の構成のときだけ(両方基準、または両方メモリ固定なら出さない)
+      if (memText(a) !== memText(b) && (memNonRef(a) || memNonRef(b))) n.push(`メモリ構成が違います(ST / MT の差に影響します。係数は推定)。現在: ${memText(a)} / ${names[i]}: ${memText(b)}`);
     });
     list.forEach((b, i) => {
       if (b.sourceKey === 'origin' || b.sourceKey === 'preset') n.push(`${names[i]}は既定のパッケージ設定で評価しています。`);

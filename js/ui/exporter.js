@@ -47,6 +47,10 @@
     const d = C.describe(design, ev);
     add('設計名', design.name, '設計', '', '');
     add('モード', d.modeText, '設計', '', d.edited ? '編集済み(性能は予測。公開値との差は出さない)' : '');
+    if (ev.memory && ev.memory.active) {
+      const mm = ev.memory;
+      add('メモリ構成', mm.label, '設計', '', mm.isRef ? '基準構成(補正なし)' : `基準 ${mm.refLabel}。MT 係数 ${((mm.mtFactor - 1) * 100).toFixed(1)}%・ST 帯域項 ${((mm.stBwFactor - 1) * 100).toFixed(1)}%(遅延は dramNs に反映)。推定(確度:低)${mm.oc ? `。メモリ OC(安定動作を保証しない${mm.extrapolated ? '・GB7 実測の範囲外=外挿' : ''})` : ''}`);
+    }
     // 性能・面積・電力・温度は compareform のセルと同じ判定を使う(画面と書き出しで食い違わせない)
     const pushCell = (key, label, unit, digits) => {
       const c = C.cellOf(key, design, ev);
@@ -121,10 +125,11 @@
       const tag = [c.kindText, c.confText && c.confText !== '—' ? `確度:${c.confText}` : ''].filter(Boolean).join('・');
       return { label, text: `${label}: ${fix(c.value, digits)} ${unit}${tag ? ` [${tag}]` : ''}` };
     };
+    const mm = ev && ev.memory && ev.memory.active && !ev.memory.isRef ? ev.memory : null; // 基準構成のときは出さない(画像の既定の表示を変えない)
     return {
       title: sanitizeText(design && design.name != null ? design.name : ''),
       subtitle: `${PNG_MODE_TEXT[o.mode] || PNG_MODE_TEXT.place}${o.noData ? '(データなし)' : ''}${o.date ? ` / ${o.date}` : ''}`,
-      values: [fmt('st', 'ST', 'pt', 0), fmt('mt', 'MT', 'pt', 0), fmt('area', 'ダイ面積', 'mm²', 1), fmt('power', '電力(推定)', 'W', 1), fmt('tj', '温度 Tj(推定)', '℃', 0)],
+      values: [fmt('st', 'ST', 'pt', 0), fmt('mt', 'MT', 'pt', 0), fmt('area', 'ダイ面積', 'mm²', 1), fmt('power', '電力(推定)', 'W', 1), fmt('tj', '温度 Tj(推定)', '℃', 0)].concat(mm ? [{ label: 'メモリ', text: `メモリ: ${mm.label}(基準 ${mm.refLabel})` }] : []),
       note: PNG_NOTE,
     };
   }

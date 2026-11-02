@@ -8,6 +8,8 @@
   const same = (a, b) => Math.abs(a - b) < 1e-9;
 
   // baseCfg と cfg の違い(変更があるものだけ)
+  const memApi = () => (root.SDS && root.SDS.sim && root.SDS.sim.memory) || (typeof require === 'function' ? require('../sim/memory.js') : null);
+
   function paramDiff(design) {
     const out = [];
     if (!design.cfg || !design.baseCfg) return out;
@@ -18,6 +20,11 @@
       if (!same(clockOf(g), clockOf(b))) out.push({ id: `core:${g.type}:clock`, label: `${g.type} クロック`, before: clockOf(b), after: clockOf(g), unit: 'GHz' });
     });
     if (!same(design.cfg.l3MB || 0, design.baseCfg.l3MB || 0)) out.push({ id: 'l3', label: 'L3 容量', before: design.baseCfg.l3MB || 0, after: design.cfg.l3MB || 0, unit: 'MB' });
+    // メモリ構成(種別 + 速度)。値は表示用の文字列(例: DDR5-5600)
+    // baseCfg に mem が無い(古い設計)ときは、そのチップの基準構成を元とみなす
+    const MEM = memApi();
+    const mn = design.cfg.mem; const mb = design.baseCfg.mem || (MEM && design.presetId ? MEM.refOf(design.presetId) : null);
+    if (mb && mn && (mb.type !== mn.type || mb.mts !== mn.mts || (mb.oc === true) !== (mn.oc === true))) out.push({ id: 'memory', label: 'メモリ構成', before: MEM.label(mb), after: MEM.label(mn), unit: '' });
     return out;
   }
 
@@ -28,7 +35,10 @@
     if (!design.cfg || !design.baseCfg) return { ok: true, design: D.clone(design), relaid: false };
     const cfg = D.clone(design.cfg);
     let relayout = false;
-    if (id === 'l3') { relayout = (cfg.l3MB || 0) !== (design.baseCfg.l3MB || 0); cfg.l3MB = design.baseCfg.l3MB; } else {
+    if (id === 'l3') { relayout = (cfg.l3MB || 0) !== (design.baseCfg.l3MB || 0); cfg.l3MB = design.baseCfg.l3MB; } else if (id === 'memory') {
+      const MEM = memApi(); const ref = design.baseCfg.mem || (MEM && design.presetId ? MEM.refOf(design.presetId) : null);
+      if (ref) cfg.mem = D.clone(ref); else delete cfg.mem;
+    } else {
       const m = /^core:(.+):(count|clock)$/.exec(id);
       if (m) {
         const g = cfg.cores.find((c) => c.type === m[1]); const b = design.baseCfg.cores.find((c) => c.type === m[1]);

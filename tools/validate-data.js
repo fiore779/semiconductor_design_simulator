@@ -102,6 +102,22 @@ const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) 
   ok(p.calib === false, `${id}: 追加分の calib は false`);
 });
 
+// メモリ構成の選択肢(data/memory.js。設計書 §5.2.4): id が実在し、基準が選択肢に含まれ、速度は対応最大以下で、区分・出典が付いていること
+Object.keys(D.memory || {}).forEach((id) => {
+  const e = D.memory[id];
+  ok(pids.has(id), `memory ${id}: プリセットに無い id`);
+  ok(e.bits > 0 && Number.isInteger(e.bits), `memory ${id}: bits が不正`);
+  ok(Array.isArray(e.options) && e.options.length >= 1, `memory ${id}: options が空`);
+  const types = new Set();
+  (e.options || []).forEach((o) => {
+    ok(!types.has(o.type), `memory ${id}: 種別 ${o.type} が重複`); types.add(o.type);
+    ok(['pub', 'sec'].includes(o.s) && typeof o.src === 'string' && o.src, `memory ${id}/${o.type}: 区分(pub/sec)・出典が無い`);
+    ok(Array.isArray(o.speeds) && o.speeds.length && o.speeds.every((v) => Number.isInteger(v) && v > 0 && v <= o.max) && o.speeds.includes(o.max), `memory ${id}/${o.type}: speeds が対応最大 ${o.max} を超えるか、最大を含まない`);
+  });
+  const ro = (e.options || []).find((o) => o.type === (e.ref && e.ref.type));
+  ok(!!ro && ro.speeds.includes(e.ref.mts), `memory ${id}: 基準構成が選択肢に含まれない`);
+});
+
 console.log(`プリセット ${(D.presets || []).length} 件 / ファイル ${files.length} / nodes ${(D.nodes || []).length} / substrates ${(D.substrates || []).length} / cooling ${(D.cooling || []).length} / gb7 ${(D.gb7Scores || []).length}`);
 if (errs.length) { console.error('エラー:\n' + errs.join('\n')); process.exit(1); }
 console.log('OK');

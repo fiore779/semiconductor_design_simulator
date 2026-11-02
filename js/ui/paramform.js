@@ -84,10 +84,45 @@
     };
   }
 
-  // 履歴ラベル。field: 'count' | 'clock' | 'l3'
+  // ---- メモリ構成(設計書 §5.2.4)----
+  const memApi = () => (typeof module !== 'undefined' && module.exports ? require('../sim/memory.js') : root.SDS.sim.memory);
+  const SRC_TEXT = { pub: '公表', sec: '二次' };
+
+  // 種別を変えたときの速度: 基準の種別ならその基準の速度、そうでなければその種別の対応最大(選択肢の最大)
+  function pickSpeed(opts, type) {
+    const o = opts.options.find((x) => x.type === type);
+    if (!o) return null;
+    return opts.ref.type === type && o.speeds.includes(opts.ref.mts) ? opts.ref.mts : o.speeds[o.speeds.length - 1];
+  }
+
+  // メモリ欄の表示用データ。選択式にできない設計(混合・D、cfg なし)は null。
+  // 戻り: { kind:'fixed' }(メモリ固定のチップ) | { kind:'select', selectable(改良モードで編集可), locked, types:[{type, label, srcText}], speeds:[], single(種別が 1 つ), sel, ref, isRef, label, refLabel, bwGBs, refBwGBs, bits, note }
+  // ocOn: 画面の「メモリ OC」トグル(既定オフ)。オンか、すでに OC を選んでいるときだけ、OC の速度を速度の選択肢に足す(DDR4 / DDR5 のみ)
+  function memoryView(design, ocOn) {
+    if (!design || !design.cfg || design.presetId == null) return null;
+    const M = memApi();
+    const opts = M.optionsOf(design.presetId);
+    if (!opts) return { kind: 'fixed', text: 'メモリは SoC に固定(選択不可)' };
+    const mode = modeInfo(design);
+    const m = M.evaluate({ id: design.presetId, cfg: { mem: design.cfg.mem } });
+    const o = opts.options.find((x) => x.type === m.selection.type);
+    const ocAvailable = opts.options.some((x) => x.ocSpeeds.length > 0);
+    const showOc = !!(ocOn || m.oc) && !!o && o.ocSpeeds.length > 0;
+    return {
+      kind: 'select', selectable: !!(mode && mode.editable), locked: !!(mode && mode.locked), single: opts.options.length === 1,
+      types: opts.options.map((x) => ({ type: x.type, srcText: `${SRC_TEXT[x.s] || x.s}: ${x.src}`, max: x.max, ocCapable: x.ocSpeeds.length > 0 })),
+      speeds: o ? o.speeds.slice() : [], ocSpeeds: showOc ? o.ocSpeeds.slice() : [], ocAvailable, ocOn: !!(ocOn || m.oc), oc: m.oc, extrapolated: m.extrapolated, sel: m.selection, ref: m.ref, isRef: m.isRef, label: m.label, refLabel: m.refLabel, bwGBs: m.bwGBs, refBwGBs: m.refBwGBs, bits: m.bits,
+      mtPct: (m.mtFactor - 1) * 100, srcText: o ? `${SRC_TEXT[o.s] || o.s}: ${o.src}` : '',
+      note: '基準構成は公開 GB7 値の測定構成とは限りません(取得不可)。選択を変えたときの係数は推定(確度:低)です。',
+      ocNote: ocAvailable ? 'メモリ OC は安定動作を保証しません。推定(確度:低)。DDR4 / DDR5 のみ(LPDDR は OC 不可)' : 'このチップはメモリ OC できません(LPDDR 系は OC 不可)',
+    };
+  }
+
+  // 履歴ラベル。field: 'count' | 'clock' | 'l3' | 'memory'(before / after は「DDR5-5600」のような文字列)
   function editLabel(field, type, before, after) {
     if (field === 'count') return `${type} コア数 ${before}→${after}`;
     if (field === 'clock') return `${type} クロック ${before ? trimNum(before) : '未取得'}→${trimNum(after)} GHz`;
+    if (field === 'memory') return `メモリ ${before}→${after}`;
     return `L3 ${trimNum(before)}→${trimNum(after)} MB`;
   }
 
@@ -96,6 +131,7 @@
     if (item.unit === 'GHz' && !(v > 0)) return '未取得';
     if (item.unit === 'GHz') return `${trimNum(v)} GHz`;
     if (item.unit === 'MB') return `${trimNum(v)} MB`;
+    if (item.id === 'memory') return String(v);
     return `${v} ${item.unit || ''}`.trim();
   }
   function paramDiffRows(items) {
@@ -148,7 +184,7 @@
 
   const api = {
     clockOf, parseCount, parseClock, parseL3, modeInfo, isEdited, showDiff, showRepro, paramRows, editLabel,
-    fmtParamValue, paramDiffRows, deltaView, fmtScore, resultRows, verdictHeadline, trimNum, NOT_RECOMPUTED, OPTIMISTIC_NOTE, MT_ALWAYS_LOW,
+    fmtParamValue, paramDiffRows, memoryView, pickSpeed, deltaView, fmtScore, resultRows, verdictHeadline, trimNum, NOT_RECOMPUTED, OPTIMISTIC_NOTE, MT_ALWAYS_LOW,
   };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.paramform = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

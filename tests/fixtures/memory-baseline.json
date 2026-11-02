@@ -1,0 +1,1063 @@
+{
+ "intel-adl-12900k": {
+  "st": 2338.4151947527616,
+  "mt": 18240.502316233997,
+  "stErr": 3.0138852313991826,
+  "mtErr": 8.445316981177143,
+  "estW": 407.62352263917325,
+  "tjC": 99.99890967314448,
+  "sus": {
+   "P": 4.045113372802734,
+   "E": 3.0933219909667966
+  },
+  "powerW": 210.63493807618173
+ },
+ "intel-rpl-13900k": {
+  "st": 2675.3733731281627,
+  "mt": 17915.339927412264,
+  "stErr": 2.3087331980176984,
+  "mtErr": -21.51344989305063,
+  "estW": 700.9299905911669,
+  "tjC": 99.99911285951673,
+  "sus": {
+   "P": 4.1045336914062505,
+   "E": 1.4153564453125003
+  },
+  "powerW": 211.79562186897397
+ },
+ "intel-rpl-14900k": {
+  "st": 2586.937450090075,
+  "mt": 22974.906649525714,
+  "stErr": -2.3428671162674664,
+  "mtErr": 4.807748960018765,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-arl-285k": {
+  "st": 2843.7185540965943,
+  "mt": 30838.60625846928,
+  "stErr": 1.4164962231310474,
+  "mtErr": 20.515089524675755,
+  "estW": 513.0205702526415,
+  "tjC": 99.99950521979227,
+  "sus": {
+   "P": 4.478299942016602,
+   "E": 3.614066619873047
+  },
+  "powerW": 211.7857328620956
+ },
+ "intel-arl-265k": {
+  "st": 2737,
+  "mt": 23909.20953095055,
+  "stErr": 0,
+  "mtErr": 1.6418379073696032,
+  "estW": 332.0263659795869,
+  "tjC": 99.9995905004166,
+  "sus": {
+   "P": 4.7933109283447255,
+   "E": 2.8759865570068355
+  },
+  "powerW": 211.78597367994462
+ },
+ "intel-mtl-185h": {
+  "st": 2196.0540215975698,
+  "mt": 12507.18814496056,
+  "stErr": 18.70562278905783,
+  "mtErr": 8.221754304409101,
+  "estW": 260.03878990649287,
+  "tjC": 99.99922901741164,
+  "sus": {
+   "P": 1.9832498931884759,
+   "E": 1.4777156066894528,
+   "LP-E": 0.9721813201904295
+  },
+  "powerW": 39.5186089983001
+ },
+ "intel-lnl-268v": {
+  "st": 2438.1781240476785,
+  "mt": null,
+  "stErr": 14.253895222477908,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-ptl-x9-388h": {
+  "st": 2834.7863566672154,
+  "mt": null,
+  "stErr": 12.715163286966824,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zen1-1800x": {
+  "st": 1126,
+  "mt": 6449.595335432625,
+  "stErr": 0,
+  "mtErr": -3.3189126752717013,
+  "estW": 121.41322866847393,
+  "tjC": 58.80104075160395,
+  "sus": {
+   "P": 3.6108428955078122
+  },
+  "powerW": 94.99938066113928
+ },
+ "amd-zenplus-2700x": {
+  "st": 1435.6321358593696,
+  "mt": 8005.837336132423,
+  "stErr": 12.246453155541005,
+  "mtErr": 7.7211697542037605,
+  "estW": 153.25611390580085,
+  "tjC": 62.36580112916949,
+  "sus": {
+   "P": 3.708274307250976
+  },
+  "powerW": 104.99880780225439
+ },
+ "amd-zen3-5800x": {
+  "st": 2154.757495636048,
+  "mt": 12562.959850047853,
+  "stErr": 4.956526821044727,
+  "mtErr": 11.849713764671055,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zen3-5600x": {
+  "st": 2112.1458964116987,
+  "mt": 10372.048606165808,
+  "stErr": 3.232937263523894,
+  "mtErr": 9.12202636681545,
+  "estW": 109.86965373942948,
+  "tjC": 49.21265758047117,
+  "sus": {
+   "P": 3.719776916503906
+  },
+  "powerW": 64.99939837573581
+ },
+ "amd-zen3-5950x": {
+  "st": 2239.590385497554,
+  "mt": 19789.43828388881,
+  "stErr": 9.783842426350686,
+  "mtErr": 32.317720539507945,
+  "estW": 280.0110509385134,
+  "tjC": 62.71437737032169,
+  "sus": {
+   "P": 3.4063620758056645
+  },
+  "powerW": 104.9985131091676
+ },
+ "amd-zen4-7700": {
+  "st": 2503,
+  "mt": 15164.404430834722,
+  "stErr": 0,
+  "mtErr": -0.21448686691635244,
+  "estW": 178.9887528585188,
+  "tjC": 49.48380833797996,
+  "sus": {
+   "P": 3.8212590789794922
+  },
+  "powerW": 64.99937341354352
+ },
+ "amd-zen4-7950x": {
+  "st": 2680.433951067857,
+  "mt": 24530.897100272316,
+  "stErr": 3.1729773313262877,
+  "mtErr": 9.215516229341159,
+  "estW": 447.608134935091,
+  "tjC": 99.9990691881908,
+  "sus": {
+   "P": 4.6691667938232415
+  },
+  "powerW": 207.52699767683637
+ },
+ "amd-zen5-9700x": {
+  "st": 3010,
+  "mt": 18350.075146219708,
+  "stErr": 0,
+  "mtErr": 3.65517226582901,
+  "estW": 212.6595906856183,
+  "tjC": 49.46425292552391,
+  "sus": {
+   "P": 3.8212646484375004
+  },
+  "powerW": 64.99897560186884
+ },
+ "amd-zen5-9950x": {
+  "st": 3113.309005791311,
+  "mt": 28827.566954605532,
+  "stErr": 1.47682548211574,
+  "mtErr": 10.19290911893862,
+  "estW": 512.0363901949211,
+  "tjC": 99.99780631868633,
+  "sus": {
+   "P": 4.496321182250977
+  },
+  "powerW": 207.61389652372813
+ },
+ "amd-strix-hx370": {
+  "st": 2780.4166716578247,
+  "mt": 11357.313204598886,
+  "stErr": 18.315603049269136,
+  "mtErr": -24.355180467571024,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-kraken-350": {
+  "st": 2694.581176484484,
+  "mt": 9508.474668229443,
+  "stErr": 27.343155788491668,
+  "mtErr": -16.25440665642556,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-strixhalo-395": {
+  "st": 2802.153573217502,
+  "mt": 20887.48669552402,
+  "stErr": 15.648104548803232,
+  "mtErr": 0.4834112451244543,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-adl-12700k": {
+  "st": 2241.89010399876,
+  "mt": 15911.37553726171,
+  "stErr": -2.01529265739685,
+  "mtErr": 2.9529313313601424,
+  "estW": 312.67458270179577,
+  "tjC": 92.65034089229292,
+  "sus": {
+   "P": 4.159867172241211,
+   "E": 3.2260194396972652
+  },
+  "powerW": 189.99643363859667
+ },
+ "intel-rpl-13700k": {
+  "st": 2488.7452468606166,
+  "mt": 19274.979844345195,
+  "stErr": 0.3526309217990464,
+  "mtErr": 0.5843544556968894,
+  "estW": 523.2608777836849,
+  "tjC": 99.99950449480879,
+  "sus": {
+   "P": 4.114208221435548,
+   "E": 3.1999397277832036
+  },
+  "powerW": 211.79672783725903
+ },
+ "intel-rpl-14700k": {
+  "st": 2538.030373344736,
+  "mt": 21198.11243191523,
+  "stErr": -1.090008833018874,
+  "mtErr": 1.6354817659070209,
+  "estW": 561.7369008095783,
+  "tjC": 99.99876887759464,
+  "sus": {
+   "P": 4.116112518310548,
+   "E": 3.2180516052246095
+  },
+  "powerW": 211.79465047261579
+ },
+ "intel-lnl-258v": {
+  "st": 2346.8506182533106,
+  "mt": null,
+  "stErr": 11.968063847963295,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zenplus-2600x": {
+  "st": 1405.2001082708907,
+  "mt": 6649.850654168539,
+  "stErr": 13.597421848899828,
+  "mtErr": 10.096865135240707,
+  "estW": 144.20214767922226,
+  "tjC": 58.80736099298811,
+  "sus": {
+   "P": 3.610842590332031
+  },
+  "powerW": 94.99950467897511
+ },
+ "amd-zen1-1500x": {
+  "st": 1047.7753704434626,
+  "mt": 3874.2600728052016,
+  "stErr": -5.350011703390911,
+  "mtErr": -8.969453176569509,
+  "estW": 74.07478857564632,
+  "tjC": 48.12689610002232,
+  "sus": {
+   "P": 3.517673263549805
+  },
+  "powerW": 64.99920586061786
+ },
+ "amd-zen4-7840hs": {
+  "st": 2360.2501808653988,
+  "mt": 11589.845505323949,
+  "stErr": 15.868933768551742,
+  "mtErr": -2.49162455557842,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zen3-5800u": {
+  "st": 1971.2608679589923,
+  "mt": 7905.686837010039,
+  "stErr": 30.980788568703808,
+  "mtErr": 24.14709228973051,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-adl-12600k": {
+  "st": 2230.5578212543073,
+  "mt": 13548.13268535026,
+  "stErr": -0.42152583686128064,
+  "mtErr": 6.1849101446058485,
+  "estW": 286.942630703871,
+  "tjC": 78.40912082276998,
+  "sus": {
+   "P": 3.968337554931641,
+   "E": 2.9155133056640627
+  },
+  "powerW": 149.99987208128425
+ },
+ "intel-rpl-13600k": {
+  "st": 2344.7622809303793,
+  "mt": 16241.611940193467,
+  "stErr": 1.2418946861130875,
+  "mtErr": 4.273317541046917,
+  "estW": 376.7916832427286,
+  "tjC": 89.09404833420959,
+  "sus": {
+   "P": 4.02280632019043,
+   "E": 3.076263656616211
+  },
+  "powerW": 180.9999919661912
+ },
+ "intel-ptl-x9-386h": {
+  "st": 2730.828817741559,
+  "mt": 16763.523591405792,
+  "stErr": 6.6730006930296515,
+  "mtErr": -4.426889444664816,
+  "estW": 130.82240992335076,
+  "tjC": 99.99965249221829,
+  "sus": {
+   "P": 2.9583518218994147,
+   "E": 2.2338574981689456,
+   "LP-E": 2.1131084442138675
+  },
+  "powerW": 38.70867582564527
+ },
+ "intel-arl-275hx": {
+  "st": 2700.3696318705724,
+  "mt": null,
+  "stErr": 11.355448736930818,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zen1-1200": {
+  "st": 942.0192771799985,
+  "mt": 3183.718444347536,
+  "stErr": -3.777397632277979,
+  "mtErr": 8.43727671483434,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-raven-2400g": {
+  "st": 1021.0096716722925,
+  "mt": 3392.8861412180618,
+  "stErr": -0.5832841604389016,
+  "mtErr": -5.936064840087008,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-raven-2200g": {
+  "st": 975.8397412792707,
+  "mt": 3171.6381357665364,
+  "stErr": -5.166205900945508,
+  "mtErr": 4.2616086708263,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-epyc-7401": {
+  "st": 888.4915292726305,
+  "mt": 9834.904600659322,
+  "stErr": -7.158669877468082,
+  "mtErr": -2.749880345502609,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "amd-zen3p-7735hs": {
+  "st": 2112.419428665977,
+  "mt": 8393.861709086825,
+  "stErr": 21.613093187448307,
+  "mtErr": 1.38738626750603,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-rpl-14600k": {
+  "st": 2432.3311791819324,
+  "mt": 16688.298224664322,
+  "stErr": -3.2100605180289565,
+  "mtErr": -2.816805120752841,
+  "estW": 439.3173010859422,
+  "tjC": 89.09287654383121,
+  "sus": {
+   "P": 4.030263595581054,
+   "E": 3.0417083740234374
+  },
+  "powerW": 180.9966828594241
+ },
+ "intel-rpl-14700hx": {
+  "st": 2538.030373344736,
+  "mt": 14341.28049765135,
+  "stErr": 17.719405071648218,
+  "mtErr": -0.5459050093526319,
+  "estW": 478.8882293290882,
+  "tjC": 115.49219995196351,
+  "sus": {
+   "P": 1.65,
+   "E": 1.17
+  },
+  "powerW": 47.79217493977154
+ },
+ "intel-adl-12100": {
+  "st": 1945.0502795948942,
+  "mt": 7429.235692090826,
+  "stErr": 2.156002079563768,
+  "mtErr": 8.64632483315042,
+  "estW": 118.9548029306169,
+  "tjC": 56.955512796936695,
+  "sus": {
+   "P": 3.900349197387695
+  },
+  "powerW": 88.99912315838986
+ },
+ "intel-lnl-256v": {
+  "st": 2346.8506182533106,
+  "mt": null,
+  "stErr": 16.353525942157198,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-ptl-x9-378h": {
+  "st": 2782.876300988215,
+  "mt": 17120.624323719636,
+  "stErr": 7.0337038841621125,
+  "mtErr": -1.036853620117717,
+  "estW": 145.1070892315379,
+  "tjC": 99.9997413807368,
+  "sus": {
+   "P": 2.905853271484374,
+   "E": 2.208448486328124,
+   "LP-E": 2.09221435546875
+  },
+  "powerW": 38.708721702615804
+ },
+ "intel-ptl-x7-358h": {
+  "st": 2678.6433604617505,
+  "mt": 16129.29327589009,
+  "stErr": 6.295371446894871,
+  "mtErr": 0.057650594851677006,
+  "estW": 127.83082239343241,
+  "tjC": 99.99897203328975,
+  "sus": {
+   "P": 2.857807617187499,
+   "E": 2.0838180541992184,
+   "LP-E": 1.9647427368164057
+  },
+  "powerW": 38.70832462849699
+ },
+ "apple-a12": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a13": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a14": {
+  "st": 2053.875000749803,
+  "mt": null,
+  "stErr": 8.441129923432044,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a15": {
+  "st": 2050.7046588703256,
+  "mt": null,
+  "stErr": -1.3135390341518005,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a16": {
+  "st": 2352,
+  "mt": null,
+  "stErr": 0,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a17pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a18": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a18pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a19pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-a20pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m1": {
+  "st": 2168.9999999999995,
+  "mt": null,
+  "stErr": -2.220446049250313e-14,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m1pro": {
+  "st": 2184.934920522344,
+  "mt": null,
+  "stErr": -0.5944076195475989,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m1max": {
+  "st": 2184.934920522344,
+  "mt": null,
+  "stErr": -1.6238216784176585,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m1ultra": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m2": {
+  "st": 2366.0000000000005,
+  "mt": null,
+  "stErr": 2.220446049250313e-14,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m2pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m2max": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m2ultra": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m3": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m3pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m3max": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m4": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m4pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m5": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "apple-m5max": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-855": {
+  "st": 678.0565439033282,
+  "mt": 2163.486306051602,
+  "stErr": -18.89275790630045,
+  "mtErr": -19.212609930858783,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-865": {
+  "st": 866.1795990601189,
+  "mt": 2643.4222151524928,
+  "stErr": -14.069484220226302,
+  "mtErr": -16.84736661992787,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-888": {
+  "st": 1135.604755537997,
+  "mt": 2911.3501513173064,
+  "stErr": 8.255934751000682,
+  "mtErr": -9.97680422642837,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8gen1": {
+  "st": 1069,
+  "mt": 3173.9399939307114,
+  "stErr": 0,
+  "mtErr": -1.9481002801757352,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8plus-gen1": {
+  "st": 1128.943925233645,
+  "mt": 3453.1194537864294,
+  "stErr": -4.1643526966345545,
+  "mtErr": -11.322047925361344,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8gen2": {
+  "st": 1426,
+  "mt": 4451.083053218937,
+  "stErr": 0,
+  "mtErr": -1.7204006796437077,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8gen3": {
+  "st": 1363.9999999999998,
+  "mt": null,
+  "stErr": -2.220446049250313e-14,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8elite": {
+  "st": 1866,
+  "mt": 10554.884152188457,
+  "stErr": 0,
+  "mtErr": 35.999022705688155,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8elite-gen5": {
+  "st": 1970.899741733197,
+  "mt": 10906.8175159922,
+  "stErr": -1.5042607829486743,
+  "mtErr": 41.61019885733835,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8s-gen3": {
+  "st": 1258.0628371945415,
+  "mt": null,
+  "stErr": 8.17393269084623,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8s-gen4": {
+  "st": 1332.5396449406715,
+  "mt": null,
+  "stErr": 9.314162833525131,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-7plus-gen3": {
+  "st": 1185.7066188095541,
+  "mt": null,
+  "stErr": 24.157761131890474,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-780g": {
+  "st": 789.293379206366,
+  "mt": 2559.296753644352,
+  "stErr": -6.148230772132457,
+  "mtErr": -2.428640730295384,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9000": {
+  "st": 1084.0984257760776,
+  "mt": 3445.7528656097434,
+  "stErr": -8.822672348521643,
+  "mtErr": -10.12642499713763,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9200": {
+  "st": 1372.7974033612074,
+  "mt": 3754.2457986240356,
+  "stErr": 3.8424662149173505,
+  "mtErr": -7.348326786178783,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9300": {
+  "st": 1346.5555642653705,
+  "mt": null,
+  "stErr": -11.235625295624885,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9400": {
+  "st": 1741.0000000000002,
+  "mt": null,
+  "stErr": 2.220446049250313e-14,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9500": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-9600pro": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "mt-8200": {
+  "st": 973.9594554427817,
+  "mt": 3187.3632287858736,
+  "stErr": 2.414243474530142,
+  "mtErr": -2.824291805308732,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "nv-orin-agx": {
+  "st": 733.316501601134,
+  "mt": 6763.311545562018,
+  "stErr": -7.175126379603302,
+  "mtErr": -1.753173364874805,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "nv-thor": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "nv-t239": {
+  "st": 405.7268262867391,
+  "mt": 2461.5905234855377,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-7gen3": {
+  "st": 1054.7554953439726,
+  "mt": 3169.2679058502595,
+  "stErr": 6.5409591256538,
+  "mtErr": 2.3665344266879718,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-7gen4": {
+  "st": null,
+  "mt": null,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-7gen1": {
+  "st": 924.6372142413433,
+  "mt": 2956.5264011115914,
+  "stErr": 4.715426301397874,
+  "mtErr": 6.349870543582425,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-720g": {
+  "st": 567.7148178574196,
+  "mt": 1457.0959951154846,
+  "stErr": -16.635122194211515,
+  "mtErr": -20.766938819168868,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8elite-x-gen6": {
+  "st": 2108.63480126129,
+  "mt": 11837.518995224866,
+  "stErr": -29.073837831776327,
+  "mtErr": 20.667879665900777,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-6gen1": {
+  "st": 733.316501601134,
+  "mt": 2494.331797863621,
+  "stErr": -9.911977690278384,
+  "mtErr": -12.202330240632842,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-4gen2": {
+  "st": 733.316501601134,
+  "mt": 1744.831180216702,
+  "stErr": -4.887613281305581,
+  "mtErr": -5.939019934409595,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "qc-8cx-gen3": {
+  "st": 1188.5496344013243,
+  "mt": 5554.659005214062,
+  "stErr": -9.61599738392971,
+  "mtErr": -17.36597731011512,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ }
+}

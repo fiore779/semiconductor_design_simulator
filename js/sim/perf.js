@@ -73,7 +73,13 @@
     return cores.slice().sort((a, b) => rank(b) - rank(a) || clk(b) - clk(a))[0] || null;
   }
 
-  // シングルコア性能。cal: { u: {uarch→補正}, uIsa: {isa→既定補正} }
+  function memoryApi() {
+    if (root.SDS && root.SDS.sim && root.SDS.sim.memory) return root.SDS.sim.memory;
+    if (typeof require === 'function') return require('./memory.js');
+    return { evaluate: () => ({ active: false }) };
+  }
+
+  // シングルコア性能。cal: { u: {uarch→補正}, uIsa: {isa→既定補正} }。opts.noMemory: メモリ構成の補正を掛けない(MT の内部呼び出し用)
   function stScore(preset, cal, uarchDb, opts) {
     const core = (opts && opts.core) || topCore(preset.cfg.cores || []);
     if (!core) return { ok: false, reason: 'コアなし' };
@@ -91,7 +97,12 @@
     // MT は総 L3 ÷ 総スレッド数のまま(各 CCD の L3 を自分の CCD のスレッドで使うのと同じ値)。l3Ccds が無い SKU は従来どおり全量
     const ccds = threads === 1 && preset.cfg.l3Ccds > 1 ? preset.cfg.l3Ccds : 1;
     const l3KB = preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / ccds / threads : null;
-    const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, noL3, params: cal && cal.params });
+    // メモリ構成(§5.2.4)。選択が基準構成なら係数 1 で何も変えない。遅延は dramNs の差し替え(85 × lat(選択)/lat(基準))で入れ、帯域は後から ^bST を掛ける。
+    // MT の呼び出し(opts.noMemory)では掛けない(MT は和にまとめて ^bMT を掛けるため。二重計上しない)
+    const mem = opts && opts.noMemory ? null : memoryApi().evaluate(preset);
+    let params = cal && cal.params;
+    if (mem && mem.active && mem.dramScale !== 1) params = Object.assign({}, params || {}, { dramNs: Object.assign({}, DEFAULT_PARAMS, params || {}).dramNs * mem.dramScale });
+    const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, noL3, params });
     if (!r.ok) return { ok: false, reason: r.reason };
     let corr = cal && cal.u && cal.u[core.uarch];
     let corrSource = 'uarch';
@@ -99,8 +110,9 @@
     const corrFrom = corrSource; // 補正の借り先('uarch' か 'isa')。自作コアでは corrSource を 'clone' にするので別に残す
     if (isClone) corrSource = 'clone';
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
+    const memActive = !!(mem && mem.active);
     return {
-      ok: true, score: corr * r.ipc * f, ipc: r.ipc, fGHz: f, corr, corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
+      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(memActive ? { memory: mem } : {}), corrSource, ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
       confidence: isClone || corrSource === 'isa' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -192,7 +204,7 @@
       const applied = clockSource === 'boost' || clockSource === 'max' ? kf : 1;
       const f = f0 ? f0 * applied : f0;
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
-      const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads });
+      const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads, noMemory: true });
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
       if (order[st.confidence] < order[worst]) worst = st.confidence;
       if (st.fallback) anyFallback = true;
@@ -202,12 +214,14 @@
       detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: applied, clockSource, corrSource: st.corrSource, ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
+    // メモリ構成の MT 係数(§5.2.4)。基準構成では 1(厳密)。ST の内部呼び出しには掛けず、ここで 1 回だけ掛ける
+    const mem = memoryApi().evaluate(preset); const memActive = !!(mem && mem.active); const memF = memActive ? mem.mtFactor : 1;
     // sigma・gammaSmt は未校正(既定値のまま)なので、呼び出し側が確度を過大評価しないよう明示する
     // 種別によってクロックの出所が違う(例: P は boost、E は boost 未取得で base)と、種別間の比が歪む。呼び出し側に知らせる
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta, eta, clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, { applied: detail.length && detail.every((d) => d.clockFactor !== 1) ? 'all' : detail.some((d) => d.clockFactor !== 1) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
+    return { ok: true, score: sum * eta * memF, eta, ...(memActive ? { memory: mem } : {}), clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, memActive ? { memory: mem } : {}, { applied: detail.length && detail.every((d) => d.clockFactor !== 1) ? 'all' : detail.some((d) => d.clockFactor !== 1) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。

@@ -45,7 +45,7 @@
     Object.assign(base, {
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
       corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null,
-      errPct: pct(r.score, pubVal),
+      errPct: pct(r.score, pubVal), memory: r.memory || null,
       noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null,
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
@@ -120,7 +120,8 @@
     // 元のプリセットの L3 が未取得(null)で、設計側が 0(cfgFromPreset が未取得を 0 にしている)なら null のまま渡す
     // (0 は「L3 なし」の意味になるので、未取得のプリセットの結果が変わらないようにする)
     const l3MB = (preset.cfg.l3MB == null && cfg.l3MB === 0) ? preset.cfg.l3MB : cfg.l3MB;
-    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB }) });
+    // メモリ構成の選択(cfg.mem。設計書 §5.2.4)も実効プリセットに渡す。無ければ基準構成
+    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB }, cfg.mem ? { mem: cfg.mem } : {}) });
   }
 
   const EPS = 1e-9; // 境界(ちょうど ±25% / 2 倍 / 半分)を範囲内にするための浮動小数の余裕
@@ -330,7 +331,9 @@
     if (design.presetId == null && design.origin && design.origin.mode === 'mix') return evaluateMix(design, ctx);
     const preset0 = ctx.presets.find((p) => p.id === design.presetId) || null;
     const hasCfg = !!(preset0 && design.cfg && Array.isArray(design.cfg.cores));
-    const edited = hasCfg && isEdited(design);
+    // 基準以外のメモリ構成が選ばれていれば、cfg と baseCfg が(読み込みの不整合などで)同じでも編集済み扱い: 公開値との差は補正後の値になるので出さない
+    const memNonRef = hasCfg && !!design.cfg.mem && !!sims().memory && (() => { const m = sims().memory.evaluate({ id: preset0.id, cfg: { mem: design.cfg.mem } }); return m.active && !m.isRef; })();
+    const edited = hasCfg && (isEdited(design) || memNonRef);
     const preset = hasCfg ? effectivePreset(preset0, design.cfg) : preset0;
     const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
     const area = evalArea(design, ctx);
@@ -370,6 +373,16 @@
         if (opt.clockUp && st.ok) st.confidence = 'low';
         result.warnings.push({ level: 'warn', text: `楽観側の予測: ${OPTIMISTIC_NOTE}` });
       }
+    }
+    // メモリ構成(§5.2.4): 基準構成のときは何も足さない(係数 1)。基準と違うときは係数の出所と確度を示す
+    const mm = sims().memory ? sims().memory.evaluate(preset) : { active: false };
+    result.memory = mm.active ? mm : null;
+    if (mm.active && !mm.isRef) {
+      if (st.ok) st.confidence = 'low';
+      result.warnings.push({ level: 'warn', text: sims().memory.WARNING });
+      result.warnings.push({ level: 'info', text: sims().memory.describe(mm) });
+      if (mm.oc) result.warnings.push({ level: 'warn', text: sims().memory.OC_WARNING });
+      if (mm.extrapolated) result.warnings.push({ level: 'warn', text: sims().memory.OC_EXTRAPOLATION });
     }
     addPowerThermal(result, design, preset0, preset, edited);
     return result;

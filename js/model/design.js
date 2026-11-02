@@ -169,7 +169,17 @@
     const c = preset.cfg || {};
     const keys = ['type', 'uarch', 'count', 'smt', 'baseGHz', 'boostGHz', 'maxGHz'];
     const cores = (c.cores || []).map((g) => { const r = {}; keys.forEach((k) => { if (g[k] != null) r[k] = g[k]; }); return r; });
-    return { cores, l3MB: typeof c.l3MB === 'number' ? c.l3MB : 0 };
+    const out = { cores, l3MB: typeof c.l3MB === 'number' ? c.l3MB : 0 };
+    // メモリ構成の選択(設計書 §5.2.4)。選択肢のあるチップだけ、既定は基準構成。メモリ固定・混合は持たない
+    const M = memoryApi(); const ref = M && preset ? M.refOf(preset.id) : null;
+    if (ref) out.mem = ref;
+    return out;
+  }
+
+  function memoryApi() {
+    if (root.SDS && root.SDS.sim && root.SDS.sim.memory) return root.SDS.sim.memory;
+    if (typeof require === 'function') { try { return require('../sim/memory.js'); } catch (e) { return null; } }
+    return null;
   }
 
   // 古い設計(cfg なし。M2 で保存したもの)に cfg/baseCfg/locks を補った新しい設計を返す。cfg があればそのまま(複製)返す。
@@ -235,6 +245,22 @@
     const g = d.cfg.cores.find((c) => c.type === type);
     // boost を更新(boost がなく max があれば max。どちらも無ければ boost を新設)。base は変えない
     if (g.boostGHz == null && g.maxGHz != null) g.maxGHz = ghz; else g.boostGHz = ghz;
+    return { ok: true, design: d, relaid: false };
+  }
+
+  // メモリ構成(種別と速度 MT/s)。そのチップの選択肢(SDS_DATA.memory)にあるものだけ。メモリ固定・混合は不可。ロック中(再現モード)は不可
+  // oc=true は対応最大を超えるメモリ OC(DDR4 / DDR5 のみ。選択に oc:true の印を付ける)
+  function setMemory(design, type, mts, oc) {
+    if (design.locks && design.locks.params) return fail(LOCKED);
+    if (!design.cfg) return fail('編集用のパラメータがありません');
+    const M = memoryApi();
+    const sel = oc === true ? { type, mts, oc: true } : { type, mts };
+    const bad = M ? M.check(design.presetId, sel) : 'メモリのモジュールがありません';
+    if (bad) return fail(bad);
+    const d = clone(design);
+    // baseCfg に mem が無い古い設計は、基準構成を補って「編集済み」の判定(cfg と baseCfg の比較)を合わせる
+    if (d.baseCfg && !d.baseCfg.mem) d.baseCfg.mem = M.refOf(design.presetId);
+    d.cfg.mem = sel;
     return { ok: true, design: d, relaid: false };
   }
 
@@ -558,6 +584,16 @@
     if (!d || d.schema !== SCHEMA || !Array.isArray(d.dies)) return { ok: false, reason: '形式が違います(schema または dies がありません)' };
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };
+    // baseCfg.mem は「元のチップの基準構成」でなければならない。違うものは基準に直し、cfg.mem との差を「編集」として扱う
+    // (cfg.mem と baseCfg.mem が同じ非基準構成の設計を読み込んでも、再現モードの公開値との差が補正後の値にならないように)
+    const M = memoryApi();
+    const ref = M && d.presetId != null ? M.refOf(d.presetId) : null;
+    if (ref && d.baseCfg && typeof d.baseCfg === 'object' && (d.baseCfg.mem !== undefined || (d.cfg && d.cfg.mem !== undefined))) {
+      d.baseCfg.mem = ref; // 常に基準(キーの順序も揃える。cfg との比較は JSON の文字列比較)
+      const c = d.cfg && d.cfg.mem;
+      if (c) d.cfg.mem = c.oc === true ? { type: c.type, mts: c.mts, oc: true } : { type: c.type, mts: c.mts };
+      else if (d.cfg && typeof d.cfg === 'object') d.cfg.mem = { type: ref.type, mts: ref.mts }; // cfg に選択が無ければ基準
+    }
     return { ok: true, design: d };
   }
 
@@ -613,7 +649,7 @@
     }
     const mixBad = checkMix(d);
     if (mixBad) return mixBad;
-    for (const k of ['cfg', 'baseCfg']) if (d[k] != null) { const r = checkCfg(d[k], k); if (r) return r; }
+    for (const k of ['cfg', 'baseCfg']) if (d[k] != null) { const r = checkCfg(d[k], k, d.presetId); if (r) return r; }
     if (d.locks != null) {
       if (typeof d.locks !== 'object' || Array.isArray(d.locks)) return 'locks: 形式が違います(オブジェクトではありません)';
       if (typeof d.locks.params !== 'boolean') return 'locks.params は true か false にしてください';
@@ -711,12 +747,20 @@
   }
 
   // 編集用パラメータの検証(cfg / baseCfg)。範囲はパラメータ編集(setCoreCount / setClock / setL3)と同じ
-  function checkCfg(c, name) {
+  function checkCfg(c, name, presetId) {
     if (!c || typeof c !== 'object' || Array.isArray(c)) return `${name}: 形式が違います`;
     if (!Array.isArray(c.cores)) return `${name}: cores が配列ではありません`;
     if (c.cores.length > MAX_DIES) return `${name}: コア種別が多すぎます`;
     // 注意: コア種別が空でも通す(以前の apple-m3pro / m3max はコア構成が未取得で cores が空だった〔2026-11-01 に追記済み〕。拒否すると、そのとき保存した設計が開けなくなる)
     if (!isNum(c.l3MB) || c.l3MB < 0 || c.l3MB > 512) return `${name}: l3MB は 0〜512 MB の有限の数にしてください`;
+    // メモリ構成の選択(§5.2.4): 形式は { type, mts } だけ。そのチップの選択肢に無いもの(メモリ固定・混合を含む)は拒否
+    if (c.mem !== undefined) {
+      const m = c.mem; const M = memoryApi();
+      if (m === null || typeof m !== 'object' || Array.isArray(m)) return `${name}: mem の形式が違います`;
+      if (Object.keys(m).some((k) => k !== 'type' && k !== 'mts' && k !== 'oc')) return `${name}: mem に不明な項目があります`;
+      const bad = M ? M.check(presetId, m) : 'メモリ構成を検証できません';
+      if (bad) return `${name}: mem: ${bad}`;
+    }
     const types = new Set();
     for (let i = 0; i < c.cores.length; i++) {
       const g = c.cores[i]; const t = `${name} のコア ${i + 1}`;
@@ -732,7 +776,7 @@
 
   const api = {
     SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse, addCoreDef, fitDieToBlocks,
-    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setCoreCount, setClock, setL3, unlock, withCfg, clockOf, relayoutCompute,
+    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setCoreCount, setClock, setL3, setMemory, unlock, withCfg, clockOf, relayoutCompute,
   };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
