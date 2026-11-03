@@ -500,6 +500,7 @@ test('参考値: HX 370・Kraken・A17 Pro の行に強い区分の順で最大 
   assert.strictEqual(hx[0].refs.length, 2); assert.strictEqual(hx[1].refs.length, 1); // MT の推定は無い
   assert.ok(/^参考\(判定外\): 2,784\(Meigao F8BAC.*・転載\)$/.test(hx[0].refs[0].text), hx[0].refs[0].text);
   assert.ok(/2,567.*推定/.test(hx[0].refs[1].text));
+  assert.strictEqual(hx[0].refs[1].text, '参考(判定外): 2,567(推定)', '機種ではなく推定のときは「推定」を重ねて書かない');
   assert.ok(Math.abs(hx[0].refs[0].diffPct - (2780.417 / 2784 - 1) * 100) < 0.01);
   assert.strictEqual(hx[0].verdict, 'ng'); assert.ok(Math.abs(hx[0].diffPct - 18.32) < 0.01); // 公開値 2350 に対する従来の判定と差
   assert.ok(hx[0].refs.every((x) => !('verdict' in x)));

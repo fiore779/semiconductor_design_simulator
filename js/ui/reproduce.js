@@ -13,7 +13,7 @@
     const row = { label, published: r.published, publishedKind: r.publishedKind, sim: r.ok ? r.score : null, diffPct: r.errPct, verdict: 'na', note: '' };
     const add = (s) => { row.note = row.note ? row.note + ' / ' + s : s; };
     // 参考値(判定外)。判定・差(diffPct)は従来どおり公開値だけで行い、参考値には verdict を付けない
-    row.refs = (r.refs || []).map((x) => ({ value: x.value, text: `参考(判定外): ${x.value.toLocaleString ? x.value.toLocaleString('ja-JP') : x.value}(${x.device}・${x.kind})`, diffPct: x.diffPct, source: x.source, note: x.note }));
+    row.refs = (r.refs || []).map((x) => ({ value: x.value, text: `参考(判定外): ${x.value.toLocaleString ? x.value.toLocaleString('ja-JP') : x.value}(${/^\(機種ではなく/.test(x.device || '') ? x.kind : `${x.device}・${x.kind}`})`, diffPct: x.diffPct, source: x.source, note: x.note }));
     if (r.published == null) { row.note = '公開値が未取得'; return row; }
     if (!r.ok) { row.note = `計算できません: ${r.reason}`; return row; }
     if (/^個別投稿/.test(r.publishedKind || '')) { row.verdict = 'gray'; row.note = `公開値は${r.publishedKind}(件数が少ない)ため判定に含めない`; return row; }
