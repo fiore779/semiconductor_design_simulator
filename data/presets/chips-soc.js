@@ -21,11 +21,11 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   a('apple-a13', 'A13', 2019, 'A13', 101.1, 'tsmc-n7', 2.66, 1.72, 'P 8MB / E 4MB');
   a('apple-a14', 'A14', 2020, 'A14', 89.8, 'tsmc-n5', 3.0, 1.82, null);
   a('apple-a15', 'A15', 2021, 'A15', 110.1, 'tsmc-n5', 2.93, 2.02, 'P 12MB / E 4MB');
-  a('apple-a16', 'A16', 2022, 'A16', 115.4, 'tsmc-n4', 3.46, null, 'P 16MB / E 4MB');
+  a('apple-a16', 'A16', 2022, 'A16', 115.4, 'tsmc-n4', 3.46, 2.02, 'P 16MB / E 4MB', { notes: 'E コアの最大クロック 2.02GHz は [二次](Wikipedia・Notebookcheck の 2 系統で一致。Apple は非公表)。docs/research/apple-pe-cores.md §3.2' });
   a('apple-a17pro', 'A17 Pro', 2023, 'A17 Pro', 114.0, 'tsmc-n3b', 3.78, 2.11, null, { power: { base: null, peak: pw(14, 'sec', 'CPU ベンチ時(Geekerwan 経由のフォーラム要約)'), range: null },
     errCause: { st: '公開値 2527 は機種中央値(n=3)。Notebookcheck の個別値(2 件平均)は 2688 で、これを公開値にすると差は +5.1%(中央値より 6.4% 高い)。P コアは Everest 2nd gen(9 幅・ROB 321。Geekerwan・jia.je の図〔二次〕)で、ST 補正 u は A16 の Everest(8 幅・ROB 274)から借用している(9 幅用の代表は無い)。基本 CPI が幅で決まり、幅 8→9 で ST が約 +12% 動くが、実機の A16→A17 Pro の IPC の伸びは数%(Apple の主張は P コア +10%、クロック込み)で、モデルの形による過大とみられる(調査メモの試算 +11.8%)。E コアが未登録のため MT は計算できない。設計書 §5.3.3 O' } });
   a('apple-a18', 'A18', 2024, 'A18', 92.4, 'tsmc-n3e', 4.05, 2.42, 'P 8MB / E 4MB');
-  a('apple-a18pro', 'A18 Pro', 2024, 'A18 Pro', 109.7, 'tsmc-n3e', null, null, 'P 16MB / E 4MB', { power: { base: null, peak: null, range: null, gaming: pw(4.9, 'sec', 'ゲーム時 4.5〜5.3W') } });
+  a('apple-a18pro', 'A18 Pro', 2024, 'A18 Pro', 109.7, 'tsmc-n3e', 4.05, 2.42, 'P 16MB / E 4MB', { notes: '最大クロック P 4.05 / E 2.42GHz は [二次](Wikipedia・Wccftech・GAZLOG。Apple は非公表)。P は資料で 4.02〜4.05 に揺れる(Geekerwan 経由は 4.02)。A18 と同じ値とする資料による。docs/research/apple-pe-cores.md §3.2', power: { base: null, peak: null, range: null, gaming: pw(4.9, 'sec', 'ゲーム時 4.5〜5.3W') } });
   a('apple-a19pro', 'A19 Pro', 2025, 'A19 Pro', 98.7, 'tsmc-n3p', 4.26, 2.6, 'P 16MB / E 6MB', { power: { base: null, peak: pw(13, 'sec', '短時間ピーク。GB6 マルチ約12.1W'), range: null } });
   a('apple-a20pro', 'A20 Pro', 2026, 'A20 Pro', 98.8, 'tsmc-n2', 4.93, 2.64, 'P 16MB / E 8MB(Wikipedia)', { notes: 'クロック 4.93GHz は Geekbench のリーク値' });
 
@@ -67,11 +67,13 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   m('apple-m4', 'M4', 2024, 'M4', [die('M4', 169.4, 'meas', 'tsmc-n3e')],
     [{ type: 'P', count: 4, maxGHz: 4.4 }, { type: 'E', count: 6, maxGHz: 2.85 }]);
   m('apple-m4pro', 'M4 Pro', 2024, 'M4 Pro', [die('M4 Pro', 325, 'sec', 'tsmc-n3e', '約320〜330(TechInsights が解析済みだが面積は未確認)')],
-    [{ type: 'P', count: 10, maxGHz: 4.5 }, { type: 'E', count: 4 }],
-    { power: { base: null, peak: pw(46, 'meas', 'マルチ最大(その後約40W)。シングル時 約6〜6.5W'), range: null } });
-  m('apple-m5', 'M5', 2025, 'M5', [die('M5', 157.5, 'sec', 'tsmc-n3p', 'NamuWiki のみ')], [{ type: 'super', count: 4 }, { type: 'E', count: 6 }]);
-  m('apple-m5max', 'M5 Max', 2026, 'M5 Max', [], [{ type: 'super', count: 6 }, { type: 'performance', count: 12 }],
-    { power: { base: null, peak: null, range: null }, notes: '電力: 14インチは CPU 50W を維持できず、CPU+GPU のストレスで 96W(1〜2秒)→46W→42W([実測] Notebookcheck)。単一のピーク値としては採用しない' });
+    [{ type: 'P', count: 10, maxGHz: 4.51 }, { type: 'E', count: 4, maxGHz: 2.59 }],
+    { power: { base: null, peak: pw(46, 'meas', 'マルチ最大(その後約40W)。シングル時 約6〜6.5W'), range: null },
+      notes: '最大クロック P 4.51 / E 2.59GHz は [実測](Eclectic Light の powermetrics。P 4511MHz を観測、E の周波数段上限 2592MHz)で、Wikipedia・Notebookcheck([二次]、4512 / 2592MHz)と一致。docs/research/apple-pe-cores.md §3.2' });
+  m('apple-m5', 'M5', 2025, 'M5', [die('M5', 157.5, 'sec', 'tsmc-n3p', 'NamuWiki のみ')], [{ type: 'super', count: 4 }, { type: 'E', count: 6, maxGHz: 3.0 }],
+    { notes: 'E コア 3.0GHz は [二次](Wikipedia 3.0 / Notebookcheck 3048MHz)。super コアの最大クロックは未確定のため null: Wikipedia は 4.4(3S 版)/ 4.46(4S 版)、Notebookcheck の仕様表は 4608MHz(本文は up to 4.4GHz。M5 Pro/Max の S と同値で流用の可能性 [推定])と資料が食い違う。docs/research/apple-pe-cores.md §3.2・§5-2' });
+  m('apple-m5max', 'M5 Max', 2026, 'M5 Max', [], [{ type: 'super', count: 6, maxGHz: 4.6 }, { type: 'performance', count: 12, maxGHz: 4.4 }],
+    { power: { base: null, peak: null, range: null }, notes: '最大クロック super 4.6 / performance 4.4GHz は [二次](Notebookcheck の仕様ページ。Wikipedia 本文は S 約 4.61。Apple は非公表)。docs/research/apple-pe-cores.md §3.2。電力: 14インチは CPU 50W を維持できず、CPU+GPU のストレスで 96W(1〜2秒)→46W→42W([実測] Notebookcheck)。単一のピーク値としては採用しない' });
 
   // ---- Qualcomm Snapdragon(コア: プライム+中間+小) ----
   const q = (id, name, year, gb7, mm2, nodeId, cores, extra) => add(Object.assign({
