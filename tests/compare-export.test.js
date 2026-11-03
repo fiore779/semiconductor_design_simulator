@@ -323,3 +323,36 @@ test('書き出し(CSV/JSON/要約)に比較は含まれない(3 列対応は不
   const csv = EX.toCsv(EX.resultRows(d, ev)); const txt = EX.toSummaryText(d, ev, {}); const json = EX.toJson(d);
   [csv, txt, json].forEach((o) => assert.ok(!o.includes('比較先') && !o.includes('差(現在')));
 });
+
+test('参考値(判定外): 再現で refs があれば比較セル・書き出しに載る。判定の値は変えない。refs が空なら出力は従来どおり', () => {
+  const withRef = design.fromPreset(D.presets.find((p) => { const e = evalOf(design.fromPreset(p, { mode: 'reproduce' })); return e.st && e.st.refs && e.st.refs.length; }), { mode: 'reproduce' });
+  const ev = evalOf(withRef);
+  const c = CF.cellOf('st', withRef, ev);
+  assert.ok(c.refs && c.refs.length === ev.st.refs.length);
+  assert.ok(c.refs.every((x) => !('verdict' in x)));
+  assert.strictEqual(c.pub.errPct, ev.st.errPct);
+  const t = CF.refTexts(c);
+  assert.ok(t[0].startsWith('参考(判定外)') && t[0].includes('判定ではない'));
+  const rows = EX.resultRows(withRef, ev);
+  const rr = rows.filter((r) => r.item.includes('参考値(判定外)'));
+  assert.ok(rr.length >= 1 && rr.every((r) => r.note.includes('判定には使わない') && r.kind.startsWith('参考(')));
+  // refs を空にすると、参考値の行が無く、他の行は同じ
+  const ev2 = JSON.parse(JSON.stringify(ev)); ev2.st.refs = []; ev2.mt.refs = [];
+  const base = EX.resultRows(withRef, ev2);
+  assert.deepStrictEqual(rows.filter((r) => !r.item.includes('参考値(判定外)')), base);
+  assert.deepStrictEqual(CF.refTexts(CF.cellOf('st', withRef, ev2)), []);
+  assert.strictEqual(CF.cellOf('st', withRef, ev2).refs, undefined);
+  // 編集後は載せない
+  const ed = design.setClock(design.fromPreset(P('intel-rpl-13900k'), { mode: 'improve' }), 'P', 6.2);
+  assert.ok(ed.ok);
+  assert.strictEqual(P('intel-mtl-185h') != null, true);
+  const mtl = design.fromPreset(P('intel-mtl-185h'), { mode: 'improve' });
+  const mtlEd = design.setClock(mtl, mtl.cfg.cores[0].type, 4.5);
+  assert.ok(mtlEd.ok, mtlEd.reason);
+  const mix = design.fromScratch({ name: 'mix', widthMm: 20, heightMm: 20, nodeId: 'tsmc-n4' });
+  [ed.design, mtlEd.design, mix].forEach((dd) => {
+    const e = evalOf(dd);
+    ['st', 'mt'].forEach((k) => assert.strictEqual(CF.cellOf(k, dd, e).refs, undefined, k));
+    assert.ok(!EX.resultRows(dd, e).some((r) => r.item.includes('参考値(判定外)')));
+  });
+});

@@ -66,6 +66,7 @@
         add(`${lab} 公開値(pt)`, fix(c.pub.published, 0), `公開${c.pub.kindText ? `(${c.pub.kindText})` : ''}`, '', '');
         add(`${lab} 公開値との差(%)`, isNum(c.pub.errPct) ? fix(c.pub.errPct, 1) : NA, '予測と公開値の差', '', isNum(c.pub.errPct) ? '' : '値なし');
       } else add(`${lab} 公開値との差(%)`, NA, '', '', c.pubNote || '出さない');
+      (c.refs || []).forEach((x) => add(`${lab} 参考値(判定外)(pt)`, fix(x.value, 0), `参考(${x.kind || '種別不明'})`, '', `判定には使わない${x.device && !/^\(機種ではなく/.test(x.device) ? `。機種: ${x.device}` : ''}${isNum(x.diffPct) ? `。参考との差 ${fix(x.diffPct, 1)}%` : ''}`));
     });
     pushCell('area', 'ダイ面積', 'mm²', 1);
     if (ev.isMix) {

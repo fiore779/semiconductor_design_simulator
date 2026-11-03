@@ -13,6 +13,7 @@
         h('span', { class: `badge conf-${c.conf || 'none'}`, title: '推定の確度', text: c.conf ? `確度 ${c.confText}` : '確度 —' })));
       c.sub.forEach((t) => kids.push(h('div', { class: 'small warn-note', text: t })));
       if (row.key !== 'area' && row.key !== 'tj') kids.push(h('div', { class: 'small', text: CF.pubText(c, row) }));
+      CF.refTexts(c).forEach((t) => kids.push(h('div', { class: 'small ref', text: t })));
     }
     return h('td', {}, kids);
   }

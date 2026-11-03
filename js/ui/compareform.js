@@ -8,6 +8,7 @@
   const PL = () => (node ? require('./presetlist.js') : root.SDS.ui.presetlist);
   const PK = () => (node ? require('./packageform.js') : root.SDS.ui.packageform);
   const PF = () => (node ? require('./paramform.js') : root.SDS.ui.paramform);
+  const RP = () => (node ? require('./reproduce.js') : root.SDS.ui.reproduce);
   const DS = () => (node ? require('../model/design.js') : root.SDS.model.design);
 
   const KIND_TEXT = { pub: '公開', pred: '予測', est: '推定', set: '指定' };
@@ -39,6 +40,8 @@
       const c = cell({ value: r.score, kind: 'pred', kindText: kindText('pred'), conf: r.confidence || null, confText: confText(r.confidence) });
       if (!ev.isMix && !ev.edited && isNum(r.published)) c.pub = { published: r.published, errPct: isNum(r.errPct) ? r.errPct : null, kindText: r.publishedKind || '' };
       else c.pubNote = ev.isMix ? '混合設計の予測のため、公開値との差は出しません' : ev.edited ? '編集後の予測のため、公開値との差は出しません' : '公開値が未取得のため比較しません';
+      // 参考値(判定外)。再現(未編集・非混合)のときだけ。判定・差・合否には使わない
+      if (!ev.isMix && !ev.edited && Array.isArray(r.refs) && r.refs.length) c.refs = RP().refRows(r.refs);
       if (c.pub && r.isCalibSample) c.sub.push('校正に使った代表 SKU のため、公開値に近くて当然(検証ではない)');
       if (c.pub && r.inUCalSet) c.sub.push('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
       if (c.pub && r.calibNotUsedForMt) c.sub.push('ST の補正には使ったが、MT の σ の合わせには使っていない');
@@ -157,6 +160,10 @@
     }
     return `公開値との差: —(${c.pubNote || '出しません'})`;
   }
+  // 参考値(判定外)の表示行(公開値の行の下に 1 件 1 行)。refs が無ければ []
+  function refTexts(c) {
+    return (c.refs || []).map((x) => `${x.text}${isNum(x.diffPct) ? ` / 参考との差 ${pctText(x.diffPct)}(判定ではない)` : ''}`);
+  }
 
   function describe(design, ev) {
     const mi = PF().modeInfo(design);
@@ -242,7 +249,7 @@
     return { targets, errors, duplicates };
   }
 
-  const api = { TARGET_NAMES, MAX_TARGETS, compareMulti, pairRow, compareNotesMulti, resolveTargets, ROWS, KIND_TEXT, CONF_TEXT, cellOf, compareRows, valueText, diffText, pctText, pubText, describe, compareNotes, sourceOptions, buildOther, pkgText };
+  const api = { TARGET_NAMES, MAX_TARGETS, compareMulti, pairRow, compareNotesMulti, resolveTargets, ROWS, KIND_TEXT, CONF_TEXT, cellOf, compareRows, valueText, diffText, pctText, pubText, refTexts, describe, compareNotes, sourceOptions, buildOther, pkgText };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.compareform = api;
   if (node) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
