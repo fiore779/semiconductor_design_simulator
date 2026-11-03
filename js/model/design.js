@@ -89,9 +89,11 @@
     const fp = FP && preset.dies && preset.dies.length ? FP.classify(preset, dieRole) : null;
     if (fp) computeIdx = fp.dieIndex;
     const layout = fp ? FP.toLayout(fp) : null;
+    const socIdx = fp && fp.socDie ? fp.socDie.dieIndex : -1; // Strix Halo: コアのない SoC ダイにも写真の枠を当てる(写真の枠のブロックはコアなし)
+    const socLay = socIdx >= 0 && FP.socLayout ? FP.socLayout(preset) : null;
     srcDies.forEach((sd, i) => {
       const known = typeof sd.mm2 === 'number';
-      const lay = layout && i === computeIdx ? FP.aspectOf(layout) : null;
+      const lay = layout && i === computeIdx ? FP.aspectOf(layout) : socLay && i === socIdx ? FP.aspectOf(socLay) : null;
       // 面積が未取得のダイは仮寸法(10×10 mm。実寸ではない)。実物風テンプレートのダイは枠の縦横比で仮の 100 mm² 相当にする(面積は null のまま)
       const size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
       const die = {
@@ -100,6 +102,7 @@
       };
       cursorX += die.widthMm + GAP_MM;
       if (i === computeIdx && layout) { die.layout = Object.assign({}, layout); die.blocks = FP.layoutDie(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB, layout); }
+      else if (socLay && i === socIdx) { die.layout = Object.assign({}, socLay); die.blocks = FP.layoutDie(die, [], 0, socLay); }
       else if (i === computeIdx) die.blocks = layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB);
       else if (fp && fp.iodGpu && roles[i] === 'uncore' && /IOD/i.test(sd.name)) die.blocks = FP.iodBlocks(die); // Zen 4 以降の IOD は内蔵 GPU(飾り)つき
       else if (roles[i] === 'gpu') die.blocks = oneBlock(die, 'gpu', 'GPU');

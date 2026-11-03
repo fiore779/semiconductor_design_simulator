@@ -56,7 +56,7 @@ test('全プリセット: コア数・L3 の個数と容量が元のプリセッ
     assert.strictEqual(coreBlocks(d).length, total(p), `${p.id}: コア数`);
     const l3 = d.dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.kind === 'l3')), []);
     const lay = (d.dies.find((x) => x.layout) || {}).layout;
-    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && lay.frame === 'strix-point' ? 2 : 1)) : 0;
+    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && (lay.frame === 'strix-point' || lay.frame === 'zeppelin') ? 2 : 1)) : 0;
     assert.strictEqual(l3.length, want, `${p.id}: L3 ブロック数`);
     const srcDies = p.dies && p.dies.length ? p.dies : [{ mm2: null }];
     assert.strictEqual(d.dies.length, srcDies.length, `${p.id}: ダイ数`);
@@ -86,7 +86,8 @@ test('飾りブロック: Uncore・iGPU・NPU だけが decorative で、コア�
   assert.deepStrictEqual(kinds('intel-adl-12900k'), ['gpu', 'uncore', 'uncore']); // iGPU・Uncore・Platform I/O
   assert.deepStrictEqual(kinds('amd-strix-hx370'), ['gpu', 'gpu', 'npu'].concat(Array(6).fill('uncore'))); // 写真に合わせた GPU(2 ブロック)・NPU・PHY など
   assert.deepStrictEqual(kinds('amd-kraken-350'), ['gpu', 'gpu', 'npu'].concat(Array(6).fill('uncore'))); // Strix の配置の流用
-  assert.deepStrictEqual(kinds('amd-zen1-1800x'), ['uncore']);
+  assert.deepStrictEqual(kinds('amd-zen1-1800x'), Array(23).fill('uncore')); // Zeppelin の写真の枠(IFOP・DDR PHY・UMC・IO Root など。2026-11-03)
+  assert.deepStrictEqual(kinds('amd-zen1-1200'), Array(23).fill('uncore'));
   assert.deepStrictEqual(kinds('amd-zen5-9950x'), ['gpu'].concat(Array(6).fill('uncore'))); // CCD 2 個の上部の帯(各 3)+ IOD の iGPU
 });
 

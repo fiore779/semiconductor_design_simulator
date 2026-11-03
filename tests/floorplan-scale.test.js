@@ -33,7 +33,10 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   assert.strictEqual(basis('amd-zen3-5950x'), 'photo'); assert.strictEqual(basis('amd-zen3-5600x'), 'photo');
   assert.strictEqual(basis('amd-zen5-9950x'), 'survey'); assert.strictEqual(basis('intel-rpl-14900k'), 'photo');
   assert.strictEqual(basis('amd-zen4-7950x'), 'reuse'); assert.strictEqual(basis('amd-strix-hx370'), 'photo');
-  ['amd-raven-2400g', 'amd-zen3-5800u', 'amd-zen3p-7735hs', 'amd-zen4-7840hs'].forEach((id) => assert.strictEqual(basis(id), 'schematic', id));
+  // 2026-11-03: AMD のモノリシック・APU のダイ写真(Zeppelin・Raven Ridge・Cezanne・Rembrandt-R・Phoenix 1)で、schematic は 0 件になった
+  ['amd-raven-2400g', 'amd-raven-2200g', 'amd-zen3-5800u', 'amd-zen3p-7735hs', 'amd-zen4-7840hs', 'amd-zen1-1800x', 'amd-zen1-1500x', 'amd-zen1-1200'].forEach((id) => assert.strictEqual(basis(id), 'photo', id));
+  ['amd-zenplus-2700x', 'amd-zenplus-2600x'].forEach((id) => assert.strictEqual(basis(id), 'reuse', id));
+  assert.strictEqual(basis('amd-strixhalo-395'), 'photo'); assert.strictEqual(basis('amd-epyc-7401'), null);
   assert.strictEqual(basis('amd-kraken-350'), 'reuse');
   assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'photo');
   assert.strictEqual(basis('apple-m1'), 'photo'); assert.strictEqual(basis('apple-m1ultra'), 'reuse'); assert.strictEqual(basis('apple-m4pro'), null); assert.strictEqual(basis('qc-8elite'), null);
@@ -90,8 +93,9 @@ test('IOD: Zen 4 以降の IOD には内蔵 GPU の飾りブロックが付き�
     assert.deepStrictEqual(design.validate(d), [], id);
   });
   ['amd-zen3-5600x', 'amd-zen3-5950x'].forEach((id) => assert.ok(!mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'gpu')), id));
-  const sh = mk('amd-strixhalo-395').dies.find((x) => !x.layout);
-  assert.ok(sh.blocks.every((b) => !b.decorative));
+  // Strix Halo の SoC ダイ(2026-11-03 から写真の枠。従来の「GPU」1 ブロックと同じく飾りではなく、電力按分に参加する)
+  const sh = mk('amd-strixhalo-395').dies.find((x) => /SoC/.test(x.name));
+  assert.deepStrictEqual(sh.blocks.filter((b) => b.decorative).map((b) => b.label), ['Big Dummy Area(ダミー領域)']); // 機能のないダミー領域だけ飾り
 });
 
 test('Strix Point: 写真の目測(photo)。縦横比 ≈ 1.55、左に Zen 5 ×4 + L3 16MB、Zen 5c ×4+4 + L3 8MB、中央にメモリコントローラ、GPU(大)、右上 NPU、飾りは uncore / gpu / npu', () => {
