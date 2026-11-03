@@ -23,7 +23,7 @@ test('テンプレート判定: 代表的なプリセットが想定どおりの
     'amd-zen5-9950x': 'amd-chiplet', 'amd-zen3-5600x': 'amd-chiplet', 'amd-zen4-7700': 'amd-chiplet', 'amd-strixhalo-395': 'amd-chiplet',
     'amd-strix-hx370': 'amd-apu', 'amd-kraken-350': 'amd-apu', 'amd-zen4-7840hs': 'amd-apu', 'amd-raven-2400g': 'amd-apu',
     'intel-arl-285k': 'x86-tile', 'intel-lnl-268v': 'x86-tile', 'intel-ptl-x9-388h': 'x86-tile',
-    'apple-m1': 'apple-soc', 'apple-m1ultra': 'apple-soc', 'apple-m3pro': 'apple-soc', 'apple-a15': 'apple-soc', 'apple-m4pro': 'other', 'apple-a12': 'apple-soc', 'apple-a20pro': 'apple-soc', 'apple-m5max': 'other', 'qc-8elite': 'arm-soc', 'qc-7gen4': 'other', 'qc-720g': 'other', 'amd-epyc-7401': 'other', 'nv-orin-agx': 'other', 'amd-zen3-5800x': 'other',
+    'apple-m1': 'apple-soc', 'apple-m1ultra': 'apple-soc', 'apple-m3pro': 'apple-soc', 'apple-a15': 'apple-soc', 'apple-m4pro': 'other', 'apple-a12': 'apple-soc', 'apple-a20pro': 'apple-soc', 'apple-m5max': 'other', 'qc-8elite': 'arm-soc', 'mt-9400': 'arm-soc', 'mt-9600pro': 'arm-soc', 'nv-t239': 'arm-soc', 'mt-8200': 'other', 'nv-thor': 'other', 'qc-7gen4': 'other', 'qc-720g': 'other', 'amd-epyc-7401': 'other', 'nv-orin-agx': 'other', 'amd-zen3-5800x': 'other',
   };
   Object.keys(want).forEach((id) => assert.strictEqual(tplOf(id), want[id], id));
   // 判定できない(ダイ情報なし・x86 以外)ものは従来の配置(layout なし)

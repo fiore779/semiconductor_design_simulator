@@ -17,7 +17,7 @@
     'amd-apu': 'AMD モノリシック APU',
     'x86-tile': 'x86 コンピュートタイル',
     'apple-soc': 'Apple シリコン(ダイ写真に倣う)',
-    'arm-soc': 'Arm モバイル SoC(Snapdragon。ダイ写真に倣う)',
+    'arm-soc': 'Arm SoC(Snapdragon・Dimensity・Switch 2 の T239。ダイ写真に倣う)',
   };
   const TEMPLATE_IDS = Object.keys(TEMPLATES);
   const MAX_UNITS = 4;
@@ -419,8 +419,74 @@
       ['npu', 'Hexagon V73 + Tensor(2 コア)', 'n', 70, 715, 500, 665], ['isp', 'Spectra ISP', 'u', 70, 92, 495, 615], ['pcie', 'PCIe x4', 'u', 378, 20, 215, 42], ['phy-t', 'LPDDR4X PHY', 'u', 1210, 15, 205, 70], ['phy-r', 'LPDDR4X PHY(右列 #3〜#8)', 'u', 1385, 90, 60, 1480], ['phy-b', 'LPDDR4X PHY', 'u', 1160, 1535, 225, 55], ['usb', 'USB バッファ(USB4?)', 'u', 200, 1440, 430, 150]]),
   };
   Object.assign(TILE_FRAMES, QC_FRAMES);
-  // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
-  Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : QC_FRAMES[k] ? ['arm-soc'] : ['x86-tile']; });
+  // ---- MediaTek Dimensity(Kurnal の注釈つきダイ写真。2026-11-03 追加)と Switch 2 の T239(Kurnal の注釈つき)。template は arm-soc。Dimensity は cfg に L3 が無く(写真の L3 は飾り)、T239 は cfg の l3MB=4 があるので frame の l3 を持つ ----
+  // big = プライム → 中間コア、small = 小コア(cfg の E)。座標は表示ピクセルからの目測(±5〜10%)
+  const MT_FRAMES = {
+    // Dimensity 9000(D9000-mt6983.jpg 6787×7296 の表示 1488×1600)。X2 ×1、A710 ×3(左下の枠は A710 の表記なしで、L2 256KiB の容量から推定)、A510 ×4(注釈の「Dual A510 Cluster」を左右 2 つに分け、さらに各 2 コアに分けた推定)。L3 4×2MiB、SLC 3+3MiB、Mali-G710 MP10、APU 590
+    'mt-9000': qf([0, 0, 1488, 1600], [[382, 990, 208, 166], [847, 1067, 166, 133], [847, 1379, 166, 128], [382, 1347, 169, 146]], [[555, 1350, 145, 77], [555, 1428, 145, 77], [702, 1350, 140, 77], [702, 1428, 140, 77]], [
+      ['l3a', 'L3 キャッシュ 2MiB(4 つで 8MiB。cfg に L3 なし)', 'u', 385, 1180, 130, 148], ['l3b', 'L3 キャッシュ 2MiB', 'u', 567, 1173, 120, 160], ['l3c', 'L3 キャッシュ 2MiB', 'u', 702, 1173, 131, 160], ['l3d', 'L3 キャッシュ 2MiB', 'u', 883, 1220, 130, 147],
+      ['dsu', 'DSU-110', 'u', 597, 1007, 246, 150], ['slc', 'System Level Cache 3+3MiB', 'u', 493, 773, 370, 208],
+      ['gpu-a', 'GPU(Mali-G710 MP10。#1〜#7)', 'g', 683, 110, 687, 340], ['gpu-t', 'GPU(#2 上段)', 'g', 860, 28, 165, 82], ['gpu-r', 'GPU(#8・#9)', 'g', 1115, 475, 325, 170], ['gpu-l2', 'GPU L2 3MiB?', 'g', 683, 450, 300, 135],
+      ['apu-a', 'APU 590(Performance ×3・Flexible)', 'n', 883, 668, 557, 396], ['apu-b', 'APU 590(Performance #2・#3)', 'n', 1040, 1070, 305, 215],
+      ['modem', 'Baseband M80 5G・LTE', 'u', 120, 75, 520, 440], ['axi', 'AXI 64/128bit Interconnect', 'u', 362, 520, 320, 250], ['disp', 'MiraVision 790 Disp', 'u', 72, 557, 275, 215], ['isp', 'Imagiq 790 ISP', 'u', 58, 780, 310, 260], ['media', 'Media Engine(Encode・VP-9・AV1)', 'u', 115, 1055, 245, 420],
+      ['phy-lt', '16bit LPDDR5 メモリチャネル', 'u', 18, 85, 72, 375], ['phy-rt', '16bit LPDDR5 メモリチャネル', 'u', 1388, 85, 72, 370], ['phy-lb', '16bit LPDDR5 メモリチャネル', 'u', 18, 1068, 75, 380], ['phy-rb', '16bit LPDDR5 メモリチャネル', 'u', 1388, 1125, 75, 335],
+      ['usb-b', 'USB Buffer・UFS', 'u', 1035, 1385, 310, 200], ['csi-b', 'CSI ×6', 'u', 165, 1545, 520, 48]]),
+    // Dimensity 9200(D9200-mt6985.jpg 10199×9504 の表示 1600×1491)。X3 ×1(右上。表記なしで L2 1MiB・L1 64KiB の構造から推定)、A715 ×3(@2.85GHz。左下・右下・左上)、A510 ×4(@1.8GHz。注釈の「2Core Cluster」〔左〕と右の A510 を 2 コアずつに分けた推定)。L3 4×2MiB、SLC 3+3M、Mali G715 MC11、APU 690
+    'mt-9200': qf([0, 0, 1600, 1491], [[1013, 933, 180, 194], [603, 1280, 144, 153], [1047, 1280, 153, 157], [590, 980, 153, 160]], [[599, 1140, 70, 135], [669, 1140, 71, 135], [1053, 1140, 72, 135], [1125, 1140, 72, 135]], [
+      ['l3a', 'L3 2MiB(4 つで 8MiB。cfg に L3 なし)', 'u', 753, 1137, 137, 136], ['l3b', 'L3 2MiB', 'u', 905, 1137, 135, 136], ['l3c', 'L3 2MiB', 'u', 757, 1290, 133, 140], ['l3d', 'L3 2MiB', 'u', 905, 1290, 135, 140],
+      ['dsu', 'DSU・リング(注釈なし)', 'u', 747, 977, 258, 120], ['slc', 'System Level Cache 3M + 3M', 'u', 585, 820, 415, 150],
+      ['gpu-a', 'GPU(Mali G715 #1〜#4・#7)', 'g', 565, 55, 560, 350], ['gpu-b', 'GPU(Mali G715 #8〜#11)', 'g', 1125, 155, 355, 340], ['gpu-c', 'GPU(ALU・TMU・ROP・#6)', 'g', 600, 405, 375, 160], ['gpu-cache', 'GPU Cache', 'g', 598, 568, 375, 235],
+      ['apu', 'APU 690(4+2 コア)', 'n', 100, 160, 425, 600], ['apu4', 'APU Core Performance #4', 'n', 60, 68, 145, 92],
+      ['modem', 'M80 Baseband(5G R16 Modem)', 'u', 15, 785, 510, 420], ['modem2', '4G Modem・BT・WiFi', 'u', 40, 1205, 520, 135], ['ufs', 'UFS 4.0 PHY', 'u', 10, 245, 88, 140],
+      ['mv', 'MiraVision 890', 'u', 975, 500, 580, 300], ['imagiq', 'Imagiq 890 ISP', 'u', 1235, 805, 315, 230], ['dsp', 'DSP?', 'u', 1235, 1045, 310, 300], ['csi', 'CSI ×6', 'u', 1555, 880, 38, 470], ['pcie', 'PCIe PHY・USB PHY', 'u', 1500, 80, 92, 305],
+      ['phy-t1', '16bit LPDDR5X 4266MHz', 'u', 210, 25, 250, 125], ['phy-t2', '16bit LPDDR5X 4266MHz', 'u', 1155, 25, 250, 125], ['phy-b1', '16bit LPDDR5X 4266MHz', 'u', 105, 1348, 250, 115], ['phy-b2', '16bit LPDDR5X 4266MHz', 'u', 1205, 1345, 390, 120]]),
+    // Dimensity 9300(D9300-mt6989.jpg 6414×7602 の表示 1350×1600)。注釈どおり: X4 @3.25GHz ×1(中央左)、X4 @2.85GHz ×3(左上・右上・右中)、A720 @2.0GHz ×4(上段 2 + その下 2)。L3 8MiB、SLC 10MiB、Mali-G720 MC12、APU 790
+    'mt-9300': qf([0, 0, 1350, 1600], [[445, 422, 175, 168], [440, 45, 165, 160], [840, 65, 165, 150], [840, 455, 165, 155]], [[605, 60, 115, 145], [722, 65, 115, 145], [590, 212, 115, 145], [732, 215, 118, 145]], [
+      ['l3a', 'L3 キャッシュ(左。8MiB の一部。cfg に L3 なし)', 'u', 442, 210, 147, 205], ['l3b', 'L3 キャッシュ(右。8MiB の一部)', 'u', 870, 238, 135, 205], ['dvfs', 'DVFS・リング(注釈なし)', 'u', 625, 415, 215, 140], ['slc', 'System Level Cache 10MiB(5MiB ×2)', 'u', 440, 595, 395, 205],
+      ['apu', 'APU 790(Flexible ×2・Performance ×4・cube)', 'n', 100, 165, 318, 755], ['usb', 'USB PHY / USB Buffer', 'u', 65, 5, 355, 150],
+      ['imagiq', 'MediaTek Imagiq 990', 'u', 1012, 60, 235, 395], ['mv', 'MediaTek MiraVision 990', 'u', 1030, 495, 285, 330], ['phy-r1', 'LPDDR5T 4800MHz', 'u', 1252, 268, 85, 222], ['phy-r2', 'LPDDR5T 4800MHz', 'u', 1262, 1305, 78, 245], ['phy-l1', 'LPDDR5T 4800MHz', 'u', 8, 165, 88, 225], ['phy-l2', 'LPDDR5T 4800MHz', 'u', 8, 1185, 88, 220],
+      ['gpu-a', 'GPU(Mali-G720 #1〜#4)', 'g', 85, 950, 725, 195], ['gpu-b', 'GPU(Mali-G720 #5〜#8)', 'g', 130, 1148, 675, 215], ['gpu-c', 'GPU(Mali-G720 #9〜#12)', 'g', 205, 1363, 545, 200],
+      ['modem', 'MediaTek M80? 5G Baseband', 'u', 815, 1110, 440, 350], ['ufs', 'UFS', 'u', 60, 1545, 125, 50], ['csi', 'CSI ×6', 'u', 832, 5, 480, 45]]),
+    // Dimensity 9400(D9400-mt6991.jpg 8000×7419 の表示 1600×1484)。注釈どおり: X925 @3.62GHz ×1(右中央)、X4 @3.3GHz ×2(左上・左中)、A720 @2.4GHz ×3(中段の左 3 つ)。推定(注釈なし): X4 の 3 つ目(右上の L2 1MiB の枠)、A720 の 4 つ目(中段の右の L2 512KiB の枠)。L3 12MiB、SLC 10MiB、Mali-G925 MP12、APU 890
+    'mt-9400': qf([0, 0, 1600, 1484], [[1030, 405, 255, 248], [470, 45, 185, 175], [470, 400, 180, 170], [935, 48, 190, 177]], [[470, 240, 125, 145], [615, 235, 135, 145], [750, 235, 140, 145], [910, 240, 135, 145]], [
+      ['l3a', 'L3 キャッシュ 3MiB(12MiB の一部。cfg に L3 なし)', 'u', 655, 55, 140, 150], ['l3b', 'L3 キャッシュ 3MiB', 'u', 795, 55, 135, 150], ['l3c', 'L3 キャッシュ 3MiB', 'u', 655, 410, 140, 160], ['l3d', 'L3 キャッシュ 3MiB', 'u', 1055, 230, 140, 172],
+      ['ctrl', 'L3 Controller・Cache', 'u', 795, 420, 230, 150], ['slc', 'System Level Cache 10MiB(5MiB ×2)', 'u', 535, 580, 490, 210],
+      ['apu-a', 'APU 890(Cluster #1)', 'n', 105, 128, 335, 450], ['apu-b', 'APU 890(Cluster #2・NPU)', 'n', 40, 580, 300, 125], ['same-cache', 'D9300 と同じブロック(キャッシュ)', 'u', 345, 580, 185, 230], ['same-core', 'D9300 と同じブロック(用途は注釈のまま)', 'u', 55, 708, 290, 100],
+      ['gpu-a', 'GPU(Mali-G925 #2・ALU・Rops)', 'g', 70, 865, 375, 165], ['gpu-c', 'GPU(Mali-G925 #7・#8)', 'g', 565, 945, 460, 130], ['gpu-b', 'GPU(Mali-G925 #3・#4)', 'g', 125, 1035, 360, 150], ['gpu-b2', 'GPU(Mali-G925 #5・#6)', 'g', 120, 1190, 365, 180], ['gpu-l2', 'GPU L2 2304KiB?', 'g', 490, 1085, 195, 170], ['gpu-d', 'GPU(Mali-G925 #9・#10)', 'g', 690, 1110, 340, 150], ['gpu-e', 'GPU(Mali-G925 #11・#12)', 'g', 490, 1260, 375, 125],
+      ['imagiq', 'MediaTek imagiq 1090(上段)', 'u', 1130, 88, 360, 140], ['imagiq-b', 'MediaTek imagiq 1090(下段)', 'u', 1198, 230, 292, 170], ['mv', 'MediaTek Miravision 1090', 'u', 1295, 438, 290, 385], ['modem', 'MediaTek 5G Modem New Baseband', 'u', 1040, 1180, 445, 215],
+      ['phy-l1', '16bit LPDDR5X 5334MHz', 'u', 8, 170, 92, 250], ['phy-l2', '16bit LPDDR5X 5334MHz', 'u', 8, 1062, 90, 370], ['phy-r1', '16bit LPDDR5X 5334MHz', 'u', 1495, 165, 92, 255], ['phy-r2', '16bit LPDDR5X 5334MHz', 'u', 1500, 1000, 90, 255],
+      ['csi', 'CSI ×4', 'u', 1190, 48, 340, 45], ['usb', 'USB・UFS・PCIe / USB3 / Lan', 'u', 225, 45, 225, 85]]),
+    // Dimensity 9500(D9500-mt6993.jpg 7531×6339 の表示 1600×1347)。注釈どおり: C1-Ultra @4.21GHz ×1(右中央)、C1-Premium @3.5GHz ×3(左上・右上・左中)、C1-Pro @2.7GHz ×4。L3 は 4MiB ×4 + 16MiB の注記、SLC 10MiB、Mali G1-Ultra MP12、NPU 990
+    'mt-9500': qf([0, 0, 1600, 1347], [[1005, 425, 222, 225], [505, 40, 165, 165], [1090, 65, 170, 180], [505, 400, 165, 175]], [[955, 65, 130, 140], [810, 230, 130, 135], [940, 230, 120, 140], [880, 405, 125, 140]], [
+      ['l3a', 'L3 キャッシュ 4MiB(cfg に L3 なし)', 'u', 672, 55, 128, 170], ['l3b', 'L3 キャッシュ 4MiB', 'u', 800, 55, 155, 170], ['l3c', 'L3 キャッシュ 4MiB', 'u', 505, 225, 165, 170], ['l3d', 'L3 キャッシュ 16MiB(注記)', 'u', 665, 228, 145, 170], ['l3e', 'L3 キャッシュ 4MiB', 'u', 1085, 248, 140, 170],
+      ['dsu', 'DSU-120? Controller', 'u', 680, 400, 200, 145], ['sme', 'SME?(×4)', 'u', 672, 550, 333, 110], ['slc-a', 'SLC 10MiB(5MiB)', 'u', 375, 580, 240, 290], ['slc-b', 'SLC 10MiB(5MiB)', 'u', 615, 665, 330, 200],
+      ['npu', 'NPU 990(MDLA #2〜#4・NPU Cache 4MiB)', 'n', 165, 115, 330, 440], ['npu-t', 'NPU(Scalar・Vector・Tensor)', 'n', 335, 30, 160, 82], ['mvpu', 'MediaTek MVPU #1・#2', 'n', 62, 392, 100, 175], ['cache', '4MiB Cache・Security Engine・1.5MiB Cache', 'u', 30, 570, 340, 300],
+      ['gpu-a', 'GPU(Mali G1-Ultra #1・Alu・Rops)', 'g', 95, 875, 365, 140], ['gpu-core', 'GPU(Mali G1-Ultra MP12 中央)', 'g', 460, 900, 235, 200], ['gpu-b', 'GPU(Mali G1-Ultra #3・#4)', 'g', 112, 1020, 345, 130], ['gpu-c', 'GPU(Mali G1-Ultra #5・#6)', 'g', 112, 1155, 360, 135],
+      ['gpu-d', 'GPU(Mali G1-Ultra #11・#12)', 'g', 695, 905, 355, 140], ['gpu-e', 'GPU(Mali G1-Ultra #9・#10)', 'g', 695, 1045, 355, 140], ['gpu-f', 'GPU(Mali G1-Ultra #7・#8)', 'g', 545, 1190, 370, 150], ['npu-l2', 'NPU L2 Cache 2MiB', 'n', 470, 1100, 225, 90],
+      ['imagiq', 'MediaTek ImageIQ 1190', 'u', 1265, 70, 235, 315], ['enc', 'Video Encode & Decode', 'u', 1235, 395, 320, 265], ['mv', 'MediaTek Miravision 1190', 'u', 1135, 725, 370, 270], ['modem', 'MediaTek M90 5G Modem', 'u', 1175, 1115, 330, 215],
+      ['phy-l1', 'LPDDR5X PHY', 'u', 10, 115, 75, 220], ['phy-l2', 'LPDDR5X PHY', 'u', 10, 1030, 75, 235], ['phy-r1', 'LPDDR5X PHY', 'u', 1500, 185, 70, 205], ['phy-r2', 'LPDDR5X PHY', 'u', 1512, 925, 60, 225],
+      ['csi', 'CSI ×6', 'u', 1040, 15, 455, 45], ['pcie', 'PCIe 5.0 ・USB', 'u', 35, 5, 260, 100], ['ufs', 'UFS コントローラ', 'u', 1050, 1030, 82, 160]]),
+    // Dimensity 9600 Pro(D9600-Pro-MT6995Z-10.47x12.80x0.15mm.jpg 8817×7232 の表示 1600×1312。写真は横長で、ファイル名の 10.47×12.80 は縦横の順が逆。12.80×10.47 と読むと 1.223 で写真の 1.219 と一致、積 134.0 mm² = プリセット)。注釈どおり: C2 Ultra @4.55GHz ×2(中央の左右)、C2 Pro @4.35GHz ×3(上段右)、C2 Pro @3.1GHz ×3(左上の縦列)。L3 16MiB、SLC 10MiB、Mali G2 Ultra MP12、NPU 1090
+    'mt-9600pro': qf([0, 0, 1600, 1312], [[530, 422, 215, 215], [1003, 420, 225, 220], [808, 45, 122, 118], [935, 45, 125, 118], [1063, 45, 127, 118]], [[487, 40, 118, 130], [487, 172, 118, 118], [487, 292, 118, 122]], [
+      ['l3a', 'L3 キャッシュ 4MiB(16MiB の一部。cfg に L3 なし)', 'u', 635, 205, 123, 200], ['l3b', 'L3 キャッシュ 4MiB', 'u', 760, 205, 125, 200], ['l3c', 'L3 キャッシュ 4MiB', 'u', 905, 205, 135, 200], ['l3d', 'L3 キャッシュ 4MiB', 'u', 1045, 205, 140, 200],
+      ['sme', 'SME ×2', 'u', 608, 50, 198, 115], ['diag', 'リング・512KiB(注釈なし)', 'u', 748, 440, 252, 148],
+      ['slc1', 'SLC#1 2.5MiB', 'u', 560, 645, 215, 150], ['slc2', 'SLC#2 2.5MiB', 'u', 780, 590, 215, 190], ['slc3', 'SLC#3 2.5MiB', 'u', 1000, 648, 195, 145], ['slc4', 'SLC#4 2.5MiB', 'u', 868, 845, 225, 115],
+      ['npu-a', 'NPU 1090(MDLA #1・#2)', 'n', 140, 100, 335, 172], ['npu-b', 'NPU 1090(NPU L2 4MiB)', 'n', 140, 272, 335, 213], ['npu-c', 'NPU 1090(MDLA #3・#4)', 'n', 158, 487, 335, 153], ['mvpu', 'MVPU #1・#2', 'n', 35, 375, 98, 160], ['hub', 'Sensor hub・audio DSP', 'u', 55, 642, 440, 160],
+      ['gpu-a', 'GPU(Mali G2 Ultra #1〜#3)', 'g', 20, 815, 500, 135], ['gpu-b', 'GPU(Mali G2 Ultra #4・#5)', 'g', 140, 965, 365, 145], ['gpu-c', 'GPU(Mali G2 Ultra #8・#9)', 'g', 140, 1112, 365, 150], ['gpu-core', 'GPU(Mali G2 Ultra-MP12 中央・GPU L2 4MiB)', 'g', 505, 965, 210, 300], ['gpu-d', 'GPU(Mali G2 Ultra #7・NX Core ほか)', 'g', 715, 965, 370, 150], ['gpu-e', 'GPU(Mali G2 Ultra #10・#12ほか)', 'g', 715, 1118, 425, 145],
+      ['mtk', 'MediaTek(ISP ほか。注記は社名のみ)', 'u', 1195, 82, 277, 265], ['imageiq', 'ImageIQ 1290', 'u', 1232, 360, 250, 240], ['video', 'Video Engine', 'u', 1095, 800, 195, 160], ['mv', 'MediaTek Miravision 1290', 'u', 1295, 690, 285, 160], ['modem', 'MediaTek M90 5G Modem', 'u', 1150, 1120, 328, 150],
+      ['phy-l1', 'LPDDR5x & 6 PHY', 'u', 8, 85, 115, 230], ['phy-l2', 'LPDDR5x & 6 PHY', 'u', 8, 990, 115, 290], ['phy-r1', 'LPDDR5x & 6 PHY', 'u', 1478, 115, 90, 235], ['phy-r2', 'LPDDR5x & 6 PHY', 'u', 1478, 855, 90, 265],
+      ['csi', 'CSI #1〜#6', 'u', 1195, 35, 330, 28], ['usb', 'USB・PCIE', 'u', 140, 25, 280, 65]]),
+  };
+  // Switch 2 の T239(im1AIk2736qP6cwD.jpg 1231×960。Kurnal の注釈)。A78C ×8(左右 4 つずつ)、L3 は中央の列(注釈の範囲 y 292〜605。注釈は 2MiB〔上〕・「L3 Cache (share)」・4MiB・2MiB〔縦書き〕で、4MiB が L3 全体とも各部分とも読める)、GPU は TPC #1〜#6(12 SM)
+  const NV_FRAMES = {
+    't239': tf([0, 0, 1231, 960], { p: 8, e: 0, lp: 0 },
+      [[667, 292, 151, 98], [667, 390, 151, 97], [667, 487, 151, 93], [667, 580, 151, 96], [980, 292, 152, 96], [980, 388, 152, 97], [980, 485, 152, 95], [980, 580, 152, 98]], [], [], [822, 292, 156, 313], [
+        ['gpu-a', 'GPU(TPC #1〜#4。SM #1〜#8)', 'g', 180, 38, 425, 477], ['gpu-b', 'GPU(TPC #5・#6)', 'g', 797, 5, 406, 210], ['gpu-l2', 'GPU L2 Cache 1MiB(4×256KiB)', 'g', 797, 215, 406, 75],
+        ['memctl', 'Memory Control', 'u', 1010, 680, 122, 165], ['memctl2', 'Memory Control', 'u', 1005, 870, 222, 85], ['phy-r', '64bit LPDDR5T/X Memory PHY', 'u', 1140, 292, 88, 560], ['phy-b', '64bit LPDDR5T/X Memory PHY', 'u', 452, 885, 545, 70], ['pcie', 'PCIe 4.0 x8', 'u', 10, 140, 68, 490]]),
+  };
+  Object.assign(TILE_FRAMES, MT_FRAMES, NV_FRAMES);
+  // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
+  Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
   const AMD_SRC = {
     zeppelin: 'Zeppelin_annotated.jpg(Zeppelin。19700×8660。作者表記なし。出典 URL 未取得)。左の CCX は注釈つき(Zen 1 コア ×4 + L2 512K、L3 8M)、右の CCX は注記が「CCX」だけで、同じ構造として左と同じ比率でコアと L3 を置いた推定。2 つの CCX にコアを交互に割り当てる。縦横比は写真の 2.275(実寸の注記なし。213 mm² は PC Games Hardware。CCX 1 つの面積比 約 20.5% は AMD の CCX 44 mm² と整合)',
@@ -459,6 +525,23 @@
     'qc-7plus-gen3': { frame: 'sd-7p3-8s3', basis: 'photo', extra: '8s Gen 3 と同じダイ' + SAME89 },
     'qc-8s-gen3': { frame: 'sd-7p3-8s3', basis: 'photo', extra: '7+ Gen 3 と同じダイ' + SAME89 },
     'qc-8s-gen4': { frame: 'sd-8s-gen4', basis: 'photo' }, 'qc-8elite-x-gen6': { frame: 'sd-8elite-x-gen6', basis: 'photo' }, 'qc-7gen1': { frame: 'sd-7gen1', basis: 'photo' }, 'qc-8cx-gen3': { frame: 'sd-8cx-gen3', basis: 'photo' },
+  };
+  // MediaTek Dimensity と Switch 2 の T239 の写真の枠(arm-soc)。出典の URL は必要な画像リスト.md の Kurnal Insights のページ(チップ名・MT 型番で対応づけた候補。ページ本文は未取得)。画像内の透かしは @Kurnal
+  const MT_SRC = {
+    'mt-9000': 'D9000-mt6983.jpg(Kurnal の注釈。6787×7296。MT6983。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9000-mt6983/)。A510 4 つは「Dual A510 Cluster」を左右・各 2 コアに分けた推定。左下のコア枠は A710 の表記なし(注釈なし。L2 256KiB の容量と構造から A710 と推定)',
+    'mt-9200': 'D9200-mt6985.jpg(Kurnal の注釈。10199×9504。MT6985。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9200-mt6985/)。A510 4 つは注釈の 2 コアクラスタ(左)と右の A510 を 2 コアずつに分けた推定。注釈なし〔推定〕: 左上の A715 は構造から、右上の X3 は表記なしで L2 1MiB・L1 64KiB の構造から X3 と推定',
+    'mt-9300': 'D9300-mt6989.jpg(Kurnal の注釈。6414×7602。MT6989。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9300-mt6989/)。X4 @3.25GHz ×1・X4 @2.85GHz ×3・A720 @2.0GHz ×4 は注釈どおり',
+    'mt-9400': 'D9400-mt6991.jpg(Kurnal の注釈。8000×7419。MT6991。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9400-mt6991/)。X925 @3.62GHz(プリセットは 3.63。0.01 差)・X4 @3.3GHz ×2〔#2・#3〕・A720 @2.4GHz ×3〔@2〜@4〕は注釈どおり。注釈なし〔推定〕: 右上の X4 #1(L2 1MiB の構造から)と 4 つ目の A720(右の枠。L2 512KiB の構造から)',
+    'mt-9500': 'D9500-mt6993.jpg(Kurnal の注釈。7531×6339。MT6993。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9500-mt6993/)。C1-Ultra @4.21GHz・C1-Premium @3.5GHz ×3・C1-Pro @2.7GHz ×4 は注釈どおり',
+    'mt-9600pro': 'D9600-Pro-MT6995Z-10.47x12.80x0.15mm.jpg(Kurnal の注釈。8817×7232。MT6995Z。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9600-pro-mt6995/)。写真は横長で、ファイル名の寸法は縦横が逆の記載(12.80×10.47 = 134.0 mm² でプリセットと一致)。C2 Ultra @4.55GHz ×2・C2 Pro @4.35GHz ×3・C2 Pro @3.1GHz ×3 は注釈どおり',
+  };
+  const NV_SRC = {
+    't239': 'im1AIk2736qP6cwD.jpg(Kurnal の注釈。1231×960。ファイル名にチップ名なし。画像内の A78C ×8・TPC #1〜#6・LPDDR5T/X からユーザー申告の Switch 2 の T239 と判定。寸法の記載なし。URL 候補: https://www.techpowerup.com/336485/full-die-shot-analysis-of-nintendo-switch-2-soc-indicates-samsung-8-nm-production-origins)。L3 は中央の列で、注釈は 2MiB〔上〕・L3 Cache (share) 4MiB・2MiB〔縦書き〕で、4MiB が L3 全体とも各部分とも読める(2 通りに読める。cfg の 4MB と食い違うかは未確定)ため、注釈の範囲(縦 y 292〜605)の 1 枠に cfg の容量を割り当てた',
+  };
+  const ARM_MAP = {
+    'mt-9000': { frame: 'mt-9000', basis: 'photo', src: MT_SRC['mt-9000'] }, 'mt-9200': { frame: 'mt-9200', basis: 'photo', src: MT_SRC['mt-9200'] }, 'mt-9300': { frame: 'mt-9300', basis: 'photo', src: MT_SRC['mt-9300'] },
+    'mt-9400': { frame: 'mt-9400', basis: 'photo', src: MT_SRC['mt-9400'] }, 'mt-9500': { frame: 'mt-9500', basis: 'photo', src: MT_SRC['mt-9500'] }, 'mt-9600pro': { frame: 'mt-9600pro', basis: 'photo', src: MT_SRC['mt-9600pro'] },
+    'nv-t239': { frame: 't239', basis: 'photo', src: NV_SRC['t239'] },
   };
   // Strix Halo の SoC ダイ(CCD は別ダイ)に写真の枠を当てる。classify の socDie と、design.fromPreset が使う
   const SOC_DIE = { 'amd-strixhalo-395': { frame: 'strix-halo-soc', src: 'Strix-Halo-All-16.02x19.20.jpg(Kurnal の注釈。6724×8237。出典は推定: https://kurnal-insights.com/en/dieshot/?sort=yearDesc&m=AMD&t=desktop-soc&id=amd-strix-halo-full-package)。SoC ダイの縦横比 1.195 は 19.2×16.02 mm(ファイル名の 16.02x19.20。積 307.6 mm² = プリセットの面積)と一致。注釈に「?」つきの項目あり(作者も未確定)。GPU の WGP 20 個(40CU)・NPU・MALL・PHY などはすべてプリセットに無いブロックで、SoC ダイは従来どおり電力按分に参加する' } };
@@ -516,6 +599,11 @@
       const m = QC_MAP[preset.id]; const dies = preset.dies || [];
       if (!dies.length || !TILE_FRAMES[m.frame]) return null;
       return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${QC_SRC[m.frame]}${m.extra ? `。${m.extra}` : ''}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
+    }
+    if (preset && (preset.vendor === 'MediaTek' || preset.vendor === 'NVIDIA') && ARM_MAP[preset.id]) {
+      const m = ARM_MAP[preset.id]; const dies = preset.dies || [];
+      if (!dies.length || !TILE_FRAMES[m.frame]) return null;
+      return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
     }
     if (!preset || preset.isa !== 'x86') return null;
     const dies = preset.dies || [];
@@ -633,8 +721,9 @@
   // 編集後の layout(枠を超えたら根拠を schematic に落とす。超えなければそのまま)
   function afterEdit(layout, cores, l3MB) {
     if (!layout || layout.scaleBasis === 'schematic') return layout;
-    // Apple は cfg に L3 が無く(SLC は飾り)、写真の枠に L3 の置き場所が無い。編集で L3 を足したら根拠なしの従来配置に落とす
-    if ((layout.template === 'apple-soc' || layout.template === 'arm-soc') && typeof l3MB === 'number' && l3MB > 0) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: `編集で L3 を追加したため、ブロックの大きさに根拠はありません(${layout.template === 'apple-soc' ? 'Apple' : 'Snapdragon'}の写真の枠に L3 は無い)` });
+    // Apple・Snapdragon・Dimensity は cfg に L3 が無く(SLC・L3 は飾り)、写真の枠に L3 の置き場所が無い。編集で L3 を足したら根拠なしの従来配置に落とす。
+    // frame に l3 がある枠(T239)は L3 を変えても photo のまま(ラベルだけ更新。L3 を 0 にすると L3 ブロックが無くなるだけ)
+    if ((layout.template === 'apple-soc' || (layout.template === 'arm-soc' && !(TILE_FRAMES[layout.frame] && TILE_FRAMES[layout.frame].l3))) && typeof l3MB === 'number' && l3MB > 0) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: `編集で L3 を追加したため、ブロックの大きさに根拠はありません(写真の枠に L3 は無い)` });
     if (fits(layout, cores)) return layout;
     return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: EDITED_NOTE });
   }

@@ -145,11 +145,11 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
   assert.strictEqual(T('qc-8s-gen4', 'P').length, 1);
 });
 
-test('Snapdragon 以外の 85 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ)', () => {
-  const MAPPED = Object.keys(FRAME_OF);
+test('Snapdragon・Dimensity 9000〜9600 Pro・T239 以外の 78 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
+  const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239']);
   const rest = D.presets.filter((p) => !MAPPED.includes(p.id));
-  assert.strictEqual(rest.length, 85);
+  assert.strictEqual(rest.length, 78);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
-  assert.strictEqual(h.digest('hex'), 'fb709f26a0545a1daf7e6e14bf1c87a608401aba3f49d7cef18e5a570f4881d2');
+  assert.strictEqual(h.digest('hex'), '7ec8a08dbf1a9c42b3d7a985b756fd9deaafe116f0734aa8438aaddf76f26f21');
 });
