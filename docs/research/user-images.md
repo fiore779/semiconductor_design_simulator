@@ -164,3 +164,14 @@
 - **プリセットの面積との照合**: 9600 Pro・8200 だけファイル名に寸法があり、プリセットの面積(134.0・84.9 mm²)と一致(8200 の寸法はファイル名のみ)。9000〜9500・T239 は寸法の記載なしで、面積はプリセットのまま、縦横比は写真の枠の比。
 - **反映しなかった理由**: 8200・Orin・Thor は注釈なしでコアの位置が読めない(推測しない)。Snapdragon の注釈なし 6 件(720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3)と同じ扱い。EPYC 7401 は黒いダイで中身なし。縦横比だけ採るかはユーザーの判断待ち(8200: 1.244、Orin: 1.101、Thor: 1.636。いずれも未実施)。
 - **推定箇所**: `scaleNote` に記載(9000・9200 の A510 の 2 コア分割、9000 の左下のコア〔A710〕、9200 の左上の A715 と右上の X3、9400 の右上の X4 #1 と 4 つ目の A720、T239 の L3 の枠)。9400 の X925 のクロック 3.62GHz はプリセットの 3.63 と 0.01 差。deco の座標は注釈の領域の目測の外形で、重ならないよう調整した。
+
+## GB10(DGX Spark)のダイ写真の受領(2026-11-03。`C:\LocalAI\画像\GB102in1.jpg`。区分 [二次])
+
+| 画像 | 実寸 (px) | 判定した内容・注釈 | 出典(URL 候補) | 反映先 |
+|---|---|---|---|---|
+| `GB102in1.jpg` | 9034×3951(縦横比 2.286)。左が S-die・右が G-die の 1 枚 | 左(S-die): ARM X925 #1〜#10(各 @3.9Ghz)、Cortex A725 #1〜#10(各 @2.8Ghz)、L3 Cache 16MiB(4MiB ×4。上)・8MiB(4MiB ×2。下)、SLC 16MiB(1MiB の小区画)、Memory Cache 2MiB ×8、32Bit LPDDR5#1〜#8 Memory PHY、Coherence Hub、Nvidia NPU 4 Core、ISP+Audio DSP、Display Engine、17x Flash、Die to Die Channel、NV-Link、USB4.0・PCIe5.0 x4・PCIe4.0 x4・USB3.0/2.0・MIPI DSI。右(G-die): GPC#1〜#4・TPC#1〜#24・SM の例示・Raster Engine/3D FF ×4・GPU L2 24MiB(1.5MiB ×8 + 12MiB)・NV-Link・Die to Die Channel・NVDEC/NVENC。透かし `@Kurnal` | 出典 https://kurnal-insights.com/en/dieshot/nvidia-gb10/(ファイル名が Kurnal 個別ページの主画像 `/uploads/Nvidia/nvidia-gb10/GB102in1.jpg` と一致。画像内に URL の記載なし。ページ本文は調査担当が取得済み) | `nv-gb10` の S-die(arm-soc の photo。`TILE_FRAMES.gb10`)。G-die は layout なし |
+
+- **寸法と縦横比**: Kurnal のページの寸法(S-die 12.91×16.10 mm、G-die 12.91×13.45 mm、合計 12.91×29.55 mm)は画像と整合する(画像の左右の境目は全幅の約 0.544、16.10/29.55 = 0.545)。S-die の枠は表示 2000×875 の左 1085 px で、縦横比 1.240 は 16.10/12.91 = 1.247 と 1% 以内。面積 207.9 / 173.6 mm² はプリセットの値(Kurnal の寸法の積)。
+- **反映した内容(S-die)**: X925 5+5・A725 5+5(上下 2 クラスタ)、L3 2 枠(16MiB・8MiB。cfg の 24MB を重み 2:1 に分ける)、SLC・Memory Cache 2MiB ×8・LPDDR5 PHY・NPU・ISP・Coherence Hub・Display・Die to Die・NV-Link・左端の I/O 列(コア以外は飾り)。ブロックは 44 個。
+- **推定箇所**: `scaleNote` に記載(L3 の 16 / 8MB の cfg への当てはめ〔どちらが 16MB かは出典で食い違う〕、SLC の 1MiB 区画を数枠に束ねたこと、Memory Cache 2MiB ×8 と SLC の関係が不明なこと、A725 の小さな枠の目測誤差)。
+- **G-die を反映しなかった理由**: 既存の仕組みでは arm-soc に付けられる飾りダイの種類が無く(`decorDies` は iod・gpu-tile・platform-tile で、amd-chiplet・x86-tile の設計だけ)、コアなしの 2 つ目のダイに枠を当てる `SOC_DIE` / `socLayout` は Strix Halo 専用(amd-apu 固定)。G-die は従来どおり面積 173.6 mm² の 1 ブロック GPU。必要な拡張は設計書 §8.1(arm-soc 項の GB10)に記載。

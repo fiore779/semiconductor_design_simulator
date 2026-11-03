@@ -75,6 +75,8 @@ Object.keys(D.uarch || {}).forEach((name) => {
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
 const C2_EXCEPTIONS = new Set(['amd-kraken-350']);
+// C1 の例外(id 指定。C2〜C5 は続ける): GB10(DGX Spark)は GB7 が未取得(二次資料にも無い。N1X の値は別製品なので入れない)で gb7: null。ユーザー指示 2026-11-03(設計書 §13 M5b-4)
+const C1_EXCEPTIONS = new Set(['nv-gb10']);
 const INTEL_GEN12_PLUS_P = new Set(['Golden Cove', 'Raptor Cove', 'Redwood Cove', 'Lion Cove', 'Cougar Cove']);
 const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) || []).some((c) => INTEL_GEN12_PLUS_P.has(c.uarch));
 (D.presets || []).forEach((p) => sigCount.set(sig(p), (sigCount.get(sig(p)) || 0) + 1));
@@ -82,8 +84,11 @@ const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) 
   const id = `presets ${p.id}(M5b)`;
   // C1 GB7
   const g = (D.gb7Scores || []).find((r) => r.name === p.gb7);
-  ok(!!g && gbByName.get(p.gb7) === 1 && Number.isFinite(g.single) && Number.isFinite(g.multi), `${id}: C1 gb7 が一意に一致し single/multi が数値であること`);
-  ok(!/64c/.test(p.gb7 || ''), `${id}: C1 定義が不明な GB7 行(64c 表記)は使えない`);
+  if (C1_EXCEPTIONS.has(p.id)) ok(p.gb7 === null, `${id}: C1 の例外は gb7 が null であること`);
+  else {
+    ok(!!g && gbByName.get(p.gb7) === 1 && Number.isFinite(g.single) && Number.isFinite(g.multi), `${id}: C1 gb7 が一意に一致し single/multi が数値であること`);
+    ok(!/64c/.test(p.gb7 || ''), `${id}: C1 定義が不明な GB7 行(64c 表記)は使えない`);
+  }
   // C2 面積
   const numDies = (p.dies || []).filter((d) => typeof d.mm2 === 'number');
   // C2 の例外(id 指定。C1・C3・C4 は続ける): Kraken Point はダイ面積が未取得(仮寸法表示)。ユーザー指示 2026-10-31(設計書 §13)

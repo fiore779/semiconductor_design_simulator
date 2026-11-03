@@ -146,7 +146,7 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
 });
 
 test('Snapdragon・Dimensity 9000〜9600 Pro・T239 以外の 78 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
-  const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239']);
+  const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239', 'nv-gb10']);
   const rest = D.presets.filter((p) => !MAPPED.includes(p.id));
   assert.strictEqual(rest.length, 78);
   const h = require('crypto').createHash('sha256');

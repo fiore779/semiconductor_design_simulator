@@ -17,7 +17,7 @@
     'amd-apu': 'AMD モノリシック APU',
     'x86-tile': 'x86 コンピュートタイル',
     'apple-soc': 'Apple シリコン(ダイ写真に倣う)',
-    'arm-soc': 'Arm SoC(Snapdragon・Dimensity・Switch 2 の T239。ダイ写真に倣う)',
+    'arm-soc': 'Arm SoC(Snapdragon・Dimensity・Switch 2 の T239・GB10 の S-die。ダイ写真に倣う)',
   };
   const TEMPLATE_IDS = Object.keys(TEMPLATES);
   const MAX_UNITS = 4;
@@ -484,6 +484,19 @@
         ['gpu-a', 'GPU(TPC #1〜#4。SM #1〜#8)', 'g', 180, 38, 425, 477], ['gpu-b', 'GPU(TPC #5・#6)', 'g', 797, 5, 406, 210], ['gpu-l2', 'GPU L2 Cache 1MiB(4×256KiB)', 'g', 797, 215, 406, 75],
         ['memctl', 'Memory Control', 'u', 1010, 680, 122, 165], ['memctl2', 'Memory Control', 'u', 1005, 870, 222, 85], ['phy-r', '64bit LPDDR5T/X Memory PHY', 'u', 1140, 292, 88, 560], ['phy-b', '64bit LPDDR5T/X Memory PHY', 'u', 452, 885, 545, 70], ['pcie', 'PCIe 4.0 x8', 'u', 10, 140, 68, 490]]),
   };
+  // GB10(DGX Spark)の S-die(GB102in1.jpg 9034×3951 の左半分。表示 2000×875 の目測で左のダイは x 0〜1085。Kurnal の注釈)。X925 #1〜#5 が上のクラスタ、#6〜#10 が下。A725 #1〜#5 は上、#6〜#10 は下。L3 16MiB(上)・8MiB(下)は重み 2:1 で cfg の 24MB を分ける。G-die は別ダイで、このプリセットでは layout なし(1 ブロックの GPU)
+  NV_FRAMES.gb10 = tf([0, 0, 1085, 875], { p: 10, e: 10, lp: 0 },
+    [[135, 45, 125, 112], [262, 45, 122, 112], [387, 45, 120, 112], [135, 172, 125, 125], [135, 300, 125, 115], [137, 447, 123, 128], [137, 577, 123, 126], [137, 705, 123, 130], [262, 752, 120, 85], [387, 752, 120, 85]],
+    [[503, 178, 55, 52], [563, 142, 65, 50], [277, 350, 55, 55], [335, 350, 62, 55], [403, 350, 70, 60], [272, 452, 62, 50], [340, 452, 62, 50], [403, 442, 56, 55], [393, 637, 62, 60], [472, 648, 62, 58]], [],
+    [[270, 165, 200, 180, 2], [270, 525, 98, 195, 1]], [
+      ['io-l', 'USB4・PCIe 5.0 / 4.0・USB 3.0 / 2.0(左端の I/O 列)', 'u', 12, 100, 120, 735], ['mipi', 'MIPI DSI ×3', 'u', 135, 850, 115, 22],
+      ['phy-t', '32bit LPDDR5 メモリ PHY #1〜#4', 'u', 530, 5, 430, 128], ['phy-b', '32bit LPDDR5 メモリ PHY #5〜#8', 'u', 530, 748, 415, 127],
+      ['mc1', 'Memory Cache 2MiB', 'u', 634, 140, 95, 70], ['mc2', 'Memory Cache 2MiB', 'u', 731, 140, 95, 70], ['mc3', 'Memory Cache 2MiB', 'u', 578, 222, 95, 70], ['mc4', 'Memory Cache 2MiB', 'u', 675, 222, 100, 70],
+      ['mc5', 'Memory Cache 2MiB', 'u', 690, 598, 80, 58], ['mc6', 'Memory Cache 2MiB', 'u', 538, 688, 92, 50], ['mc7', 'Memory Cache 2MiB', 'u', 633, 688, 95, 50], ['mc8', 'Memory Cache 2MiB', 'u', 733, 688, 80, 50],
+      ['isp', 'ISP + Audio DSP', 'u', 830, 140, 145, 175], ['hub', 'Coherence Hub', 'u', 478, 425, 118, 140],
+      ['slc', 'SLC 16MiB(上段)', 'u', 598, 312, 185, 213], ['slc-b', 'SLC(下段の 1MiB 区画)', 'u', 535, 597, 150, 52], ['slc-c', 'SLC(1MiB 区画)', 'u', 667, 528, 55, 55],
+      ['npu', 'Nvidia NPU 4 Core', 'n', 785, 455, 190, 200], ['flash', '17x Flash', 'u', 815, 695, 100, 50],
+      ['d2d', 'Die to Die Channel', 'u', 975, 225, 60, 335], ['nvl', 'NV-Link', 'u', 1036, 225, 42, 335], ['disp', 'Nvidia Display Engine', 'u', 980, 565, 100, 310]]);
   Object.assign(TILE_FRAMES, MT_FRAMES, NV_FRAMES);
   // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
   Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
@@ -538,10 +551,12 @@
   const NV_SRC = {
     't239': 'im1AIk2736qP6cwD.jpg(Kurnal の注釈。1231×960。ファイル名にチップ名なし。画像内の A78C ×8・TPC #1〜#6・LPDDR5T/X からユーザー申告の Switch 2 の T239 と判定。寸法の記載なし。URL 候補: https://www.techpowerup.com/336485/full-die-shot-analysis-of-nintendo-switch-2-soc-indicates-samsung-8-nm-production-origins)。L3 は中央の列で、注釈は 2MiB〔上〕・L3 Cache (share) 4MiB・2MiB〔縦書き〕で、4MiB が L3 全体とも各部分とも読める(2 通りに読める。cfg の 4MB と食い違うかは未確定)ため、注釈の範囲(縦 y 292〜605)の 1 枠に cfg の容量を割り当てた',
   };
+  NV_SRC.gb10 = 'GB102in1.jpg(Kurnal の注釈。9034×3951。透かし @Kurnal。左が S-die・右が G-die の 1 枚で、左のダイだけ使う。寸法 12.91×16.10 mm〔ページの値。画像内に記載なし〕は縦横比と一致。URL 候補: https://kurnal-insights.com/en/dieshot/nvidia-gb10/)。X925 5+5・A725 5+5・L3 16MiB〔上〕/ 8MiB〔下〕・SLC・NPU・PHY・C2C は注釈どおり。推定: L3 は cfg の 24MB を 16:8 に分けた(どちらが 16MB かは出典で食い違う)、SLC の 1MiB 区画は 3 枠に束ねた〔下段の左隣の区画は枠外、上段の枠の右端は 2 段目の区画を切る〕、Memory Cache 2MiB ×8 と SLC の関係は不明、A725 の小さな枠は目測の誤差が大きい。G-die は layout なし';
   const ARM_MAP = {
     'mt-9000': { frame: 'mt-9000', basis: 'photo', src: MT_SRC['mt-9000'] }, 'mt-9200': { frame: 'mt-9200', basis: 'photo', src: MT_SRC['mt-9200'] }, 'mt-9300': { frame: 'mt-9300', basis: 'photo', src: MT_SRC['mt-9300'] },
     'mt-9400': { frame: 'mt-9400', basis: 'photo', src: MT_SRC['mt-9400'] }, 'mt-9500': { frame: 'mt-9500', basis: 'photo', src: MT_SRC['mt-9500'] }, 'mt-9600pro': { frame: 'mt-9600pro', basis: 'photo', src: MT_SRC['mt-9600pro'] },
     'nv-t239': { frame: 't239', basis: 'photo', src: NV_SRC['t239'] },
+    'nv-gb10': { frame: 'gb10', basis: 'photo', src: NV_SRC['gb10'] },
   };
   // Strix Halo の SoC ダイ(CCD は別ダイ)に写真の枠を当てる。classify の socDie と、design.fromPreset が使う
   const SOC_DIE = { 'amd-strixhalo-395': { frame: 'strix-halo-soc', src: 'Strix-Halo-All-16.02x19.20.jpg(Kurnal の注釈。6724×8237。出典は推定: https://kurnal-insights.com/en/dieshot/?sort=yearDesc&m=AMD&t=desktop-soc&id=amd-strix-halo-full-package)。SoC ダイの縦横比 1.195 は 19.2×16.02 mm(ファイル名の 16.02x19.20。積 307.6 mm² = プリセットの面積)と一致。注釈に「?」つきの項目あり(作者も未確定)。GPU の WGP 20 個(40CU)・NPU・MALL・PHY などはすべてプリセットに無いブロックで、SoC ダイは従来どおり電力按分に参加する' } };
@@ -806,8 +821,9 @@
       const bigs = flat.filter((g) => !isSmall(g.type)); const lps = flat.filter(isLp); const es = flat.filter((g) => isSmall(g.type) && !isLp(g));
       [[bigs, TF.big], [es, TF.small], [lps, TF.lp]].forEach((pr) => pr[0].forEach((g, i) => { const r = pr[1][i]; coreBlock(g, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy); }));
       if (hasL3 && TF.l3) {
-        const rs = Array.isArray(TF.l3[0]) ? TF.l3 : [TF.l3]; // 複数枠(Zeppelin の 2 CCX)は容量を等分
-        rs.forEach((r, i) => put(rs.length === 1 ? `${die.id}-l3` : `${die.id}-l3-${i}`, 'l3', `L3 ${rs.length === 1 ? l3MB : Math.round((l3MB / rs.length) * 100) / 100}MB`, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy));
+        const rs = Array.isArray(TF.l3[0]) ? TF.l3 : [TF.l3]; // 複数枠(Zeppelin の 2 CCX)は容量を等分。枠の 5 番目の数(重み)があれば容量をその比で分ける(GB10 の 16MB + 8MB クラスタ = 重み 2:1)
+        const wsum = rs.reduce((a, r) => a + (r[4] || 1), 0);
+        rs.forEach((r, i) => put(rs.length === 1 ? `${die.id}-l3` : `${die.id}-l3-${i}`, 'l3', `L3 ${rs.length === 1 ? l3MB : Math.round((l3MB * (r[4] || 1) / wsum) * 100) / 100}MB`, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy));
       }
       TF.deco.forEach((d) => put(`${die.id}-${d[0]}`, KIND[d[2]], d[1], X(d[3]), Y(d[4]), d[5] * sx, d[6] * sy, TF.live && d[7] !== 'deco' ? undefined : deco));
       return blocks;

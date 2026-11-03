@@ -56,7 +56,7 @@ test('全プリセット: コア数・L3 の個数と容量が元のプリセッ
     assert.strictEqual(coreBlocks(d).length, total(p), `${p.id}: コア数`);
     const l3 = d.dies.reduce((a, die) => a.concat(die.blocks.filter((b) => b.kind === 'l3')), []);
     const lay = (d.dies.find((x) => x.layout) || {}).layout;
-    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && (lay.frame === 'strix-point' || lay.frame === 'zeppelin') ? 2 : 1)) : 0;
+    const want = p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && (lay.frame === 'strix-point' || lay.frame === 'zeppelin' || lay.frame === 'gb10') ? 2 : 1)) : 0;
     assert.strictEqual(l3.length, want, `${p.id}: L3 ブロック数`);
     const srcDies = p.dies && p.dies.length ? p.dies : [{ mm2: null }];
     assert.strictEqual(d.dies.length, srcDies.length, `${p.id}: ダイ数`);

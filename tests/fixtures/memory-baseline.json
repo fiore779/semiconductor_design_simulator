@@ -1059,5 +1059,15 @@
   "tjC": null,
   "sus": null,
   "powerW": null
+ },
+ "nv-gb10": {
+  "st": 2132.5128960418765,
+  "mt": 17860.878513305503,
+  "stErr": null,
+  "mtErr": null,
+  "estW": null,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
  }
 }

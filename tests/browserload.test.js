@@ -375,7 +375,7 @@ test('PNG 書き出し: ダイ図なし・2D 不可・toBlob なし/null・高�
 });
 
 // ---- プリセット一覧(グループ化) ----
-test('プリセット一覧: 99 行・28 見出し・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
+test('プリセット一覧: 100 行・29 見出し・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
   const ctx = loadAll(stubDoc());
   const ui = ctx.SDS.ui; const c = ctx.SDS.model.evaluate.makeContext();
   const body = new FakeNode('body');
@@ -387,9 +387,9 @@ test('プリセット一覧: 99 行・28 見出し・初期は全て閉じる・
     ui.dialogs.openPresets(c, { onReproduce(p) { got.push(p.id); }, onImprove() {} });
     const rows = () => findAll(body, (n) => n.tag === 'button' && n.attrs.role === 'option');
     const heads = () => findAll(body, (n) => n.tag === 'button' && n.className === 'group-head');
-    assert.strictEqual(c.presets.length, 99);
-    assert.strictEqual(rows().length, 99);
-    assert.strictEqual(heads().length, 28);
+    assert.strictEqual(c.presets.length, 100);
+    assert.strictEqual(rows().length, 100);
+    assert.strictEqual(heads().length, 29);
     assert.ok(heads().every((n) => n.attrs['aria-expanded'] === 'false'));
     const key = heads()[0].dataset.key;
     heads()[0].listeners.click();
@@ -402,8 +402,8 @@ test('プリセット一覧: 99 行・28 見出し・初期は全て閉じる・
     r1.listeners.click();
     assert.ok(focused && focused.dataset.id === id);
     rows().forEach((r) => r.listeners.dblclick());
-    assert.strictEqual(got.length, 99);
-    assert.strictEqual(new Set(got).size, 99);
+    assert.strictEqual(got.length, 100);
+    assert.strictEqual(new Set(got).size, 100);
     assert.strictEqual([...got].sort().join(','), Array.from(c.presets, (p) => p.id).sort().join(','));
   } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
 });
