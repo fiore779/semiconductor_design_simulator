@@ -215,7 +215,7 @@
       // コア数が元のダイの枠を超えたら、大きさの根拠(scaleBasis)を schematic に落とす
       if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores, d.cfg.l3MB);
       // 根拠なしに落ちた Apple(apple-soc で schematic)は、写真の枠を使わず従来の配置にする(layout は注記のために残す)
-      const legacy = !die.layout || !FP || (die.layout.template === 'apple-soc' && die.layout.scaleBasis === 'schematic');
+      const legacy = !die.layout || !FP || ((die.layout.template === 'apple-soc' || die.layout.template === 'arm-soc') && die.layout.scaleBasis === 'schematic');
       die.blocks = legacy ? layoutCompute(die, d.cfg.cores, d.cfg.l3MB) : FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout);
     }
     return d;
@@ -277,7 +277,7 @@
     d.cfg.l3MB = mb;
     if (old === mb) return { ok: true, design: d, relaid: false };
     // 実物風テンプレートのダイは L3 の大きさが容量で変わらないので、あるまま(0 でない同士)なら位置は動かさず、ラベルだけ更新
-    const tpl = (die) => die.layout && !(die.layout.template === 'apple-soc' && die.layout.scaleBasis === 'schematic'); // 根拠なしに落ちた Apple は従来の配置(下の帯の高さの分岐)
+    const tpl = (die) => die.layout && !((die.layout.template === 'apple-soc' || die.layout.template === 'arm-soc') && die.layout.scaleBasis === 'schematic'); // 根拠なしに落ちた Apple は従来の配置(下の帯の高さの分岐)
     if (old > 0 && mb > 0 && d.dies.some((die) => tpl(die) && die.blocks.some((b) => b.kind === 'l3'))) {
       const FP = floorplanApi();
       d.dies.forEach((die) => {

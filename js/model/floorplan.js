@@ -17,6 +17,7 @@
     'amd-apu': 'AMD モノリシック APU',
     'x86-tile': 'x86 コンピュートタイル',
     'apple-soc': 'Apple シリコン(ダイ写真に倣う)',
+    'arm-soc': 'Arm モバイル SoC(Snapdragon。ダイ写真に倣う)',
   };
   const TEMPLATE_IDS = Object.keys(TEMPLATES);
   const MAX_UNITS = 4;
@@ -344,8 +345,82 @@
       ['usb4', 'USB4 Buffer / PHY ×2', 'u', 1122, 1772, 265, 190], ['phy-br', 'USB / Display PHY ほか', 'u', 1390, 1860, 235, 135]]),
   };
   Object.assign(TILE_FRAMES, AMD_FRAMES);
-  // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
-  Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : ['x86-tile']; });
+  // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
+  // big = プライム → 中間コアの順(cfg の P → M → M2 の順に埋める)、small = 小コア(cfg の E)。cfg に L3 が無い(l3MB なし)ので frame の l3 は null で、写真の L3 は飾り(deco)で置く。座標は表示ピクセルからの目測(±5〜10%)。
+  const qf = (box, big, small, deco) => tf(box, { p: big.length, e: small.length, lp: 0 }, big, small, [], null, deco);
+  const QC_FRAMES = {
+    // 855(855 sm8150.jpg 5670×5925 の表示 1531×1600)。Kryo 485: A76 2.84GHz ×1(右端)+ 2.42GHz ×3、A55 ×4、L3 2+1+1MiB、SLC 3MiB
+    'sd-855': qf([0, 0, 1531, 1600], [[637, 132, 198, 255], [88, 132, 178, 230], [270, 132, 178, 230], [452, 132, 180, 230]], [[222, 515, 98, 110], [322, 515, 96, 110], [420, 530, 98, 110], [545, 528, 98, 112]], [
+      ['l3', 'L3 キャッシュ 4MiB(1+2+1。cfg に L3 なし)', 'u', 222, 390, 445, 118], ['slc', 'System Level Cache 3MiB', 'u', 442, 707, 392, 360], ['modem', 'Baseband X24(PCIe 経由の 5G)', 'u', 962, 125, 470, 520],
+      ['hex-l', 'Hexagon 690?', 'n', 92, 740, 325, 280], ['hex-r', 'Hexagon 690?', 'n', 925, 682, 560, 165], ['gpu', 'GPU(Adreno 640 768 ALU)', 'g', 905, 858, 530, 692], ['isp', 'Spectra 380 ISP', 'u', 88, 1100, 770, 350],
+      ['phy-lt', 'LPDDR4X PHY', 'u', 8, 75, 72, 365], ['phy-rt', 'LPDDR4X PHY', 'u', 1443, 75, 72, 365], ['phy-lb', 'LPDDR4X PHY', 'u', 8, 1190, 72, 350], ['phy-rb', 'LPDDR4X PHY', 'u', 1443, 1200, 72, 350], ['csi', 'CSI', 'u', 95, 1495, 310, 58]]),
+    // 865(865 sm8250.jpg 5674×6695 の表示 1356×1600)。Kryo 585: A77 2.84GHz ×1(HP)+ 2.42GHz ×3、A55 ×4、L3 4MiB、SLC 3MiB
+    'sd-865': qf([0, 0, 1356, 1600], [[288, 490, 210, 262], [112, 112, 175, 230], [288, 112, 175, 230], [112, 465, 175, 240]], [[465, 112, 92, 100], [472, 218, 92, 100], [566, 232, 90, 90], [660, 244, 90, 78]], [
+      ['l3a', 'L3 キャッシュ 2MiB(合計 4MiB。cfg に L3 なし)', 'u', 112, 365, 195, 95], ['l3b', 'L3 キャッシュ 2MiB', 'u', 555, 350, 195, 95], ['slc', 'System Level Cache 3MiB', 'u', 505, 580, 410, 150], ['slc2', 'SLC(768KiB ほか)', 'u', 370, 765, 315, 185],
+      ['hex', 'Hexagon DSP + VPU 665', 'n', 820, 50, 430, 390], ['gpu', 'GPU(Adreno 650 768 ALU?)', 'g', 700, 905, 545, 640], ['dpu', 'DPU 995', 'u', 8, 712, 275, 215], ['isp', 'Spectra 480 ISP', 'u', 108, 955, 590, 575],
+      ['phy-lt', 'LPDDR5 / 4X PHY', 'u', 20, 155, 70, 285], ['phy-rt', 'LPDDR5 / 4X PHY', 'u', 1262, 205, 65, 285], ['phy-lb', 'LPDDR5 / 4X PHY', 'u', 8, 1235, 75, 280], ['phy-rb', 'LPDDR5 / 4X PHY', 'u', 1245, 1262, 85, 300],
+      ['dsi', 'DSI', 'u', 8, 445, 85, 205], ['csi-l', 'CSI', 'u', 8, 985, 65, 210], ['csi-b', 'CSI', 'u', 105, 1535, 200, 55]]),
+    // 888(SM8350.jpg 6760×6998 の表示 1546×1600)。X1 2.84GHz ×1、A78 2.4GHz ×3、A55 ×4、L3 4MiB、SLC 3MiB
+    'sd-888': qf([0, 0, 1546, 1600], [[243, 845, 228, 300], [85, 962, 155, 175], [115, 1255, 155, 175], [272, 1265, 155, 170]], [[448, 1272, 72, 82], [522, 1260, 74, 82], [598, 1250, 74, 84], [438, 1362, 72, 72]], [
+      ['l3', 'L3 キャッシュ 4MiB(2+?+2。cfg に L3 なし)', 'u', 115, 1152, 590, 95], ['slc', 'System Level Cache 3MiB', 'u', 478, 780, 425, 360], ['gpu', 'GPU(Adreno 660 768 ALU)', 'g', 108, 148, 480, 620], ['modem', 'Snapdragon X60 5G', 'u', 685, 100, 755, 475],
+      ['pcie', 'PCIe x8', 'u', 903, 48, 435, 45], ['hex', 'Hexagon 780(26 TOPS)', 'n', 1010, 590, 490, 395], ['vpu', 'VPU 665', 'u', 985, 1017, 450, 210], ['isp', 'Spectra 580 ISP', 'u', 945, 1232, 500, 250], ['dpu', 'DPU', 'u', 700, 1385, 240, 150],
+      ['csi', 'CSI', 'u', 950, 1485, 540, 60], ['phy-lt', 'LPDDR5 PHY', 'u', 15, 115, 80, 260], ['phy-rt', 'LPDDR5 PHY', 'u', 1445, 205, 78, 265], ['phy-lb', 'LPDDR5 PHY', 'u', 20, 1185, 78, 262], ['phy-rb', 'LPDDR5 PHY', 'u', 1448, 1130, 78, 270]]),
+    // 8 Gen 1(Snapdragon 8 Gen1… v2-…_1440w.jpg の左半分。TechInsights の写真 + xian333c の Floor Plan。表示 1440×778 の x 8〜692)。X2 ×1、A710 ×3、A510(写真の「Dual A510 cluster」を 2 つ + 単独の 2 つ = 2+2)×4
+    'sd-8gen1': qf([8, 8, 692, 750], [[225, 122, 132, 112], [60, 55, 88, 63], [52, 122, 88, 68], [260, 50, 85, 72]], [[82, 195, 56, 32], [82, 227, 56, 32], [92, 265, 56, 32], [92, 297, 56, 32]], [
+      ['l3', 'L3 キャッシュ 4×1.5MiB(cfg に L3 なし)', 'u', 148, 55, 72, 230], ['slc', 'SLC 4×1MiB', 'u', 205, 295, 155, 135], ['gmem', 'GMEM', 'u', 392, 55, 58, 95], ['gpu', 'GPU(Adreno 730)', 'g', 452, 55, 235, 335],
+      ['dsp', 'DSP?', 'n', 288, 435, 170, 295], ['modem', 'Modem?', 'u', 468, 398, 215, 310], ['isp', 'ISP', 'u', 50, 520, 210, 190], ['csi', 'CSI', 'u', 18, 520, 28, 175],
+      ['phy-tl', '16bit DDR チャネル', 'u', 105, 18, 118, 32], ['phy-tr', '16bit DDR チャネル', 'u', 548, 18, 122, 32], ['phy-bl', '16bit DDR チャネル', 'u', 105, 716, 122, 28], ['phy-br', '16bit DDR チャネル', 'u', 468, 712, 120, 30]]),
+    // 8 Gen 2(sm8550Dieshot.jpg 7631×7222 の表示 1600×1514)。X3 ×1、A715 / A710 の中間コア ×4(写真の注釈の枠。cfg では同じ M 種別なので A715 と A710 の割当は区別しない)、A510 ×3(写真の注釈「A510 2core cluster」〔左上の帯〕を 2 等分した 2 枠 + 「A510 1core」〔その右の枠〕の 1 枠)
+    'sd-8gen2': qf([0, 0, 1600, 1514], [[1025, 445, 243, 282], [1060, 88, 150, 188], [1215, 88, 140, 188], [1358, 90, 142, 185], [1262, 445, 120, 185]], [[828, 170, 69, 105], [897, 170, 69, 105], [970, 100, 88, 175]], [
+      ['l3a', 'L3 キャッシュ 2MiB(合計 8MiB。cfg に L3 なし)', 'u', 828, 290, 155, 135], ['l3b', 'L3 キャッシュ 2MiB', 'u', 1010, 290, 155, 135], ['l3c', 'L3 キャッシュ 2MiB', 'u', 1188, 290, 150, 135], ['l3d', 'L3 キャッシュ 2MiB', 'u', 1360, 290, 140, 135],
+      ['slc', 'System Level Cache 6MiB', 'u', 610, 440, 280, 330], ['gpu', 'GPU(Adreno 740 1536 ALU)', 'g', 715, 830, 805, 600], ['hex', 'Hexagon DSP', 'n', 20, 610, 385, 185], ['isp', 'ISP', 'u', 85, 95, 480, 330], ['dpu', 'DPU', 'u', 85, 430, 340, 170],
+      ['vpu', 'Adreno VPU', 'u', 570, 60, 255, 370], ['modem', 'Snapdragon X70 5G', 'u', 90, 1055, 625, 360], ['csi', 'CSI', 'u', 75, 15, 500, 60], ['phy-lt', 'LPDDR5X PHY', 'u', 8, 235, 70, 215], ['phy-lb', 'LPDDR5X PHY', 'u', 8, 1050, 70, 235], ['phy-rt', 'LPDDR5X PHY', 'u', 1525, 190, 60, 245], ['phy-rb', 'LPDDR5X PHY', 'u', 1525, 1050, 62, 235]]),
+    // 8 Gen 3(SM8650.jpg 7575×6335 の表示 1600×1338)。X4 ×1、A720 Gold 3.15GHz ×3 + 2.96GHz ×2、A520 Silver ×2(2.27GHz)。L3 12MiB(3MiB ×4)
+    'sd-8gen3': qf([0, 0, 1600, 1338], [[975, 405, 225, 265], [912, 75, 145, 170], [1058, 75, 142, 170], [1200, 75, 142, 170], [1212, 395, 153, 155], [1372, 395, 122, 150]], [[1345, 118, 72, 115], [1418, 140, 70, 100]], [
+      ['l3a', 'L3 キャッシュ 3MiB(合計 12MiB。cfg に L3 なし)', 'u', 790, 248, 160, 130], ['l3b', 'L3 キャッシュ 3MiB', 'u', 978, 248, 167, 130], ['l3c', 'L3 キャッシュ 3MiB', 'u', 1163, 248, 172, 130], ['l3d', 'L3 キャッシュ 3MiB', 'u', 1348, 255, 170, 130],
+      ['slc', 'System Level Cache 6MiB', 'u', 540, 395, 290, 340], ['dpu', 'Adreno DPU', 'u', 1212, 560, 370, 170], ['gpu', 'GPU(Adreno 750 1536 ALU)', 'g', 635, 740, 880, 570], ['isp', 'Spectra ISP', 'u', 75, 65, 450, 485], ['csi', 'CSI', 'u', 70, 15, 340, 50], ['vpu', 'Adreno VPU 8650', 'u', 535, 45, 370, 200],
+      ['ai', 'Hexagon V73M DSP・Low power AI', 'n', 8, 562, 530, 385], ['modem', 'Snapdragon X75 5G', 'u', 75, 1045, 490, 285], ['dsi', 'DSI', 'u', 8, 415, 60, 150], ['phy-lt', 'LPDDR5X PHY', 'u', 8, 210, 62, 195], ['phy-lb', 'LPDDR5X PHY', 'u', 8, 950, 62, 235], ['phy-rt', 'LPDDR5X PHY', 'u', 1528, 175, 60, 225], ['phy-rb', 'LPDDR5X PHY', 'u', 1518, 925, 70, 205]]),
+    // 8 Elite(SM8750shuiying.jpg 7961×7039 の表示 1600×1415)。Phoenix L ×2(4.32GHz。写真の 1 つの大きい帯を左右に 2 等分した推定)、Phoenix M ×6(3.53GHz。上 3 + 下 3)。L2 は L クラスタ 12MB・M クラスタ 12MB
+    'sd-8elite': qf([0, 0, 1600, 1415], [[745, 152, 185, 208], [930, 152, 182, 208]], [[1215, 20, 125, 155], [1340, 20, 122, 155], [1462, 20, 125, 155], [1200, 450, 125, 125], [1330, 450, 125, 125], [1458, 450, 125, 125]], [
+      ['l2l', 'L クラスタ L2 12MB', 'u', 735, 365, 380, 275], ['l2m', 'M クラスタ L2 12MB', 'u', 1125, 178, 395, 262], ['slc1', 'SLC#1(2MB)', 'u', 715, 640, 230, 85], ['slc2', 'SLC#2(2MB)', 'u', 695, 728, 245, 115], ['slc', 'System Level Cache 8MB', 'u', 945, 640, 395, 125], ['slc34', 'SLC#3・#4(各 2MB)', 'u', 1345, 585, 230, 175],
+      ['gpu', 'GPU(Adreno 830 1536 ALU)', 'g', 705, 845, 815, 540], ['isp', 'Spectra ISP', 'u', 90, 75, 410, 395], ['csi', 'CSI', 'u', 75, 20, 365, 50], ['vpu', 'Adreno 8 VPU', 'u', 505, 150, 225, 325], ['dpu', 'Adreno 8 DPU', 'u', 30, 485, 500, 90], ['dsi', 'DSI', 'u', 8, 585, 65, 70],
+      ['npu', 'Hexagon V79(Dual NPU)', 'n', 80, 660, 420, 135], ['lpi', 'Low-power AI System', 'n', 8, 800, 340, 225], ['modem', 'Snapdragon X80 5G', 'u', 85, 1045, 480, 245], ['phy-lt', 'LPDDR5X PHY', 'u', 8, 175, 70, 230], ['phy-lb', 'LPDDR5X PHY', 'u', 8, 1030, 70, 250], ['phy-rt', 'LPDDR5X PHY', 'u', 1525, 195, 62, 215], ['phy-rb', 'LPDDR5X PHY', 'u', 1525, 1085, 62, 205]]),
+    // 8 Elite Gen 5(8EliteG5 Dieshot.jpg 6309×5588 の表示 1600×1417。SM8850)。Oryon 3rd L ×2(4.61GHz。上に 1 つ、L2 の下に 1 つ)、M ×6(3.63GHz。M クラスタ L2 12MiB の左右に 3 つずつ)
+    'sd-8elite-gen5': qf([0, 0, 1600, 1417], [[818, 50, 178, 215], [582, 510, 180, 210]], [[1002, 50, 120, 138], [1002, 190, 120, 135], [1002, 330, 120, 138], [1395, 50, 125, 130], [1395, 185, 125, 140], [1395, 325, 125, 140]], [
+      ['l2l', 'L クラスタ L2 12MiB', 'u', 607, 275, 390, 225], ['l2m', 'M クラスタ L2 12MiB', 'u', 1125, 50, 262, 380], ['slc1', 'SLC#1(2MiB)', 'u', 768, 632, 190, 100], ['slc2', 'SLC#2(2MiB)', 'u', 720, 745, 240, 90], ['slc', 'SLC 8MiB', 'u', 965, 615, 120, 130], ['slc34', 'SLC#3・#4(各 2MiB)', 'u', 1095, 570, 235, 175],
+      ['gpu', 'GPU(Adreno 840)', 'g', 712, 840, 805, 480], ['isp', 'Spectra ISP', 'u', 80, 75, 455, 335], ['csi', 'CSI', 'u', 75, 25, 350, 50], ['vpu', 'Adreno 8 VPU', 'u', 560, 90, 250, 180], ['dpu', 'Adreno 8 DPU', 'u', 25, 445, 300, 140],
+      ['npu', 'Hexagon DSP', 'n', 12, 615, 560, 330], ['modem', 'Snapdragon X85 5G', 'u', 85, 1040, 520, 250], ['usb', 'USB / UFS', 'u', 840, 1345, 270, 60], ['phy-lt', 'LPDDR5X PHY', 'u', 8, 175, 65, 235], ['phy-lb', 'LPDDR5X PHY', 'u', 8, 1030, 65, 260], ['phy-rt', 'LPDDR5X PHY', 'u', 1525, 95, 65, 205], ['phy-rb', 'LPDDR5X PHY', 'u', 1525, 1100, 65, 205]]),
+    // 7+ Gen 3 / 8s Gen 3(7gen3+&8Sgen3.jpg 5307×6764 の表示 1255×1600。7+ Gen 3 / 8s Gen 3 共通のダイ=画像内の両チップ併記・ファイル名・URL の綴りから)。X4 ×1、A720 ×4、A520 ×3(2 コア + 1 コア)、L3 4MiB(2MiB ×2)
+    'sd-7p3-8s3': qf([0, 0, 1255, 1600], [[990, 470, 165, 180], [775, 40, 150, 170], [930, 40, 155, 170], [1090, 40, 150, 160], [1090, 222, 145, 148]], [[650, 225, 80, 125], [730, 225, 80, 125], [812, 230, 70, 120]], [
+      ['l3a', 'L3 キャッシュ 2MiB(合計 4MiB。cfg に L3 なし)', 'u', 915, 228, 115, 145], ['l3b', 'L3 キャッシュ 2MiB', 'u', 752, 362, 150, 150], ['x4-l2', 'X4 の L2 256KiB', 'u', 985, 405, 100, 62], ['slc1', 'SLC(896KiB ×2)', 'u', 415, 615, 250, 105], ['slc2', 'System Level Cache 3584KiB', 'u', 470, 727, 230, 130],
+      ['isp', 'Spectra ISP', 'u', 95, 90, 300, 450], ['vpu', 'VPU?', 'u', 405, 150, 220, 330], ['csi', 'CSI', 'u', 200, 20, 345, 60], ['dsi', 'DSI', 'u', 20, 590, 65, 95], ['ai', 'Hexagon DSP・Low Power AI', 'n', 40, 770, 380, 320], ['modem', 'Snapdragon X70 / X62 5G', 'u', 90, 1100, 630, 420],
+      ['gpu', 'GPU(Adreno 735 / 732 768 ALU)', 'g', 715, 950, 440, 590], ['pcie', 'PCIe', 'u', 360, 1525, 330, 70], ['wifi', 'WiFi + BT', 'u', 118, 1530, 230, 65], ['phy-lt', 'LPDDR5X PHY', 'u', 10, 265, 75, 245], ['phy-lb', 'LPDDR5X PHY', 'u', 10, 1095, 75, 245], ['phy-rt', 'LPDDR5X PHY', 'u', 1160, 380, 95, 270], ['phy-rb', 'LPDDR5X PHY', 'u', 1160, 965, 95, 245]]),
+    // 8s Gen 4(8sGen4.jpg 7451×4711 の表示 1600×1012。SM8735)。X4 3.21GHz ×1、A720 3.01GHz ×3 + 2.8GHz ×2、A720 2.02GHz ×2(小コア)。L3 8MiB(2MiB ×4)
+    'sd-8s-gen4': qf([0, 0, 1600, 1012], [[402, 222, 205, 245], [28, 165, 122, 135], [28, 305, 122, 120], [100, 455, 120, 115], [275, 15, 110, 125], [482, 88, 118, 130]], [[28, 28, 120, 110], [150, 28, 122, 110]], [
+      ['l3a', 'L3 キャッシュ #1(2MiB。合計 8MiB。cfg に L3 なし)', 'u', 155, 185, 120, 95], ['l3b', 'L3 キャッシュ #2(2MiB)', 'u', 305, 145, 160, 80], ['l3c', 'L3 キャッシュ #3(2MiB)', 'u', 165, 315, 110, 110], ['l3d', 'L3 キャッシュ #4(2MiB)', 'u', 290, 285, 110, 140],
+      ['slc', 'SLC 6MiB', 'u', 375, 472, 235, 80], ['slca', 'SLC #1(1.5MiB)', 'u', 655, 215, 115, 110], ['slcb', 'SLC #2(1.5MiB)', 'u', 660, 330, 130, 105], ['slcc', 'SLC #3(1.5MiB)', 'u', 580, 555, 140, 105], ['slcd', 'SLC #4(1.5MiB)', 'u', 405, 615, 140, 115],
+      ['npu', 'Hexagon NPU', 'n', 790, 75, 315, 125], ['npu2', 'Scalar + L2 / HMX', 'n', 790, 205, 310, 130], ['modem', 'Snapdragon X75 5G', 'u', 1112, 70, 478, 320], ['ufs', 'UFS コントローラ', 'u', 628, 75, 95, 140], ['gpu', 'GPU(Adreno 825)', 'g', 725, 620, 860, 320],
+      ['isp', 'Spectra ISP', 'u', 75, 580, 325, 360], ['csi', 'CSI', 'u', 8, 675, 60, 235], ['dpu', 'Adreno DPU', 'u', 540, 745, 175, 255], ['phy-t', 'LPDDR5X PHY', 'u', 415, 25, 190, 40], ['phy-t2', 'LPDDR5X PHY', 'u', 1095, 25, 195, 40], ['phy-b', 'LPDDR5X PHY', 'u', 240, 945, 215, 60], ['phy-b2', 'LPDDR5X PHY', 'u', 920, 945, 230, 55]]),
+    // 8 Elite Extreme Gen 6(SM8975.jpg 8531×7396 の表示 1600×1387)。Oryon-L ×2(5.01GHz。上と、L2 の右下)、Oryon-M ×6(4.03GHz 上 3 + 3.74GHz 下 3)。L2 は M クラスタ 16MiB
+    'sd-8elite-x-gen6': qf([0, 0, 1600, 1387], [[898, 50, 170, 195], [1070, 415, 168, 150]], [[1070, 50, 135, 120], [1205, 50, 130, 120], [1335, 50, 130, 120], [1240, 420, 105, 145], [1348, 420, 100, 145], [1455, 420, 110, 145]], [
+      ['l2m', 'L2 キャッシュ 16MiB', 'u', 1070, 175, 450, 235], ['lpi', 'LPI?', 'n', 1125, 575, 395, 165], ['slct', 'SLC(2MiB ×2。SLC 8MiB の一部)', 'u', 612, 355, 255, 245], ['slcb', 'SLC(2MiB ×2。SLC 8MiB の一部)', 'u', 695, 757, 260, 245],
+      ['gpu', 'GPU(Adreno 850)', 'g', 958, 762, 562, 590], ['gpu-s3', 'GPU(Slice #3。GMEM 6MiB を含む)', 'g', 620, 1005, 338, 295], ['isp', 'Spectra ISP', 'u', 78, 75, 500, 320], ['csi', 'CSI', 'u', 105, 28, 340, 45], ['vpu', 'Adreno VPU', 'u', 685, 90, 210, 175], ['dpu', 'Adreno 8 DPU', 'u', 10, 400, 375, 115], ['dsi', 'DSI', 'u', 8, 520, 60, 130],
+      ['hmx', 'HMX', 'n', 72, 525, 285, 125], ['npu', 'Hexagon NPU(V83 ×2)', 'n', 12, 680, 480, 270], ['modem', 'Snapdragon X105 5G', 'u', 85, 1015, 480, 310], ['usb', 'USB / UFS', 'u', 795, 1320, 160, 60],
+      ['phy-lt', 'LPDDR5x&6 PHY', 'u', 8, 125, 62, 230], ['phy-rt', 'LPDDR5x&6 PHY', 'u', 1525, 150, 62, 215], ['phy-lb', 'LPDDR5x&6 PHY', 'u', 8, 1010, 65, 260], ['phy-rb', 'LPDDR5x&6 PHY', 'u', 1525, 1065, 62, 215]]),
+    // 7 Gen 1(sn7450Kurnal.jpg 7472×6535 の表示 1600×1399。SM7450)。A710 HP 2.5GHz ×1、A710 HD 2.36GHz ×3、A510 2 コア ×2(2 つずつに区切った)。L3 2MiB
+    'sd-7gen1': qf([0, 0, 1600, 1399], [[985, 378, 235, 200], [995, 22, 215, 190], [1215, 8, 215, 170], [995, 220, 215, 150]], [[1432, 35, 72, 135], [1504, 35, 72, 135], [1352, 345, 75, 130], [1427, 345, 75, 130]], [
+      ['l3a', 'L3 キャッシュ(1MiB。合計 2MiB。cfg に L3 なし)', 'u', 1235, 195, 170, 120], ['l3b', 'L3 キャッシュ(1MiB)', 'u', 1435, 180, 140, 130], ['slc', 'System Level Cache 2MiB', 'u', 1225, 500, 270, 250], ['gpu', 'GPU(Adreno 644 768 ALU)', 'g', 990, 752, 505, 640],
+      ['dsp', 'Low Power AI Subsystem DSP', 'n', 550, 85, 270, 395], ['dpu', 'DPU', 'u', 830, 100, 150, 395], ['modem', 'Snapdragon X62 5G', 'u', 90, 520, 430, 390], ['isp', 'Spectra ISP', 'u', 105, 945, 770, 355], ['csi', 'CSI', 'u', 370, 1305, 330, 90],
+      ['phy-rt', 'LPDDR4x/5 PHY', 'u', 1500, 315, 75, 275], ['phy-rb', 'LPDDR4x/5 PHY', 'u', 1500, 785, 75, 265]]),
+    // 8cx Gen 3(8CXG3.jpg 7094×7832 の表示 1449×1600。SC8280XP)。X1 ×4(3.0GHz)、A78 ×4(2.42GHz。注釈の A78 は 3 つ。4 つ目〔左上〕の枠は注釈が「System Level Cache 512KiByte」だが、構造が A78 と似ているため 4 つ目の A78 と推定した=注釈と食い違う)。L3 8MiB
+    'sd-8cx-gen3': qf([0, 0, 1449, 1600], [[638, 85, 180, 225], [820, 35, 180, 270], [1002, 35, 180, 270], [1185, 85, 172, 225], [1233, 315, 128, 150], [762, 447, 125, 118], [888, 447, 125, 118], [605, 315, 120, 150]], [], [
+      ['l3a', 'L3 キャッシュ 3MiB(合計 8MiB。cfg に L3 なし)', 'u', 728, 330, 145, 112], ['l3t', 'L3 タグ', 'u', 875, 330, 210, 112], ['l3b', 'L3 キャッシュ 3MiB', 'u', 1088, 330, 140, 112], ['slc', 'System Level Cache 6MiB', 'u', 1020, 540, 320, 260],
+      ['gpu-f', 'GPU(Rops ほか)', 'g', 640, 685, 335, 340], ['gpu-m', 'GPU(Adreno 690 Cluster 3・4)', 'g', 635, 1035, 360, 490], ['gpu-c', 'GPU(Adreno 690 Cluster 1・2)', 'g', 1000, 850, 355, 680],
+      ['npu', 'Hexagon V73 + Tensor(2 コア)', 'n', 70, 715, 500, 665], ['isp', 'Spectra ISP', 'u', 70, 92, 495, 615], ['pcie', 'PCIe x4', 'u', 378, 20, 215, 42], ['phy-t', 'LPDDR4X PHY', 'u', 1210, 15, 205, 70], ['phy-r', 'LPDDR4X PHY(右列 #3〜#8)', 'u', 1385, 90, 60, 1480], ['phy-b', 'LPDDR4X PHY', 'u', 1160, 1535, 225, 55], ['usb', 'USB バッファ(USB4?)', 'u', 200, 1440, 430, 150]]),
+  };
+  Object.assign(TILE_FRAMES, QC_FRAMES);
+  // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
+  Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : QC_FRAMES[k] ? ['arm-soc'] : ['x86-tile']; });
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
   const AMD_SRC = {
     zeppelin: 'Zeppelin_annotated.jpg(Zeppelin。19700×8660。作者表記なし。出典 URL 未取得)。左の CCX は注釈つき(Zen 1 コア ×4 + L2 512K、L3 8M)、右の CCX は注記が「CCX」だけで、同じ構造として左と同じ比率でコアと L3 を置いた推定。2 つの CCX にコアを交互に割り当てる。縦横比は写真の 2.275(実寸の注記なし。213 mm² は PC Games Hardware。CCX 1 つの面積比 約 20.5% は AMD の CCX 44 mm² と整合)',
@@ -360,6 +435,30 @@
     'amd-zenplus-2600x': { frame: 'zeppelin', basis: 'reuse', extra: 'Zen+(Pinnacle Ridge。12nm)は Zeppelin(14nm)と同じ設計・ほぼ同じ面積(211.7 / 213 mm²)なので Zeppelin の写真の配置を流用(Pinnacle Ridge 自身の写真・測定なし)。コア無効の SKU で空き枠を残す' },
     'amd-raven-2400g': { frame: 'raven-ridge', basis: 'photo' }, 'amd-raven-2200g': { frame: 'raven-ridge', basis: 'photo', extra: '2400G と同じダイ' },
     'amd-zen3-5800u': { frame: 'cezanne', basis: 'photo' }, 'amd-zen3p-7735hs': { frame: 'rembrandt-r', basis: 'photo' }, 'amd-zen4-7840hs': { frame: 'phoenix1', basis: 'photo' },
+  };
+  // Qualcomm Snapdragon の写真の枠(arm-soc)。出典の URL は C:\LocalAI\画像\必要な画像リスト.md の Kurnal Insights のページ(チップ名・SM 型番で対応づけた候補。ページ本文は未取得)
+  const QC_SRC = {
+    'sd-855': '855 sm8150.jpg(Kurnal の注釈。5670×5925。SM8150。URL 候補: https://kurnal-insights.com/en/dieshot/dieshotqualcomm-snapdragon-855sm8150/)',
+    'sd-865': '865 sm8250.jpg(Kurnal の注釈。5674×6695。SM8250。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-865/)',
+    'sd-888': 'SM8350.jpg(Kurnal の注釈。6760×6998。SM8350 = 888。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-888sm8350/)',
+    'sd-8gen1': 'Snapdragon 8 Gen1(左)と 8+ Gen1(右)のダイショット …_1440w.jpg の左半分(TechInsights の写真 + xian333c の Floor Plan。右半分の 8+ Gen 1 は注釈なし・知乎 @Michael Yeh の透かしで、別のダイ配置のため使っていない。URL 候補: https://zhuanlan.zhihu.com/p/597438689)',
+    'sd-8gen2': 'sm8550Dieshot.jpg(Kurnal の注釈。7631×7222。SM8550。URL 候補: https://kurnal-insights.com/dieshot/qualcomm-snapdragon-8gen2sm8550/)。A510 は写真の注釈どおり「2core cluster」を 2 等分した 2 枠 + 「1core」の 1 枠(2 コアクラスタの 2 等分は写真に境界が無く目測)。中間コアの A715 / A710 の割当は区別しない',
+    'sd-8gen3': 'SM8650.jpg(Kurnal の注釈。7575×6335。SM8650。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8gen3/)',
+    'sd-8elite': 'SM8750shuiying.jpg(Kurnal の注釈。7961×7039。SM8750。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8elitesm8750/)。Phoenix L 2 個は写真の 1 つの帯を左右に 2 等分した推定',
+    'sd-8elite-gen5': '8EliteG5 Dieshot.jpg(Kurnal の注釈。6309×5588。SM8850。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-8elite-gen5sm8850/)',
+    'sd-7p3-8s3': '7gen3+&8Sgen3.jpg(Kurnal の注釈。5307×6764。画像内に 7+ Gen 3 / 8s Gen 3 の両チップを併記〔クロック・Adreno・モデム〕、SM7675 / SM8635 共通のダイと判断。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen38sgen3sm7675sm8635/)',
+    'sd-8s-gen4': '8sGen4.jpg(Kurnal の注釈。7451×4711。SM8735。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8sgen4sm8735/)',
+    'sd-8elite-x-gen6': 'SM8975.jpg(Kurnal の注釈。8531×7396。SM8975。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-8elite-extreme-gen6sm8975/)',
+    'sd-7gen1': 'sn7450Kurnal.jpg(Kurnal の注釈。7472×6535。SM7450。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen1sm7450/)',
+    'sd-8cx-gen3': '8CXG3.jpg(Kurnal の注釈。7094×7832。SC8280XP。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8cxgen3sa8295psc8280/)。A78 の 4 つ目〔左上の枠〕は、写真の注釈が「System Level Cache 512KiByte」だが、構造が A78 と似ているため 4 つ目の A78 と推定した(注釈と食い違う)',
+  };
+  const SAME89 = '(根拠: 画像内にクロック〔X4 3.0/2.8GHz、A720 2.8/2.61GHz〕・Adreno 735/732・モデム X70/X62 の両チップ併記、ファイル名 7gen3+&8Sgen3、URL の綴り sm7675sm8635、プリセットの面積・プロセスの一致〔89.5 mm²・N4〕。このダイ自身の写真なので photo)';
+  const QC_MAP = {
+    'qc-855': { frame: 'sd-855', basis: 'photo' }, 'qc-865': { frame: 'sd-865', basis: 'photo' }, 'qc-888': { frame: 'sd-888', basis: 'photo' }, 'qc-8gen1': { frame: 'sd-8gen1', basis: 'photo' },
+    'qc-8gen2': { frame: 'sd-8gen2', basis: 'photo' }, 'qc-8gen3': { frame: 'sd-8gen3', basis: 'photo' }, 'qc-8elite': { frame: 'sd-8elite', basis: 'photo' }, 'qc-8elite-gen5': { frame: 'sd-8elite-gen5', basis: 'photo' },
+    'qc-7plus-gen3': { frame: 'sd-7p3-8s3', basis: 'photo', extra: '8s Gen 3 と同じダイ' + SAME89 },
+    'qc-8s-gen3': { frame: 'sd-7p3-8s3', basis: 'photo', extra: '7+ Gen 3 と同じダイ' + SAME89 },
+    'qc-8s-gen4': { frame: 'sd-8s-gen4', basis: 'photo' }, 'qc-8elite-x-gen6': { frame: 'sd-8elite-x-gen6', basis: 'photo' }, 'qc-7gen1': { frame: 'sd-7gen1', basis: 'photo' }, 'qc-8cx-gen3': { frame: 'sd-8cx-gen3', basis: 'photo' },
   };
   // Strix Halo の SoC ダイ(CCD は別ダイ)に写真の枠を当てる。classify の socDie と、design.fromPreset が使う
   const SOC_DIE = { 'amd-strixhalo-395': { frame: 'strix-halo-soc', src: 'Strix-Halo-All-16.02x19.20.jpg(Kurnal の注釈。6724×8237。出典は推定: https://kurnal-insights.com/en/dieshot/?sort=yearDesc&m=AMD&t=desktop-soc&id=amd-strix-halo-full-package)。SoC ダイの縦横比 1.195 は 19.2×16.02 mm(ファイル名の 16.02x19.20。積 307.6 mm² = プリセットの面積)と一致。注釈に「?」つきの項目あり(作者も未確定)。GPU の WGP 20 個(40CU)・NPU・MALL・PHY などはすべてプリセットに無いブロックで、SoC ダイは従来どおり電力按分に参加する' } };
@@ -412,6 +511,11 @@
       const m = APPLE_MAP[preset.id]; const dies = preset.dies || [];
       if (!dies.length) return null;
       return { uncore: false, igpu: false, npu: false, template: 'apple-soc', units: m.units || 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はファイル名・透かしからの推定で、ユーザー提示の URL のうちのどれかは要確認`, iodGpu: false, decorIod: false };
+    }
+    if (preset && preset.vendor === 'Qualcomm' && QC_MAP[preset.id]) {
+      const m = QC_MAP[preset.id]; const dies = preset.dies || [];
+      if (!dies.length || !TILE_FRAMES[m.frame]) return null;
+      return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${QC_SRC[m.frame]}${m.extra ? `。${m.extra}` : ''}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
     }
     if (!preset || preset.isa !== 'x86') return null;
     const dies = preset.dies || [];
@@ -505,6 +609,7 @@
       case 'apple-soc': { const a = APPLE_FRAMES[layout.frame]; return a ? a.aspect / u : 1; }
       case 'amd-apu': return FRAMES[layout.frame] ? FRAMES[layout.frame].W / FRAMES[layout.frame].H : TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1.1;
       case 'x86-tile': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1.2;
+      case 'arm-soc': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1;
       case 'amd-chiplet': return (CCD_RECIPES[layout.recipe] || CCD_RECIPES[DEFAULT_RECIPE]).aspect * (u + (u - 1) * CCD_GAP);
       default: return null;
     }
@@ -523,13 +628,13 @@
     return true;
   }
   // TILE_FRAMES の枠を使うテンプレート(Intel のタイル、AMD の APU・モノリシックのダイ写真)
-  function usesTileFrame(layout) { return !!layout && (layout.template === 'x86-tile' || layout.template === 'amd-apu' || layout.template === 'x86-mono'); }
+  function usesTileFrame(layout) { return !!layout && (layout.template === 'x86-tile' || layout.template === 'amd-apu' || layout.template === 'x86-mono' || layout.template === 'arm-soc'); }
   const EDITED_NOTE = '編集でコア数が元のダイの枠を超えたため、ブロックの大きさに根拠はありません';
   // 編集後の layout(枠を超えたら根拠を schematic に落とす。超えなければそのまま)
   function afterEdit(layout, cores, l3MB) {
     if (!layout || layout.scaleBasis === 'schematic') return layout;
     // Apple は cfg に L3 が無く(SLC は飾り)、写真の枠に L3 の置き場所が無い。編集で L3 を足したら根拠なしの従来配置に落とす
-    if (layout.template === 'apple-soc' && typeof l3MB === 'number' && l3MB > 0) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: '編集で L3 を追加したため、ブロックの大きさに根拠はありません(Apple の写真の枠に L3 は無い)' });
+    if ((layout.template === 'apple-soc' || layout.template === 'arm-soc') && typeof l3MB === 'number' && l3MB > 0) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: `編集で L3 を追加したため、ブロックの大きさに根拠はありません(${layout.template === 'apple-soc' ? 'Apple' : 'Snapdragon'}の写真の枠に L3 は無い)` });
     if (fits(layout, cores)) return layout;
     return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: EDITED_NOTE });
   }
@@ -544,10 +649,10 @@
     if (l.scaleNote != null && !(typeof l.scaleNote === 'string' && l.scaleNote.length <= 600)) return 'layout.scaleNote は 600 文字以内の文字列にしてください';
     if (l.frame != null) {
       if (typeof l.frame !== 'string') return 'layout.frame が文字列ではありません';
-      // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)か TILE_FRAMES、x86-tile・x86-mono は TILE_FRAMES(Intel の Compute タイル・AMD のダイ写真の枠)。ほかのテンプレートは frame を持たない
+      // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)か TILE_FRAMES、x86-tile・x86-mono・arm-soc は TILE_FRAMES(Intel の Compute タイル・AMD のダイ写真・Snapdragon の枠)。ほかのテンプレートは frame を持たない
       const has = (o) => Object.prototype.hasOwnProperty.call(o, l.frame);
-      if (l.template === 'apple-soc' ? !has(APPLE_FRAMES) : l.template === 'x86-tile' || l.template === 'x86-mono' ? !(has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0) : (l.template !== 'amd-apu' || !(has(FRAMES) || (has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0)))) return `layout.frame「${l.frame}」はテンプレート ${l.template} では使えません`;
-    } else if (l.template === 'apple-soc') return 'apple-soc には layout.frame が要ります';
+      if (l.template === 'apple-soc' ? !has(APPLE_FRAMES) : l.template === 'x86-tile' || l.template === 'x86-mono' || l.template === 'arm-soc' ? !(has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0) : (l.template !== 'amd-apu' || !(has(FRAMES) || (has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0)))) return `layout.frame「${l.frame}」はテンプレート ${l.template} では使えません`;
+    } else if (l.template === 'apple-soc' || l.template === 'arm-soc') return `${l.template} には layout.frame が要ります`;
     if (l.recipe != null && !(typeof l.recipe === 'string' && Object.prototype.hasOwnProperty.call(CCD_RECIPES, l.recipe))) return 'layout.recipe が未知です';
     if (l.slots != null) {
       const s = l.slots;

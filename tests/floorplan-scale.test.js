@@ -39,7 +39,7 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   assert.strictEqual(basis('amd-strixhalo-395'), 'photo'); assert.strictEqual(basis('amd-epyc-7401'), null);
   assert.strictEqual(basis('amd-kraken-350'), 'reuse');
   assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'photo');
-  assert.strictEqual(basis('apple-m1'), 'photo'); assert.strictEqual(basis('apple-m1ultra'), 'reuse'); assert.strictEqual(basis('apple-m4pro'), null); assert.strictEqual(basis('qc-8elite'), null);
+  assert.strictEqual(basis('apple-m1'), 'photo'); assert.strictEqual(basis('apple-m1ultra'), 'reuse'); assert.strictEqual(basis('apple-m4pro'), null); assert.strictEqual(basis('qc-8elite'), 'photo'); assert.strictEqual(basis('qc-7gen4'), null); // 2026-11-03: Snapdragon は写真のある 14 件が photo(qc-8elite は旧 null)。画像なし・注釈なしで判別できない 7 件は従来の配置(null)
   assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('写真・測定なし')); assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('流用'));
   assert.ok(FP.scaleText({ scaleBasis: 'photo' }).includes('目測'));
   assert.ok(FP.scaleText({ scaleBasis: 'survey' }).includes('面積調査'));
