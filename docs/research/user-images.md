@@ -86,6 +86,20 @@
 
 拡張子は .jpg だが MTL・ARL_LQ・LNL・Panther Lake・Wildcat Lake・`863ef392-…` の 6 枚は中身が WebP。依頼文の画素数は MTL・ARL_LQ・LNL の 3 枚で入れ替わっていた。実ファイルの寸法を上表に記載。
 
+### Panther Lake の 3 構成(`Panther Lake_dies.jpg`。2026-11-04 受領)
+ユーザー提供の 542×350 px(JPEG)。**出典 URL は未申告。Intel の資料由来の可能性があるが未確認**。画像はダイ写真風の着色画像(写真か描画かは未確認)で、縮尺の注記はない。左から「4P+4LPE+4Xe」「4P+8E+4LPE+4Xe」「4P+8E+4LPE+12Xe」の 3 パッケージ。各構成とも、上に Compute タイル(左の大きなブロック)、その右に Platform タイル(縦長)、下に GPU タイル(左下の横長ブロック)で、右下と(中・右は)右上に無地の灰青のブロック(フィラー。実チップの詰め物と解釈。機能の根拠なし)がある。
+目測は表示ピクセル(元ファイルを 3 倍に拡大して 10px 格子で読んだ。±2px)。
+
+| 構成 | Compute(幅×高さ) | Platform | GPU(幅×高さ) | 無地ブロック |
+|---|---|---|---|---|
+| 4P+4LPE+4Xe(左) | 112×162 | 53×162(Compute と下端が揃う) | 111×45 | 右下 53×45 |
+| 4P+8E+4LPE+4Xe(中) | 111×198 | 53×161 | 111×45 | 右上 53×36・右下 53×45 |
+| 4P+8E+4LPE+12Xe(右) | 110×198 | 53×161 | 110×93 | 右上 53×37・右下 53×93 |
+
+- 中と右の Compute は同じ(4P+8E+4LPE。幅 110〜111・高さ 198。縦横比 0.56 が Kurnal の 115.1 mm² の Compute 14.27×8.06 mm の 0.565 と一致)。左の Compute(4P+4LPE)は E クラスタが無く、高さが 162 で中の 0.82 倍(E の帯 約 36px 分短い)。幅は同じ。
+- 縮尺は Compute(115.1 mm²。プリセット値)に合わせると約 13.9 px/mm。GPU 12Xe は 110×93 = 7.9×6.7 mm(Kurnal 6.78×8.14 の回転)= 約 54 mm²(Kurnal 55.2 に対し約 -2%)。Platform 53×161 = 3.8×11.6 mm = 約 44 mm²(Kurnal 12.44×4.0 = 49.8 に対し約 9〜12% 小さい。長辺 -7%・短辺 -4%)。4Xe の GPU は 111×45 = 8.0×3.2 mm = 約 26 mm²(12Xe の高さ比 0.49)。**画像と Kurnal の値は GPU で一致、Platform は 12% 以内**。画像の縮尺は未確認(着色画像)。
+- 反映: 386H の飾りのダイに 4Xe の GPU タイル(3.29×8.14 mm = 約 26.8 mm²。12Xe の Kurnal 値に画像の高さ比 0.485 を掛けた[推定]。`sizeBasis` に「出典未確認」と記載)。388H・378H・358H(12Xe、Kurnal 二次値)と Platform タイルは変更なし。左の 4P+4LPE の Compute は枠(`ptl-compute-4p4lpe`。E 帯を除き縦横比 1.446)だけ追加。**対応するプリセットは無い**(ダイの面積も未取得)。評価・面積合計には影響しない。
+
 ## AMD のダイ写真の受領(2026-11-03。`C:LocalAI画像`。区分 [二次]。出典 URL は、ユーザーから申告のあったものはなく、画像内に出典の記載があるもの(Cezanne の flickr URL)と、ファイル名・透かしからの推定(Strix Halo の Kurnal のページ URL)だけ。それ以外は「出典未取得」。座標は表示ピクセルからの目測 ±5〜10%)
 
 寸法はファイル名の表記を根拠に採用(既定の方針)。画像内に実寸の注記があるものは無い。
@@ -101,11 +115,20 @@
 | `Strix-Halo-All-16.02x19.20.jpg` | 6724×8237(1633×2000 表示) | **Strix Halo**(ファイル名・Kurnal の透かし) | 上に Zen 5 CCD ×2(各 約 767×625 px、180° 回転した向き。Zen Core #1〜#8・L3 32MiB・IFOP with TSV)、下に SoC ダイ(縦横比 1.195 = 19.2×16.02 mm)。SoC は GPU L2 ×8・RDNA 3.5 WGP #1〜#20・NPU(XDNA)・MALL 16MiB ×2・メモリ PHY・Media Engine ×2・Display・PCIe 4.0 x16・USB4 など | Strix Halo の SoC ダイ(photo、飾り)と CCD の比(photo)。SoC の 16.02×19.20 = 307.6 mm² はプリセットの面積と一致 |
 | `FH9oQiNXEAAwTeZ.jpg` | 900×506 | **Rembrandt のモックアップ**("6nm Rembrandt die estimate, die size according to Patrick Schur 208.33 mm²"。Cezanne・Navi22 の写真の要素を組んだ Locuza の 2021-12 の想像図) | 実物の写真ではない。実物(Rembrandt-R の写真)と配置が違う | **使わない**(想像図) |
 | `5cac7a55-463a-44db-a5a4-af985c35cc05_2434x1656.jpg` | 2434×1656(ファイル名の表記。中身は WebP らしく Windows の画像 API では読めず、表示は Read で確認) | **Intel Alder Lake-S2(6+0)のモックアップ**(Locuza、2022-08) | Golden Cove ×6・L3 3MiB ×6・iGPU 16EU など。**AMD ではない** | **記録のみ**(12100 の x86-mono は schematic のまま。反映は別途ユーザー判断) |
-| `delidded.jpg` | 1420×1000 | **Ryzen 7000(Raphael)のパッケージ図**(Zen 4 CCD ×2 + Client I/O Die。AMD の公式図の転用) | 蓋を外した模式図。ダイ内の配置は無い。CCD 5nm 8c、IOD 6nm・iGPU のラベル | **記録のみ**(Raphael の CCD は既存の reuse。ダイ内配置の根拠にならない) |
-| `GNR_Package_Annotated.jpg` | — | **Intel Granite Rapids**(ユーザー指示。画像は今回は開いていない) | Intel | **記録のみ**(AMD ではない) |
+| `delidded.jpg` | 1420×1000 | **Ryzen 7000(Raphael)のパッケージ図**(Zen 4 CCD ×2 + Client I/O Die。AMD の公式図の転用) | 蓋を外した模式図(レンダリング。縮尺保証なし)。ダイ内の配置は無い。CCD 5nm 8c、IOD 6nm・iGPU のラベル | **2026-11-04 反映**: IOD の位置・縦横比の目測(下の節)。Raphael の CCD 内は既存の reuse のまま(ダイ内配置の根拠にならない) |
+| `GNR_Package_Annotated.jpg` | 8681×8678 | **AMD Zen 5(Granite Ridge)の蓋なしパッケージ写真**(注釈つき。2026-11-04 訂正: 以前の「Intel Granite Rapids」は誤記) | IOD: PCIe 5.0 x16 PHY・PCIe Root・Display Engine・Media Engine・メモリコントローラ・128bit DDR5-5600 PHY・IFOP PHY ×2・GPU 注釈。CCD: Zen 5 コア ×8・L3 32MB・IFOP PHY・SMU | **IOD の縦横比・位置に反映(2026-11-04)**。Zen 5 の CCD 内の配置は今回は変更しない |
+| `Zen4_Core_annotated.jpg` | 9143×4320 | **Zen 4 コア 1 つ + L2 の拡大注釈**(CCD 全体ではない)。幅は左約 70% がコア、右約 26% が L2 1MB(512KB ×2)、下に CPL | コア内部の注釈 | **記録のみ**(CCD 内の配置の根拠にならない。core+L2 の幅比 約 70%:26% は参考) |
+
+- **IOD の位置合わせ(2026-11-04。ユーザー談「IO ダイは Zen 4/5 共通」)**: Raphael(7700・7950X)と Granite Ridge(9700X・9950X)の IOD に同じ値を当てた(`floorplan.js` の `IOD_PLACE`、`design.js` の `arrangeChiplet`)。ダイ面積は未取得のまま(仮の 100 mm² 相当で縦横比だけ決める)。評価(ST/MT/面積/電力)は全プリセットで不変。ただし熱マップの電力按分(100W 時 CCD/IOD)は IOD が正方形でなくなるため 0.4〜0.65 ポイント変わる(7700 76.16/23.84→75.51/24.49、7950X 86.46/13.55→86.04/13.96、9700X 75.76/24.24→75.11/24.89、9950X 86.20/13.80→85.78/14.22。評価には影響しない)。
+  - `delidded.jpg`(表示=実寸 1420×1000)の目測: CCD ×2 は x 490〜980・y 203〜358(1 枚 約 245×155 px、間隔 約 3 px)、IOD は x 588〜890・y 455〜675(302×220 px = 縦横比 1.37)。CCD 下端と IOD 上端の隙間 97 px(CCD 高さの 0.63 倍。ただし図中の文字「Infinity Fabric over Package」を含む)。IOD の水平中心 739 と CCD ペアの中心 735 はほぼ一致(差 約 1%)。
+  - `GNR_Package_Annotated.jpg`(表示 1932 基準): IOD x 665〜1270・y 565〜1030(605×465 = 縦横比 1.30)、CCD(1 つ)x 972〜1408・y 1208〜1580(436×372)。隙間 178 px(CCD 高さの 0.48 倍)。IOD の水平中心 967、CCD の中心 1190(実写の向きで CCD が IOD の右寄り。ずれは IOD 幅の 0.37 倍)。**この実写は delidded.jpg と 180° 向きが違う**(実写はピン 1 の三角が左上、delidded は右下)。実装は delidded の向き(CCD 上・IOD 下)なので、実写を 180° 回した位置で当てる = CCD 1 つのとき CCD は IOD の左寄り(IOD は CCD の右寄り)。
+  - 2 つの縦横比(1.37 と 1.30)は差 約 5%。レンダリングより**注釈つき実写を優先**し、縦横比 1.30・隙間 0.48・CCD 1 つのときの水平ずれ +0.37(IOD 幅比。delidded の向きで IOD が CCD の右寄り。実写の 180° 回転後の値)・CCD 2 つは中央揃いとした。
+  - 面積比の照合: IOD/CCD の面積比は delidded.jpg 1.75(302×220 ÷ 245×155)、実写 1.73(605×465 ÷ 436×372)。公表値(Raphael IOD 約 122〜125 mm²、CCD 約 70 mm² → 約 1.75。プリセットに IOD の面積は無く、公表値は記憶による参考)と一致。縮尺は図の比と大きくずれない。
+  - `iodBlocks`(SoC / I/O + iGPU 飾り)の内部配置は注釈つき IOD に合わせていない(ブロックの種類・個数を変えない方針。今回は縦横比とダイ間の位置のみ)。
+  - Zen 5 の CCD の recipe は変えていない。Zen 4 CCD の recipe の `scaleNote` は「IOD の位置・縦横比を写真の目測で合わせた。CCD 内は Zen 3 写真の流用」と記載(basis は reuse)。
 
 - **EPYC 7401**: Zeppelin 4 個(各 6 コア有効 = 3+3)に同じ写真の枠が使えるが、`design.fromPreset`・`relayoutCompute` は「コアとブロックを持つ最初の 1 ダイ」だけを扱い、4 ダイへのコア配分が未対応のため、従来の配置のまま。実装するなら別作業(ダイごとのコア数配分の追加が要る)。
-- **Phoenix 2・Locuza の Rembrandt モックアップ・Intel の 2 枚・delidded.jpg**: プリセットの配置には使っていない。
+- **Phoenix 2・Locuza の Rembrandt モックアップ・Intel の 2 枚・Zen4_Core_annotated.jpg**: プリセットの配置には使っていない(delidded.jpg・GNR_Package_Annotated.jpg は IOD の位置・縦横比にのみ使用)。
 - **注釈なしの 2 枚(Rembrandt-R・Phoenix 1)**: 写真から構造が読める CCX(コア ×8 + L3。縦の区切り線から 4 行)だけ置いた。GPU・NPU・PHY は注釈が無く推測しないため、残りは 1 種類の「未判別」の飾りの 4 枠(`rest-l/r/t/b`)。写真の注釈つきが入ったら置き換える。
 - Zeppelin の縦横比 2.275 は写真から(213 mm² で 22.0×9.7 mm)。AMD の CCX 44 mm² に対し、写真の CCX 1 つの面積比 約 20.5% は 43.7 mm² で整合(テストで ±10% を確認)。Raven Ridge の CCX(コア + L3 4M)は 18.9% ≈ 39.7 mm²。
 

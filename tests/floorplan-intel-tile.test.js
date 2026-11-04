@@ -78,8 +78,22 @@ test('Panther Lake: GPU・Platform タイルは飾りのダイ(decorDies)。寸�
   const E = require('../js/model/evaluate.js'); const ctx = E.makeContext();
   // 388H・378H・358H は 12Xe(Arc B390。設計書の Wikipedia 表)で GPU+Platform、386H は 4Xe で Platform のみ
   const x386 = mk('intel-ptl-x9-386h');
-  assert.deepStrictEqual(x386.decorDies.map((x) => x.kind), ['platform-tile']);
+  // 386H(4Xe)は 4Xe 版の GPU タイル(decor2。Panther Lake_dies.jpg の同一画像内の相対寸法の目測。出典未確認)+ Platform
+  assert.deepStrictEqual(x386.decorDies.map((x) => x.kind), ['gpu-tile', 'platform-tile']);
+  assert.deepStrictEqual(x386.decorDies.map((x) => x.id), ['decor2', 'decor1']);
   assert.ok(x386.dies[0].layout.scaleNote.includes('4Xe'));
+  {
+    const [g4, pl4] = x386.decorDies; const c = x386.dies[0];
+    assert.strictEqual(g4.sizeBasis.s, 'est'); assert.ok(g4.sizeBasis.source.includes('出典未確認') && g4.sizeBasis.source.includes('Panther Lake_dies.jpg'));
+    assert.ok(g4.label.includes('4 コア') && g4.label.includes('推定'));
+    // 12Xe(6.78×8.14)の約 0.49 倍の幅で高さは同じ。面積は Compute の約 0.23 倍(画像の 45/93×0.484)
+    assert.ok(Math.abs(g4.widthMm / 6.78 - 0.4855) < 0.01 && Math.abs(g4.heightMm - 8.14) < 1e-3);
+    assert.ok(Math.abs(g4.areaMm2 / c.areaMm2 - 0.2327) < 0.01, String(g4.areaMm2 / c.areaMm2));
+    assert.ok(g4.x >= c.x + c.widthMm); assert.ok(pl4.y >= c.y + c.heightMm - 1e-6);
+    assert.ok(!(pl4.x < g4.x + g4.widthMm && g4.x < pl4.x + pl4.widthMm && pl4.y < g4.y + g4.heightMm && g4.y < pl4.y + pl4.heightMm));
+    assert.ok(FP.decorNote(x386.decorDies).includes('Panther Lake_dies.jpg'));
+    assert.strictEqual(FP.checkDecorDies(x386.decorDies, new Set(), ['x86-tile']), null);
+  }
   assert.deepStrictEqual(design.validate(x386), []);
   ['intel-ptl-x9-388h', 'intel-ptl-x9-378h', 'intel-ptl-x7-358h'].forEach((id) => {
     const d = mk(id); const c = d.dies[0];
@@ -107,6 +121,37 @@ test('Panther Lake: GPU・Platform タイルは飾りのダイ(decorDies)。寸�
   const b386 = JSON.parse(JSON.stringify(x386)); delete b386.decorDies; assert.deepStrictEqual(E.evaluate(x386, ctx), E.evaluate(b386, ctx));
   // ほかの Intel タイル(枠に tiles が無い)・AMD 以外には付かない
   assert.ok(!mk('intel-arl-285k').decorDies); assert.ok(!mk('intel-lnl-268v').decorDies);
+});
+
+test('ptl-compute を使う TILE_MAP の各プリセットは、12Xe の GPU(decor0)か 4Xe の GPU(decor2)のどちらか一方だけを出す', () => {
+  const ids = D.presets.map((p) => p.id).filter((id) => comp(id) && comp(id).layout && comp(id).layout.frame === 'ptl-compute');
+  assert.strictEqual(ids.length, 4);
+  ids.forEach((id) => {
+    const gpus = mk(id).decorDies.filter((x) => x.kind === 'gpu-tile').map((x) => x.id);
+    assert.strictEqual(gpus.length, 1, id);
+    assert.strictEqual(gpus[0], id === 'intel-ptl-x9-386h' ? 'decor2' : 'decor0', id);
+  });
+});
+
+test('Panther Lake 4P+4LPE の Compute 枠(ptl-compute-4p4lpe。Panther Lake_dies.jpg の左の構成の目測。使うプリセットはまだ無い): E 無し・縦横比は画像の 162/112 と一致', () => {
+  const T = FP.TILE_FRAMES['ptl-compute-4p4lpe']; const M = FP.TILE_FRAMES['ptl-compute'];
+  assert.ok(T);
+  assert.strictEqual(FP.checkLayout({ template: 'x86-tile', frame: 'ptl-compute-4p4lpe' }), null);
+  assert.ok(!(FP.checkLayout({ template: 'amd-apu', frame: 'ptl-compute-4p4lpe' }) === null));
+  assert.deepStrictEqual(T.nom, { p: 4, e: 0, lp: 4 });
+  assert.strictEqual(T.big.length, 4); assert.strictEqual(T.small.length, 0); assert.strictEqual(T.lp.length, 4);
+  assert.strictEqual(T.tiles.length, 0); // ダイ面積が未取得なので飾りのタイルは付けない
+  assert.ok(Math.abs(T.aspect - 162 / 112) < 0.01, String(T.aspect));
+  // 長辺は 4P+8E+4LPE の枠の約 0.82 倍(画像の 162/198)。短辺は同じ
+  assert.ok(Math.abs((T.box[2] - T.box[0]) / (M.box[2] - M.box[0]) - 162 / 198) < 0.01);
+  assert.strictEqual(T.box[3] - T.box[1], M.box[3] - M.box[1]);
+  // ブロックは枠内
+  const inBox = (x, y, w, h) => x >= T.box[0] && y >= T.box[1] && x + w <= T.box[2] + 1e-6 && y + h <= T.box[3] + 1e-6;
+  T.big.concat(T.lp).forEach((r) => assert.ok(inBox(r[0], r[1], r[2], r[3]), JSON.stringify(r)));
+  assert.ok(inBox(T.l3[0], T.l3[1], T.l3[2], T.l3[3]));
+  T.deco.forEach((r) => assert.ok(inBox(r[3], r[4], r[5], r[6]), r[0]));
+  // 4P+8E+4LPE の枠(ptl-compute)は従来どおり E 8
+  assert.strictEqual(M.small.length, 8);
 });
 
 test('decorDies の検査: kind とテンプレートの対応(iod は amd-chiplet、gpu-tile / platform-tile は x86-tile)', () => {

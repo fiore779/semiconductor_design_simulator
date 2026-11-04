@@ -145,11 +145,14 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
   assert.strictEqual(T('qc-8s-gen4', 'P').length, 1);
 });
 
-test('Snapdragon・Dimensity 9000〜9600 Pro・T239 以外の 78 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
+test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge の 4 件以外の 74 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
   const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239', 'nv-gb10']);
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id));
-  assert.strictEqual(rest.length, 78);
+  // 2026-11-04: Raphael・Granite Ridge(7700・7950X・9700X・9950X)は IOD の縦横比・位置を写真に合わせて変えたので除く(その変更は floorplan-scale.test.js で検証。評価は不変)
+  const IOD_MOVED = ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'];
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id));
+  assert.strictEqual(rest.length, 74);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
-  assert.strictEqual(h.digest('hex'), '7ec8a08dbf1a9c42b3d7a985b756fd9deaafe116f0734aa8438aaddf76f26f21');
+  // 2026-11-04: 386H(intel-ptl-x9-386h)だけ、4Xe の GPU タイルの飾りと scaleNote を足したのでハッシュを更新(Panther Lake_dies.jpg)。388H・378H・358H・Platform タイルは一致を確認済み
+  assert.strictEqual(h.digest('hex'), 'a0fc169207ce8c117bf8dc16dbd9eda85307c2293e230e0143eedf7487d785f8');
 });

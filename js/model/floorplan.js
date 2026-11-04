@@ -41,17 +41,18 @@
     if (!TF || !TF.tiles.length || !die || !(die.areaMm2 > 0)) return null;
     const s = die.widthMm / (TF.box[2] - TF.box[0]);
     const skip = (TILE_MAP[presetId] && TILE_MAP[presetId].skip) || [];
-    return TF.tiles.filter((t) => skip.indexOf(t[1]) < 0).map((t) => {
+    return TF.tiles.filter((t) => skip.indexOf(t[0]) < 0).map((t) => { // skip はタイルの id(例: 'decor0')で指定
       const w = t[7] || (t[5] - t[3]) * s; const h = t[8] || (t[6] - t[4]) * s;
+      const own = t[9]; // 10 番目: 独自の根拠 { s, source }(Kurnal の二次値でない寸法。例: 4Xe の GPU タイル)
       return { id: t[0], kind: t[1], label: t[2], x: r4(die.x + (t[3] - TF.box[0]) * s), y: r4(die.y + (t[4] - TF.box[1]) * s), widthMm: r4(w), heightMm: r4(h), areaMm2: r4(w * h),
-        sizeBasis: { s: t[7] ? 'sec' : 'est', source: t[7] ? `Kurnal の寸法 ${t[7]}×${t[8]} mm〔幅×高さ。向きは全体図に合わせた〕(Tom's Hardware 2026-03 の引用経由。[二次])。位置は Kurnal 全体図(dh0gWbF8gG9AXfQw.jpg。出典は推定)の目測[推定]` : 'Kurnal 全体図の相対比を Compute タイルの面積に当てはめた[推定]', note: '評価・面積合計には含まない。実測面積ではない' } };
+        sizeBasis: own ? { s: own.s, source: own.source, note: '評価・面積合計には含まない。実測面積ではない' } : { s: t[7] ? 'sec' : 'est', source: t[7] ? `Kurnal の寸法 ${t[7]}×${t[8]} mm〔幅×高さ。向きは全体図に合わせた〕(Tom's Hardware 2026-03 の引用経由。[二次])。位置は Kurnal 全体図(dh0gWbF8gG9AXfQw.jpg。出典は推定)の目測[推定]` : 'Kurnal 全体図の相対比を Compute タイルの面積に当てはめた[推定]', note: '評価・面積合計には含まない。実測面積ではない' } };
     });
   }
   const MAX_DECOR = 4; const MAX_DECOR_TEXT = 300;
   // 画面の注記。「AMD 公表値」は sizeBasis.s が pub のときだけ。面積が無くても「飾り・評価には含まない」は出す
   const decorNote = (decor) => {
     const d = decor && decor[0]; if (!d) return null;
-    if (decor.some((x) => x.kind !== 'iod')) return '飾りのタイル(GPU・Platform)は見た目だけ。寸法は二次資料(Kurnal)、位置は全体図の目測の推定(参考。評価・面積合計には含まない)';
+    if (decor.some((x) => x.kind !== 'iod')) return '飾りのタイル(GPU・Platform)は見た目だけ。寸法は二次資料(Kurnal)、位置は全体図の目測の推定(参考。評価・面積合計には含まない)' + (decor.some((x) => x.id === 'decor2') ? '。4Xe の GPU タイルの寸法は Panther Lake_dies.jpg(出典未確認)の目測' : '');
     if (typeof d.areaMm2 !== 'number') return '飾りの IOD は見た目だけで、大きさは参考(評価には含まない)';
     const who = d.sizeBasis && d.sizeBasis.s === 'pub' ? 'AMD 公表値' : '参考値';
     return `飾りの IOD の大きさは ${who} ${d.areaMm2}mm²、縦横比は写真の目測(参考。評価には含まない)`;
@@ -289,7 +290,16 @@
         ['phy', 'LPDDR5x / DDR5 PHY', 'u', 325, 432, 848, 45], ['mc', 'メモリコントローラ・メモリサイドキャッシュ', 'u', 665, 497, 240, 203], ['npu', 'NPU(5th。NCE ×3)', 'n', 915, 497, 345, 222],
         ['display', 'Display Engine?', 'u', 985, 760, 108, 360], ['media', 'Media Engine?', 'u', 1108, 760, 190, 360], ['soc-gpu', 'SoC to GPU', 'u', 1302, 432, 22, 320], ['soc-iod', 'SoC to IOD', 'u', 510, 1095, 470, 30]],
       // GPU タイル(Xe3 12 コア)と Platform タイルの飾りのダイ: 位置は Kurnal 全体図の目測(Compute の px を mm に換算)、寸法は設計書の調査表の Kurnal 寸法(GPU 8.14×6.78、I/O 12.44×4.00 mm。二次)。全体図の面積比(0.48・0.43)と 1% 以内で一致
-      [['decor0', 'gpu-tile', 'GPU タイル(Xe3 12 コア。飾り・位置は推定)', 1343, 428, 1938, 1138, 6.78, 8.14], ['decor1', 'platform-tile', 'Platform タイル(飾り・位置は推定)', 250, 1135, 1340, 1480, 12.44, 4.0]]),
+      [['decor0', 'gpu-tile', 'GPU タイル(Xe3 12 コア。飾り・位置は推定)', 1343, 428, 1938, 1138, 6.78, 8.14],
+        // 4Xe 版(386H)の GPU タイル: Panther Lake_dies.jpg(ユーザー提供。出典未確認)の同一画像内の相対寸法。12Xe 構成の GPU の高さ 93px に対し 4Xe 構成は 45px(比 0.49)、幅は同じ(111px)。12Xe の Kurnal 値に比を掛けた(3.29×8.14 mm)。位置の px は 12Xe と同じ起点
+        ['decor2', 'gpu-tile', 'GPU タイル(Xe3 4 コア。飾り・位置と寸法は推定)', 1343, 428, 1630, 1138, 3.29, 8.14, { s: 'est', source: 'Panther Lake_dies.jpg(ユーザー提供。出典未確認)の目測[推定]: 同一画像で 12Xe 構成の GPU の高さ 93px に対し 4Xe 構成は 45px(比 0.49)、幅は同じ。12Xe の Kurnal 値 6.78×8.14 mm に比を掛けた' }], ['decor1', 'platform-tile', 'Platform タイル(飾り・位置は推定)', 250, 1135, 1340, 1480, 12.44, 4.0]]),
+    // Panther Lake の 4P+4LPE の Compute タイル(E クラスタ無し。使うプリセットはまだ無い)。Panther Lake_dies.jpg(ユーザー提供。出典未確認)の左の構成の目測: 中の 4P+8E+4LPE の Compute(111×198px)に対し 112×162px = 長辺が 0.82 倍。
+    // ptl-compute から E クラスタの帯(x 97〜322)を除き、box の左端を E 帯の右(313)まで切った(座標は ptl-compute と共通)。縦横比 1.446 は画像(縦長)の 162/112=1.45 と一致(Kurnal の向きに直した値)。ダイの面積は未取得。GPU・Platform の飾りのタイルは付けない
+    'ptl-compute-4p4lpe': tf([313, 428, 1328, 1130], { p: 4, e: 0, lp: 4 },
+      [[325, 497, 165, 203], [325, 848, 165, 205], [493, 497, 170, 203], [493, 848, 170, 205]],
+      [], quad(727, 765, 225, 225), [325, 700, 340, 148], [
+        ['phy', 'LPDDR5x / DDR5 PHY', 'u', 325, 432, 848, 45], ['mc', 'メモリコントローラ・メモリサイドキャッシュ', 'u', 665, 497, 240, 203], ['npu', 'NPU(5th。NCE ×3)', 'n', 915, 497, 345, 222],
+        ['display', 'Display Engine?', 'u', 985, 760, 108, 360], ['media', 'Media Engine?', 'u', 1108, 760, 190, 360], ['soc-gpu', 'SoC to GPU', 'u', 1302, 432, 22, 320], ['soc-iod', 'SoC to IOD', 'u', 510, 1095, 470, 30]]),
   };
   // ---- AMD のモノリシックダイ(Zeppelin・Raven Ridge・Cezanne・Rembrandt-R・Phoenix 1)と Strix Halo の SoC ダイの写真の枠(2026-11-03 追加)----
   // TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)。template が amd-apu / x86-mono のダイが frame で使う。l3 は 1 枠か、枠の配列(Zeppelin の 2 CCX。容量は等分)。
@@ -579,20 +589,25 @@
     'intel-lnl-268v': tm('lnl-compute', 'photo'),
     'intel-lnl-258v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
     'intel-lnl-256v': tm('lnl-compute', 'reuse', '268V と同じ Compute タイルの流用(プリセット側の注記に従う)'),
-    'intel-ptl-x9-388h': tm('ptl-compute', 'photo', PTL_NOTE),
-    // 386H は GPU が 4Xe(プリセットの notes)。12Xe の GPU タイルは出さない(4Xe の寸法は二次資料なし)。Platform タイルのみ
-    'intel-ptl-x9-386h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE + '。386H の GPU は 4Xe のため GPU タイルは出さない'), { skip: ['gpu-tile'] }),
-    'intel-ptl-x9-378h': tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE),
-    'intel-ptl-x7-358h': tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE),
+    // 12Xe の SKU は 4Xe 版の GPU タイル(decor2)を出さない。386H は GPU が 4Xe(プリセットの notes)なので 12Xe 版(decor0)を出さず、4Xe 版を出す
+    'intel-ptl-x9-388h': Object.assign(tm('ptl-compute', 'photo', PTL_NOTE), { skip: ['decor2'] }),
+    'intel-ptl-x9-386h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE + '。386H の GPU は 4Xe のため 12Xe の GPU タイルは出さず、4Xe の GPU タイルは Panther Lake_dies.jpg の相対寸法の目測(出典未確認)'), { skip: ['decor0'] }),
+    'intel-ptl-x9-378h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE), { skip: ['decor2'] }),
+    'intel-ptl-x7-358h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE), { skip: ['decor2'] }),
   };
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。
   const CCD_RECIPES = {
     'Zen 3': { aspect: 1.516, top: 0.154, core: 0.247, basis: 'photo', note: 'Zen 3 CCD の注釈つきダイ写真(WCCFTech、ユーザー提示)の目測(上部の帯 約15%、コア+L2 約25%、L3 約50%)。面積比は AMD 公表(CCX 68 / CCD 81 mm²)と Locuza(二次)と整合' },
-    'Zen 5': { aspect: 1.188, top: 0.174, core: 0.354, basis: 'survey', note: 'Fritzchens Fritz の Zen 5 CCD 測定値(コア+L2 7.1%、L3 23.3%。二次)' },
+    'Zen 5': { aspect: 1.188, top: 0.174, core: 0.354, basis: 'survey', note: 'Fritzchens Fritz の Zen 5 CCD 測定値(コア+L2 7.1%、L3 23.3%。二次)。IOD は Zen 4/5 共通(ユーザー談)で、IOD の位置・縦横比は GNR_Package_Annotated.jpg と delidded.jpg の目測' },
     'Zen 5 (Strix Halo)': { aspect: 1.227, top: 0.127, core: 0.355, basis: 'photo', note: 'Strix Halo の Zen 5 CCD ×2 の注釈つきダイ写真(Strix-Halo-All-16.02x19.20.jpg の上側。Kurnal の注釈。出典は推定)の目測(縦横比 767×625 px = 1.227、IFOP の帯 約 13%、コア+L2 約 35.5%、L3 約 29%)。SoC ダイと同尺の写真で、CCD 1 つ 約 66.9 mm² はプリセットの 67.1 mm² と整合。9950X の Zen 5 CCD(Fritzchens Fritz の測定値の比)とも近い' },
-    'Zen 4': { aspect: 1.516, top: 0.16, core: 0.276, basis: 'reuse', note: '配置と比の流用: Zen 3 CCD の写真の構造に、Zen 4 の面積比(コア+L2 5.8%、L3 約 37%。検索要約で低信頼)を当てた目安。このチップの写真・実測ではない' },
+    'Zen 4': { aspect: 1.516, top: 0.16, core: 0.276, basis: 'reuse', note: 'delidded.jpg(AMD 公式図のレンダリング。縮尺保証なし)と GNR_Package_Annotated.jpg の目測で IOD の位置・縦横比を合わせた(IOD は Zen 4/5 共通。ユーザー談)。Zen 4 CCD 内の配置は Zen 3 写真の構造に Zen 4 の面積比(コア+L2 5.8%、L3 約 37%。低信頼)を当てた流用で、このチップの CCD 写真ではない' },
   };
   const DEFAULT_RECIPE = 'Zen 3';
+  // Zen 4(Raphael)・Zen 5(Granite Ridge)共通の Client I/O Die の配置(IOD は共通のダイ。ユーザー談)。ダイ面積はプリセットのまま(縦横比だけ)。
+  // aspect = 幅/高さ: GNR_Package_Annotated.jpg(注釈つき実写。IOD 605×465 px = 1.30)を採用。delidded.jpg(AMD 公式図のレンダリング)の目測は 302×220 px = 1.37(差 5%)。
+  // gap = CCD 下端と IOD 上端の隙間(CCD の高さ比): 実写 178 / 372 px = 0.48(delidded は 97 / 155 = 0.63 だが図中の文字を含む)。
+  // dx1 = CCD 1 つのとき、IOD の水平中心を CCD の中心から IOD 幅の何倍ずらすか(実写は delidded.jpg と 180° 向きが違う〔ピン 1 の三角が左上〕。実写で CCD は IOD の右寄り〔223 / 605 = 0.37〕なので、delidded の向き(CCD 上・IOD 下)に回すと CCD は IOD 中心より左、IOD は CCD の右寄り = +0.37)。CCD 2 つは delidded.jpg で中央揃い(ずれ約 1%)。
+  const IOD_PLACE = { aspect: 1.30, gap: 0.48, dx1: 0.37 };
   const CCD_TOP = [0.257, 0.733]; // 上部の帯の区切り(Debug | Infinity Fabric | SMU の幅比。Zen 3 写真の目測)
   const CCD_GAP = 0.03;           // 1 つのダイ内の CCD どうしの隙間(CCD 幅比)
 
@@ -635,6 +650,7 @@
       const sd = SOC_DIE[preset.id]; const socIdx = sd ? dies.findIndex((d, i) => i !== ccd && /SoC/i.test(d.name || '')) : -1;
       return Object.assign(base, {
         socDie: socIdx >= 0 ? { dieIndex: socIdx, frame: sd.frame } : null,
+        iodPlace: !RECIPE_OF[preset.id] && known && (u === 'Zen 4' || u === 'Zen 5'), // Raphael・Granite Ridge の IOD(Strix Halo は対象外)
         template: 'amd-chiplet', units: ccdUnits(dies[ccd].name), dieIndex: ccd, recipe: key,
         scaleBasis: known || RECIPE_OF[preset.id] ? rc.basis : 'reuse', scaleNote: known || RECIPE_OF[preset.id] ? rc.note : `${CCD_RECIPES[DEFAULT_RECIPE].note}(この世代の値なし。流用)`,
         iodGpu: known && (u === 'Zen 4' || u === 'Zen 5'), // Zen 4 以降(Raphael・Granite Ridge)の IOD には内蔵 GPU がある
@@ -921,7 +937,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

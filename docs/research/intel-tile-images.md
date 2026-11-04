@@ -56,7 +56,7 @@ Wildcat Lake: プリセット無し。反映せず。
 - **訂正**: 当初「`panther-lake-computex26-die-annotated.jpg` はおそらく Xe3 4 コア版のダイで X モデルには使えない」と記録したが、**誤り**。ユーザーの説明では、最初に保存した画像は Compute タイルで、全体図(Kurnal)も取得できた。4P+8E+4LP-E の Compute タイルとして H 系 4 件(388H・386H・378H・358H)に使える。
 - 全体図(`dh0gWbF8gG9AXfQw.jpg`)の Compute タイルとは、縦横比(1.771 と 1/0.564 = 1.773)と L3・NPU・P・E の相対位置で照合し、同じタイル(向きが違うだけ)と判断した。枠は全体図の向き(横長)で作った。
 - **scaleBasis**: 388H = **photo**、386H・378H・358H = **reuse**(プリセットが「388H と同じタイルの流用」と注記。LNL の 258V・256V と同じ基準)。**画像に縮尺の注記はない**。Compute の 115.1 mm² はプリセット値(Kurnal・二次)を当てはめた。GPU・Platform の寸法も Kurnal の二次値で、独立した検証なし。位置は目測の推定。
-- **GPU は SKU で違う**(設計書の Wikipedia 表・`chips-pc.js` の notes): 388H・378H・358H = Arc B390(**12 Xe**)、386H = **4 Xe**。12Xe の GPU タイルの飾りは 388H・378H・358H だけに付け、386H は Platform タイルのみ(4Xe の GPU タイルは寸法の二次資料が無いので出さない。記録のみ)。
+- **GPU は SKU で違う**(設計書の Wikipedia 表・`chips-pc.js` の notes): 388H・378H・358H = Arc B390(**12 Xe**)、386H = **4 Xe**。12Xe の GPU タイルの飾りは 388H・378H・358H だけに付け、386H は 4Xe の GPU タイル(2026-11-04 受領の Panther Lake_dies.jpg の同一画像内の相対寸法の目測。出典未確認)+ Platform タイル。詳細は user-images.md の「Panther Lake の 3 構成」節。
 - **GPU タイル・Platform タイルは飾りのダイ**(`design.decorDies`。kind は gpu-tile / platform-tile。dies に入れず、評価・面積合計に含まない。Zen 3 の cIOD と同じ仕組みを `x86-tile` にも許した)。位置は全体図の目測(GPU は Compute の右、Platform は下)で**推定**。寸法は設計書の調査表の Kurnal 値(GPU 6.78×8.14 mm〔表の 8.14×6.78 を全体図の向きに合わせた〕、Platform 12.44×4.00 mm。二次。Tom’s Hardware 2026-03 の引用経由で独立でない)。全体図の px から出した面積比(GPU 0.484・Platform 0.431)は、その寸法から出る 0.480・0.432 と 1% 以内で一致。
 - **非 X 向けの 4P+4LPE 系**(`1lgodfRzmK0H3DUG.jpg`・`zsALH81651iOGldG.jpg` の左の 4Xe の GPU タイル): プリセット(Core Ultra 5 325)は面積・構成とも未取得のため**反映せず記録のみ**。**非 X 向けの全体像は未取得で、部分画像(Compute タイル・GPU タイル)のみ記録した**。画像の出典・チップ名は推定・要ユーザー確認。
 

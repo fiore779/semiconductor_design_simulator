@@ -152,3 +152,35 @@ test('Kraken Point: Strix Point の写真の配置の流用(reuse)。Zen 5 ×4�
   const u = design.unlock(d); const r = design.setCoreCount(u, 'C', 6); assert.ok(r.ok);
   assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'schematic'); assert.deepStrictEqual(design.validate(r.design), []);
 });
+
+test('Raphael・Granite Ridge の IOD(Zen 4/5 共通): 縦横比 1.30(GNR_Package_Annotated.jpg の目測)、CCD との隙間は CCD 高さの 0.48 倍、CCD 1 つは IOD が CCD の右寄り(delidded.jpg の向き。実写は 180° 回転)、2 つは中央。面積は未取得のまま', () => {
+  const P = FP.IOD_PLACE; assert.strictEqual(P.aspect, 1.30);
+  ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'].forEach((id) => {
+    const d = mk(id); const ccd = d.dies.find((x) => x.layout); const iod = d.dies.find((x) => /IOD/.test(x.name));
+    assert.ok(Math.abs(iod.widthMm / iod.heightMm - 1.30) < 1e-6, id);
+    assert.strictEqual(iod.areaKnown, false, id); assert.strictEqual(iod.areaMm2, null, id);
+    assert.ok(Math.abs(iod.y - (ccd.y + ccd.heightMm) - ccd.heightMm * 0.48) < 1e-6, `${id} 隙間`);
+    const dx = (iod.x + iod.widthMm / 2) - (ccd.x + ccd.widthMm / 2);
+    const expect = ccd.layout.units === 1 ? 0.37 * iod.widthMm : 0;
+    assert.ok(Math.abs(dx - expect) < 1e-6, `${id} 水平位置 ${dx}`);
+    assert.ok(Math.min.apply(null, d.dies.map((x) => x.x)) === 0, id);
+  });
+  assert.ok(/IOD は Zen 4\/5 共通/.test(FP.CCD_RECIPES['Zen 4'].note) && FP.CCD_RECIPES['Zen 4'].note.length <= 600 && /delidded\.jpg/.test(FP.CCD_RECIPES['Zen 4'].note));
+  assert.strictEqual(FP.CCD_RECIPES['Zen 4'].basis, 'reuse');
+  assert.strictEqual(FP.CCD_RECIPES['Zen 5'].aspect, 1.188); // Zen 5 の CCD recipe は変えない
+});
+
+test('IOD の位置合わせの対象外: Zen 3(5600X・5950X)と Strix Halo の配置は従来どおり(隙間 max(4, 高さ×0.45)・中央揃い)', () => {
+  const d = mk('amd-zen3-5950x'); assert.strictEqual(d.dies.length, 1);
+  const sh = mk('amd-strixhalo-395'); const c = sh.dies.find((x) => x.layout); const s = sh.dies.find((x) => /SoC/.test(x.name));
+  assert.ok(Math.abs(s.y - (c.heightMm + Math.max(4, c.heightMm * 0.45))) < 1e-6);
+  assert.ok(Math.abs((s.x + s.widthMm / 2) - (c.x + c.widthMm / 2)) < 1e-6);
+  const ids = D.presets.filter((p) => { const f = FP.classify(p, design.dieRole); return f && f.iodPlace; }).map((p) => p.id);
+  assert.deepStrictEqual(ids, ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x']);
+});
+
+test('評価(ST/MT/面積/電力など)は IOD の位置合わせの前後で全プリセット不変(固定のハッシュ。変更前の JSON ダンプの sha256)', () => {
+  const E = require('../js/model/evaluate.js'); const ctx = E.makeContext(); const out = {};
+  D.presets.forEach((p) => { out[p.id] = E.evaluate(design.fromPreset(p), ctx); });
+  assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), '6cf04a8edd39af72f88294f7d816115b961e61a0ae7a9594a949500d53365d20');
+});

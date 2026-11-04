@@ -62,13 +62,15 @@
   }
 
   // dies[ci](CCD)を上段、ほかのダイを下段の中央に並べ直す。最後に x の最小を 0 に揃える。
-  function arrangeChiplet(dies, ci, extra) {
+  // place(任意): { gap, dxFrac } = Raphael / Granite Ridge の IOD 用。隙間は CCD の高さ比、dxFrac は IOD 幅比の水平ずれ(ほかのダイが 1 つのときだけ)。
+  function arrangeChiplet(dies, ci, extra, place) {
     const top = dies.filter((d, i) => i === ci); const rest = dies.filter((d, i) => i !== ci).concat(extra || []);
     let x = 0; top.forEach((d) => { d.x = x; d.y = 0; x += d.widthMm + GAP_MM; });
     const topW = Math.max(0, x - GAP_MM); const topH = Math.max.apply(null, top.map((d) => d.heightMm));
     if (rest.length) {
       const restW = rest.reduce((s, d) => s + d.widthMm, 0) + GAP_MM * (rest.length - 1);
-      let rx = topW / 2 - restW / 2; const ry = topH + Math.max(4, topH * 0.45);
+      const pl = place && rest.length === 1 ? place : null;
+      let rx = topW / 2 - restW / 2 + (pl ? pl.dxFrac * restW : 0); const ry = topH + (pl ? topH * pl.gap : Math.max(4, topH * 0.45));
       rest.forEach((d) => { d.x = rx; d.y = ry; rx += d.widthMm + GAP_MM; });
     }
     const all = dies.concat(extra || []);
@@ -91,9 +93,11 @@
     const layout = fp ? FP.toLayout(fp) : null;
     const socIdx = fp && fp.socDie ? fp.socDie.dieIndex : -1; // Strix Halo: コアのない SoC ダイにも写真の枠を当てる(写真の枠のブロックはコアなし)
     const socLay = socIdx >= 0 && FP.socLayout ? FP.socLayout(preset) : null;
+    const iodPlaced = !!(fp && fp.iodPlace && FP.IOD_PLACE); // Raphael・Granite Ridge: IOD の縦横比・位置を写真の目測に合わせる(ダイ面積は変えない)
     srcDies.forEach((sd, i) => {
       const known = typeof sd.mm2 === 'number';
-      const lay = layout && i === computeIdx ? FP.aspectOf(layout) : socLay && i === socIdx ? FP.aspectOf(socLay) : null;
+      const isIod = !!(iodPlaced && i !== computeIdx && roles[i] === 'uncore' && /IOD/i.test(sd.name));
+      const lay = layout && i === computeIdx ? FP.aspectOf(layout) : socLay && i === socIdx ? FP.aspectOf(socLay) : isIod ? FP.IOD_PLACE.aspect : null;
       // 面積が未取得のダイは仮寸法(10×10 mm。実寸ではない)。実物風テンプレートのダイは枠の縦横比で仮の 100 mm² 相当にする(面積は null のまま)
       const size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
       const die = {
@@ -117,7 +121,7 @@
       decorDies = [{ id: 'decor0', kind: 'iod', label: D.label, x: 0, y: 0, widthMm: w, heightMm: D.areaMm2 / w, areaMm2: D.areaMm2, sizeBasis: Object.assign({}, D.sizeBasis) }];
     }
     if (layout && layout.template === 'x86-tile' && FP.tileDecor) decorDies = FP.tileDecor(layout, dies[computeIdx], preset.id); // Panther Lake: GPU・Platform タイルの飾り(Kurnal 全体図の相対位置。推定)
-    if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || []);
+    if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || [], iodPlaced ? { gap: FP.IOD_PLACE.gap, dxFrac: layout.units === 1 ? FP.IOD_PLACE.dx1 : 0 } : null);
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
     return Object.assign({
