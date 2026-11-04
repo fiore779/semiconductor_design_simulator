@@ -70,3 +70,50 @@
 - 校正(σ・γ・uarch ごとの u・uIsa)は 2 件を除いた標本と一致(`tests/mix.test.js`)。TDP 帯別係数の標本(`perf.test.js`)には 325 を入れた(ユーザー指示「3つ全部やってください」〔判断待ち 3 点への包括的な指示〕による。閾値の緩和はそれに伴う実装側の対応。帯の係数は変えない)。LOO の MAE 0.0717 → 0.1140・0.81 一律の MAE 0.1373 → 0.1253・誤差 10% 超 2 → 4 件と精度指標は悪化し、閾値は実測に合わせて緩めた(コメントに悪化を明記)。帯係数が 0.81 一律より良い主張は残る(差は縮小)。
 - 部品ライブラリ(`BL.build`)は 273 → 280 件(+7)。
 - メモリ構成の選択(`data/memory.js`)には 2 件を載せていない(係数は 1。依頼にないため)。
+
+## 6. 未取得項目の追加調査(2026-11-04)
+
+ユーザーの質問「tdp とかは取得できませんでしたか?」「取れていない項目を検索してください」を受けた追加調査(調査担当の報告)。評価・数式・校正・面積(null)は変えていない。区分は [二次] を基本とし、「原ページ確認済み」と「未確認(検索要約のみ)」を分けて書く。
+
+### 6.1 重要な訂正: ARK の値は ARK 原ページ未確認(403)
+このメモと notes にある ARK の値(325・320 の TDP 等)は、**ARK 原ページを自分たちでは開けていない**(実装担当・今回の調査担当とも curl は 403、WebFetch は 404 リダイレクト)。以前の調査担当(Wildcat 仕様調査)が要約ツール経由で読んだ値である。区分 [公表] は「Intel が公表した値を要約経由で読んだもの」であり、原ページ未確認。
+
+### 6.2 ダイ面積(すべて未取得。null のまま)
+- 325 用の 4P+4LPE Compute タイル・4Xe GPU タイル・小型版 Platform タイル: 未取得。
+- Wildcat Lake の compute die・I/O die: mm² は未取得。記事は相対値のみ。Wccftech / TechBang「compute tile は 38% 減、I/O(Platform Controller Tile、TSMC N6)は 15% 減」。比較基準は Panther Lake(Xe 4 基・PCIe Gen5×4 / Gen4×8・TB4×3 の構成と読めるが SKU の明記なし)。ServeTheHome「I/O chiplet は Panther Lake 比で面積約 15% 減」。
+- Wccftech: UCIe バンプピッチ 110µm(Foveros は 36µm)、18A compute die の 29% は歩留まり救済対象、パッケージ 35×25×1.23mm(比較: Panther Lake 4Xe 品 50×25×1.5mm)。
+- Kurnal Insights のギャラリーは intel-panther-lake-h(14.32×8.04)1 件のみで、4+4 版も Wildcat も無い(原ページ確認済み)。
+- SemiAnalysis「Intel Panther Lake Teardown」(2026-09-26、有料。無料部分のみ原ページ確認)は Core Ultra 7 365 を分解し「Annotated Panther Lake-U 4+0+4 compute tile」の図があるが、面積の数値は有料部分または画像で未取得。
+- Notebookcheck の Core 5 320「Die Size 77 mm²」は根拠・対象ダイ不明で不採用のまま。
+- PTL-H タイルの別値(114.304mm²・約 110mm²)は検索要約のみ・原ページ未確認。Kurnal の 115.13 は変えない。
+
+### 6.3 ノード([二次])
+- SemiAnalysis: 「Both compute tile variants use Intel 18A」「4-core GT1 tile on Intel 3、12-core GT2 tile on TSMC N3E」「Both I/O tile variants use TSMC N6」(I/O タイルは 2 種類)。
+- Chips and Cheese「Panther Lake's Reveal at ITT 2025」(2025-10-14、原ページ確認済み): 4Xe の GPU は Intel 3。Platform Controller Tile が全バージョン同一かは不明。TechBang も 4Xe = Intel 3・12Xe = N3E。
+
+### 6.4 Wildcat Lake のメモリサイドキャッシュ(MSC): 未確定、両論併記
+- 2MB 説: Wccftech が Intel の Hot Chips スライド「Right Size Compute」を書き起こし(「Cuts to 64b LP5 (versus 128b) - 2 MB Sys cache versus 4 MB」「cuts LLC in half (6MB vs 12MB)」)。IT之家が転載。
+- 4MB 説: TechBang 132756「Memory Side Cache 8MB→4MB」。
+- Chips and Cheese の ITT 2025 記事(原ページ確認済み)は Panther Lake の最小構成 4P+4LPE でも「8MB Memory-side Cache」・128b バス。
+- Tom's Hardware / Guru3D の「4MB」は原ページ未確認。
+- 結論: 未確定。決め手は Hot Chips 2026 スライド原本。
+
+### 6.5 メモリ帯域とバス幅
+- ARK は 403 で、帯域の項目の有無は未確認。
+- バス幅: 325 = 128-bit(Chips and Cheese、Wccftech の書き起こし)。320 = 64-bit(Wccftech「64b LP5」、スライド「128b => 64b DRAM」。Chips and Cheese の Hot Chips 記事は筆者推測として 64-bit)。TechBang は「Wildcat 單通道(32bit)、Panther 雙通道(64bit)」でチャネル幅の数え方が違うとみられる。Notebookcheck の Dell XPS 13(320)レビューは「LPDDR5x-7467, Single-Channel」。
+- **算出値(公表値ではない。バス幅 × 転送速度 ÷ 8)**: 325 = LPDDR5X-7467 128bit で 119.5 GB/s、DDR5-6400 で 102.4 GB/s。320 = 64bit LPDDR5X-7467 で 59.7 GB/s、DDR5-6400 で 51.2 GB/s。第三者 DB も 119.5 / 59.7 を載せるが原ページ未確認。
+- 最大容量の食い違い: 325 は ARK 128GB(要約経由)、Notebookcheck は「96GB LPDDR5X-7467 or 128GB DDR5-6400」(原ページ確認済み)。320 は TechBang「64GB(Panther Lake は 96GB)」。
+
+### 6.6 その他
+- 325 の L2: Notebookcheck L1 2.3MB / L2 16MB / L3 12MB(原ページ確認済み [二次])。L2 16MB は P 3MB×4 + LPE クラスタ 4MB と整合(調査担当の計算)。
+- P コアの L2 は資料で割れる(設計書の表は Cougar Cove L2 2.5MB、Kurnal を引く記事は 3MB = 検索要約のみ未確認)。未確定。
+- 320 の L2「LPE 共有 4MB」は検索要約のみ未確認。
+- トランジスタ数: 325・320 とも未取得。
+
+### 6.7 GB7 の新集計・PL1/PL2
+- Geekbench Browser は 403 で取得不可(新集計なし)。
+- Intel が SKU 別に公表しているのは ARK のベース電力・最大ターボ電力のみ(取得済み。Notebookcheck はこれを PL1 / PL2 と表記)。
+- OEM 設定の例: Dell XPS 13(320)「37W PL2 / 18W PL1」(Notebookcheck レビュー、原ページ確認済み [二次]。Intel の値ではない)。325 実機の PL 測定値は見つからず。
+
+### 6.8 取得できなかったページ(回避していない)
+Intel ARK 2 ページ(curl 403、WebFetch は 404 リダイレクト)、Geekbench Browser、HotHardware、Guru3D、SemiWiki、cpu-monkey、Tom's Hardware の Hot Chips / 発売記事(本文取得不可)、SemiAnalysis(有料)。
