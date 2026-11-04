@@ -147,11 +147,11 @@
 | `sm8550Dieshot.jpg` | 7631×7222 | **8 Gen 2(SM8550)**。注釈つき(X3、A715 / A710、A510、L3 2MiB ×4、SLC 6MiB、Adreno 740、X70 モデム) | https://kurnal-insights.com/dieshot/qualcomm-snapdragon-8gen2sm8550/ | qc-8gen2(photo)。A510 は写真の注釈どおり「2core cluster」を 2 等分した 2 枠 + 「1core」の 1 枠(2 等分は写真に境界が無く目測)。中間コアの A715 / A710 の割当は区別しない |
 | `8CXG3.jpg` | 7094×7832 | **8cx Gen 3(SC8280XP)**。注釈つき(Kryo 680 Prime X1 ×4 3.0GHz、Gold A78 2.42GHz〔注釈は 3 つ〕、L3 8MiB、Adreno 690、Hexagon V73 + Tensor) | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8cxgen3sa8295psc8280/ | qc-8cx-gen3(photo)。A78 の 4 つ目〔左上の枠〕は写真の注釈が「System Level Cache 512KiByte」で、構造が A78 と似ているため 4 つ目の A78 と推定(注釈と食い違う) |
 | `sn7450Kurnal.jpg` | 7472×6535 | **7 Gen 1(SM7450)**。注釈つき(A710 HP 2.5GHz ×1、HD 2.36GHz ×3、A510 2 コア ×2、L3 2MiB、SLC 2MiB、Adreno 644、X62 モデム) | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen1sm7450/ | qc-7gen1(photo) |
-| `sd6gen1-sm6450-6.67x8.08.jpg` | 8702×7198(ファイル名の寸法 6.67×8.08 mm = 53.9 mm² = プリセット) | **6 Gen 1(SM6450)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-6gen1-sm6450/ | **反映しない(未判別)** |
+| `sd6gen1-sm6450-6.67x8.08.jpg` | 8702×7198(ファイル名の寸法 6.67×8.08 mm = 53.9 mm² = プリセット) | **6 Gen 1(SM6450)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-6gen1-sm6450/ | ブロックは反映しない(未判別)。**縦横比だけ採った(2026-11-04。幅/高さ 8.08/6.67 = 1.2114。画像 8702×7198 = 1.209 は横長で、ファイル名の後ろの値が横)** |
 | `SM8650.jpg` | 7575×6335 | **8 Gen 3(SM8650)**。注釈つき(X4 3.30GHz、A720 Gold 3.15GHz ×3 + 2.96GHz ×2、A520 ×2、L3 12MiB、SLC 6MiB、Adreno 750、X75 モデム) | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8gen3/ | qc-8gen3(photo) |
-| `sd4gen2-sm4450-6.32x6.38.jpg` | 6896×6827(6.32×6.38 mm = 40.3 mm² = プリセット) | **4 Gen 2(SM4450)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-4gen2-sm4450/ | **反映しない(未判別)** |
+| `sd4gen2-sm4450-6.32x6.38.jpg` | 6896×6827(6.32×6.38 mm = 40.3 mm² = プリセット) | **4 Gen 2(SM4450)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-4gen2-sm4450/ | ブロックは反映しない(未判別)。**縦横比だけ採った(2026-11-04。6.38/6.32 = 1.0095。画像 6896×6827 = 1.0101)** |
 | `SM8750shuiying.jpg` | 7961×7039 | **8 Elite(SM8750)**。注釈つき(Phoenix L 4.32GHz、Phoenix M ×6 3.53GHz、L2 12MB ×2、SLC 8MB、Adreno 830、X80 モデム、Hexagon V79) | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8elitesm8750/ | qc-8elite(photo)。Phoenix L の 2 個は写真の 1 つの帯を左右 2 等分した推定 |
-| `SD7gen3 sm7550 6.43x8.58.jpg` | 6941×9251(6.43×8.58 mm = 55.2 mm² = プリセット) | **7 Gen 3(SM7550)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen3sm7550/ | **反映しない(未判別)** |
+| `SD7gen3 sm7550 6.43x8.58.jpg` | 6941×9251(6.43×8.58 mm = 55.2 mm² = プリセット) | **7 Gen 3(SM7550)**。**注釈なし** | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen3sm7550/ | ブロックは反映しない(未判別)。**縦横比だけ採った(2026-11-04。6.43/8.58 = 0.7494。画像 6941×9251 = 0.7503 は縦長)** |
 | `7gen3+&8Sgen3.jpg` | 5307×6764 | **7+ Gen 3(SM7675)と 8s Gen 3(SM8635)の共通のダイ**(画像内に両チップ併記)。注釈つき(X4 3.0/2.8GHz、A720 ×4 2.8/2.61GHz、A520 ×3〔2 コア + 1 コア〕、L3 4MiB、SLC 3584KiB、Adreno 735/732、X70/X62 モデム)。クロック表記は 8s Gen 3 の 3.0GHz と 7+ Gen 3 の 2.8GHz の両方を併記 | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-7gen38sgen3sm7675sm8635/ | qc-7plus-gen3・qc-8s-gen3(**どちらも photo**。同じダイで、プリセットの面積 89.5 mm²・プロセス N4 も同じ。1 枚の写真が両チップのダイ自身) |
 | `8Gen5.jpg` | 9386×5915 | **8 Gen 5(SM8845)**。注釈つき(Oryon 3rd L ×2 3.8GHz、E ×6 3.32GHz、Adreno 829、X80 モデム)。ユーザー注記「参考」 | https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-8gen5sm8845/ | **プリセット無し。記録のみ**。ファイル名と画像内の表記(3.8GHz / 3.32GHz)から判定し、8 Elite Gen 5 ではない |
 | `8EliteG5 Dieshot.jpg` | 6309×5588 | **8 Elite Gen 5(SM8850)**。注釈つき(Oryon 3rd L ×2 4.61GHz、M ×6 3.63GHz、L2 12MiB ×2、SLC 8MiB、Adreno 840、X85 モデム) | https://kurnal-insights.com/en/dieshot/qualcomm-8elite-gen5sm8850/ | qc-8elite-gen5(photo)。**8Gen5.jpg と取り違えない**(4.61GHz のほうが 8 Elite Gen 5 = プリセットの P クロック 4.61 と一致) |
@@ -161,7 +161,7 @@
 
 - **7 Gen 4(qc-7gen4)**と MediaTek・NVIDIA の画像は無い(未反映)。
 - **反映した 14 件の根拠は photo**(自分のダイ自身の写真)。reuse にした件は無い: 7+ Gen 3 と 8s Gen 3 は、画像内の両チップ併記(X4 3.0/2.8GHz・A720 2.8/2.61GHz のクロック、Adreno 735/732、モデム X70/X62)、ファイル名(7gen3+&8Sgen3)、URL の綴り(sm7675sm8635)、プリセットの面積・プロセスの一致(89.5 mm²・N4)から同じダイと判断し、流用ではなく、流用ではなく同じダイの photo と判断した(別ダイなら reuse にする)。8+ Gen 1 は 8 Gen 1 と別のダイ(Samsung 4nm と TSMC N4。右半分の写真は配置が違う)なので 8 Gen 1 の流用にもしていない。
-- **反映しなかった 7 件**: 720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3(注釈なしでコアの位置が読めない。推測しない)、7 Gen 4(画像なし)。AMD の注釈なしの写真(Rembrandt-R・Phoenix 1)はコア ×8 が CCX の構造として読めたが、Snapdragon の注釈なしの写真は同様に読める構造が無かった。6 Gen 1・4 Gen 2・7 Gen 3 はファイル名の寸法がプリセットの面積と一致するので、縦横比だけ採る拡張が可能(未実施)。
+- **ブロックを反映しなかった 7 件**: 720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3(注釈なしでコアの位置が読めない。推測しない)、7 Gen 4(画像なし)。AMD の注釈なしの写真(Rembrandt-R・Phoenix 1)はコア ×8 が CCX の構造として読めたが、Snapdragon の注釈なしの写真は同様に読める構造が無かった。**このうち 6 Gen 1・4 Gen 2・7 Gen 3 は 2026-11-04 に縦横比だけ採った**(下の「縦横比だけ採る拡張」)。従来の配置のまま(layout なし)は 720G・780G・8+ Gen 1・7 Gen 4 の 4 件。
 - **プリセットのクロックとの照合**: 8s Gen 4・8 Elite・8 Elite Gen 5・8 Elite Extreme Gen 6・8cx Gen 3・7 Gen 1・855・865 は、注釈のクロック・コア数がプリセットと一致(855 の A76 2.84 / 2.42 / A55 1.8、8 Elite Extreme の L 5.0 / M 4.03・3.74〔プリセットは E 4.0 の 1 値〕など)。
 - **座標の特記**: 注釈つきでも注釈から外れる・境界が無い箇所がある: 8 Gen 2 の A510(注釈「2core cluster」を 2 等分した 2 枠 + 「1core」の 1 枠。2 等分は目測。中間コアの A715 / A710 の割当は区別しない)、8 Elite の Phoenix L 2 個(1 つの帯を左右 2 等分した推定)、**8cx Gen 3 の 4 つ目の A78(枠の注釈は「System Level Cache 512KiByte」だが、構造が A78 と似ているため A78 と推定。注釈と食い違う)**、7 Gen 1 の A510 2 コアを 2 つずつに区切った点、8 Elite Extreme Gen 6 の GPU は Slice #3(GMEM 6MiB を含む)も飾りに含めた。`scaleNote` に記載。L3 は cfg に無い(`l3MB` なし)ので L3 ブロックではなく飾りで置いた。
 
@@ -174,7 +174,7 @@
 | `D9000-mt6983.jpg` | 6787×7296 | **Dimensity 9000(MT6983)**。注釈つき(X2 + L2 1MiB、A710 ×3、Dual A510 Cluster、L3 2MiB ×4、DSU-110、SLC 3+3MiB、Mali G710 MP10 #1〜#9、APU 590、M80 5G、MiraVision 790、Imagiq 790、Media Engine、LPDDR5 16bit ×4) | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9000-mt6983/ | mt-9000(photo)。A510 ×4 は「Dual A510 Cluster」を 2×2 に分けた推定。**左下のコア枠は A710 の表記なし(注釈なし)。L2 256KiB の容量と構造から A710 と推定**(A710 の表記があるのは右上・右下の 2 つだけ) |
 | `D9200-mt6985.jpg` | 10199×9504 | **Dimensity 9200(MT6985)**。注釈つきだが、コアの表記は A715 @2.85GHz ×2(左下・右下)、2Core Cluster A510 @1.8GHz、右の A510 だけ。**X3 の表記はなく**、右上の枠(L2 1MiB・L1 64KiB の構造)は X3 と推定、左上の枠も注釈なしで A715 と推定。ほか L3 2MiByte ×4、SLC 3M ×2、Mali G715 MC11、APU 690、M80 Baseband、MiraVision 890、Imagiq 890) | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9200-mt6985/ | mt-9200(photo)。注釈なし〔推定〕: 左上の A715 と右上の X3、A510 ×4 は 2 コアクラスタ ×2 を 2 コアずつに分けた推定 |
 | `D9300-mt6989.jpg` | 6414×7602 | **Dimensity 9300(MT6989)**。注釈つき(X4 @3.25GHz、X4 @2.85GHz ×3、A720 @2.0GHz ×4、L3 8MiByte、SLC 10MiByte、Mali-G720 MC12 #1〜#12、APU 790、MediaTek M80?、Imagiq 990、MiraVision 990、LPDDR5T) | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9300-mt6989/ | mt-9300(photo)。コアは注釈どおり |
-| `D8200-mt6896z-10.27x8.27x0.09mm.jpg` | 7667×6161 | **Dimensity 8200(MT6896Z)**。**注釈なし**(コアの位置が読めない)。10.27×8.27 mm = 84.9 mm² = プリセット、縦横比 1.244(写真 1.244 と一致)。中国語の透かし | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-8200-mt6896/ | **反映しない(未判別)**。縦横比だけ採る拡張は可能(未実施) |
+| `D8200-mt6896z-10.27x8.27x0.09mm.jpg` | 7667×6161 | **Dimensity 8200(MT6896Z)**。**注釈なし**(コアの位置が読めない)。10.27×8.27 mm = 84.9 mm² = プリセット、縦横比 1.244(写真 1.244 と一致)。中国語の透かし | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-8200-mt6896/ | ブロックは反映しない(未判別)。**縦横比だけ採った(2026-11-04。10.27/8.27 = 1.2418。画像 7667×6161 = 1.2444)** |
 | `D9400-mt6991.jpg` | 8000×7419 | **Dimensity 9400(MT6991)**。注釈つき(X925 @3.62GHz〔プリセットのクロックは 3.63GHz。0.01GHz 差〕、X4 @3.3GHz ×2〔#2・#3。3 つ目は表記なし〕、A720 @2.4GHz ×3〔@2〜@4。4 つ目は表記なし〕、L3 12MiByte、SLC 10MiByte、Mali-G925 MP12、APU 890、5G Modem、imagiq 1090、Miravision 1090、LPDDR5X 5334MHz) | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9400-mt6991/ | mt-9400(photo)。**注釈なし〔推定〕**: 右上の X4 #1(L2 1MiByte の構造から)と、4 つ目の A720(中段の右の枠。注釈は @2・@3・@4 の 3 つだけ。L2 512KiB の構造から) |
 | `D9500-mt6993.jpg` | 7531×6339 | **Dimensity 9500(MT6993)**。注釈つき(C1-Ultra @4.21GHz、C1-Premium @3.5GHz ×3、C1-Pro @2.7GHz ×4、L3 4MiB ×4 + 16MiByte、SLC 10MiB、Mali G1-Ultra MP12 @1.7GHz、NPU 990、M90 5G Modem、ImageIQ 1190、Miravision 1190) | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9500-mt6993/ | mt-9500(photo)。コアは注釈どおり |
 | `D9600-Pro-MT6995Z-10.47x12.80x0.15mm.jpg` | 8817×7232(横長) | **Dimensity 9600 Pro(MT6995Z)**。注釈つき(C2 Ultra @4.55GHz ×2、C2 Pro @4.35GHz ×3、C2 Pro @3.1GHz ×3、SME ×2、16MiB L3、10MiB SLC、Mali G2 Ultra-MP12 @1.8GHz、NPU 1090、M90 5G Modem、ImageIQ 1290、Miravision 1290)。ファイル名の 10.47x12.80 は縦横の順が逆で、12.80×10.47 = 134.0 mm² = プリセット、比 1.223 = 写真 1.219 | https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9600-pro-mt6995/ | mt-9600pro(photo)。コアは注釈どおり |
@@ -185,7 +185,7 @@
 
 - **反映した 7 件の根拠は photo**(自分のダイ自身の写真)。reuse にした件は無い。Dimensity の cfg はプリセットの P/M/E の 1+3+4(9600 Pro は 2+3+3)で、写真の注釈のクロックとコア数が一致する(9300 の X4 ×4 は P 1 + M 3 の cfg と対応)。
 - **プリセットの面積との照合**: 9600 Pro・8200 だけファイル名に寸法があり、プリセットの面積(134.0・84.9 mm²)と一致(8200 の寸法はファイル名のみ)。9000〜9500・T239 は寸法の記載なしで、面積はプリセットのまま、縦横比は写真の枠の比。
-- **反映しなかった理由**: 8200・Orin・Thor は注釈なしでコアの位置が読めない(推測しない)。Snapdragon の注釈なし 6 件(720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3)と同じ扱い。EPYC 7401 は黒いダイで中身なし。縦横比だけ採るかはユーザーの判断待ち(8200: 1.244、Orin: 1.101、Thor: 1.636。いずれも未実施)。
+- **反映しなかった理由**: 8200・Orin・Thor は注釈なしでコアの位置が読めない(推測しない)。Snapdragon の注釈なし 6 件(720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3)と同じ扱い。EPYC 7401 は黒いダイで中身なし。縦横比だけ採る拡張は、8200 だけ 2026-11-04 に実施した(1.2418。下の「縦横比だけ採る拡張」)。Orin(1.101)・Thor(1.636)はファイル名に寸法が無く、未実施(対象外)。
 - **推定箇所**: `scaleNote` に記載(9000・9200 の A510 の 2 コア分割、9000 の左下のコア〔A710〕、9200 の左上の A715 と右上の X3、9400 の右上の X4 #1 と 4 つ目の A720、T239 の L3 の枠)。9400 の X925 のクロック 3.62GHz はプリセットの 3.63 と 0.01 差。deco の座標は注釈の領域の目測の外形で、重ならないよう調整した。
 
 ## GB10(DGX Spark)のダイ写真の受領(2026-11-03。`C:\LocalAI\画像\GB102in1.jpg`。区分 [二次])
@@ -198,6 +198,21 @@
 - **反映した内容(S-die)**: X925 5+5・A725 5+5(上下 2 クラスタ)、L3 2 枠(16MiB・8MiB。cfg の 24MB を重み 2:1 に分ける)、SLC・Memory Cache 2MiB ×8・LPDDR5 PHY・NPU・ISP・Coherence Hub・Display・Die to Die・NV-Link・左端の I/O 列(コア以外は飾り)。ブロックは 44 個。
 - **推定箇所**: `scaleNote` に記載(L3 の 16 / 8MB の cfg への当てはめ〔どちらが 16MB かは出典で食い違う〕、SLC の 1MiB 区画を数枠に束ねたこと、Memory Cache 2MiB ×8 と SLC の関係が不明なこと、A725 の小さな枠の目測誤差)。
 - **G-die を反映しなかった理由**: 既存の仕組みでは arm-soc に付けられる飾りダイの種類が無く(`decorDies` は iod・gpu-tile・platform-tile で、amd-chiplet・x86-tile の設計だけ)、コアなしの 2 つ目のダイに枠を当てる `SOC_DIE` / `socLayout` は Strix Halo 専用(amd-apu 固定)。G-die は従来どおり面積 173.6 mm² の 1 ブロック GPU。必要な拡張は設計書 §8.1(arm-soc 項の GB10)に記載。
+
+## 縦横比だけ採る拡張(2026-11-04。ユーザー指示「3つ全部」の項目 3。Snapdragon 6 Gen 1・4 Gen 2・7 Gen 3、Dimensity 8200 の 4 件。区分 [二次]・出典 URL 未確認)
+- **使い方**: 注釈なしのダイ写真しかなく、ブロックの位置が読めないが、**ファイル名にダイの寸法があり、プリセットの面積と一致する**チップについて、ダイの縦横比(幅/高さ)だけを写真に合わせる。`js/model/floorplan.js` の `ASPECT_ONLY`(preset id → `aspect`・ファイル名・寸法の説明)に足すと、`classify` が frame なしの `arm-soc`・`scaleBasis: 'schematic'`・`layout.aspect` を返し、`design.fromPreset` が `aspectOf(layout)` でダイの幅・高さを決める(面積はプリセットのまま)。ブロックは従来の配置(`layoutCompute`)で、根拠のない模式。新しい対象を足すときは、ファイル名の寸法の積がプリセットの面積と一致し、縦横の向きが画像の実ピクセル比と 1% 以内で合うことを確認する(`tests/floorplan-snapdragon.test.js`・`floorplan-mediatek.test.js` の追加時に同じ確認を足す)。
+- **対象**: 下の表の 4 件だけ。720G・780G・8+ Gen 1 はファイル名に寸法がなく対象外(従来の配置のまま。扱い不変)。7 Gen 4 は画像なし。Orin・Thor はファイル名に寸法がなく対象外。
+- **向きの確認**(画像の実ピクセルを `file` コマンドとファイルヘッダで確認): 6 Gen 1 と 4 Gen 2 のファイル名は「小さい方 x 大きい方」(6.67x8.08、6.32x6.38)だが、画像は横長(8702×7198 = 1.209、6896×6827 = 1.010)なので、横 = ファイル名の後ろの値とした。7 Gen 3(6941×9251 = 0.750、縦長)と 8200(7667×6161 = 1.244)は前 x 後 = 横 x 縦。4 Gen 2 は EXIF の向きが upper-right(左右反転)だが縦横の入れ替えはない。
+
+| id | ファイル名 | 幅 × 高さ(mm)= 面積 | 採用した縦横比(幅/高さ) | 画像の実ピクセル比 |
+|---|---|---|---|---|
+| qc-6gen1 | `sd6gen1-sm6450-6.67x8.08.jpg` | 8.08 × 6.67 = 53.9 mm²(プリセット 53.9) | 1.2114 | 8702×7198 = 1.2089 |
+| qc-4gen2 | `sd4gen2-sm4450-6.32x6.38.jpg` | 6.38 × 6.32 = 40.3 mm²(プリセット 40.3) | 1.0095 | 6896×6827 = 1.0101 |
+| qc-7gen3 | `SD7gen3 sm7550 6.43x8.58.jpg` | 6.43 × 8.58 = 55.2 mm²(プリセット 55.2) | 0.7494 | 6941×9251 = 0.7503 |
+| mt-8200 | `D8200-mt6896z-10.27x8.27x0.09mm.jpg` | 10.27 × 8.27 = 84.9 mm²(プリセット 84.9) | 1.2418 | 7667×6161 = 1.2444 |
+
+- scaleNote(600 文字以内)は「縦横比のみ写真のファイル名の寸法(ファイル名。寸法。出典 URL 未確認)に合わせた。ブロックの配置・大きさは模式で根拠なし」。画面の縮尺注記は schematic の「模式図」の文言。
+- 件数: 従来の配置 14 → 10、schematic 1 → 5(12100 の x86-mono + この 4 件)。他の 98 プリセットの layout・寸法・ブロック・飾りダイと、全プリセットの評価は変更前と一致(`tests/floorplan-snapdragon.test.js` の固定ハッシュは 74 件 → 70 件に更新。評価の固定ハッシュ `floorplan-scale.test.js` は不変)。
 
 ## Wildcat Lake のダイ写真の反映と Panther Lake 小型枠の使用先(2026-11-04。Core 5 320・Core Ultra 5 325 の追加。区分 [二次])
 

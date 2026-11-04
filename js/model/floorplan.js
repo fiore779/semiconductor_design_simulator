@@ -633,6 +633,15 @@
 
   // プリセット → classify の結果({ template, uncore, igpu, npu, units, scaleBasis, scaleNote, slots?, recipe?, dieIndex, iodGpu })か null(判定できない / 対象外。呼び出し側は従来の配置にする)。
   // roleOf(name) はダイ名 → 'compute' | 'gpu' | 'uncore'。
+  // 注釈なしのダイ写真(Kurnal Insights。画像は C:\LocalAI\画像)の縦横比(幅/高さ)だけを採る 4 件。ファイル名の寸法の幅×高さが画像の実ピクセル比と一致する向きで、面積(mm²)はプリセットと一致。
+  // 6 Gen 1 と 4 Gen 2 のファイル名は「小さい方 x 大きい方」の順だが、画像は横長(8702×7198 = 1.209、6896×6827 = 1.010)なので、横 = ファイル名の後ろの値とした。7 Gen 3(6941×9251 = 0.750、縦長)・Dimensity 8200(7667×6161 = 1.244)は前 x 後 = 幅 x 高さ
+  const ASPECT_ONLY = {
+    'qc-6gen1': { aspect: 1.2114, file: 'sd6gen1-sm6450-6.67x8.08.jpg', dims: '横 8.08 × 縦 6.67 mm = 53.9 mm²。画像 8702×7198 px は横長' },
+    'qc-4gen2': { aspect: 1.0095, file: 'sd4gen2-sm4450-6.32x6.38.jpg', dims: '横 6.38 × 縦 6.32 mm = 40.3 mm²。画像 6896×6827 px' },
+    'qc-7gen3': { aspect: 0.7494, file: 'SD7gen3 sm7550 6.43x8.58.jpg', dims: '横 6.43 × 縦 8.58 mm = 55.2 mm²。画像 6941×9251 px は縦長' },
+    'mt-8200': { aspect: 1.2418, file: 'D8200-mt6896z-10.27x8.27x0.09mm.jpg', dims: '横 10.27 × 縦 8.27 mm = 84.9 mm²。画像 7667×6161 px' },
+  };
+
   function classify(preset, roleOf) {
     if (preset && preset.vendor === 'Apple' && APPLE_MAP[preset.id]) {
       const m = APPLE_MAP[preset.id]; const dies = preset.dies || [];
@@ -648,6 +657,12 @@
       const m = ARM_MAP[preset.id]; const dies = preset.dies || [];
       if (!dies.length || !TILE_FRAMES[m.frame]) return null;
       return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
+    }
+    if (preset && ASPECT_ONLY[preset.id] && (preset.dies || []).length) {
+      // 注釈なしのダイ写真しかない 4 件: ダイの縦横比だけ写真のファイル名の寸法に合わせる(frame なし。ブロックの配置は従来どおりの模式。面積はプリセットのまま)
+      const m = ASPECT_ONLY[preset.id]; const dies = preset.dies;
+      const ci = Math.max(0, dies.findIndex((d) => (typeof roleOf === 'function' ? roleOf(d.name) : 'compute') === 'compute'));
+      return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, dieIndex: ci, scaleBasis: 'schematic', aspect: m.aspect, scaleNote: `縦横比のみ写真のファイル名の寸法(${m.file}。${m.dims}。出典 URL 未確認)に合わせた。ブロックの配置・大きさは模式で根拠なし`, iodGpu: false, decorIod: false };
     }
     if (!preset || preset.isa !== 'x86') return null;
     const dies = preset.dies || [];
@@ -722,6 +737,7 @@
     if (c.slots) l.slots = { p: c.slots.p, e: c.slots.e };
     if (c.recipe) l.recipe = c.recipe;
     if (c.frame) l.frame = c.frame;
+    if (c.aspect) l.aspect = c.aspect;
     return l;
   }
 
@@ -742,7 +758,7 @@
       case 'apple-soc': { const a = APPLE_FRAMES[layout.frame]; return a ? a.aspect / u : 1; }
       case 'amd-apu': return FRAMES[layout.frame] ? FRAMES[layout.frame].W / FRAMES[layout.frame].H : TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1.1;
       case 'x86-tile': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1.2;
-      case 'arm-soc': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : 1;
+      case 'arm-soc': return TILE_FRAMES[layout.frame] ? TILE_FRAMES[layout.frame].aspect : (typeof layout.aspect === 'number' && layout.aspect > 0 ? layout.aspect : 1);
       case 'amd-chiplet': return (CCD_RECIPES[layout.recipe] || CCD_RECIPES[DEFAULT_RECIPE]).aspect * (u + (u - 1) * CCD_GAP);
       default: return null;
     }
@@ -786,7 +802,8 @@
       // template と frame の対応: apple-soc は APPLE_FRAMES、amd-apu は FRAMES(Strix・Kraken)か TILE_FRAMES、x86-tile・x86-mono・arm-soc は TILE_FRAMES(Intel の Compute タイル・AMD のダイ写真・Snapdragon の枠)。ほかのテンプレートは frame を持たない
       const has = (o) => Object.prototype.hasOwnProperty.call(o, l.frame);
       if (l.template === 'apple-soc' ? !has(APPLE_FRAMES) : l.template === 'x86-tile' || l.template === 'x86-mono' || l.template === 'arm-soc' ? !(has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0) : (l.template !== 'amd-apu' || !(has(FRAMES) || (has(TILE_FRAMES) && TILE_FRAMES[l.frame].tpl.indexOf(l.template) >= 0)))) return `layout.frame「${l.frame}」はテンプレート ${l.template} では使えません`;
-    } else if (l.template === 'apple-soc' || l.template === 'arm-soc') return `${l.template} には layout.frame が要ります`;
+    } else if (l.template === 'apple-soc' || (l.template === 'arm-soc' && !(l.scaleBasis === 'schematic' && l.aspect != null))) return `${l.template} には layout.frame が要ります`;
+    if (l.aspect != null && !(l.template === 'arm-soc' && l.frame == null && l.scaleBasis === 'schematic' && typeof l.aspect === 'number' && isFinite(l.aspect) && l.aspect >= 0.25 && l.aspect <= 4)) return 'layout.aspect は frame のない arm-soc(scaleBasis が schematic)の縦横比(0.25〜4 の数)だけに使えます';
     if (l.recipe != null && !(typeof l.recipe === 'string' && Object.prototype.hasOwnProperty.call(CCD_RECIPES, l.recipe))) return 'layout.recipe が未知です';
     if (l.slots != null) {
       const s = l.slots;

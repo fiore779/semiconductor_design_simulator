@@ -16,17 +16,44 @@ const FRAME_OF = {
   'qc-855': 'sd-855', 'qc-865': 'sd-865', 'qc-888': 'sd-888', 'qc-8gen1': 'sd-8gen1', 'qc-8gen2': 'sd-8gen2', 'qc-8gen3': 'sd-8gen3', 'qc-8elite': 'sd-8elite', 'qc-8elite-gen5': 'sd-8elite-gen5',
   'qc-7plus-gen3': 'sd-7p3-8s3', 'qc-8s-gen3': 'sd-7p3-8s3', 'qc-8s-gen4': 'sd-8s-gen4', 'qc-8elite-x-gen6': 'sd-8elite-x-gen6', 'qc-7gen1': 'sd-7gen1', 'qc-8cx-gen3': 'sd-8cx-gen3',
 };
-// 注釈なしの写真(720G・780G・8+ Gen 1・6 Gen 1・4 Gen 2・7 Gen 3)と画像なし(7 Gen 4)は、コアの位置が読めず従来の配置のまま
-const NONE = ['qc-720g', 'qc-780g', 'qc-8plus-gen1', 'qc-6gen1', 'qc-4gen2', 'qc-7gen3', 'qc-7gen4'];
+// 注釈なしの写真(720G・780G・8+ Gen 1)と画像なし(7 Gen 4)は、コアの位置が読めず従来の配置のまま(6 Gen 1・4 Gen 2・7 Gen 3 は縦横比だけ採った)
+// 2026-11-04: 6 Gen 1・4 Gen 2・7 Gen 3 はファイル名の寸法があるので、縦横比だけ写真に合わせる(ASPECT_ONLY。frame なしの arm-soc・schematic。ブロックの配置は従来どおり)
+const NONE = ['qc-720g', 'qc-780g', 'qc-8plus-gen1', 'qc-7gen4'];
+const ASPECT_ONLY = { 'qc-6gen1': 1.2114, 'qc-4gen2': 1.0095, 'qc-7gen3': 0.7494 };
 
-test('Snapdragon: 写真のある 14 件は arm-soc の photo、読めない・画像なしの 7 件は従来の配置(layout なし)。Snapdragon は全部で 21 件', () => {
+test('Snapdragon: 写真のある 14 件は arm-soc の photo、縦横比だけ写真に合わせた 3 件は schematic、読めない・画像なしの 4 件は従来の配置(layout なし)。Snapdragon は全部で 21 件', () => {
   Object.keys(FRAME_OF).forEach((id) => {
     const l = lay(id); assert.ok(l, id);
     assert.strictEqual(l.template, 'arm-soc', id); assert.strictEqual(l.frame, FRAME_OF[id], id); assert.strictEqual(l.scaleBasis, 'photo', id);
     assert.ok(l.scaleNote.includes('目測') && l.scaleNote.includes('実チップのフロアプランではない') && l.scaleNote.includes('URL 候補'), id);
   });
   NONE.forEach((id) => assert.strictEqual(lay(id), null, id));
-  assert.strictEqual(D.presets.filter((p) => p.vendor === 'Qualcomm').length, Object.keys(FRAME_OF).length + NONE.length);
+  assert.strictEqual(D.presets.filter((p) => p.vendor === 'Qualcomm').length, Object.keys(FRAME_OF).length + Object.keys(ASPECT_ONLY).length + NONE.length);
+  // 縦横比だけ採った 3 件: frame なしの arm-soc・schematic。面積(mm²)はプリセットのまま、幅/高さは指定の比、ブロックは従来の配置(模式)。
+  // 比はファイル名の寸法(幅/高さ)で、画像の実ピクセル比と 1% 以内で一致(8702×7198 = 1.2089、6896×6827 = 1.0101、6941×9251 = 0.7503)
+  const PX = { 'qc-6gen1': 8702 / 7198, 'qc-4gen2': 6896 / 6827, 'qc-7gen3': 6941 / 9251 };
+  Object.keys(ASPECT_ONLY).forEach((id) => {
+    const l = lay(id); const die = mk(id).dies[0]; const p = byId(id);
+    assert.strictEqual(l.template, 'arm-soc', id); assert.strictEqual(l.scaleBasis, 'schematic', id); assert.strictEqual(l.frame, undefined, id); assert.strictEqual(l.aspect, ASPECT_ONLY[id], id);
+    assert.ok(l.scaleNote.includes('縦横比のみ') && l.scaleNote.includes('出典 URL 未確認') && l.scaleNote.includes('模式で根拠なし') && l.scaleNote.length <= 600, id);
+    assert.ok(Math.abs(die.widthMm / die.heightMm - ASPECT_ONLY[id]) < 1e-9, id);
+    assert.ok(Math.abs(ASPECT_ONLY[id] / PX[id] - 1) < 0.01, id);
+    assert.ok(Math.abs(die.widthMm * die.heightMm - p.dies[0].mm2) < 1e-6, id); assert.strictEqual(die.areaMm2, p.dies[0].mm2, id);
+    // ブロックは従来の配置(layoutCompute)と同じ: 同じ寸法のダイで layout なしにしたものと一致
+    const legacy = JSON.parse(JSON.stringify(mk(id))); delete legacy.dies[0].layout; legacy.dies[0].blocks = design.relayoutCompute(legacy).dies[0].blocks;
+    assert.deepStrictEqual(die.blocks, legacy.dies[0].blocks, id);
+    // checkLayout・保存データの検証・編集後の再配置が通る
+    assert.strictEqual(FP.checkLayout(l), null, id);
+    assert.strictEqual(design.parse(JSON.stringify(mk(id))).ok, true, id);
+    assert.deepStrictEqual(FP.afterEdit(l, p.cfg.cores, 0), l, id);
+    const r = design.setCoreCount(design.unlock(mk(id)), p.cfg.cores[0].type, p.cfg.cores[0].count + 1); assert.ok(r.ok, id); // 再現モードはロックされるので unlock してから
+    assert.strictEqual(r.design.dies[0].layout.aspect, ASPECT_ONLY[id], id); assert.ok(Math.abs(r.design.dies[0].widthMm / r.design.dies[0].heightMm - ASPECT_ONLY[id]) < 1e-9, id);
+  });
+  // aspect は frame なしの arm-soc・schematic だけに使える
+  const base = { template: 'arm-soc', scaleBasis: 'schematic', aspect: 1.2 };
+  assert.strictEqual(FP.checkLayout(base), null);
+  [Object.assign({}, base, { scaleBasis: 'photo' }), Object.assign({}, base, { aspect: 'x' }), Object.assign({}, base, { aspect: 0 }), Object.assign({}, base, { aspect: 5 }), Object.assign({}, base, { frame: 'sd-855' }), Object.assign({}, base, { template: 'x86-mono' }), { template: 'arm-soc', scaleBasis: 'schematic' }]
+    .forEach((l, i) => assert.ok(FP.checkLayout(l), 'NG ' + i));
   // 7+ Gen 3 と 8s Gen 3 は同じダイ(Kurnal の 1 枚)。同じ枠・同じ photo で、注記にその根拠がある
   assert.strictEqual(lay('qc-7plus-gen3').frame, lay('qc-8s-gen3').frame);
   assert.ok(lay('qc-8s-gen3').scaleNote.includes('SM7675 / SM8635') && lay('qc-8s-gen3').scaleNote.includes('このダイ自身の写真'));
@@ -145,14 +172,16 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
   assert.strictEqual(T('qc-8s-gen4', 'P').length, 1);
 });
 
-test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge の 4 件以外の 74 件(Snapdragon の未反映 7 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
+test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と、縦横比だけ採った 4 件以外の 70 件(Snapdragon の未反映 4 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
   const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239', 'nv-gb10', 'intel-ptl-u5-325', 'intel-wcl-c5-320']);
+  // 2026-11-04: 6 Gen 1・4 Gen 2・7 Gen 3・Dimensity 8200 は縦横比だけ写真に合わせた(幅・高さと layout が変わる。ブロックは従来の配置。縦横比は上のテストと floorplan-mediatek で検証)ので除く。除く前の 74 件のハッシュは a0fc1692…(それ以前と同じ)
+  const ASPECT_4 = ['qc-6gen1', 'qc-4gen2', 'qc-7gen3', 'mt-8200'];
   // 2026-11-04: Raphael・Granite Ridge(7700・7950X・9700X・9950X)は IOD の縦横比・位置を写真に合わせて変えたので除く(その変更は floorplan-scale.test.js で検証。評価は不変)
   const IOD_MOVED = ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'];
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id));
-  assert.strictEqual(rest.length, 74);
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id));
+  assert.strictEqual(rest.length, 70);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
   // 2026-11-04: 386H(intel-ptl-x9-386h)だけ、4Xe の GPU タイルの飾りと scaleNote を足したのでハッシュを更新(Panther Lake_dies.jpg)。388H・378H・358H・Platform タイルは一致を確認済み
-  assert.strictEqual(h.digest('hex'), 'a0fc169207ce8c117bf8dc16dbd9eda85307c2293e230e0143eedf7487d785f8');
+  assert.strictEqual(h.digest('hex'), '2a9232c909d49e286a7a9ab75cb2e832f3d8ff79b1a4c2ce443aae0a76b33e2c'); // 70 件の layout・寸法・ブロック・飾りダイは変更前(HEAD)のコードと一致を確認して更新(4 件を除いただけ)
 });

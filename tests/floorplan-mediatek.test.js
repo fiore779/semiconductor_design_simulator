@@ -14,10 +14,17 @@ const lay = (id) => mk(id).dies[0].layout || null;
 const cores = (die) => die.blocks.filter((b) => b.kind === 'core');
 
 const FRAME_OF = { 'mt-9000': 'mt-9000', 'mt-9200': 'mt-9200', 'mt-9300': 'mt-9300', 'mt-9400': 'mt-9400', 'mt-9500': 'mt-9500', 'mt-9600pro': 'mt-9600pro', 'nv-t239': 't239' };
-// 注釈なしの写真(8200・Orin・Thor)は構造から読めず、EPYC 7401 の写真はパッケージ上の黒いダイで中身が見えないので、従来の配置のまま
-const NONE = ['mt-8200', 'nv-orin-agx', 'nv-thor', 'amd-epyc-7401'];
+// 注釈なしの写真(Orin・Thor。8200 は縦横比だけ採った)は構造から読めず、EPYC 7401 の写真はパッケージ上の黒いダイで中身が見えないので、従来の配置のまま
+const NONE = ['nv-orin-agx', 'nv-thor', 'amd-epyc-7401'];
 
-test('MediaTek・T239: 写真のある 7 件は arm-soc の photo。注釈なしで読めない Dimensity 8200・Orin・Thor と EPYC 7401 は従来の配置(layout なし)', () => {
+test('MediaTek・T239: 写真のある 7 件は arm-soc の photo。Dimensity 8200 は縦横比だけ写真に合わせた schematic。Orin・Thor と EPYC 7401 は従来の配置(layout なし)', () => {
+  // 2026-11-04: Dimensity 8200(D8200-mt6896z-10.27x8.27x0.09mm.jpg。注釈なし)は縦横比 10.27/8.27 = 1.2418(画像 7667×6161 px = 1.2444 と 1% 以内)だけ採る。ブロックの配置は従来どおり
+  const l8 = lay('mt-8200'); const d8 = mk('mt-8200').dies[0];
+  assert.strictEqual(l8.template, 'arm-soc'); assert.strictEqual(l8.scaleBasis, 'schematic'); assert.strictEqual(l8.frame, undefined); assert.strictEqual(l8.aspect, 1.2418);
+  assert.ok(l8.scaleNote.includes('縦横比のみ') && l8.scaleNote.includes('出典 URL 未確認') && l8.scaleNote.includes('模式で根拠なし') && l8.scaleNote.length <= 600);
+  assert.ok(Math.abs(d8.widthMm / d8.heightMm - 1.2418) < 1e-9); assert.ok(Math.abs(1.2418 / (7667 / 6161) - 1) < 0.01);
+  assert.ok(Math.abs(d8.widthMm * d8.heightMm - byId('mt-8200').dies[0].mm2) < 1e-6); assert.strictEqual(FP.checkLayout(l8), null);
+  assert.strictEqual(design.parse(JSON.stringify(mk('mt-8200'))).ok, true);
   Object.keys(FRAME_OF).forEach((id) => {
     const l = lay(id); assert.ok(l, id);
     assert.strictEqual(l.template, 'arm-soc', id); assert.strictEqual(l.frame, FRAME_OF[id], id); assert.strictEqual(l.scaleBasis, 'photo', id);
@@ -26,7 +33,7 @@ test('MediaTek・T239: 写真のある 7 件は arm-soc の photo。注釈なし
   });
   NONE.forEach((id) => assert.strictEqual(lay(id), null, id));
   assert.strictEqual(D.presets.filter((p) => p.vendor === 'MediaTek').length, 7);
-  assert.strictEqual(D.presets.filter((p) => p.vendor === 'MediaTek' && lay(p.id)).length, 6);
+  assert.strictEqual(D.presets.filter((p) => p.vendor === 'MediaTek' && lay(p.id)).length, 7);
   // 9600 Pro の写真は横長(ファイル名の寸法の縦横が逆)。12.80×10.47 = 134.0 mm² でプリセットと一致し、枠の比 1.22 とも合う
   assert.ok(Math.abs(12.80 * 10.47 - byId('mt-9600pro').dies[0].mm2) < 0.1);
   assert.ok(Math.abs(FP.TILE_FRAMES['mt-9600pro'].aspect / (12.80 / 10.47) - 1) < 0.01);

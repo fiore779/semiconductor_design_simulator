@@ -105,7 +105,11 @@
         areaKnown: known, areaNote: sd.note || null, x: cursorX, y: 0, widthMm: size.widthMm, heightMm: size.heightMm, blocks: [],
       };
       cursorX += die.widthMm + GAP_MM;
-      if (i === computeIdx && layout) { die.layout = Object.assign({}, layout); die.blocks = FP.layoutDie(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB, layout); }
+      if (i === computeIdx && layout) {
+        die.layout = Object.assign({}, layout);
+        // 根拠なしの Snapdragon・Dimensity(縦横比だけ採った 4 件)は、layout を注記・縦横比のために持ち、ブロックは従来の配置
+        die.blocks = layout.template === 'arm-soc' && layout.scaleBasis === 'schematic' ? layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB) : FP.layoutDie(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB, layout);
+      }
       else if (socLay && i === socIdx) { die.layout = Object.assign({}, socLay); die.blocks = FP.layoutDie(die, [], 0, socLay); }
       else if (i === computeIdx) die.blocks = layoutCompute(die, (preset.cfg && preset.cfg.cores) || [], preset.cfg && preset.cfg.l3MB);
       else if (fp && fp.iodGpu && roles[i] === 'uncore' && /IOD/i.test(sd.name)) die.blocks = FP.iodBlocks(die); // Zen 4 以降の IOD は内蔵 GPU(飾り)つき
