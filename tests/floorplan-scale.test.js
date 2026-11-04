@@ -189,5 +189,5 @@ test('評価(ST/MT/面積/電力など)は IOD の位置合わせの前後で全
   const E = require('../js/model/evaluate.js'); const ctx = E.makeContext(); const out = {};
   // 2026-11-04: Core Ultra 5 325・Core 5 320 は、この固定ハッシュの後に追加したプリセットなので対象外(既存 100 件のハッシュは追加の前後で一致を確認。追加分の評価は mix.test.js の BASE_M5B で固定)
   D.presets.filter((p) => !['intel-ptl-u5-325', 'intel-wcl-c5-320'].includes(p.id)).forEach((p) => { out[p.id] = E.evaluate(design.fromPreset(p), ctx); });
-  assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), '6cf04a8edd39af72f88294f7d816115b961e61a0ae7a9594a949500d53365d20');
+  assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), '100c5b20a196caa654ac3877ccdde97dc12d3e66c38b28233d25f937fbf14942'); // 同日の 2 回目の更新: 評価値は不変のまま、レビュー対応で HX370・5800U の errCause.mt の文面だけを直したため(ハッシュは evaluate の結果全体で errCause 文面を含む) // 2026-11-05: MT の帯 0 係数を 0.65 → 0.69 に再校正したため MT の評価値が変わった(帯 0 の mobile-pc 5 件〔325・320 は対象外〕: 5800U・7735HS・HX370・14700HX・Kraken Point)。ST・面積・電力・温度は不変。あわせて 3 件(HX370・Kraken・5800U)の errCause.mt の文面も更新
 });

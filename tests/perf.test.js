@@ -210,9 +210,9 @@ test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(
   assert.ok(rb.ok && rb.detail.every((d) => d.clockSource === 'base' && d.clockFactor === 1)); assert.strictEqual(rb.clockFactor, 1);
   assert.ok(Math.abs(a.score / b.score - 1) < 1e-12);
   assert.ok(a.detail.every((d) => d.clockFactor === 0.81));
-  // mobile-pc は電力が未取得なら 0.81(7840HS)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.65)、pc は 1.0
+  // mobile-pc は電力が未取得なら 0.81(7840HS)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.69)、pc は 1.0
   assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.81);
-  assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.65);
+  assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.69);
   const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
   const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
   assert.strictEqual(r1.clockFactor, 1); assert.strictEqual(r2.clockFactor, 1); assert.strictEqual(r1.score, r2.score);
@@ -264,9 +264,9 @@ test('uCal: 代表の u がある uarch には定数より代表を優先する'
 test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォールバック・kind 別', () => {
   const mk = (kind, power) => ({ kind, power });
   const rng = (maxW) => ({ base: null, peak: null, range: { minW: 10, maxW } });
-  assert.deepStrictEqual(F.MT_CLOCK_BANDS.map((b) => [b.maxW, b.factor]), [[60, 0.65], [Infinity, 0.76]]);
+  assert.deepStrictEqual(F.MT_CLOCK_BANDS.map((b) => [b.maxW, b.factor]), [[60, 0.69], [Infinity, 0.76]]);
   // 境界: 60W ちょうどは 60W 以下の帯、60.1W は 60W 超の帯
-  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60))).factor, 0.65);
+  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60))).factor, 0.69);
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60.1))).factor, 0.76);
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(15))).band, '60W 以下');
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(120))).band, '60W 超');
@@ -283,8 +283,8 @@ test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォ�
   const ph = F.mtClockInfo(mk('mobile', both)); assert.deepStrictEqual([ph.factor, ph.band, ph.fallback], [0.81, null, false]);
   ['pc', 'server', 'embedded', undefined].forEach((k) => assert.strictEqual(F.mtClockInfo(mk(k, both)).factor, 1));
   assert.strictEqual(F.mtClockInfo(null).factor, 1);
-  // 実データ: 5800U(10〜25W)→0.65、HX370(54W)→0.65、PTL(80W)→0.76、7840HS(未取得)→0.81・fallback
-  assert.strictEqual(F.mtClockInfo(preset('amd-zen3-5800u')).factor, 0.65);
+  // 実データ: 5800U(10〜25W)→0.69、HX370(54W)→0.69、PTL(80W)→0.76、7840HS(未取得)→0.81・fallback
+  assert.strictEqual(F.mtClockInfo(preset('amd-zen3-5800u')).factor, 0.69);
   assert.strictEqual(F.mtClockInfo(preset('intel-ptl-x9-386h')).factor, 0.76);
   assert.strictEqual(F.mtClockInfo(preset('amd-zen4-7840hs')).fallback, true);
 });
@@ -293,15 +293,16 @@ test('mtScore: 帯の係数は mtScore の結果(clockFactor・clockInfo)に出�
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
   const p = preset('amd-zen3-5800u');
   const r = F.mtScore(p, c, D.uarch, null);
-  assert.strictEqual(r.clockFactor, 0.65); assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW');
+  assert.strictEqual(r.clockFactor, 0.69); assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW');
   // コア数を変えた設計(power は元のまま)でも同じ係数
   const q = clone(p); q.cfg.cores[0].count = 6;
-  assert.strictEqual(F.mtScore(q, c, D.uarch, null).clockFactor, 0.65);
+  assert.strictEqual(F.mtScore(q, c, D.uarch, null).clockFactor, 0.69);
   // 混合設計(kind 'pc')は 1.0
   assert.strictEqual(F.mtScore(Object.assign({}, p, { kind: 'pc' }), c, D.uarch, null).clockFactor, 1);
 });
 
-// 帯の係数を、データから再現できるか(中央値)と leave-one-out(LOO)。標本 = MT を計算でき、GB7 マルチと公表電力がある mobile-pc(10 件。Kraken Point〔GB7 が原ページ未確認のため帯の標本から除外。id 指定〕を含めると帯 0 の中央値が 0.65 → 0.66 になるため標本から除く。係数は再校正しない)。**Core Ultra 5 325 は標本に入れた(ユーザー指示「3つ全部やってください」〔判断待ち 3 点への包括的な指示〕による。閾値の緩和はそれに伴う実装側の対応)**。帯の中央値は 325 を入れても MT_CLOCK_BANDS(0.65・0.76)と一致したまま。ただし 325 を入れた結果、精度指標が悪化した: LOO の MAE 0.0717 → 0.1140、一律 0.81 の MAE 0.1373 → 0.1253、誤差 10% 超の件数 2 → 4。325 の MT は公開値(11018、n=25)に -18.8% 届かず、逆算した k は 0.826 で帯 0 の 0.65 から離れ、HX370(0.869)と同じ傾向=帯係数の弱点が新標本で出たもの。以下の閾値(LOO MAE < 0.12、0.81 一律 MAE > 0.12、10% 超 4 件)は旧閾値(0.09・0.13・2 件)をこの実測に合わせて緩めたもので、このテストの主張(帯係数の LOO 誤差が一律 0.81 より小さい)は維持される(0.1140 < 0.1253)が、差は 0.0717 vs 0.1373 から 0.1140 vs 0.1253 へ縮んだ。帯係数は再校正しない
+// 【2026-11-05 再校正】Core 5 320(GB7 ST 2242 / MT 7212、n=25)を標本に入れ、帯 0 を 0.65 → 0.69 に再校正した(ユーザー指示「再校正してください」)。標本 11 件、帯 0 は 6 件で中央値 0.688(→0.69)、帯 1 は 5 件で 0.759(→0.76、不変)。再校正後の実測: LOO MAE 0.1056(325 を入れた時の 0.1140 から良化)、一律 0.81 の MAE 0.1230、誤差 10% 超 3 件(4 → 3)。閾値(LOO < 0.11、一律 0.81 > 0.12、10% 超 3 件)はこの実測に合わせた更新。主張(帯係数の LOO 誤差 0.1056 < 一律 0.81 の 0.1230)は保たれている。以下の記述のうち「10 件」「0.65」「再校正しない」は(当時の)再校正前の経緯(325 を入れた時点)。
+// 帯の係数を、データから再現できるか(中央値)と leave-one-out(LOO)。標本 = MT を計算でき、GB7 マルチと公表電力がある mobile-pc(11 件。Kraken Point〔GB7 が原ページ未確認のため帯の標本から除外。id 指定〕を含めると帯 0 の中央値が変わるため標本から除く)。**Core Ultra 5 325 は標本に入れた(ユーザー指示「3つ全部やってください」〔判断待ち 3 点への包括的な指示〕による。閾値の緩和はそれに伴う実装側の対応)**。帯の中央値は 325 を入れても(当時の)MT_CLOCK_BANDS(0.65・0.76)と一致したまま。ただし 325 を入れた結果、精度指標が悪化した: LOO の MAE 0.0717 → 0.1140、一律 0.81 の MAE 0.1373 → 0.1253、誤差 10% 超の件数 2 → 4。325 の MT は公開値(11018、n=25)に -18.8% 届かず、逆算した k は 0.826 で帯 0 の 0.65 から離れ、HX370(0.869)と同じ傾向=帯係数の弱点が新標本で出たもの。以下の閾値(LOO MAE < 0.12、0.81 一律 MAE > 0.12、10% 超 4 件)は旧閾値(0.09・0.13・2 件)をこの実測に合わせて緩めたもので、このテストの主張(帯係数の LOO 誤差が一律 0.81 より小さい)は維持される(0.1140 < 0.1253)が、差は 0.0717 vs 0.1373 から 0.1140 vs 0.1253 へ縮んだ。帯係数は(当時)再校正しない
 test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係数」の中央値(小数 2 桁)が MT_CLOCK_BANDS と一致し、LOO の誤差が一律 0.81 より小さい', () => {
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
   const med = (a) => { const s = a.slice().sort((x, y) => x - y); const n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
@@ -310,12 +311,12 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
   const S = [];
   D.presets.forEach((p) => {
     const g = gb7ByName[p.gb7]; const w = F.mtPublishedW(p);
-    // Core 5 320(intel-wcl-c5-320)も id 指定で標本から除く(暫定対応。ユーザー判断待ち)。入れると標本 11 件・帯 0 の中央値が 0.65 → 0.69 となり MT_CLOCK_BANDS(0.65)と不一致になる。実測: LOO MAE 0.1056・一律 0.81 の MAE 0.1230・誤差 10% 超 3 件で、指標自体はむしろ良化。帯 0 を 0.69 に再校正すると全 mobile-pc の MT 評価が変わるため見送った
-    if (p.id === 'amd-kraken-350' || p.id === 'intel-wcl-c5-320' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
+    // Core 5 320(intel-wcl-c5-320)は標本に含める(ユーザー指示 2026-11-05「再校正してください」。帯 0 を 0.65 → 0.69 に再校正した)
+    if (p.id === 'amd-kraken-350' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, band: F.MT_CLOCK_BANDS.findIndex((b) => w.w <= b.maxW) });
   });
-  assert.strictEqual(S.length, 10);
+  assert.strictEqual(S.length, 11);
   F.MT_CLOCK_BANDS.forEach((b, i) => {
     const ks = S.filter((s) => s.band === i).map((s) => s.k);
     assert.ok(ks.length >= 4, '帯 ' + i + ' の標本数');
@@ -328,11 +329,11 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
     const k = o.length ? r2(med(o.map((x) => x.k))) : 0.81;
     return { e: mtAt(s.p, k) / s.pub - 1, e81: mtAt(s.p, 0.81) / s.pub - 1 };
   });
-  // 注意: 次の 2 つの絶対値閾値(0.12)は、実測(LOO 0.1140、一律 0.81 は 0.1253)に対して余裕が約 0.005 しかなく脆い(標本・データの小さな変更で落ちる)。主張の中心は 3 つ目の相対比較(帯係数の LOO 誤差 < 一律 0.81 の誤差)
-  assert.ok(mae(loo.map((l) => l.e)) < 0.12, 'LOO MAE ' + mae(loo.map((l) => l.e)));
+  // 注意: 次の 2 つの絶対値閾値は、再校正後の実測(標本 11 件。LOO 0.1056、一律 0.81 は 0.1230、10% 超 3 件)に対して余裕が小さく脆い(LOO は 0.11 に対し約 0.005、一律 0.81 は 0.12 に対し約 0.003)。主張の中心は 3 つ目の相対比較(帯係数の LOO 誤差 < 一律 0.81 の誤差)
+  assert.ok(mae(loo.map((l) => l.e)) < 0.11, 'LOO MAE ' + mae(loo.map((l) => l.e)));
   assert.ok(mae(loo.map((l) => l.e81)) > 0.12);
   assert.ok(mae(loo.map((l) => l.e)) < mae(loo.map((l) => l.e81)));
-  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 4);
+  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 3);
 });
 
 test('TDP 帯別係数: σ の校正(代表 3 件)は不変(代表は pc で係数 1.0)', () => {
