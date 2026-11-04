@@ -389,7 +389,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 4, smt: 1, baseGHz: 1.9, boostGHz: 4.8 }, { type: 'E', uarch: 'Darkmont', count: 8, smt: 1, baseGHz: 1.5, boostGHz: 3.5 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.5, boostGHz: 3.3 }], l3MB: 18, memory: null },
     calib: false, notes: 'クロック・L3・電力は Wikipedia「Panther Lake (microprocessor)」の表(取得日 2026-10-29)',
   });
-  // ---- 2026-11-04 追加 2 件(ユーザーの指示は 325 と 320 の追加。例外の登録は実装上の判断。調査: docs/research/intel-ptl-325-wcl-320.md)。addedIn:'M5b'(calib は false)。ダイ面積はどちらも未取得(null)。Core Ultra 5 325 は 4P+4LPE の小型 Compute タイルの代表(332・322 は 2P+4LPE+2Xe で別構成のため追加しない)。320 は GB7 が未取得(gb7: null)のため validate-data.js の C1_EXCEPTIONS に載せている ----
+  // ---- 2026-11-04 追加 2 件(ユーザーの指示は 325 と 320 の追加。例外の登録は実装上の判断。調査: docs/research/intel-ptl-325-wcl-320.md)。addedIn:'M5b'(calib は false)。ダイ面積はどちらも未取得(null)。Core Ultra 5 325 は 4P+4LPE の小型 Compute タイルの代表(332・322 は 2P+4LPE+2Xe で別構成のため追加しない)。320 の GB7 は 2026-11-04 にユーザー提供の検索結果(n=8)で採用し、C1_EXCEPTIONS から外した ----
   P.push({
     id: 'intel-ptl-u5-325', name: 'Core Ultra 5 325', vendor: 'Intel', family: 'Panther Lake', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
     gb7: 'Panther Lake: Core Ultra 5 325(2.1GHz, 8c)',
@@ -400,11 +400,11 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   });
   P.push({
     id: 'intel-wcl-c5-320', name: 'Core 5 320', vendor: 'Intel', family: 'Wildcat Lake', isa: 'x86', kind: 'mobile-pc', year: 2026, addedIn: 'M5b',
-    gb7: null,
+    gb7: 'Wildcat Lake: Core 5 320(1.5GHz, 6c)',
     dies: [die('Compute タイル', null, null, 'intel-18a', '面積は未取得(null)。Notebookcheck の 77mm² は出典・対象のダイが不明のため採用しない。プロセスは Intel 18A'), die('I/O タイル(IO die)', null, null, 'tsmc-n6', '面積は未取得(null)。プロセスは TSMC N6 [二次](Chips and Cheese・heise など。原ページは実装担当は未確認)')],
     power: { base: pw(15, 'pub', 'ARK のプロセッサー・ベース・パワー'), peak: pw(35, 'pub', 'ARK の最大ターボ・パワー'), range: { minW: 10, maxW: 35 } },
     cfg: { cores: [{ type: 'P', uarch: 'Cougar Cove', count: 2, smt: 1, baseGHz: 1.5, boostGHz: 4.6 }, { type: 'LP-E', uarch: 'Darkmont', count: 4, smt: 1, baseGHz: 1.4, boostGHz: 3.4 }], l3MB: 6, memory: 'LPDDR5X-7467 / DDR5-6400, 最大 64GB, 1ch' },
-    calib: false, notes: 'Intel ARK([公表]。https://www.intel.com/content/www/us/en/products/sku/246018/intel-core-5-processor-320-6m-cache-up-to-4-60-ghz/specifications.html): P(Cougar Cove)2 コア 1.5〜4.6GHz、LP-E(Darkmont)4 コア 1.4〜3.4GHz、6 スレッド(SMT なし)、L3 6MB、ベース 15W・最大ターボ 35W・最小保証 10W、メモリ LPDDR5X-7467 / DDR5-6400・最大 64GB・1ch。GPU は Xe3 2 コア・最大 2.5GHz(評価には使わない)、NPU は 16 TOPS(ARK の値。記事では 17)。メモリサイドキャッシュの容量は二次ソースで 4MB と 2MB に割れており未確定。Compute タイル(Intel 18A)と I/O タイル(TSMC N6)の 2 ダイ構成・UCIe 接続・有機パッケージ(Foveros ではない)は [二次](Chips and Cheese の Hot Chips 2026 記事・Tom\'s Hardware・heise など。原ページは実装担当は未確認)。ダイ面積はどちらも未取得。GB7 は gb7: null: 設計書 §5.3.2 C にコア数表示別の中央値 ST 2220〜2225 / MT 7223〜7359(n=16〜25)はあるが、範囲で単一の値が決まらないため採らない(leader の実装判断 2026-11-04。採用するかはユーザー判断待ち)。Notebookcheck の GB7 個別投稿 1 件(Dell XPS 13 DX13260: シングル 2551・マルチ 7890)は集計値ではないので参考として記すだけで判定には使わない。Geekbench 6.7.1 の二次値(参考・判定外): シングル中央値 2575・マルチ中央値 7913(n=4、Notebookcheck)。判定には使わない',
+    calib: false, notes: 'Intel ARK([公表]。https://www.intel.com/content/www/us/en/products/sku/246018/intel-core-5-processor-320-6m-cache-up-to-4-60-ghz/specifications.html): P(Cougar Cove)2 コア 1.5〜4.6GHz、LP-E(Darkmont)4 コア 1.4〜3.4GHz、6 スレッド(SMT なし)、L3 6MB、ベース 15W・最大ターボ 35W・最小保証 10W、メモリ LPDDR5X-7467 / DDR5-6400・最大 64GB・1ch。GPU は Xe3 2 コア・最大 2.5GHz(評価には使わない)、NPU は 16 TOPS(ARK の値。記事では 17)。メモリサイドキャッシュの容量は二次ソースで 4MB と 2MB に割れており未確定。Compute タイル(Intel 18A)と I/O タイル(TSMC N6)の 2 ダイ構成・UCIe 接続・有機パッケージ(Foveros ではない)は [二次](Chips and Cheese の Hot Chips 2026 記事・Tom\'s Hardware・heise など。原ページは実装担当は未確認)。ダイ面積はどちらも未取得。GB7 は、ユーザーが提供した Geekbench 7 検索結果(CPU「Intel Core 5 320」、全 431 件中の直近 25 件のスクリーンショット 3 枚、2026-11-04)の中央値を採用(ST 2242 / MT 7212、n=25。Linux 5 件と ST 1358・1684 など低い投稿を含むが、既存規則どおり除外せず中央値で頑健化。外れ値 7 件を除いた感度は ST 2277 / MT 7301。設計書 §2.4)。以前の範囲 ST 2220〜2225 / MT 7223〜7359 は単一値が決まらず採らなかった。Notebookcheck の GB7 個別投稿 1 件(Dell XPS 13 DX13260: シングル 2551・マルチ 7890)は集計値ではないので参考として記すだけで判定には使わない。Geekbench 6.7.1 の二次値(参考・判定外): シングル中央値 2575・マルチ中央値 7913(n=4、Notebookcheck)。判定には使わない',
   });
   // 参考値(判定外)。再現度パネルに公開値と並べて出す。値は docs/research/nbc-gb7-mobile.md・kraken-point.md のものだけ(新たな取得・推測なし)。評価・判定には使わない(設計書 §5.3.3 J-7)
   const GB7_REF = {

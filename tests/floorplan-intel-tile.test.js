@@ -210,7 +210,11 @@ test('325・320: 325 の GB7(n=25)の誤差と判定、320 は GB7 なし。ど�
   const rows325 = require('../js/ui/reproduce.js').reproductionRows(r325); // n=25 の「直近25件の中央値」は gray にならず ok / ng の判定が出る
   assert.strictEqual(rows325.find((x) => /シングル/.test(x.label)).verdict, 'ok');
   assert.strictEqual(rows325.find((x) => /マルチ/.test(x.label)).verdict, 'ng');
-  assert.deepStrictEqual([r320.st.published, r320.mt.published], [null, null]);
+  assert.deepStrictEqual([r320.st.published, r320.mt.published], [2242, 7212]); // 2026-11-04 にユーザー提供の検索結果(スクリーンショット 3 枚、直近 25 件、n=25)の中央値を採用
+  assert.ok(Math.abs(r320.st.errPct - 9.8842) < 0.001 && Math.abs(r320.mt.errPct + 8.5311) < 0.001);
+  const rows320 = require('../js/ui/reproduce.js').reproductionRows(r320);
+  assert.strictEqual(rows320.find((x) => /シングル/.test(x.label)).verdict, 'ok'); // n=25 は gray にならず判定が出る(ST +9.9%)
+  assert.strictEqual(rows320.find((x) => /マルチ/.test(x.label)).verdict, 'ok'); // MT -8.5%
   assert.strictEqual(r325.area.totalMm2, null); assert.strictEqual(r320.area.totalMm2, null);
   assert.strictEqual(byId('intel-ptl-u5-325').calib, false); assert.strictEqual(byId('intel-wcl-c5-320').calib, false);
 });
