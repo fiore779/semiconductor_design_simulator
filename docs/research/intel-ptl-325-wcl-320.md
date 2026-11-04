@@ -156,7 +156,7 @@ Intel ARK 2 ページ(curl 403、WebFetch は 404 リダイレクト。**2026-11
 | 最大メモリ帯域 | ARK に項目なし | ARK に項目なし |
 
 - 325 の GPU が Intel 3 であることは、従来は [二次](SemiAnalysis・Chips and Cheese・TechBang)だったが、**ARK により [公表] になった**。
-- 320 の「GPU も Intel 18A」は ARK の記載。Chips and Cheese 等の二次資料の記述と食い違わないかは未確認(照合していない)。
+- 320 の「GPU も Intel 18A」は ARK の記載で、二次資料(heise「CPU・GPU・NPU・メモリコントローラを載せた compute die は Intel 18A」、CNX Software「Compute & GPU タイルは Intel 18A」)と一致することを 2026-11-05 に確認した。ユーザーは当初「TSMC の 3nm」と記憶していたが、出典の提示はなく、のちに「Intel 18A で合っていそう」と述べた。TSMC N3E は Panther Lake の 12Xe の GPU タイル(Wildcat Lake の GPU ではない)。
 - パッケージ寸法は §6.2 の Wccftech(325 の比較: 50×25×1.5mm、320: 35×25×1.23mm)と x-y 寸法が一致。
 - メモリ帯域(§6.5)は ARK に項目が無いため、算出値(バス幅 × 転送速度 ÷ 8)のまま。公表値ではない。
 
