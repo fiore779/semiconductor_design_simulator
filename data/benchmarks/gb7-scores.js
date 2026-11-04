@@ -888,10 +888,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra 5 325(2.1GHz, 8c)",
-  "single": 1885,
-  "multi": 9500,
+  "single": 2337,
+  "multi": 11018,
   "kind": "直近25件の中央値",
-  "n": 2
+  "n": 25
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",

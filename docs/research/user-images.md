@@ -79,9 +79,9 @@
 | `LNL_Package_Annotated.jpg` | 6742×6850 | Lunar Lake パッケージ(Compute・Platform Controller・LPDDR5X) | 268V(photo)、258V・256V(reuse) |
 | `panther-lake-computex26-die-annotated.jpg` | 971×1717 | Panther Lake の Compute タイル(Kurnal 全体図の Compute を回して反転した向き) | 388H(photo)、386H・378H・358H(reuse。「Xe3 4 コア版」とした 2026-11-03 の当初の解釈は誤りで、ユーザーの説明により訂正) |
 | `dh0gWbF8gG9AXfQw.jpg`(Kurnal) | 2501×2000 | Panther Lake の全体図(Compute・12Xe の GPU・Platform の 3 タイル) | ptl-compute の枠(横向き)と、12Xe の GPU(388H・378H・358H)・Platform タイル(386H 含む 4 件)の飾りのダイ(decorDies) |
-| `1lgodfRzmK0H3DUG.jpg`(SemiAnalysis) | 1142×960 | 4P+4LPE 系の小さい Compute タイル(非 X 向けと推定) | プリセット無し。記録のみ |
+| `1lgodfRzmK0H3DUG.jpg`(SemiAnalysis) | 1142×960 | 4P+4LPE 系の小さい Compute タイル(非 X 向けと推定) | プリセット無し。記録のみ(4P+4LPE の枠 `ptl-compute-4p4lpe` は `Panther Lake_dies.jpg` から作り、2026-11-04 に Core Ultra 5 325 が使う) |
 | `zsALH81651iOGldG.jpg`(SemiAnalysis) | 2409×960 | Xe3 4 コアの GPU タイル(左)と 12 コアの GPU タイル(右) | 縦横比の相互確認。4 コア版は記録のみ |
-| `Wildcat-lake-computex26-series3-die-annotated.jpg` | 1182×1427 | Wildcat Lake | プリセット無し。記録のみ |
+| `Wildcat-lake-computex26-series3-die-annotated.jpg` | 1182×1427 | Wildcat Lake(compute die 単体と判断) | 2026-11-04 に Core 5 320 の枠 `wcl-compute`(photo)。下の「Wildcat Lake のダイ写真の反映」 |
 | `863ef392-…_1024x674.jpg` | 1024×674 | Raptor Lake/Redwood Cove の die shot(Locuza) | コア内部の参考のみ |
 
 拡張子は .jpg だが MTL・ARL_LQ・LNL・Panther Lake・Wildcat Lake・`863ef392-…` の 6 枚は中身が WebP。依頼文の画素数は MTL・ARL_LQ・LNL の 3 枚で入れ替わっていた。実ファイルの寸法を上表に記載。
@@ -198,3 +198,27 @@
 - **反映した内容(S-die)**: X925 5+5・A725 5+5(上下 2 クラスタ)、L3 2 枠(16MiB・8MiB。cfg の 24MB を重み 2:1 に分ける)、SLC・Memory Cache 2MiB ×8・LPDDR5 PHY・NPU・ISP・Coherence Hub・Display・Die to Die・NV-Link・左端の I/O 列(コア以外は飾り)。ブロックは 44 個。
 - **推定箇所**: `scaleNote` に記載(L3 の 16 / 8MB の cfg への当てはめ〔どちらが 16MB かは出典で食い違う〕、SLC の 1MiB 区画を数枠に束ねたこと、Memory Cache 2MiB ×8 と SLC の関係が不明なこと、A725 の小さな枠の目測誤差)。
 - **G-die を反映しなかった理由**: 既存の仕組みでは arm-soc に付けられる飾りダイの種類が無く(`decorDies` は iod・gpu-tile・platform-tile で、amd-chiplet・x86-tile の設計だけ)、コアなしの 2 つ目のダイに枠を当てる `SOC_DIE` / `socLayout` は Strix Halo 専用(amd-apu 固定)。G-die は従来どおり面積 173.6 mm² の 1 ブロック GPU。必要な拡張は設計書 §8.1(arm-soc 項の GB10)に記載。
+
+## Wildcat Lake のダイ写真の反映と Panther Lake 小型枠の使用先(2026-11-04。Core 5 320・Core Ultra 5 325 の追加。区分 [二次])
+
+- **使用先の更新**: `ptl-compute-4p4lpe`(`Panther Lake_dies.jpg` の 4P+4LPE の目測。2026-11-04 に追加し、使うプリセットが無かった)を **Core Ultra 5 325**(`intel-ptl-u5-325`、reuse)が使う。GPU・Platform の飾りのタイルは付けない(寸法が未取得)。
+- **`Wildcat-lake-computex26-series3-die-annotated.jpg`**(1182×1427 の WebP。作者表記・出典 URL なし。ユーザー提供)を **Core 5 320**(`intel-wcl-c5-320`、photo)の枠 `wcl-compute` にした。**compute die 単体の写真**と判断した(I/O die の写真ではない。PHY・I/O の帯がなく、コア・GPU・NPU・メディア・ディスプレイが 1 枚に載るため)。
+- **ダイの外形**: 表示ピクセル [10, 14, 1178, 1420](縦横比 0.831)。ダイ面積は未取得なので縮尺なし(寸法は縦横比だけで決まる仮寸法)。
+- **注釈どおりに置いたもの(座標は表示ピクセルの目測 ±5〜10%)**:
+
+| ブロック | 座標(x, y, 幅, 高さ) | 備考 |
+|---|---|---|
+| Cougar Cove ×2(P) | 左 (142, 1130, 331, 268)、右 (725, 1128, 335, 270) | 各 P コア内の L2$ の小枠は P コアに含める |
+| Darkmont ×4(LP-E。1 クラスタ) | (222, 642, 146, 157)、(448, 642, 148, 157)、(222, 857, 143, 145)、(450, 857, 147, 145) | 2×2。中央の十字は Darkmont L2$(飾り 3 枠: 縦 (380, 642, 58, 358)、横 左 (226, 810, 150, 36)・右 (442, 810, 150, 36)) |
+| L3 | (487, 1133, 225, 262) | 容量の数値の注記なし。cfg の 6MB を割り当て |
+| Memory Side Cache | (690, 858, 368, 258) | 容量は二次ソースで 4MB と 2MB に割れており未確定。数値は載せない |
+| NPU | (672, 562, 383, 280) | 右上の張り出し(約 65×75 px)は省いた |
+| iGPU(Xe Core ×2 を含む) | (637, 55, 527, 490) | Xe Core の 2 つの枠は iGPU の中に収まるので 1 枠にまとめた |
+| Media Engines | (35, 25, 520, 310) | |
+| Display Engine | (118, 348, 438, 268) | |
+| DDR Controller | (1067, 640, 102, 758) | 縦長の帯 |
+| Interconnect | 縦 (568, 55, 58, 560)、横 (27, 1008, 650, 115) | L 字の領域を 2 枠で近似 |
+
+- **推定・省いた箇所**: 座標は目測。コア以外はすべて飾り(計算に入らない)。写真の左端の暗い領域(パッドなど)、Interconnect が L 字に続く細い帯、NPU の張り出しは省いた。**容量の数値は写真にない**(L3・MSC とも)。
+- **I/O die の飾りは付けない**(寸法・位置が未取得。`decorDies` は付かない)。プリセットの dies には I/O タイル(TSMC N6、面積 null)が実在ダイとして載るが、layout は compute die だけ。
+- テスト: `tests/floorplan-intel-tile.test.js`(`wcl-compute` は `x86-tile` 専用で `checkLayout` を通る、枠・飾りがダイ外形に収まり互いに重ならない、P を 3 に増やすと schematic に落ちる)。

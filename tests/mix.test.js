@@ -275,7 +275,7 @@ test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(
 // 2026-10-30(M6 第 4 段): 12700K・13700K・14700K・12600K・13600K・14600K・14700HX・12100 の ST/MT を更新
 // 2026-10-31(M6 第 5 段): Zen 3 デスクトップ 2 件(5600X・5950X)を追加(初回値。GB7 との差は設計書 §5.3.0)
 // 2026-10-31(M6 第 5 段 E5): Snapdragon 8cx Gen 3(qc-8cx-gen3)を追加(初回値 [1188.55, 5554.659]。GB7 1315/6722 との差は ST -9.6% / MT -17.4%。設計書 §5.3.0)。Oryon Performance の l2KB を 3072→2048 に修正(8 Elite 系 3 件の MT のみ下がる。qc-8elite 10605.004→10554.884、qc-8elite-gen5 10958.045→10906.818、qc-8elite-x-gen6 11892.725→11837.519。ST・校正は不変。設計書 §5.3.0)
-const BASE_M5B = {"nv-gb10":[2132.513,17860.879],"intel-adl-12700k":[2241.89,15911.376],"intel-rpl-13700k":[2488.745,19274.98],"intel-rpl-14700k":[2538.03,21198.112],"intel-lnl-258v":[2346.851,null],"amd-zenplus-2600x":[1405.2,6649.851],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,11589.846],"amd-zen3-5800u":[1971.261,7905.687],"qc-7gen3":[1061.707,3190.156],"qc-7gen4":[null,null],"qc-7gen1":[930.731,2976.013],"qc-720g":[571.457,1466.7],"qc-8elite-x-gen6":[2108.635,11895.999],"intel-adl-12600k":[2230.558,13548.133],"intel-rpl-13600k":[2344.762,16241.612],"intel-ptl-x9-386h":[2730.829,16763.524],"intel-arl-275hx":[2700.37,null],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[738.15,2510.772],"qc-4gen2":[738.15,1756.331],"intel-rpl-14600k":[2432.331,16688.298],"intel-rpl-14700hx":[2538.03,14341.28],"intel-adl-12100":[1945.05,7429.236],"intel-lnl-256v":[2346.851,null],"intel-ptl-x9-378h":[2782.876,17120.624],"intel-ptl-x7-358h":[2678.643,16129.293],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2112.419,8393.862],"amd-zen3-5600x":[2112.146,10372.049],"amd-zen3-5950x":[2239.59,19789.438],"qc-8cx-gen3":[1196.383,5591.269],"amd-kraken-350":[2694.581,9736.787]};
+const BASE_M5B = {"intel-ptl-u5-325":[2487.772,8945.613],"intel-wcl-c5-320":[2463.603,6596.74],"nv-gb10":[2132.513,17860.879],"intel-adl-12700k":[2241.89,15911.376],"intel-rpl-13700k":[2488.745,19274.98],"intel-rpl-14700k":[2538.03,21198.112],"intel-lnl-258v":[2346.851,null],"amd-zenplus-2600x":[1405.2,6649.851],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,11589.846],"amd-zen3-5800u":[1971.261,7905.687],"qc-7gen3":[1061.707,3190.156],"qc-7gen4":[null,null],"qc-7gen1":[930.731,2976.013],"qc-720g":[571.457,1466.7],"qc-8elite-x-gen6":[2108.635,11895.999],"intel-adl-12600k":[2230.558,13548.133],"intel-rpl-13600k":[2344.762,16241.612],"intel-ptl-x9-386h":[2730.829,16763.524],"intel-arl-275hx":[2700.37,null],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[738.15,2510.772],"qc-4gen2":[738.15,1756.331],"intel-rpl-14600k":[2432.331,16688.298],"intel-rpl-14700hx":[2538.03,14341.28],"intel-adl-12100":[1945.05,7429.236],"intel-lnl-256v":[2346.851,null],"intel-ptl-x9-378h":[2782.876,17120.624],"intel-ptl-x7-358h":[2678.643,16129.293],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2112.419,8393.862],"amd-zen3-5600x":[2112.146,10372.049],"amd-zen3-5950x":[2239.59,19789.438],"qc-8cx-gen3":[1196.383,5591.269],"amd-kraken-350":[2694.581,9736.787]};
 test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
   const added = D.presets.filter((p) => p.addedIn === 'M5b');
   assert.deepStrictEqual(added.map((p) => p.id).sort(), Object.keys(BASE_M5B).sort());
@@ -534,6 +534,16 @@ test('GB10(addedIn:M5b・GB7 なし)は校正に影響しない: nv-gb10 を除�
   const S = require('../js/sim/perf.js');
   const without = D.presets.filter((p) => p.id !== 'nv-gb10');
   assert.strictEqual(without.length, D.presets.length - 1);
+  const cal0 = S.calibrate(without, ctx.gb7ByName, ctx.uarch, 'rep', null);
+  const cal = S.calibrateMt(without, ctx.gb7ByName, ctx.uarch, cal0);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));
+});
+
+test('Core Ultra 5 325・Core 5 320(addedIn:M5b・calib:false)は校正に影響しない: 2 件を除いた標本の校正結果が ctx.cal と一致する', () => {
+  const S = require('../js/sim/perf.js');
+  const ids = ['intel-ptl-u5-325', 'intel-wcl-c5-320'];
+  const without = D.presets.filter((p) => !ids.includes(p.id));
+  assert.strictEqual(without.length, D.presets.length - 2);
   const cal0 = S.calibrate(without, ctx.gb7ByName, ctx.uarch, 'rep', null);
   const cal = S.calibrateMt(without, ctx.gb7ByName, ctx.uarch, cal0);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));

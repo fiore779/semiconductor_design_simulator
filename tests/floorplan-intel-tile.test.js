@@ -70,8 +70,8 @@ test('Intel タイル: frame の検査(未知の frame・他テンプレート�
   assert.ok(!ok({ template: 'x86-tile', frame: 'nope' }));
   assert.ok(!ok({ template: 'intel-hybrid', frame: 'arl-compute' }));
   assert.ok(!ok({ template: 'apple-soc', frame: 'arl-compute' }));
-  // Wildcat Lake などプリセットの無いチップは追加していない
-  assert.ok(!D.presets.some((p) => /wcl|wildcat/i.test(p.id)));
+  // Wildcat Lake は 2026-11-04 に Core 5 320 を追加(frame は wcl-compute。下の専用テスト)
+  assert.deepStrictEqual(D.presets.filter((p) => /wcl|wildcat/i.test(p.id)).map((p) => p.id), ['intel-wcl-c5-320']);
 });
 
 test('Panther Lake: GPU・Platform タイルは飾りのダイ(decorDies)。寸法は二次資料の Kurnal 値で、評価・ダイ数・面積合計に入らない', () => {
@@ -133,7 +133,7 @@ test('ptl-compute を使う TILE_MAP の各プリセットは、12Xe の GPU(dec
   });
 });
 
-test('Panther Lake 4P+4LPE の Compute 枠(ptl-compute-4p4lpe。Panther Lake_dies.jpg の左の構成の目測。使うプリセットはまだ無い): E 無し・縦横比は画像の 162/112 と一致', () => {
+test('Panther Lake 4P+4LPE の Compute 枠(ptl-compute-4p4lpe。Panther Lake_dies.jpg の左の構成の目測。Core Ultra 5 325 が使う): E 無し・縦横比は画像の 162/112 と一致', () => {
   const T = FP.TILE_FRAMES['ptl-compute-4p4lpe']; const M = FP.TILE_FRAMES['ptl-compute'];
   assert.ok(T);
   assert.strictEqual(FP.checkLayout({ template: 'x86-tile', frame: 'ptl-compute-4p4lpe' }), null);
@@ -152,6 +152,67 @@ test('Panther Lake 4P+4LPE の Compute 枠(ptl-compute-4p4lpe。Panther Lake_die
   T.deco.forEach((r) => assert.ok(inBox(r[3], r[4], r[5], r[6]), r[0]));
   // 4P+8E+4LPE の枠(ptl-compute)は従来どおり E 8
   assert.strictEqual(M.small.length, 8);
+});
+
+// ---- 2026-11-04 追加: Core Ultra 5 325(4P+4LPE)・Core 5 320(Wildcat Lake)。ダイ面積は未取得(null) ----
+const NEW2 = { 'intel-ptl-u5-325': 'ptl-compute-4p4lpe', 'intel-wcl-c5-320': 'wcl-compute' };
+test('325・320: x86-tile + 専用の枠で checkLayout を通り、ダイ面積 null でも寸法・ブロック(コア数・L3)・飾りが出て、飾りのタイル・飾りのダイは付かない', () => {
+  Object.keys(NEW2).forEach((id) => {
+    const p = byId(id); const d = mk(id); const die = comp(id); const l = die.layout;
+    assert.strictEqual(l.template, 'x86-tile', id);
+    assert.strictEqual(l.frame, NEW2[id], id);
+    assert.strictEqual(FP.checkLayout(l), null, id);
+    assert.ok(l.scaleNote.length <= 600 && l.scaleNote.includes('目測') && l.scaleNote.includes('ダイ面積未取得'), `${id} ${l.scaleNote.length}`);
+    assert.strictEqual(die.areaMm2, null, id);
+    assert.ok(die.widthMm > 0 && die.heightMm > 0, id);
+    assert.ok(Math.abs(die.widthMm / die.heightMm / FP.TILE_FRAMES[l.frame].aspect - 1) < 1e-6, id);
+    assert.strictEqual(die.blocks.filter((b) => b.kind === 'core').length, p.cfg.cores.reduce((s, g) => s + g.count, 0), id);
+    assert.strictEqual(die.blocks.filter((b) => b.kind === 'l3').length, 1, id);
+    assert.strictEqual(d.decorDies === undefined || d.decorDies === null || d.decorDies.length === 0, true, id);
+    assert.deepStrictEqual(design.validate(d), [], id);
+    die.blocks.forEach((b) => { if (b.decorative) assert.ok(['uncore', 'gpu', 'npu'].includes(b.kind), id); else assert.ok(['core', 'l3'].includes(b.kind), id); });
+  });
+  assert.ok(comp('intel-ptl-u5-325').layout.scaleNote.includes('Panther Lake_dies.jpg(ユーザー提供・出典未確認)'));
+  assert.strictEqual(comp('intel-ptl-u5-325').layout.scaleBasis, 'reuse');
+  assert.ok(comp('intel-wcl-c5-320').layout.scaleNote.includes('compute die 単体と判断'));
+});
+
+test('wcl-compute 枠: P 2・LP-E(Darkmont)4・E 無し、枠・飾りは写真(1182×1427)の中でダイ外形に収まり互いに重ならない。x86-tile 専用', () => {
+  const T = FP.TILE_FRAMES['wcl-compute'];
+  assert.ok(T);
+  assert.deepStrictEqual(T.nom, { p: 2, e: 0, lp: 4 });
+  assert.strictEqual(FP.checkLayout({ template: 'x86-tile', frame: 'wcl-compute' }), null);
+  ['amd-apu', 'x86-mono', 'arm-soc', 'intel-hybrid'].forEach((t) => assert.ok(FP.checkLayout({ template: t, frame: 'wcl-compute' }) !== null, t));
+  assert.strictEqual(T.tiles.length, 0); // I/O タイルの飾りは付けない
+  assert.ok(T.box[0] >= 0 && T.box[1] >= 0 && T.box[2] <= 1182 && T.box[3] <= 1427);
+  assert.ok(Math.abs(T.aspect - 1168 / 1406) < 1e-9);
+  const rects = [];
+  T.big.forEach((r, i) => rects.push(['P' + i, r])); T.lp.forEach((r, i) => rects.push(['LP' + i, r])); rects.push(['l3', T.l3]);
+  T.deco.forEach((d) => rects.push([d[0], [d[3], d[4], d[5], d[6]]]));
+  rects.forEach(([n, r]) => assert.ok(r[0] >= T.box[0] && r[1] >= T.box[1] && r[0] + r[2] <= T.box[2] && r[1] + r[3] <= T.box[3], n));
+  for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+    const a = rects[i][1]; const b = rects[j][1];
+    assert.ok(a[0] + a[2] <= b[0] || b[0] + b[2] <= a[0] || a[1] + a[3] <= b[1] || b[1] + b[3] <= a[1], `${rects[i][0]} と ${rects[j][0]} が重なる`);
+  }
+  // 5-core 以上などの枠外の構成は schematic に落ちる(P を 3 に増やす)
+  const r = design.unlock(mk('intel-wcl-c5-320'));
+  const e = design.setCoreCount(r, 'P', 3);
+  assert.ok(e.ok);
+  assert.strictEqual(e.design.dies.find((x) => x.layout).layout.scaleBasis, 'schematic');
+});
+
+test('325・320: 325 の GB7(n=25)の誤差と判定、320 は GB7 なし。どちらも校正に入らない', () => {
+  const E = require('../js/model/evaluate.js'); const ctx = E.makeContext();
+  const r325 = E.evaluate(mk('intel-ptl-u5-325'), ctx); const r320 = E.evaluate(mk('intel-wcl-c5-320'), ctx);
+  assert.ok(r325.st.ok && r325.mt.ok && r320.st.ok && r320.mt.ok);
+  assert.deepStrictEqual([r325.st.published, r325.mt.published], [2337, 11018]); // 2026-11-04 に n=2 の旧値(1885 / 9500)を n=25 の取り直し値に更新
+  assert.ok(Math.abs(r325.st.errPct - 6.4515) < 0.001 && Math.abs(r325.mt.errPct + 18.8091) < 0.001);
+  const rows325 = require('../js/ui/reproduce.js').reproductionRows(r325); // n=25 の「直近25件の中央値」は gray にならず ok / ng の判定が出る
+  assert.strictEqual(rows325.find((x) => /シングル/.test(x.label)).verdict, 'ok');
+  assert.strictEqual(rows325.find((x) => /マルチ/.test(x.label)).verdict, 'ng');
+  assert.deepStrictEqual([r320.st.published, r320.mt.published], [null, null]);
+  assert.strictEqual(r325.area.totalMm2, null); assert.strictEqual(r320.area.totalMm2, null);
+  assert.strictEqual(byId('intel-ptl-u5-325').calib, false); assert.strictEqual(byId('intel-wcl-c5-320').calib, false);
 });
 
 test('decorDies の検査: kind とテンプレートの対応(iod は amd-chiplet、gpu-tile / platform-tile は x86-tile)', () => {

@@ -293,13 +293,22 @@
       [['decor0', 'gpu-tile', 'GPU タイル(Xe3 12 コア。飾り・位置は推定)', 1343, 428, 1938, 1138, 6.78, 8.14],
         // 4Xe 版(386H)の GPU タイル: Panther Lake_dies.jpg(ユーザー提供。出典未確認)の同一画像内の相対寸法。12Xe 構成の GPU の高さ 93px に対し 4Xe 構成は 45px(比 0.49)、幅は同じ(111px)。12Xe の Kurnal 値に比を掛けた(3.29×8.14 mm)。位置の px は 12Xe と同じ起点
         ['decor2', 'gpu-tile', 'GPU タイル(Xe3 4 コア。飾り・位置と寸法は推定)', 1343, 428, 1630, 1138, 3.29, 8.14, { s: 'est', source: 'Panther Lake_dies.jpg(ユーザー提供。出典未確認)の目測[推定]: 同一画像で 12Xe 構成の GPU の高さ 93px に対し 4Xe 構成は 45px(比 0.49)、幅は同じ。12Xe の Kurnal 値 6.78×8.14 mm に比を掛けた' }], ['decor1', 'platform-tile', 'Platform タイル(飾り・位置は推定)', 250, 1135, 1340, 1480, 12.44, 4.0]]),
-    // Panther Lake の 4P+4LPE の Compute タイル(E クラスタ無し。使うプリセットはまだ無い)。Panther Lake_dies.jpg(ユーザー提供。出典未確認)の左の構成の目測: 中の 4P+8E+4LPE の Compute(111×198px)に対し 112×162px = 長辺が 0.82 倍。
+    // Panther Lake の 4P+4LPE の Compute タイル(E クラスタ無し。Core Ultra 5 325 が使う)。Panther Lake_dies.jpg(ユーザー提供。出典未確認)の左の構成の目測: 中の 4P+8E+4LPE の Compute(111×198px)に対し 112×162px = 長辺が 0.82 倍。
     // ptl-compute から E クラスタの帯(x 97〜322)を除き、box の左端を E 帯の右(313)まで切った(座標は ptl-compute と共通)。縦横比 1.446 は画像(縦長)の 162/112=1.45 と一致(Kurnal の向きに直した値)。ダイの面積は未取得。GPU・Platform の飾りのタイルは付けない
     'ptl-compute-4p4lpe': tf([313, 428, 1328, 1130], { p: 4, e: 0, lp: 4 },
       [[325, 497, 165, 203], [325, 848, 165, 205], [493, 497, 170, 203], [493, 848, 170, 205]],
       [], quad(727, 765, 225, 225), [325, 700, 340, 148], [
         ['phy', 'LPDDR5x / DDR5 PHY', 'u', 325, 432, 848, 45], ['mc', 'メモリコントローラ・メモリサイドキャッシュ', 'u', 665, 497, 240, 203], ['npu', 'NPU(5th。NCE ×3)', 'n', 915, 497, 345, 222],
         ['display', 'Display Engine?', 'u', 985, 760, 108, 360], ['media', 'Media Engine?', 'u', 1108, 760, 190, 360], ['soc-gpu', 'SoC to GPU', 'u', 1302, 432, 22, 320], ['soc-iod', 'SoC to IOD', 'u', 510, 1095, 470, 30]]),
+    // Wildcat Lake(Core 5 320)の Compute タイル(Wildcat-lake-computex26-series3-die-annotated.jpg 1182×1427 の表示ピクセルで目測。compute die 単体の写真。ダイの外形 [10,14,1178,1420])。
+    // Cougar Cove ×2(下の左右)、Darkmont ×4(1 クラスタ。2×2 で中央に L2$)、L3(下の中央)、Memory Side Cache・NPU・iGPU(Xe Core ×2)・Media・Display・DDR Controller・Interconnect は注釈どおり。容量の数値の注記はない。NPU の右上の張り出し(約 65×75px)は省いた。Cougar Cove 内の L2$ は P コアに含める
+    'wcl-compute': tf([10, 14, 1178, 1420], { p: 2, e: 0, lp: 4 },
+      [[142, 1130, 331, 268], [725, 1128, 335, 270]],
+      [], [[222, 642, 146, 157], [448, 642, 148, 157], [222, 857, 143, 145], [450, 857, 147, 145]], [487, 1133, 225, 262], [
+        ['media', 'Media Engines', 'u', 35, 25, 520, 310], ['display', 'Display Engine', 'u', 118, 348, 438, 268], ['gpu', 'iGPU(Xe3 2 コア)', 'g', 637, 55, 527, 490],
+        ['npu', 'NPU', 'n', 672, 562, 383, 280], ['msc', 'Memory Side Cache', 'u', 690, 858, 368, 258], ['ddr', 'DDR Controller', 'u', 1067, 640, 102, 758],
+        ['icn-v', 'Interconnect', 'u', 568, 55, 58, 560], ['icn-h', 'Interconnect', 'u', 27, 1008, 650, 115],
+        ['l2-v', 'Darkmont L2$', 'u', 380, 642, 58, 358], ['l2-hl', 'Darkmont L2$', 'u', 226, 810, 150, 36], ['l2-hr', 'Darkmont L2$', 'u', 442, 810, 150, 36]]),
   };
   // ---- AMD のモノリシックダイ(Zeppelin・Raven Ridge・Cezanne・Rembrandt-R・Phoenix 1)と Strix Halo の SoC ダイの写真の枠(2026-11-03 追加)----
   // TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)。template が amd-apu / x86-mono のダイが frame で使う。l3 は 1 枠か、枠の配列(Zeppelin の 2 CCX。容量は等分)。
@@ -577,6 +586,8 @@
     'arl-compute': 'arrow lake cpudie al3.jpg(Arrow Lake の Compute タイルの拡大注釈。ARL_LQ_annotated.jpg の左のタイルと同じ配置。作者表記なし)。P #1〜#8、E クラスタ #1〜#4(各 4 コア)、中央に L3 とリングエージェントの帯',
     'lnl-compute': 'LNL_Package_Annotated.jpg(Lunar Lake のパッケージ注釈。作者表記なし)。Compute タイル(P 4・LP-E 4・L3・GPU・NPU・メディアが一枚)',
     'ptl-compute': 'Kurnal の Panther Lake 全体図 dh0gWbF8gG9AXfQw.jpg と panther-lake-computex26-die-annotated.jpg(同じ Compute タイル。縦横比 1.77 が一致)。P 4・Darkmont E 4×2 クラスタ・LPE 4・L3 18MiB・NPU・メディアなど',
+    'ptl-compute-4p4lpe': 'Panther Lake_dies.jpg(ユーザー提供・出典未確認)の 4P+4LPE 構成の目測。ptl-compute の配置から E クラスタを除いた流用。ダイ面積未取得',
+    'wcl-compute': 'Wildcat-lake-computex26-series3-die-annotated.jpg(注釈つきダイ写真。作者表記なし)の目測。Cougar Cove ×2・Darkmont ×4・L3・MSC・Xe Core ×2・NPU など。ダイ面積未取得。写真は compute die 単体と判断',
   };
   const tm = (frame, basis, extra) => ({ frame, basis, src: TILE_SRC[frame] + (extra ? `。${extra}` : '') });
   const PTL_NOTE = '写真は Compute タイル(Kurnal 全体図の向き)。画像に縮尺の注記はなく、Compute の 115.1mm² はプリセット値(Kurnal・二次)を当てはめた。GPU(12Xe)・Platform タイルの飾りのダイの寸法も Kurnal の二次値で独立した検証なし、位置は目測の推定';
@@ -594,6 +605,9 @@
     'intel-ptl-x9-386h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE + '。386H の GPU は 4Xe のため 12Xe の GPU タイルは出さず、4Xe の GPU タイルは Panther Lake_dies.jpg の相対寸法の目測(出典未確認)'), { skip: ['decor0'] }),
     'intel-ptl-x9-378h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE), { skip: ['decor2'] }),
     'intel-ptl-x7-358h': Object.assign(tm('ptl-compute', 'reuse', PTL_REUSE + PTL_NOTE), { skip: ['decor2'] }),
+    // 325 の frame(ptl-compute-4p4lpe)は tiles が空なので、GPU・Platform の飾りのタイルは出ない(寸法未取得)。320 の I/O タイルの飾りも付けない
+    'intel-ptl-u5-325': tm('ptl-compute-4p4lpe', 'reuse'),
+    'intel-wcl-c5-320': tm('wcl-compute', 'photo'),
   };
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。
   const CCD_RECIPES = {

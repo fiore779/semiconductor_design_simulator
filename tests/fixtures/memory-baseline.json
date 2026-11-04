@@ -1069,5 +1069,25 @@
   "tjC": null,
   "sus": null,
   "powerW": null
+ },
+ "intel-ptl-u5-325": {
+  "st": 2487.7716802623195,
+  "mt": 8945.613496619286,
+  "stErr": 6.451505359962328,
+  "mtErr": -18.80909877818764,
+  "estW": 75.2171214319934,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
+ },
+ "intel-wcl-c5-320": {
+  "st": 2463.6033568273956,
+  "mt": 6596.739832009712,
+  "stErr": null,
+  "mtErr": null,
+  "estW": 54.47434479919573,
+  "tjC": null,
+  "sus": null,
+  "powerW": null
  }
 }

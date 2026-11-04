@@ -74,9 +74,11 @@ Object.keys(D.uarch || {}).forEach((name) => {
 });
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
-const C2_EXCEPTIONS = new Set(['amd-kraken-350']);
+// 2026-11-04: Core Ultra 5 325・Core 5 320 もダイ面積が未取得(Kraken Point と同じ扱い。ユーザーは 2 件の追加を指示しただけで、例外の登録は実装上の判断)
+const C2_EXCEPTIONS = new Set(['amd-kraken-350', 'intel-ptl-u5-325', 'intel-wcl-c5-320']);
 // C1 の例外(id 指定。C2〜C5 は続ける): GB10(DGX Spark)は GB7 が未取得(二次資料にも無い。N1X の値は別製品なので入れない)で gb7: null。ユーザー指示 2026-11-03(設計書 §13 M5b-4)
-const C1_EXCEPTIONS = new Set(['nv-gb10']);
+// Core 5 320(Wildcat Lake)は、設計書 §5.3.2 C にコア数表示別の中央値 ST 2220〜2225 / MT 7223〜7359(n=16〜25)はあるが、範囲で単一の値が決まらないため採らず gb7: null(leader の実装判断)。実装上の判断 2026-11-04(ユーザーは追加だけを指示)
+const C1_EXCEPTIONS = new Set(['nv-gb10', 'intel-wcl-c5-320']);
 const INTEL_GEN12_PLUS_P = new Set(['Golden Cove', 'Raptor Cove', 'Redwood Cove', 'Lion Cove', 'Cougar Cove']);
 const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) || []).some((c) => INTEL_GEN12_PLUS_P.has(c.uarch));
 (D.presets || []).forEach((p) => sigCount.set(sig(p), (sigCount.get(sig(p)) || 0) + 1));

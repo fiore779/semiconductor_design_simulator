@@ -181,6 +181,7 @@ test('IOD の位置合わせの対象外: Zen 3(5600X・5950X)と Strix Halo の
 
 test('評価(ST/MT/面積/電力など)は IOD の位置合わせの前後で全プリセット不変(固定のハッシュ。変更前の JSON ダンプの sha256)', () => {
   const E = require('../js/model/evaluate.js'); const ctx = E.makeContext(); const out = {};
-  D.presets.forEach((p) => { out[p.id] = E.evaluate(design.fromPreset(p), ctx); });
+  // 2026-11-04: Core Ultra 5 325・Core 5 320 は、この固定ハッシュの後に追加したプリセットなので対象外(既存 100 件のハッシュは追加の前後で一致を確認。追加分の評価は mix.test.js の BASE_M5B で固定)
+  D.presets.filter((p) => !['intel-ptl-u5-325', 'intel-wcl-c5-320'].includes(p.id)).forEach((p) => { out[p.id] = E.evaluate(design.fromPreset(p), ctx); });
   assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), '6cf04a8edd39af72f88294f7d816115b961e61a0ae7a9594a949500d53365d20');
 });
