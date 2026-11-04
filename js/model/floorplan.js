@@ -30,7 +30,9 @@
     reuse: 'ブロックの配置と大きさの比は、他の世代・SKU の写真や値の流用による目安(このチップの写真・測定なし)。実チップのフロアプランではない',
     schematic: '模式図(ブロックの大きさは根拠なし。配置も実チップのものではありません)',
   };
-  const scaleText = (layout) => SCALE_TEXT[(layout && layout.scaleBasis) || 'schematic'] || SCALE_TEXT.schematic;
+  // 縦横比だけ写真のファイル名の寸法に合わせた模式図(layout.aspect を持つ schematic。ASPECT_ONLY の 4 件)の注記
+  const ASPECT_ONLY_TEXT = '縦横比だけ写真(ファイル名の寸法)に合わせた模式図。ブロックの配置・大きさは模式で根拠なし';
+  const scaleText = (layout) => (layout && layout.scaleBasis === 'schematic' && typeof layout.aspect === 'number' ? ASPECT_ONLY_TEXT : SCALE_TEXT[(layout && layout.scaleBasis) || 'schematic'] || SCALE_TEXT.schematic);
 
   // 飾りの IO ダイ(design.decorDies。dies には入れない=評価に影響しない)。IOD のデータが無い Zen 3 の CCD 単独のプリセット(5600X・5950X)に、
   // パッケージ写真(5950x.jpg)に倣って CCD の下側中央に表示する。大きさは AMD 公表の Zen 3 cIOD 125 mm²(GF 12nm。AMD の Zen 3 発表資料 = block-areas.md の AMD-Z3)、縦横比は写真の目測。
