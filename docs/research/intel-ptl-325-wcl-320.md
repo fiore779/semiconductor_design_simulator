@@ -1,7 +1,7 @@
 # Core Ultra 5 325(Panther Lake の 4P+4LPE)と Core 5 320(Wildcat Lake)のプリセット追加
 
 - 追加日: 2026-11-04。ユーザーの発言(原文): 「4p+4lpeの構成は一つあればいいです。336Hなどは見た目は上位と変わらないと思われるのでいらないです。変わりにワイルドキャットレイク(320)を追加してください」。
-- 値は依頼文(leader から渡された ARK・Notebookcheck の値)による。**実装担当は ARK・Notebookcheck のページを開いていない**(この環境に Web 取得手段が無い)。区分は依頼文の指定どおり: ARK = **[公表]**、Notebookcheck など = **[二次]**。
+- 値は依頼文(leader から渡された ARK・Notebookcheck の値)による。**実装担当は ARK・Notebookcheck のページを開いていない**(この環境に Web 取得手段が無い)。**2026-11-05 に leader が ARK の原ページ(325・320 の 2 ページ)を Chrome で直接開いて確認済み**(§7)。Notebookcheck の原ページは別途(§6 の記述どおり)。区分は依頼文の指定どおり: ARK = **[公表]**、Notebookcheck など = **[二次]**。
 - 区分の優先は設計書 §2.2 と同じ: [実測] > [公表] > [二次] > [推定]/未取得。未取得は null のまま、推測で埋めない。
 - 追加: `data/presets/chips-pc.js`(`intel-ptl-u5-325`・`intel-wcl-c5-320`。`addedIn:'M5b'`・`calib:false`)。配置: `js/model/floorplan.js`(`TILE_FRAMES['wcl-compute']` を新設、`ptl-compute-4p4lpe` を 325 が使う)。
 
@@ -75,8 +75,9 @@
 
 ユーザーの質問「tdp とかは取得できませんでしたか?」「取れていない項目を検索してください」を受けた追加調査(調査担当の報告)。評価・数式・校正・面積(null)は変えていない。区分は [二次] を基本とし、「原ページ確認済み」と「未確認(検索要約のみ)」を分けて書く。
 
-### 6.1 重要な訂正: ARK の値は ARK 原ページ未確認(403)
-このメモと notes にある ARK の値(325・320 の TDP 等)は、**ARK 原ページを自分たちでは開けていない**(実装担当・今回の調査担当とも curl は 403、WebFetch は 404 リダイレクト)。以前の調査担当(Wildcat 仕様調査)が要約ツール経由で読んだ値である。区分 [公表] は「Intel が公表した値を要約経由で読んだもの」であり、原ページ未確認。
+### 6.1 訂正(2026-11-05 に再訂正): ARK の値は原ページで確認済み
+2026-11-04 の時点では、このメモと notes にある ARK の値(325・320 の TDP 等)は、**ARK 原ページを自分たちでは開けていなかった**(実装担当・調査担当とも curl は 403、WebFetch は 404 リダイレクト)。以前の調査担当(Wildcat 仕様調査)が要約ツール経由で読んだ値だった。
+**2026-11-05 に leader が Chrome(通常の閲覧)で ARK の原ページを直接開いて確認した**。以前の値はすべて一致し、新しい値も分かった。結果は §7。以下の §6.2〜6.8 のうち「ARK は 403」とする記述は 2026-11-04 時点のもの(§6.5 の帯域の項目の有無と最大容量は §7 で確定)。
 
 ### 6.2 ダイ面積(すべて未取得。null のまま)
 - 325 用の 4P+4LPE Compute タイル・4Xe GPU タイル・小型版 Platform タイル: 未取得。
@@ -99,10 +100,10 @@
 - 結論: 未確定。決め手は Hot Chips 2026 スライド原本。
 
 ### 6.5 メモリ帯域とバス幅
-- ARK は 403 で、帯域の項目の有無は未確認。
+- (2026-11-05 に確定: ARK の原ページ 2 件とも最大メモリ帯域の項目はない。§7)当初は ARK が 403 で、帯域の項目の有無は未確認だった。
 - バス幅: 325 = 128-bit(Chips and Cheese、Wccftech の書き起こし)。320 = 64-bit(Wccftech「64b LP5」、スライド「128b => 64b DRAM」。Chips and Cheese の Hot Chips 記事は筆者推測として 64-bit)。TechBang は「Wildcat 單通道(32bit)、Panther 雙通道(64bit)」でチャネル幅の数え方が違うとみられる。Notebookcheck の Dell XPS 13(320)レビューは「LPDDR5x-7467, Single-Channel」。
 - **算出値(公表値ではない。バス幅 × 転送速度 ÷ 8)**: 325 = LPDDR5X-7467 128bit で 119.5 GB/s、DDR5-6400 で 102.4 GB/s。320 = 64bit LPDDR5X-7467 で 59.7 GB/s、DDR5-6400 で 51.2 GB/s。第三者 DB も 119.5 / 59.7 を載せるが原ページ未確認。
-- 最大容量の食い違い: 325 は ARK 128GB(要約経由)、Notebookcheck は「96GB LPDDR5X-7467 or 128GB DDR5-6400」(原ページ確認済み)。320 は TechBang「64GB(Panther Lake は 96GB)」。
+- 最大容量の食い違い(2026-11-05: ARK 原ページで 128GB を確認。ARK を採用。§7): 325 は ARK 128GB(当時は要約経由)、Notebookcheck は「96GB LPDDR5X-7467 or 128GB DDR5-6400」(原ページ確認済み)。320 は TechBang「64GB(Panther Lake は 96GB)」。
 
 ### 6.6 その他
 - 325 の L2: Notebookcheck L1 2.3MB / L2 16MB / L3 12MB(原ページ確認済み [二次])。L2 16MB は P 3MB×4 + LPE クラスタ 4MB と整合(調査担当の計算)。
@@ -116,4 +117,54 @@
 - OEM 設定の例: Dell XPS 13(320)「37W PL2 / 18W PL1」(Notebookcheck レビュー、原ページ確認済み [二次]。Intel の値ではない)。325 実機の PL 測定値は見つからず。
 
 ### 6.8 取得できなかったページ(回避していない)
-Intel ARK 2 ページ(curl 403、WebFetch は 404 リダイレクト)、Geekbench Browser、HotHardware、Guru3D、SemiWiki、cpu-monkey、Tom's Hardware の Hot Chips / 発売記事(本文取得不可)、SemiAnalysis(有料)。
+Intel ARK 2 ページ(curl 403、WebFetch は 404 リダイレクト。**2026-11-05 に leader が Chrome で開いて確認済み、§7**)、Geekbench Browser、HotHardware、Guru3D、SemiWiki、cpu-monkey、Tom's Hardware の Hot Chips / 発売記事(本文取得不可)、SemiAnalysis(有料)。
+
+## 7. ARK 原ページ確認(2026-11-05)
+
+ユーザーの指示「結果が出たらプリセットに反映して」を受け、leader が Chrome(通常の閲覧)で Intel ARK の原ページ 2 件を直接開いて確認した。区分はすべて [公表]。評価・数式・校正・面積(null)は変えていない。
+- 325: https://www.intel.com/content/www/us/en/products/sku/245720/intel-core-ultra-5-processor-325-12m-cache-up-to-4-50-ghz/specifications.html
+- 320: https://www.intel.com/content/www/us/en/products/sku/246018/intel-core-5-processor-320-6m-cache-up-to-4-60-ghz/specifications.html
+
+### 7.1 以前の値と一致した項目(プリセットの cfg・power・dies の nodeId は変更なし)
+
+| 項目 | 325(ARK) | 320(ARK) | 以前の値との関係 |
+|---|---|---|---|
+| コア | 総 8(P 4・E 0・LP-E 4)、スレッド 8 | 総 6(P 2・E 0・LP-E 4)、スレッド 6 | 一致 |
+| 最大ターボ | 4.5GHz | 4.6GHz | 一致 |
+| P ベース | 2.1GHz | 1.5GHz | 一致 |
+| LP-E | 最大 3.4GHz・ベース 1.6GHz | 最大 3.4GHz・ベース 1.4GHz | 一致 |
+| キャッシュ | 12MB Intel Smart Cache | 6MB Intel Smart Cache | 一致 |
+| 電力 | ベース 25W・最大ターボ 55W・最小保証 12W | ベース 15W・最大ターボ 35W・最小保証 10W | 一致 |
+| メモリ | LPDDR5X 7467 / DDR5 6400 MT/s、最大 128GB、最大 2ch | 同、最大 64GB、最大 1ch | 一致 |
+| NPU Peak TOPS(Int8) | 47 | 16 | 一致(記事の 17 などは ARK と別) |
+| CPU リソグラフィ | Intel 18A | Intel 18A | 一致(dies の nodeId `intel-18a`) |
+| 発売 | Q1'26 | Q2'26 | 新規(以前は未記載) |
+
+- 325 の ARK に「Efficient-core Base Frequency 1.6GHz」の行もあるが、E コアは 0 基。LP-E の値が表記上 E に出るだけで、ARK 側の表記の癖。cfg は LP-E 1.6 のまま。
+- GPU の周波数: 325 は ARK 最大動的周波数 2.45GHz(プリセット notes の「最大 2.5GHz」は丸め。評価に使わない)。Xe コア数は 325 = 4・320 = 2 で一致。ARK の GPU 名は「Intel Graphics」で、世代(Xe3)の記載は ARK の表に無い。
+- 320 のコードネームは ARK 上「旧ワイルドキャットレイク製品」(Products formerly Wildcat Lake)。
+
+### 7.2 新しく分かった項目
+
+| 項目 | 325 | 320 |
+|---|---|---|
+| GPU Peak TOPS(Int8) | 40 | 20 |
+| GPU Ray Tracing | あり | (記載の確認なし) |
+| 最大動作温度 | 100°C | 100°C |
+| パッケージ | 50mm × 25mm | FCBGA1516・35mm × 25mm |
+| GPU リソグラフィ | **Intel 3**(ARK の Lithography 2 項目: Intel 18A と Intel 3) | Intel 18A(ARK の Lithography 2 項目とも Intel 18A) |
+| 最大メモリ帯域 | ARK に項目なし | ARK に項目なし |
+
+- 325 の GPU が Intel 3 であることは、従来は [二次](SemiAnalysis・Chips and Cheese・TechBang)だったが、**ARK により [公表] になった**。
+- 320 の「GPU も Intel 18A」は ARK の記載。Chips and Cheese 等の二次資料の記述と食い違わないかは未確認(照合していない)。
+- パッケージ寸法は §6.2 の Wccftech(325 の比較: 50×25×1.5mm、320: 35×25×1.23mm)と x-y 寸法が一致。
+- メモリ帯域(§6.5)は ARK に項目が無いため、算出値(バス幅 × 転送速度 ÷ 8)のまま。公表値ではない。
+
+### 7.3 食い違い
+
+| 項目 | ARK | 他の資料 | 採用 |
+|---|---|---|---|
+| 325 の最大メモリ容量 | 128GB | Notebookcheck「96GB LPDDR5X / 128GB DDR5」[二次] | **ARK を採用**(Notebookcheck は二次)。プリセットの memory 文字列(最大 128GB)は変更なし |
+
+### 7.4 プリセットとの突き合わせ結果
+- `dies` の nodeId・面積(null)、`cfg`、`power`(base・peak・range)、L3、memory は ARK と一致していたため変更なし。notes のみ訂正・追記した。
