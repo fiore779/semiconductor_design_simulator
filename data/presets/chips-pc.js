@@ -159,10 +159,11 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   P.push({
     id: 'amd-strix-hx370', name: 'Ryzen AI 9 HX 370', vendor: 'AMD', family: 'Strix Point', isa: 'x86', kind: 'mobile-pc', year: 2024,
     gb7: 'Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)',
-    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: 'Zen 5c(8 個)の ST 補正を Zen 5 の u に揃えて -24.4% → -21.9%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -21.9% → -17.7%(改善)。残りは、54W 級の帯係数 0.69 に対し公開値と一致する係数が 0.869 で、標本 11 件の中で最も高い側であること(5800U 0.498・7735HS 0.639・14700HX 0.654)。原因は未特定(Zen 5 + Zen 5c の持続クロック、チャートの偏り、並列スケールの切り分けはできていない)。設計書 §5.3.3 K' },
+    errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: 'Zen 5c(8 個)の ST 補正を Zen 5 の u に揃えて -24.4% → -21.9%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -21.9% → -17.7%(改善)。ユーザー申告(2026-11-05)で Zen 5c のブーストを 3.3 → 3.4GHz に更新して -17.7% → -16.5%。残りは、54W 級の帯係数 0.69 に対し公開値と一致する係数が 0.854(3.3GHz のときは 0.869)で、標本 11 件の中で最も高い側であること(5800U 0.498・7735HS 0.639・14700HX 0.654)。原因は未特定(Zen 5 + Zen 5c の持続クロック、チャートの偏り、並列スケールの切り分けはできていない)。設計書 §5.3.3 K' },
     dies: [die('Strix Point (モノリシック)', 225.6, 'meas', 'tsmc-n4')],
     power: { base: pw(28, 'sec', 'cTDP 15〜54W'), peak: null, range: { minW: 15, maxW: 54 } },
-    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.1 }, { type: 'C', uarch: 'Zen 5c', count: 8, smt: 2, baseGHz: null, boostGHz: 3.3 }], l3MB: 24, memory: 'DDR5-5600 / LPDDR5X-8000' },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.1 }, { type: 'C', uarch: 'Zen 5c', count: 8, smt: 2, baseGHz: 2.0, boostGHz: 3.4 }], l3MB: 24, memory: 'DDR5-5600 / LPDDR5X-8000' },
+    notes: 'Zen 5c(8 個)のクロック: ユーザー申告(2026-11-05)でベース 2.0GHz・ブースト 3.4GHz を採用(Zen 5 のベースも 2.0GHz、ブースト 5.1GHz)。AMD 公式ページでの確認はしていない(amd.com は再取得しない方針)。従来の記録はブースト 3.3GHz・ベース未取得で、食い違うためユーザー申告を優先した',
     calib: false,
   });
   P.push({
