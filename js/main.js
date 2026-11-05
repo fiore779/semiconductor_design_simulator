@@ -574,11 +574,8 @@
       let st2 = null; try { st2 = window.localStorage || null; } catch (e) { st2 = null; }
       panelCtl = S.ui.layout.initPanelToggles({
         app: $('app'), storage: st2,
-        onChange(state, changed) {
-          panelState = state; updateBadges();
-          // 配置を再表示したら、隠している間に変わったサイズに合わせて全体表示(リサイズ自体は ResizeObserver が行う)
-          if (changed === 'place' && state.place && view && view.fit) requestAnimationFrame(() => { if (view && view.fit) view.fit(); });
-        },
+        // 再表示時のサイズ合わせは ResizeObserver に任せる。隠している間(0 サイズ)の通知はビューが無視するので、ズーム・パン・選択は保たれる
+        onChange(state) { panelState = state; updateBadges(); },
       });
     } catch (e) { /* 表示切替が使えなくても画面は動く */ }
   }

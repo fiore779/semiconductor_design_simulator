@@ -10,7 +10,7 @@ const { createDieView } = dieview;
 
 function setup(opt) {
   const o = opt || {};
-  const st = { texts: [], lens: [], raf: [], handlers: {}, lost: false, outs: [], throwDraw: false };
+  const st = { texts: [], lens: [], raf: [], handlers: {}, winHandlers: {}, size: null, lost: false, outs: [], throwDraw: false };
   const gl = new Proxy({}, { get(t, k) {
     if (k === 'isContextLost') return () => st.lost;
     if (k === 'getExtension') return () => null;
@@ -38,14 +38,29 @@ function setup(opt) {
     return c;
   };
   const doc = { createElement: () => { const c = mkCanvas(); if (st.capturing) { c.isOut = true; st.outs.push(c); } return c; } };
-  const win = { devicePixelRatio: o.dpr || 1, getComputedStyle: () => ({ position: 'relative' }), requestAnimationFrame: (f) => { st.raf.push(f); return st.raf.length; }, cancelAnimationFrame() {}, addEventListener() {} };
+  const win = { devicePixelRatio: o.dpr || 1, getComputedStyle: () => ({ position: 'relative' }), requestAnimationFrame: (f) => { st.raf.push(f); return st.raf.length; }, cancelAnimationFrame() {}, addEventListener(n, f) { st.winHandlers[n] = f; } };
   doc.defaultView = win;
-  const container = { ownerDocument: doc, style: {}, children: [], getBoundingClientRect: () => ({ width: o.w || 800, height: o.h || 600 }), appendChild(c) { this.children.push(c); c.parentNode = this; }, removeChild() {}, set textContent(v) { this.children = []; }, get textContent() { return ''; } };
+  const container = { ownerDocument: doc, style: {}, children: [], getBoundingClientRect: () => ({ width: st.size ? st.size.w : (o.w || 800), height: st.size ? st.size.h : (o.h || 600) }), appendChild(c) { this.children.push(c); c.parentNode = this; }, removeChild() {}, set textContent(v) { this.children = []; }, get textContent() { return ''; } };
   const view = createDieView(container, {});
   const runRaf = () => { const q = st.raf.splice(0); st.lens = []; q.forEach((f) => f()); return st.lens.reduce((a, b) => a + b, 0); };
   return { st, view, runRaf, doc };
 }
 const preset = () => design.fromPreset(D.presets[0], { mode: 'reproduce' });
+
+test('隠れている間(サイズ 0)のリサイズ通知を無視し、再表示後も縮尺(ズーム・パン)が保たれる', () => {
+  const { st, view, runRaf } = setup({ w: 1000, h: 500 });
+  view.setDesign(preset()); runRaf();
+  const scaleOf = () => { st.texts = []; view.setSelection([]); runRaf(); view.setViewMode('place'); runRaf(); return st.texts.filter((t) => / mm$/.test(t)); };
+  const before = scaleOf();
+  assert.ok(before.length > 0, '縮尺の文字が描かれる');
+  st.size = { w: 0, h: 0 }; st.winHandlers.resize(); // 配置を隠した
+  view.setDesign(preset()); view.fit(); runRaf(); // 隠している間の設計更新・全体表示でも壊れない
+  st.size = { w: 1000, h: 500 }; st.winHandlers.resize(); // 再表示
+  assert.deepStrictEqual(scaleOf(), before, '縮尺が変わらない(1×1 で全体表示されていない)');
+  view.fit(); // 再表示後の全体表示も有限で妥当
+  const after = scaleOf();
+  assert.ok(after.length > 0 && after.every((t) => /^[\d.]+ mm$/.test(t) && parseFloat(t) < 1000));
+});
 
 test('captureCanvas: 選択枠を外して描き、戻すと選択が復元される。縮小サイズのオフスクリーンを返し凡例を含む', () => {
   const { st, view, runRaf } = setup({ w: 1000, h: 500, dpr: 4 }); // 元は 4000x2000

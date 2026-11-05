@@ -229,6 +229,7 @@
     // ---- サイズ ----
     function resize() {
       const r = container.getBoundingClientRect();
+      if (!(r.width >= 1) || !(r.height >= 1)) return; // 隠れている間は無視(カメラ・サイズを壊さない)
       const w = Math.max(1, Math.round(r.width)); const h = Math.max(1, Math.round(r.height));
       const d = win.devicePixelRatio || 1;
       if (w === cssW && h === cssH && d === dpr) return;
@@ -650,6 +651,7 @@
       },
       // 全体表示: 今の向きのまま、距離と注視点だけ合わせる
       fit() {
+        resize();
         if (!cssW || !cam) return;
         const keep = cam; resetCamera('oblique'); cam = Object.assign({}, cam, { yaw: keep.yaw, pitch: keep.pitch }); invalidate();
       },

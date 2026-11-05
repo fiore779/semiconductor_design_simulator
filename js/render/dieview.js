@@ -226,6 +226,8 @@
     // ---- サイズ ----
     function resize() {
       const r = container.getBoundingClientRect();
+      // 隠れている間(幅または高さが 0)の通知は無視する。1×1 に縮めると、ズーム・パンや自動の全体表示が壊れる
+      if (!(r.width >= 1) || !(r.height >= 1)) return;
       const w = Math.max(1, Math.round(r.width)); const h = Math.max(1, Math.round(r.height));
       const d = win.devicePixelRatio || 1;
       if (w === cssW && h === cssH && d === dpr) return;
@@ -821,7 +823,7 @@
         if (!glLost) { try { uploadHeat(); } catch (e) { heatTex.clear(); } }
         updateAria(); invalidate();
       },
-      fit() { if (cssW) doFit(); },
+      fit() { resize(); if (cssW) doFit(); }, // 先に今のサイズを読む(再表示直後は通知が間に合わないことがある)
       // 画面の注記(ビューの下に DOM で出す文)。PNG には従来どおり captureCanvas が画像に描く
       getNotes() {
         const n = [];
