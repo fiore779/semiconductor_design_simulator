@@ -1,6 +1,6 @@
 'use strict';
 // NVIDIA GB10(DGX Spark。2026-11-03 追加)のプリセットと S-die のダイ写真に倣った配置(floorplan.js の arm-soc)のテスト。
-// 配置・大きさは写真(GB102in1.jpg。Kurnal の注釈)の目測で、実チップのフロアプランではない。G-die は layout なし(従来の 1 ブロックの GPU)。docs/research/nvidia-gb10.md・user-images.md 参照。
+// 配置・大きさは写真(GB102in1.jpg。Kurnal の注釈)の目測で、実チップのフロアプランではない。G-die は frame gb10-gpu(下の G-die のテスト)(従来の 1 ブロックの GPU)。docs/research/nvidia-gb10.md・user-images.md 参照。
 const test = require('node:test');
 const assert = require('node:assert');
 const { D } = require('./helpers');
@@ -38,17 +38,16 @@ test('GB10: ST/MT は計算できる(fallback ではない)が、公開値が無
   assert.strictEqual(r.mt.threads, 20);
 });
 
-test('GB10: S-die は arm-soc の photo(frame gb10)。ダイ面積・縦横比は写真のまま。G-die は layout なしの 1 ブロック GPU', () => {
+test('GB10: S-die は arm-soc の photo(frame gb10)。ダイ面積・縦横比は写真のまま。G-die は別ダイで frame gb10-gpu(下のテスト)', () => {
   const d = mk(); const s = d.dies[0]; const g = d.dies[1];
   assert.strictEqual(d.dies.length, 2);
   assert.strictEqual(s.layout.template, 'arm-soc'); assert.strictEqual(s.layout.frame, 'gb10'); assert.strictEqual(s.layout.scaleBasis, 'photo');
   const n = s.layout.scaleNote; assert.ok(n.includes('目測') && n.includes('実チップのフロアプランではない') && n.includes('URL 候補') && n.includes('推定') && n.length <= 600);
-  assert.ok(n.includes('G-die は layout なし'));
+  assert.ok(n.includes('G-die は別ダイ(frame gb10-gpu)'));
   assert.strictEqual(s.areaMm2, 207.9); assert.ok(Math.abs(s.widthMm * s.heightMm - 207.9) < 1e-6);
   // 写真の縦横比 1085/875 = 1.24 は Kurnal の寸法 16.10/12.91 = 1.247 と 1% 以内で一致
   assert.ok(Math.abs(FP.TILE_FRAMES.gb10.aspect / (16.10 / 12.91) - 1) < 0.01);
-  assert.strictEqual(g.layout, undefined); assert.strictEqual(g.areaMm2, 173.6);
-  assert.deepStrictEqual(g.blocks.map((b) => b.kind), ['gpu']);
+  assert.strictEqual(g.layout.frame, 'gb10-gpu'); assert.strictEqual(g.areaMm2, 173.6);
   assert.deepStrictEqual(design.validate(d), []);
 });
 
@@ -112,4 +111,86 @@ test('GB10: L3 を変えても photo のまま(frame に l3 枠がある)。ラ�
   assert.deepStrictEqual(design.validate(r.design), []);
   const r0 = design.setL3(design.unlock(t0), 0); assert.ok(r0.ok);
   assert.strictEqual(r0.design.dies[0].layout.scaleBasis, 'photo'); assert.strictEqual(r0.design.dies[0].blocks.filter((b) => b.kind === 'l3').length, 0);
+});
+
+// ---- G-die(2026-11-05。GB102in1.jpg の右半分。frame gb10-gpu。SOC_DIE / socLayout) ----
+const H = require('../js/sim/heatmap.js');
+const gdie = (d) => d.dies[1];
+const rectsOverlap = (a, c) => a.x < c.x + c.w - 1e-9 && c.x < a.x + a.w - 1e-9 && a.y < c.y + c.h - 1e-9 && c.y < a.y + a.h - 1e-9;
+
+test('GB10 G-die: layout は arm-soc の photo(frame gb10-gpu)。面積 173.6 は不変、縦横比は写真の目測 1.03。注記は 600 文字以内で、目測・N3E 推定・URL 要確認を書く', () => {
+  const d = mk(); const g = gdie(d);
+  assert.deepStrictEqual([g.layout.template, g.layout.frame, g.layout.scaleBasis], ['arm-soc', 'gb10-gpu', 'photo']);
+  const n = g.layout.scaleNote; assert.ok(n.length <= 600);
+  ['GB102in1.jpg', '目測', 'N3E は推定', 'ファイル名一致による対応づけ', '画像内に URL の記載なし', '実チップのフロアプランではない'].forEach((s) => assert.ok(n.includes(s), s));
+  assert.strictEqual(g.areaMm2, 173.6); assert.ok(Math.abs(g.widthMm * g.heightMm - 173.6) < 1e-6);
+  assert.ok(Math.abs(g.widthMm / g.heightMm - 1.03) < 0.005);
+  assert.ok(Math.abs(FP.TILE_FRAMES['gb10-gpu'].aspect / (13.45 / 12.91) - 1) < 0.02); // Kurnal の寸法 1.042 と 2% 以内
+  assert.strictEqual(g.layout.units, 1); assert.deepStrictEqual(FP.TILE_FRAMES['gb10-gpu'].tpl, ['arm-soc']);
+  assert.deepStrictEqual(design.validate(d), []);
+});
+
+test('GB10 G-die: ブロックは GPC#1〜#4 の TPC 区画 12 個・Raster Engine ×4・GPU L2 ×2・NV-Link・Die to Die・NVDEC・未判別 1。コア・L3 なし。ダイ内に収まり重ならない', () => {
+  const g = gdie(mk()); const bs = g.blocks;
+  assert.strictEqual(bs.length, 22);
+  assert.strictEqual(bs.filter((b) => /^GPC#[1-4] TPC/.test(b.label)).length, 12);
+  [1, 2, 3, 4].forEach((n) => assert.strictEqual(bs.filter((b) => b.label.startsWith(`GPC#${n} `)).length, 3));
+  assert.strictEqual(bs.filter((b) => b.label === 'Raster Engine/3D FF').length, 4);
+  assert.strictEqual(bs.filter((b) => /^GPU L2 Cache/.test(b.label)).length, 2);
+  ['NV-Link', 'Die to Die Channel', 'NVDEC・NVENC'].forEach((s) => assert.strictEqual(bs.filter((b) => b.label === s).length, 1, s));
+  assert.strictEqual(bs.filter((b) => /^未判別/.test(b.label)).length, 1);
+  assert.ok(!bs.some((b) => b.kind === 'core' || b.kind === 'l3' || b.kind === 'npu'));
+  // TPC は 6 個ずつ(各 3 区画 × 2)で合計 24。GPC#1 は最上段、#4 は最下段
+  const y = (n) => bs.find((b) => b.label.startsWith(`GPC#${n} `)).y; assert.ok(y(1) < y(2) && y(2) < y(3) && y(3) < y(4));
+  bs.forEach((b) => assert.ok(b.x >= -1e-9 && b.y >= -1e-9 && b.x + b.w <= g.widthMm + 1e-9 && b.y + b.h <= g.heightMm + 1e-9 && b.w > 0 && b.h > 0, b.label));
+  for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) assert.ok(!rectsOverlap(bs[i], bs[j]), bs[i].label + ' と ' + bs[j].label);
+  assert.strictEqual(new Set(bs.map((b) => b.id)).size, bs.length);
+});
+
+test("GB10 G-die: GPU 演算(GPC・Raster・L2)と I/F は 'live'(飾りでない)、未判別だけ decorative。電力按分に参加する", () => {
+  const d = mk(); const bs = gdie(d).blocks;
+  bs.forEach((b) => { if (/^未判別/.test(b.label)) assert.strictEqual(b.decorative, true); else assert.strictEqual(b.decorative, undefined, b.label); });
+  assert.ok(bs.filter((b) => b.kind === 'gpu').every((b) => /^(GPC|Raster|GPU L2)/.test(b.label)));
+  const r = H.blockPowers(d, 140); assert.ok(r.ok);
+  const sum = (die) => die.blocks.reduce((s, b) => s + (r.byBlock[b.id] || 0), 0);
+  assert.ok(Math.abs(sum(d.dies[0]) + sum(d.dies[1]) - 140) < 1e-9);
+  // 前後の記録(従来の「GPU」1 ブロック: S-die 92.80 W / G-die 47.20 W。今回: 92.20 / 47.80 W)
+  assert.ok(Math.abs(sum(d.dies[0]) - 92.20) < 0.01 && Math.abs(sum(d.dies[1]) - 47.80) < 0.01);
+  bs.filter((b) => /^未判別/.test(b.label)).forEach((b) => assert.strictEqual(r.byBlock[b.id], 0));
+  bs.filter((b) => b.kind === 'gpu').forEach((b) => assert.ok(r.byBlock[b.id] > 0));
+});
+
+test('GB10 G-die: 評価は配置に依存しない。S-die のコア・L3 編集は G-die の layout・ブロックに効かない(G-die はコアを持たない)', () => {
+  const ctx = E.makeContext(); const a = mk(); const b = JSON.parse(JSON.stringify(a)); b.dies[1].blocks = []; delete b.dies[1].layout;
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(E.evaluate(a, ctx))), JSON.parse(JSON.stringify(E.evaluate(b, ctx))));
+  const g0 = JSON.stringify(gdie(a));
+  const r = design.setCoreCount(design.unlock(mk()), 'P', 11); assert.ok(r.ok);
+  assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'schematic'); assert.strictEqual(JSON.stringify(gdie(r.design)), g0);
+  const r2 = design.setCoreCount(design.unlock(mk()), 'E', 4); assert.ok(r2.ok);
+  assert.strictEqual(JSON.stringify(gdie(r2.design)), g0);
+  const r3 = design.setL3(design.unlock(mk()), 0); assert.ok(r3.ok); assert.strictEqual(JSON.stringify(gdie(r3.design)), g0);
+  const r4 = design.setL3(design.unlock(mk()), 48); assert.ok(r4.ok); assert.strictEqual(JSON.stringify(gdie(r4.design)), g0);
+  assert.strictEqual(gdie(r4.design).layout.scaleBasis, 'photo');
+});
+
+test('GB10 G-die: 負テスト。G-die の frame は arm-soc 以外(amd-apu など)に付けられない。コア・L3 のあるダイにも付けられない。parse も拒否', () => {
+  const ng = (t) => assert.ok(FP.checkLayout({ template: t, frame: 'gb10-gpu' }), t);
+  assert.strictEqual(FP.checkLayout({ template: 'arm-soc', frame: 'gb10-gpu' }), null);
+  ['amd-apu', 'x86-tile', 'x86-mono', 'apple-soc', 'amd-chiplet', 'intel-hybrid'].forEach(ng);
+  // 逆: AMD の Strix Halo SoC の枠は arm-soc に付けられない。S-die の frame(gb10)も amd-apu に付けられない
+  assert.ok(FP.checkLayout({ template: 'arm-soc', frame: 'strix-halo-soc' })); assert.ok(FP.checkLayout({ template: 'amd-apu', frame: 'gb10' }));
+  const a = JSON.parse(JSON.stringify(mk())); a.dies[1].layout.template = 'amd-apu';
+  assert.strictEqual(design.parse(JSON.stringify(a)).ok, false);
+  const b = JSON.parse(JSON.stringify(mk())); b.dies[0].layout.frame = 'gb10-gpu'; // S-die(コア・L3 あり)に G-die の枠
+  assert.strictEqual(design.parse(JSON.stringify(b)).ok, false);
+  const c = JSON.parse(JSON.stringify(mk())); assert.strictEqual(design.parse(JSON.stringify(c)).ok, true);
+});
+
+test('GB10 G-die: Strix Halo の SoC ダイは変わらない(amd-apu・strix-halo-soc・live)。ほかの arm-soc に socDie は付かない', () => {
+  const s = D.presets.find((x) => x.id === 'amd-strixhalo-395'); const d = design.fromPreset(s);
+  const soc = d.dies.find((x) => /SoC/i.test(x.name));
+  assert.deepStrictEqual([soc.layout.template, soc.layout.frame, soc.layout.scaleBasis], ['amd-apu', 'strix-halo-soc', 'photo']);
+  assert.strictEqual(FP.TILE_FRAMES['strix-halo-soc'].live, true);
+  D.presets.filter((x) => x.isa === 'arm' && x.id !== 'nv-gb10').forEach((x) => { const c = FP.classify(x, () => 'compute'); if (c) assert.strictEqual(c.socDie, undefined, x.id); });
+  assert.strictEqual(FP.classify(p, () => 'compute').socDie.frame, 'gb10-gpu'); assert.strictEqual(FP.classify(p, () => 'compute').socDie.dieIndex, 1);
 });

@@ -505,7 +505,7 @@
         ['gpu-a', 'GPU(TPC #1〜#4。SM #1〜#8)', 'g', 180, 38, 425, 477], ['gpu-b', 'GPU(TPC #5・#6)', 'g', 797, 5, 406, 210], ['gpu-l2', 'GPU L2 Cache 1MiB(4×256KiB)', 'g', 797, 215, 406, 75],
         ['memctl', 'Memory Control', 'u', 1010, 680, 122, 165], ['memctl2', 'Memory Control', 'u', 1005, 870, 222, 85], ['phy-r', '64bit LPDDR5T/X Memory PHY', 'u', 1140, 292, 88, 560], ['phy-b', '64bit LPDDR5T/X Memory PHY', 'u', 452, 885, 545, 70], ['pcie', 'PCIe 4.0 x8', 'u', 10, 140, 68, 490]]),
   };
-  // GB10(DGX Spark)の S-die(GB102in1.jpg 9034×3951 の左半分。表示 2000×875 の目測で左のダイは x 0〜1085。Kurnal の注釈)。X925 #1〜#5 が上のクラスタ、#6〜#10 が下。A725 #1〜#5 は上、#6〜#10 は下。L3 16MiB(上)・8MiB(下)は重み 2:1 で cfg の 24MB を分ける。G-die は別ダイで、このプリセットでは layout なし(1 ブロックの GPU)
+  // GB10(DGX Spark)の S-die(GB102in1.jpg 9034×3951 の左半分。表示 2000×875 の目測で左のダイは x 0〜1085。Kurnal の注釈)。X925 #1〜#5 が上のクラスタ、#6〜#10 が下。A725 #1〜#5 は上、#6〜#10 は下。L3 16MiB(上)・8MiB(下)は重み 2:1 で cfg の 24MB を分ける。G-die は別ダイで、frame 'gb10-gpu'(下。SOC_DIE / socLayout)
   NV_FRAMES.gb10 = tf([0, 0, 1085, 875], { p: 10, e: 10, lp: 0 },
     [[135, 45, 125, 112], [262, 45, 122, 112], [387, 45, 120, 112], [135, 172, 125, 125], [135, 300, 125, 115], [137, 447, 123, 128], [137, 577, 123, 126], [137, 705, 123, 130], [262, 752, 120, 85], [387, 752, 120, 85]],
     [[503, 178, 55, 52], [563, 142, 65, 50], [277, 350, 55, 55], [335, 350, 62, 55], [403, 350, 70, 60], [272, 452, 62, 50], [340, 452, 62, 50], [403, 442, 56, 55], [393, 637, 62, 60], [472, 648, 62, 58]], [],
@@ -518,10 +518,23 @@
       ['slc', 'SLC 16MiB(上段)', 'u', 598, 312, 185, 213], ['slc-b', 'SLC(下段の 1MiB 区画)', 'u', 535, 597, 150, 52], ['slc-c', 'SLC(1MiB 区画)', 'u', 667, 528, 55, 55],
       ['npu', 'Nvidia NPU 4 Core', 'n', 785, 455, 190, 200], ['flash', '17x Flash', 'u', 815, 695, 100, 50],
       ['d2d', 'Die to Die Channel', 'u', 975, 225, 60, 335], ['nvl', 'NV-Link', 'u', 1036, 225, 42, 335], ['disp', 'Nvidia Display Engine', 'u', 980, 565, 100, 310]]);
+  // GB10 の G-die(同じ GB102in1.jpg の右半分。表示 2000×875 の目測でダイは x 1095〜1988・y 6〜873)。コアなし(GPU の演算ブロックは電力按分に参加する live の枠)。
+  // 注釈どおり: GPC#1〜#4(各 TPC ×6 = 3 区画×TPC 2 つ)、Raster Engine/3D FF ×4(縦の帯)、GPU L2(左上 1.5MiB ×8 と左下 12MiB。「24MiB」の注記は中央)、NV-Link・Die to Die Channel(左端)、NVDEC・NVENC。
+  // GPC#1 の右端の区画は「TPC#2・TPC#1・SM#1〜#4」の拡大注記で、TPC#5・#6 とみられる(未確認)。中央(注記「GPU L2 Cache 24MiB」の位置)は構造を判別できず『未判別』の飾り
+  NV_FRAMES['gb10-gpu'] = tf([1095, 6, 1988, 873], { p: 0, e: 0, lp: 0 }, [], [], [], null, [
+    ['l2a', 'GPU L2 Cache 1.5MiB ×8(左上)', 'g', 1188, 10, 172, 317], ['l2b', 'GPU L2 Cache 12MiB(左下)', 'g', 1197, 555, 163, 315], ['l2x', '未判別(注記「GPU L2 Cache 24MiB」の位置)', 'u', 1175, 331, 210, 220, 'deco'],
+    ['rast1', 'Raster Engine/3D FF', 'g', 1362, 10, 68, 215], ['rast2', 'Raster Engine/3D FF', 'g', 1387, 228, 78, 212], ['rast3', 'Raster Engine/3D FF', 'g', 1387, 442, 78, 213], ['rast4', 'Raster Engine/3D FF', 'g', 1368, 659, 74, 213],
+    ['gpc1a', 'GPC#1 TPC#1・#2', 'g', 1432, 10, 171, 215], ['gpc1b', 'GPC#1 TPC#3・#4', 'g', 1605, 10, 171, 215], ['gpc1c', 'GPC#1 TPC#5・#6(SM 拡大注記つき)', 'g', 1778, 10, 177, 215],
+    ['gpc2a', 'GPC#2 TPC#7・#8', 'g', 1467, 228, 170, 210], ['gpc2b', 'GPC#2 TPC#9・#10', 'g', 1639, 228, 174, 210], ['gpc2c', 'GPC#2 TPC#11・#12', 'g', 1815, 228, 170, 210],
+    ['gpc3a', 'GPC#3 TPC#13・#14', 'g', 1467, 442, 170, 211], ['gpc3b', 'GPC#3 TPC#15・#16', 'g', 1639, 442, 174, 211], ['gpc3c', 'GPC#3 TPC#17・#18', 'g', 1815, 442, 170, 211],
+    ['gpc4a', 'GPC#4 TPC#19・#20', 'g', 1444, 659, 150, 213], ['gpc4b', 'GPC#4 TPC#21・#22', 'g', 1596, 659, 198, 213], ['gpc4c', 'GPC#4 TPC#23・#24', 'g', 1796, 659, 189, 213],
+    ['nvl', 'NV-Link', 'u', 1100, 228, 44, 330], ['d2d', 'Die to Die Channel', 'u', 1146, 228, 27, 330], ['nvdec', 'NVDEC・NVENC', 'u', 1100, 582, 93, 288]]);
   Object.assign(TILE_FRAMES, MT_FRAMES, NV_FRAMES);
   // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
   Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
+  TILE_FRAMES['gb10-gpu'].live = true; // GB10 の G-die も同じ(従来の「GPU」1 ブロックは飾りではなかった。'deco' を付けた「未判別」だけ飾り)
+  TILE_FRAMES['gb10-gpu'].coreless = true; // コアも L3 も持たないダイ専用の枠(parse〔checkShape〕が、コア・L3 のブロックがあるダイへの誤用を拒否する。design.validate〔DRC〕は拒否しない)
   const AMD_SRC = {
     zeppelin: 'Zeppelin_annotated.jpg(Zeppelin。19700×8660。作者表記なし。出典 URL 未取得)。左の CCX は注釈つき(Zen 1 コア ×4 + L2 512K、L3 8M)、右の CCX は注記が「CCX」だけで、同じ構造として左と同じ比率でコアと L3 を置いた推定。2 つの CCX にコアを交互に割り当てる。縦横比は写真の 2.275(実寸の注記なし。213 mm² は PC Games Hardware。CCX 1 つの面積比 約 20.5% は AMD の CCX 44 mm² と整合)',
     'raven-ridge': 'RavenRidge_annotated.jpg(Raven Ridge。10461×5945。作者表記なし。出典 URL 未取得)。1 CCX(Zen 1 コア ×4 + L2 512K、L3 4M)、Vega の Compute Unit などの GPU、IO。縦横比は写真の 1.759(実寸の注記なし)。GPU の枠は Vega 11 CU 全体(2200G は 8CU 有効)',
@@ -572,7 +585,7 @@
   const NV_SRC = {
     't239': 'im1AIk2736qP6cwD.jpg(Kurnal の注釈。1231×960。ファイル名にチップ名なし。画像内の A78C ×8・TPC #1〜#6・LPDDR5T/X からユーザー申告の Switch 2 の T239 と判定。寸法の記載なし。URL 候補: https://www.techpowerup.com/336485/full-die-shot-analysis-of-nintendo-switch-2-soc-indicates-samsung-8-nm-production-origins)。L3 は中央の列で、注釈は 2MiB〔上〕・L3 Cache (share) 4MiB・2MiB〔縦書き〕で、4MiB が L3 全体とも各部分とも読める(2 通りに読める。cfg の 4MB と食い違うかは未確定)ため、注釈の範囲(縦 y 292〜605)の 1 枠に cfg の容量を割り当てた',
   };
-  NV_SRC.gb10 = 'GB102in1.jpg(Kurnal の注釈。9034×3951。透かし @Kurnal。左が S-die・右が G-die の 1 枚で、左のダイだけ使う。寸法 12.91×16.10 mm〔ページの値。画像内に記載なし〕は縦横比と一致。URL 候補: https://kurnal-insights.com/en/dieshot/nvidia-gb10/)。X925 5+5・A725 5+5・L3 16MiB〔上〕/ 8MiB〔下〕・SLC・NPU・PHY・C2C は注釈どおり。推定: L3 は cfg の 24MB を 16:8 に分けた(どちらが 16MB かは出典で食い違う)、SLC の 1MiB 区画は 3 枠に束ねた〔下段の左隣の区画は枠外、上段の枠の右端は 2 段目の区画を切る〕、Memory Cache 2MiB ×8 と SLC の関係は不明、A725 の小さな枠は目測の誤差が大きい。G-die は layout なし';
+  NV_SRC.gb10 = 'GB102in1.jpg(Kurnal の注釈。9034×3951。透かし @Kurnal。左が S-die・右が G-die の 1 枚で、左のダイだけ使う。寸法 12.91×16.10 mm〔ページの値。画像内に記載なし〕は縦横比と一致。URL 候補: https://kurnal-insights.com/en/dieshot/nvidia-gb10/)。X925 5+5・A725 5+5・L3 16MiB〔上〕/ 8MiB〔下〕・SLC・NPU・PHY・C2C は注釈どおり。推定: L3 は cfg の 24MB を 16:8 に分けた(どちらが 16MB かは出典で食い違う)、SLC の 1MiB 区画は 3 枠に束ねた〔下段の左隣の区画は枠外、上段の枠の右端は 2 段目の区画を切る〕、Memory Cache 2MiB ×8 と SLC の関係は不明、A725 の小さな枠は目測の誤差が大きい。G-die は別ダイ(frame gb10-gpu)';
   const ARM_MAP = {
     'mt-9000': { frame: 'mt-9000', basis: 'photo', src: MT_SRC['mt-9000'] }, 'mt-9200': { frame: 'mt-9200', basis: 'photo', src: MT_SRC['mt-9200'] }, 'mt-9300': { frame: 'mt-9300', basis: 'photo', src: MT_SRC['mt-9300'] },
     'mt-9400': { frame: 'mt-9400', basis: 'photo', src: MT_SRC['mt-9400'] }, 'mt-9500': { frame: 'mt-9500', basis: 'photo', src: MT_SRC['mt-9500'] }, 'mt-9600pro': { frame: 'mt-9600pro', basis: 'photo', src: MT_SRC['mt-9600pro'] },
@@ -580,7 +593,9 @@
     'nv-gb10': { frame: 'gb10', basis: 'photo', src: NV_SRC['gb10'] },
   };
   // Strix Halo の SoC ダイ(CCD は別ダイ)に写真の枠を当てる。classify の socDie と、design.fromPreset が使う
-  const SOC_DIE = { 'amd-strixhalo-395': { frame: 'strix-halo-soc', src: 'Strix-Halo-All-16.02x19.20.jpg(Kurnal の注釈。6724×8237。出典は推定: https://kurnal-insights.com/en/dieshot/?sort=yearDesc&m=AMD&t=desktop-soc&id=amd-strix-halo-full-package)。SoC ダイの縦横比 1.195 は 19.2×16.02 mm(ファイル名の 16.02x19.20。積 307.6 mm² = プリセットの面積)と一致。注釈に「?」つきの項目あり(作者も未確定)。GPU の WGP 20 個(40CU)・NPU・MALL・PHY などはすべてプリセットに無いブロックで、SoC ダイは従来どおり電力按分に参加する' } };
+  // template は socLayout が layout に入れるテンプレート(Strix Halo は amd-apu、GB10 の G-die は arm-soc)。match は CCD・S-die 以外から SoC ダイ(G-die)を探す名前の判定
+  const SOC_DIE = { 'amd-strixhalo-395': { template: 'amd-apu', frame: 'strix-halo-soc', src: 'Strix-Halo-All-16.02x19.20.jpg(Kurnal の注釈。6724×8237。出典は推定: https://kurnal-insights.com/en/dieshot/?sort=yearDesc&m=AMD&t=desktop-soc&id=amd-strix-halo-full-package)。SoC ダイの縦横比 1.195 は 19.2×16.02 mm(ファイル名の 16.02x19.20。積 307.6 mm² = プリセットの面積)と一致。注釈に「?」つきの項目あり(作者も未確定)。GPU の WGP 20 個(40CU)・NPU・MALL・PHY などはすべてプリセットに無いブロックで、SoC ダイは従来どおり電力按分に参加する' },
+    'nv-gb10': { template: 'arm-soc', frame: 'gb10-gpu', match: /G-die/i, src: 'GB102in1.jpg の右半分(Kurnal の注釈。9034×3951。透かし @Kurnal。出典 URL https://kurnal-insights.com/en/dieshot/nvidia-gb10/ はファイル名一致による対応づけ。ページ本文は調査担当が取得済み。画像内に URL の記載なし)。縦横比 1.03 は写真の目測(Kurnal の寸法 13.45×12.91 mm = 1.04 と 1.2% 差)。GPC#1〜#4・TPC・Raster Engine・GPU L2・NV-Link・NVDEC・NVENC は注釈どおり、中央は未判別の飾り。N3E は推定。GPU 演算ブロックは従来の「GPU」1 ブロックと同じく電力按分に参加する' } };
   // Strix Halo の Zen 5 CCD(CCD ×2 の写真。同じ画像の上側。SoC ダイと同尺で、CCD 1 つ 767×625 px = 約 9.06×7.39 mm = 66.9 mm² でプリセットの 67.1 mm² と整合)
   const RECIPE_OF = { 'amd-strixhalo-395': 'Zen 5 (Strix Halo)' };
   const TILE_SRC = {
@@ -658,7 +673,11 @@
     if (preset && (preset.vendor === 'MediaTek' || preset.vendor === 'NVIDIA') && ARM_MAP[preset.id]) {
       const m = ARM_MAP[preset.id]; const dies = preset.dies || [];
       if (!dies.length || !TILE_FRAMES[m.frame]) return null;
-      return { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
+      const res = { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
+      // GB10: コアを持たない G-die(別ダイ)にも写真の枠を当てる(design.fromPreset が socLayout で layout とブロックを作る)
+      const sd = SOC_DIE[preset.id];
+      if (sd) { const gi = dies.findIndex((d, i) => i !== 0 && sd.match && sd.match.test(d.name || '')); if (gi >= 0) res.socDie = { dieIndex: gi, frame: sd.frame }; }
+      return res;
     }
     if (preset && ASPECT_ONLY[preset.id] && (preset.dies || []).length) {
       // 注釈なしのダイ写真しかない 4 件: ダイの縦横比だけ写真のファイル名の寸法に合わせる(frame なし。ブロックの配置は従来どおりの模式。面積はプリセットのまま)
@@ -726,10 +745,10 @@
     return null;
   }
 
-  // Strix Halo の SoC ダイ(classify の socDie)→ そのダイの layout(コアなし。写真の枠の飾りだけ)。design.fromPreset が使う
+  // コアを持たない別ダイ(Strix Halo の SoC ダイ、GB10 の G-die。classify の socDie)→ そのダイの layout(コアなし。写真の枠のブロックだけ)。design.fromPreset が使う
   function socLayout(preset) {
     const sd = preset && SOC_DIE[preset.id]; if (!sd) return null;
-    return { template: 'amd-apu', uncore: false, igpu: false, npu: false, units: 1, scaleBasis: 'photo', scaleNote: `${sd.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま`, frame: sd.frame };
+    return { template: sd.template || 'amd-apu', uncore: false, igpu: false, npu: false, units: 1, scaleBasis: 'photo', scaleNote: `${sd.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま`, frame: sd.frame };
   }
 
   // classify の結果 → die.layout に保存する形(dieIndex・iodGpu は保存しない)

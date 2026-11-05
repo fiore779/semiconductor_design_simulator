@@ -633,6 +633,9 @@
         const FP = floorplanApi();
         const lb = FP ? FP.checkLayout(die.layout) : null;
         if (lb) return `${t}: ${lb}`;
+        // コア・L3 を持たないダイ専用の枠(GB10 の G-die)を、コアや L3 のブロックがあるダイに付けるのは誤用
+        const tfr = FP && die.layout.frame != null ? FP.TILE_FRAMES[die.layout.frame] : null;
+        if (tfr && tfr.coreless && die.blocks.some((b) => b && (b.kind === 'core' || b.kind === 'l3'))) return `${t}: layout.frame「${die.layout.frame}」はコア・L3 を持たないダイ専用です`;
       }
       total += die.blocks.length;
       if (die.blocks.length > MAX_BLOCKS || total > MAX_BLOCKS) return `ブロックが多すぎます(上限 ${MAX_BLOCKS} 個)`;
