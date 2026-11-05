@@ -148,12 +148,31 @@
       onRevertAll: () => { const r = DF.revertAll(design); if (commit(r.design, 'すべて元に戻す(パラメータ)', false) && r.relaid) notifyRelaid(); },
     });
   }
+  // ---- パネルの表示切替(ui-cleanup.md §10)。隠している間のバッジとエラー通知 ----
+  let panelState = { right: false, bottom: false, place: true }; let panelCtl = null; let seenErrors = 0;
+  function updateBadges() {
+    const WN = S.ui.warnings; if (!WN || !WN.badgeInfo) return;
+    const warns = design && lastEval ? lastEval.warnings : [];
+    const bi = WN.badgeInfo(warns);
+    const bb = $('t-bottom-badge');
+    bb.hidden = panelState.bottom || bi.level === 'none';
+    bb.textContent = bi.text; bb.className = 'tbadge' + (bi.level === 'error' ? ' err' : '');
+    $('t-bottom').title = bi.text && !panelState.bottom ? `プロパティ・履歴・検証を表示/非表示(検証: ${bi.text})` : 'プロパティ・履歴・検証を表示/非表示';
+    const flag = !!(design && lastEval && WN.resultsFlag(lastEval));
+    const rb = $('t-right-badge');
+    rb.hidden = panelState.right || !flag; rb.textContent = flag ? '◆' : ''; rb.className = 'tbadge';
+    $('t-right').title = flag && !panelState.right ? '結果カード・差分パネルを表示/非表示(◆: 結果に注意があります)' : '結果カード・差分パネルを表示/非表示';
+    const msg = WN.errorNotice(seenErrors, bi.error, panelState.bottom);
+    seenErrors = bi.error;
+    if (msg) setTimeout(() => { if (panelState.bottom && seenErrors > 0) notify(msg, 'err'); }, 0); // 読み込み直後の通知より後に出す
+  }
   function renderAll(opts) {
     const o = opts || {};
     renderButtons();
     if (!design) {
       clear($('results')).appendChild(h('p', { class: 'note', text: '設計を読み込むと、ここに結果が出ます。' }));
       clear($('repro')); clear($('diff')); $('diff').hidden = true; clear($('validation')); renderMixPanels(); renderParamsPanel(); renderPackagePanel(); updateHeat(); renderProps(); renderHistory(); renderEmptyOrFallback();
+      updateBadges();
       return;
     }
     lastEval = EV.evaluate(design, ctx);
@@ -164,6 +183,7 @@
     if (!o.skipProps) renderProps();
     renderHistory();
     renderEmptyOrFallback(); // ダイビューがあっても、「設計がありません」の表示を消す(設計があるとき)
+    updateBadges();
   }
 
   // ---- 自動保存(localStorage が使えなくても動作は続ける) ----
@@ -548,6 +568,19 @@
       let st = null; try { st = window.localStorage || null; } catch (e) { st = null; }
       S.ui.layout.initLayout({ workarea: $('workarea'), resizer: $('parts-resizer'), menubar: $('menubar'), storage: st });
     } catch (e) { /* 配置の保存ができなくても画面は動く */ }
+  }
+  if (S.ui.layout && typeof S.ui.layout.initPanelToggles === 'function') {
+    try {
+      let st2 = null; try { st2 = window.localStorage || null; } catch (e) { st2 = null; }
+      panelCtl = S.ui.layout.initPanelToggles({
+        app: $('app'), storage: st2,
+        onChange(state, changed) {
+          panelState = state; updateBadges();
+          // 配置を再表示したら、隠している間に変わったサイズに合わせて全体表示(リサイズ自体は ResizeObserver が行う)
+          if (changed === 'place' && state.place && view && view.fit) requestAnimationFrame(() => { if (view && view.fit) view.fit(); });
+        },
+      });
+    } catch (e) { /* 表示切替が使えなくても画面は動く */ }
   }
   initView();
   const auto = loadAutosave();

@@ -469,3 +469,19 @@
 | U9 | **`/` キーの割り当て** | 混合・新規設計のときだけ検索欄へ(入力欄の外のとき) | 現行のショートカットは Ctrl 系と Esc のみで衝突しない。プリセット選択ダイアログは既に検索欄に自動フォーカス |
 | U10 | **`docs/設計書.md` §8 への反映** | 今回は編集しない(`grep -c '^`'` = 33 を守るため)。実装後、leader の判断で §8.7・§8.13 に追記 | 指示による |
 | U11 | **ブラウザでの目視は未実施**(設計者の環境ではブラウザが使えない) | §8.3 を実装者が実機で行う。[I] とした箇所(合計の高さの見積もり、フォーカス復帰、`#parts` のスクロール位置の保持、sticky の見え方)は実機で確認する | 推定を事実として書かないため |
+
+---
+
+## 10. 表示切替(2026-11-05、ユーザー要望)
+
+要望: 「画面に出ているものが多すぎる。左側以外はいらない。あとで表示できるようにするだけでいい」。
+
+- **ツールバー**(メニューバー内、ヘルプの前)に 3 つのトグルボタン `#t-right`(結果)・`#t-bottom`(下段)・`#t-place`(配置)。`aria-pressed` と `aria-controls`(`right` / `bottom` / `center`)を持つ。Tab で届き、Enter/Space で切り替わる。
+- **既定**: 結果=隠す、下段=隠す、配置=表示。定数は `js/ui/layout.js` の `PANEL_DEFAULTS`(1 か所。`place: false` にすると配置も既定で隠す)。左欄 `#parts` は常時表示。
+- **保存**: localStorage `sds.ui.panels`(JSON。真偽値だけ採用、壊れていれば既定)。`parsePanels` / `serializePanels` / `togglePanel` / `panelClasses` は純関数(`tests/layout.test.js`)。`initPanelToggles` がブラウザ専用で、ボタンの aria-pressed・パネルの `hidden`・`#app` の `hide-right|bottom|place` クラスを同期する。
+- **列・行**: `#workarea` の列は `--center-col` / `--right-col` で決まり、`#app.hide-right` で右列 0px、`#app.hide-place` で中央 0px(右が表示なら右が残りを使う)。下段は `hidden` で行ごと消え、`#workarea`(flex:1)が縦に広がる。1280px・1000px 以下の `--right-w` の段階とは独立(仕切りは `--parts-w` のまま動く)。
+- **ダイビュー**: `dieview.js` は `ResizeObserver` で container を監視しており、幅・高さの変化に追従する。配置を再表示したときは、隠している間のサイズ変化に合わせて `view.fit()` を 1 回呼ぶ。
+- **バッジ**(隠している間だけ。`warnings.js` の `badgeInfo` / `resultsFlag` / `errorNotice`): 「下段」=検証の `✗ エラー件数 ⚠ 警告件数`(info は数えない。エラーがあれば強い色 `.tbadge.err`)。「結果」=`◆`(結果パネルの「常に見せる」警告: 仮の IPC・クロックの歪み・楽観的な予測がある)。エラー件数が**増えたとき**だけ、下段が隠れていれば `notify(…, 'err')` で「エラーが N 件あります。「下段」で表示できます」を 1 回出す(同数の再描画では出さない)。
+- **描画**: 隠したパネルも DOM は残し、`renderAll` は従来どおり描く(再表示で最新。負荷は従来どおり)。
+- **ショートカット**: 追加しない(ヘルプに、ボタンの説明を 1 行追記)。
+- **評価**: `js/model`・`js/sim`・`data` は変更なし(全 102 プリセットの evaluate ダンプが開始前後で一致)。

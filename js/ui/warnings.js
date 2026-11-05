@@ -16,7 +16,26 @@
     warnings.forEach((w) => { c[SYMBOL[w.level] ? w.level : 'info']++; });
     return c;
   }
-  const api = { SYMBOL, decorate, counts };
+  // 隠している「下段」ボタンのバッジ。{ error, warn, text, level('error'|'warn'|'none') }。info は数えない
+  function badgeInfo(warnings) {
+    const c = counts(Array.isArray(warnings) ? warnings : []);
+    const parts = [];
+    if (c.error) parts.push(`${SYMBOL.error} ${c.error}`);
+    if (c.warn) parts.push(`${SYMBOL.warn} ${c.warn}`);
+    return { error: c.error, warn: c.warn, text: parts.join(' '), level: c.error ? 'error' : c.warn ? 'warn' : 'none' };
+  }
+  // 隠している「結果」ボタンの ◆。結果パネルの「常に見せる」警告(仮の IPC・クロックの歪み・予測が楽観的)があるか
+  function resultsFlag(ev) {
+    if (!ev || typeof ev !== 'object') return false;
+    const st = ev.st || {}; const mt = ev.mt || {};
+    return !!(ev.optimistic || (st.ok && st.fallback) || (mt.ok && (mt.fallback || mt.mixedClock)));
+  }
+  // エラー件数が増えたときだけ、隠している間に一度案内する。戻り値は文言(出さないなら null)
+  function errorNotice(prevErrors, nextErrors, bottomHidden) {
+    if (!bottomHidden || !(nextErrors > 0) || !(nextErrors > (prevErrors || 0))) return null;
+    return `エラーが ${nextErrors} 件あります。「下段」で表示できます`;
+  }
+  const api = { SYMBOL, decorate, counts, badgeInfo, resultsFlag, errorNotice };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.warnings = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

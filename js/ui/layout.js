@@ -30,6 +30,67 @@
     return clampPartsWidth(next, viewportW);
   }
 
+  // ---- パネルの表示/非表示(docs/design/ui-cleanup.md §10)----
+  // 既定の表示状態。ここを書き換えるだけで既定が変わる(右=結果、bottom=下段、place=中央のダイビュー)
+  const PANEL_DEFAULTS = Object.freeze({ right: false, bottom: false, place: true });
+  const PANEL_KEYS = Object.freeze(['right', 'bottom', 'place']);
+  const PANEL_ELEMENT_IDS = Object.freeze({ right: 'right', bottom: 'bottom', place: 'center' });
+  const LS_PANELS = 'sds.ui.panels';
+  function defaultPanels() { return Object.assign({}, PANEL_DEFAULTS); }
+  // 保存文字列(JSON)→ 状態。壊れた文字列・不正な値は既定に戻す(キーごとに、真偽値だけ採用)
+  function parsePanels(str) {
+    const out = defaultPanels();
+    if (typeof str !== 'string') return out;
+    let o = null;
+    try { o = JSON.parse(str); } catch (e) { return out; }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return out;
+    PANEL_KEYS.forEach((k) => { if (typeof o[k] === 'boolean') out[k] = o[k]; });
+    return out;
+  }
+  function serializePanels(state) {
+    const s = parsePanels(JSON.stringify(state || {}));
+    return JSON.stringify({ right: s.right, bottom: s.bottom, place: s.place });
+  }
+  // 1 つを切り替えた新しい状態(未知のキーは変えない)
+  function togglePanel(state, key) {
+    const s = parsePanels(JSON.stringify(state || {}));
+    if (PANEL_KEYS.indexOf(key) >= 0) s[key] = !s[key];
+    return s;
+  }
+  // 状態 → #app に付けるクラス名の配列(CSS が列・行をつめる)
+  function panelClasses(state) {
+    const s = parsePanels(JSON.stringify(state || {}));
+    return PANEL_KEYS.filter((k) => !s[k]).map((k) => `hide-${k}`);
+  }
+
+  // ブラウザ専用。{ app, storage, onChange(state, changedKey) } → { get, set, toggle }
+  // ボタン #t-right / #t-bottom / #t-place(aria-pressed)と、パネル要素の hidden・#app のクラスを同期する
+  function initPanelToggles(o) {
+    const app = o.app; const doc = app.ownerDocument || document;
+    let storage = null;
+    try { storage = o.storage || null; } catch (e) { storage = null; }
+    let state = defaultPanels();
+    try { if (storage) state = parsePanels(storage.getItem(LS_PANELS)); } catch (e) { /* 読めなければ既定 */ }
+    function apply(changed) {
+      PANEL_KEYS.forEach((k) => {
+        const el = doc.getElementById(PANEL_ELEMENT_IDS[k]); if (el) el.hidden = !state[k];
+        const b = doc.getElementById(`t-${k}`); if (b) b.setAttribute('aria-pressed', String(state[k]));
+        app.classList.toggle(`hide-${k}`, !state[k]);
+      });
+      if (typeof o.onChange === 'function') o.onChange(Object.assign({}, state), changed || null);
+    }
+    function save() { try { if (storage) storage.setItem(LS_PANELS, serializePanels(state)); } catch (e) { /* 保存できなくても動作は続ける */ } }
+    PANEL_KEYS.forEach((k) => {
+      const b = doc.getElementById(`t-${k}`);
+      if (b) b.addEventListener('click', () => { state = togglePanel(state, k); save(); apply(k); });
+    });
+    apply(null);
+    return {
+      get: () => Object.assign({}, state),
+      set(k, v) { if (PANEL_KEYS.indexOf(k) >= 0 && state[k] !== !!v) { state[k] = !!v; save(); apply(k); } },
+    };
+  }
+
   // ブラウザ専用。{ workarea, resizer, menubar, storage } → { setPartsWidth, getPartsWidth, destroy }
   function initLayout(o) {
     const { workarea, resizer, menubar } = o;
@@ -109,7 +170,7 @@
     };
   }
 
-  const api = { PARTS_MIN, PARTS_MAX, PARTS_DEFAULT, LS_PARTS, clampPartsWidth, parseStoredWidth, stepWidth, initLayout };
+  const api = { PARTS_MIN, PARTS_MAX, PARTS_DEFAULT, LS_PARTS, clampPartsWidth, parseStoredWidth, stepWidth, initLayout, PANEL_DEFAULTS, PANEL_KEYS, PANEL_ELEMENT_IDS, LS_PANELS, defaultPanels, parsePanels, serializePanels, togglePanel, panelClasses, initPanelToggles };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.layout = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

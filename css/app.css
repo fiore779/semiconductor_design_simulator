@@ -52,7 +52,17 @@ canvas:focus-visible { outline-offset: -3px; } /* ダイビューのフォーカ
 .warn-note { color: var(--warn); }
 
 /* 列幅は 1 か所だけで決める。左欄は利用者が変えられる(--parts-w。保存あり)。ただし 40vw を超えない */
-#workarea { --parts-w-def: 300px; --right-w: 400px; position: relative; display: grid; min-height: 0; grid-template-columns: min(var(--parts-w, var(--parts-w-def)), 40vw) minmax(240px, 1fr) var(--right-w); }
+#workarea { --parts-w-def: 300px; --right-w: 400px; position: relative; display: grid; min-height: 0; grid-template-columns: min(var(--parts-w, var(--parts-w-def)), 40vw) var(--center-col, minmax(240px, 1fr)) var(--right-col, var(--right-w)); }
+#parts { grid-column: 1; } #center { grid-column: 2; } #right { grid-column: 3; }
+/* 表示切替(ui-cleanup.md §10): 隠した列は 0 幅につめる。左欄(#parts)は常時表示 */
+#app.hide-right #workarea { --right-col: 0px; }
+#app.hide-place #workarea { --center-col: 0px; }
+#app.hide-place:not(.hide-right) #workarea { --right-col: minmax(240px, 1fr); }
+#center[hidden], #bottom[hidden], #right[hidden] { display: none; }
+#panel-toggles { display: inline-flex; gap: 4px; }
+.tbadge { margin-left: 6px; padding: 0 5px; border-radius: 8px; font-size: 0.85em; background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+.tbadge.err { background: var(--low-bg); color: var(--ng); border-color: var(--ng); font-weight: bold; }
+.tbadge[hidden] { display: none; }
 #parts-resizer { position: absolute; top: 0; bottom: 0; left: calc(min(var(--parts-w, var(--parts-w-def)), 40vw) - 3px); width: 7px; cursor: col-resize; z-index: 5; touch-action: none; background: linear-gradient(to right, transparent 3px, var(--border) 3px, var(--border) 4px, transparent 4px); }
 #parts-resizer:hover, #parts-resizer:focus-visible { background: linear-gradient(to right, transparent 2px, var(--accent) 2px, var(--accent) 5px, transparent 5px); }
 @media (max-width: 1280px) { #workarea { --parts-w-def: 272px; --right-w: 360px; } }

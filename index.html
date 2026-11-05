@@ -23,7 +23,13 @@
     <button type="button" class="btn" id="m-compare" title="現在の設計を、元のプリセット・別のプリセット・履歴の最初の状態(最大 2 つ)と並べる">比較</button>
     <button type="button" class="btn" id="m-export" title="設計(JSON)・結果(CSV)・要約テキストを書き出す">書き出し</button>
     <button type="button" class="btn" id="m-settings" aria-haspopup="dialog" title="設定(元に戻す/やり直す、プリセットの呼び出し)">設定</button>
-    <button type="button" class="btn" id="m-help" aria-expanded="false" aria-controls="help">ヘルプ</button>
+    <span class="sep" aria-hidden="true"></span>
+    <span id="panel-toggles" role="group" aria-label="パネルの表示切替">
+      <button type="button" class="btn" id="t-right" aria-pressed="false" aria-controls="right" title="結果カード・差分パネルを表示/非表示"><span class="tlabel">結果</span><span class="tbadge" id="t-right-badge" hidden></span></button>
+      <button type="button" class="btn" id="t-bottom" aria-pressed="false" aria-controls="bottom" title="プロパティ・履歴・検証を表示/非表示"><span class="tlabel">下段</span><span class="tbadge" id="t-bottom-badge" hidden></span></button>
+      <button type="button" class="btn" id="t-place" aria-pressed="true" aria-controls="center" title="ダイビュー(配置)を表示/非表示"><span class="tlabel">配置</span></button>
+    </span>
+    <button type="button" class="btn" id="m-help"aria-expanded="false" aria-controls="help">ヘルプ</button>
     <span id="modebadge" class="badge modebadge" hidden></span>
     <span id="designname" class="designname"></span>
     <input type="file" id="fileinput" accept=".json,application/json" hidden>
@@ -37,6 +43,7 @@
       <li>ダイビュー 2D 編集: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
       <li>ダイビュー 3D 表示: ドラッグ=回転 / ホイール=拡大縮小 / 右・中・Shift+ドラッグ=移動 / 矢印=回転 / +/-=ズーム / 0=リセット / Esc=選択解除 / Shift+クリック=選択の追加/解除(編集は 2D 編集で)</li>
       <li>/: 部品ライブラリの検索欄へ移動(混合・新規設計のとき)/ 検索欄で Esc: 検索語を消す・Enter: 先頭の部品へ移動</li>
+      <li>ツールバーの「結果」「下段」「配置」: 右の結果・下段(プロパティ/履歴/検証)・中央のダイビューの表示/非表示(状態は保存されます。隠している間は、検証の件数などをボタンのバッジで知らせます)</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
     <p class="small">ブロックの配置は現実の CPU のレイアウトに倣った模式図で、大きさは実測ではありません(実チップのフロアプランではありません)。Uncore・iGPU・NPU は見た目だけの「飾り」で、計算に影響しません。</p>
@@ -72,13 +79,13 @@
       </div>
       <p id="heatnote" class="small" hidden></p>
     </section>
-    <aside id="right" aria-label="結果">
+    <aside id="right" aria-label="結果" hidden>
       <div id="diff" aria-label="元のチップとの差分" hidden></div>
       <div id="results"></div>
       <div id="repro"></div>
     </aside>
   </main>
-  <footer id="bottom">
+  <footer id="bottom" hidden>
     <section id="props" aria-label="プロパティ"></section>
     <section id="history" aria-label="履歴"></section>
     <section id="validation" aria-label="検証"></section>

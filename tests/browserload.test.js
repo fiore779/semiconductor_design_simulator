@@ -609,3 +609,16 @@ test('index.html: 左欄タブ・仕切り・layout.js の読み込み順・a11y
   assert.ok(order('js/ui/layout.js') > order('js/ui/panels.js') && order('js/ui/layout.js') < order('js/main.js'));
   assert.ok(!html.includes('partslist') && !html.includes('M2 では部品の追加はできません'));
 });
+
+test('index.html: 表示切替ボタン(結果・下段・配置)の aria-pressed・aria-controls と、対応するパネルの id', () => {
+  const want = { 't-right': ['false', 'right'], 't-bottom': ['false', 'bottom'], 't-place': ['true', 'center'] };
+  for (const id of Object.keys(want)) {
+    const m = html.match(new RegExp(`<button[^>]*id="${id}"[^>]*>`));
+    assert.ok(m, `${id} が無い`);
+    assert.ok(m[0].includes(`aria-pressed="${want[id][0]}"`), `${id} の aria-pressed`);
+    assert.ok(m[0].includes(`aria-controls="${want[id][1]}"`), `${id} の aria-controls`);
+    assert.ok(new RegExp(`id="${want[id][1]}"`).test(html), `${want[id][1]} のパネルが無い`);
+  }
+  assert.ok(/<aside id="right"[^>]*\bhidden\b/.test(html) && /<footer id="bottom"[^>]*\bhidden\b/.test(html), '既定で隠すパネルに hidden');
+  assert.ok(html.includes('id="t-right-badge"') && html.includes('id="t-bottom-badge"'));
+});
