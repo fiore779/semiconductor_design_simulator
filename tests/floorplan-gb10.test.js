@@ -14,7 +14,7 @@ const cores = (die) => die.blocks.filter((b) => b.kind === 'core');
 
 test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分)', () => {
   assert.ok(p);
-  assert.strictEqual(p.kind, 'pc'); assert.strictEqual(p.isa, 'arm'); assert.strictEqual(p.year, 2025); assert.strictEqual(p.gb7, null);
+  assert.strictEqual(p.kind, 'pc'); assert.strictEqual(p.isa, 'arm'); assert.strictEqual(p.year, 2025); assert.strictEqual(p.gb7, 'GB10: GB10(DGX Spark, 3.9GHz, 20c)'); // 2026-11-06 に採用(追加時の 2026-11-03 は null)
   assert.strictEqual(p.addedIn, 'M5b'); assert.strictEqual(p.calib, false);
   assert.strictEqual(p.dies.length, 2);
   assert.deepStrictEqual([p.dies[0].mm2, p.dies[0].s, p.dies[0].nodeId], [207.9, 'meas', 'tsmc-n3e']);
@@ -26,13 +26,15 @@ test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分
   assert.strictEqual(p.power.base.w, 140); assert.strictEqual(p.power.base.s, 'pub'); assert.strictEqual(p.power.peak, null);
   // GB6 の個別 3 件は notes に参考として(判定には使わない)
   ['3123', '19708', '3237', '19794', '2983', '18183', '1 件'].forEach((s) => assert.ok(p.notes.includes(s), s));
-  assert.ok(p.notes.includes('GB7 は未取得'));
+  assert.ok(p.notes.includes('GB7 は 2026-11-06 にユーザー提供の検索結果') && p.notes.includes('GB7 未取得')); // 旧記録(2026-11-03 時点は未取得)も残す
 });
 
-test('GB10: ST/MT は計算できる(fallback ではない)が、公開値が無いので誤差は出ない', () => {
+test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -18.7%・MT 約 -13.3%(両方 ng・原因未特定)', () => {
   const r = E.evaluate(mk(), E.makeContext());
-  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, null); assert.strictEqual(r.st.errPct, null);
-  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, null); assert.strictEqual(r.mt.errPct, null);
+  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -18.73) < 0.01);
+  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -13.28) < 0.01);
+  const rows = require('../js/ui/reproduce.js').reproductionRows(r);
+  assert.deepStrictEqual([rows[0].verdict, rows[1].verdict], ['ng', 'ng']); // 許容 ±10% を超える。n=6 でも gray にはならない(gray は「個別投稿」だけ)
   assert.strictEqual(r.st.corrSource, 'uarch'); // X925 は Dimensity 9400 の代表の u
   assert.deepStrictEqual(r.mt.corrSources, ['uarch', 'isa']); // A725 は専用の u がなく命令セット平均
   assert.strictEqual(r.mt.threads, 20);

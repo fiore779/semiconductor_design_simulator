@@ -111,7 +111,8 @@ add({
 ## 8. Geekbench
 
 ### 8.1 Geekbench 7(GB10 = DGX Spark / OEM 機)
-- **未取得**。DGX Spark・Dell Pro Max with GB10・ASUS Ascent GX10 の GB7 値は、二次資料・検索のどちらでも見つからなかった(設計書 §2.4 の「GB10 0 件」と同じ状態)。
+- **【2026-11-06 更新】採用: ST 2624 / MT 20595(6 件の中央値)**。ユーザーが Geekbench 7 の検索結果(CPU「NVIDIA GB10」)のスクリーンショットを提供。先頭 8 件のうち、仮想マシン 2 件(マイクロソフト仮想マシン。10 コア表示)を既存規則(コア数が SKU と不一致・仮想環境)で除外し、残り 6 件 〔NVIDIA_DGX_Spark ×2(Windows)、XFUSION FusionXpark ×1・Dell Pro Max ×3(Linux)〕の中央値。ST 2416〜2637、MT 13639〜23929(ばらつきが大きい。Windows と Linux、電力モードなどの差が疑われるが原因は未確認)。直近 25 件ではない。設計書 §2.4 に行を追加(`gb7` = 'GB10: GB10(DGX Spark, 3.9GHz, 20c)')。
+- **旧記録(2026-11-03)**: 未取得。DGX Spark・Dell Pro Max with GB10・ASUS Ascent GX10 の GB7 値は、二次資料・検索のどちらでも見つからなかった(設計書 §2.4 の「GB10 0 件」と同じ状態)。この下の §9 以降の「gb7: null」「未取得」も、その時点の記録。
 
 ### 8.2 Geekbench 7(参考: 同じチップとされる N1X / RTX Spark。Windows ノート、電力設定が違うため GB10 の値としては使えない)
 | 機種・構成 | シングル | マルチ | 件数・種別 | 区分 | 出典 |

@@ -903,6 +903,14 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
+  "name": "GB10: GB10(DGX Spark, 3.9GHz, 20c)",
+  "single": 2624,
+  "multi": 20595,
+  "kind": "直近25件の中央値",
+  "n": 6
+ },
+ {
+  "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "EPYC 7401(Zen 1 サーバー、24c)",
   "single": 957,
   "multi": 10113,

@@ -193,17 +193,17 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     power: { base: pw(19, 'pub', 'Nintendo 公式の Switch 2 本体全体・TV モード・マリオカート ワールドでの平均消費電力(Full HD / 4K の平均)。SoC 単体の値ではない(2026-11-05 に訂正)。ホーム画面 8W。Tom\'s Hardware のワットメーター実測(ドック時 18〜19W)とも一致(検索要約のみ)'), peak: null, range: null },
     cfg: { cores: [c('P', 'Cortex-A78C', 8, 1.1)], l3MB: 4, memory: 'LPDDR5X, 128bit' },
   });
-  // GB10(DGX Spark)。2026-11-03 追加。調査: docs/research/nvidia-gb10.md。addedIn:'M5b'(calib は false)。GB7 は未取得(gb7: null)のため、validate-data.js の C1_EXCEPTIONS(id 指定。C1 だけを外し、C2〜C5 は検査する)に載せている(設計書 §13 M5b-4)
+  // GB10(DGX Spark)。2026-11-03 追加。調査: docs/research/nvidia-gb10.md。addedIn:'M5b'(calib は false)。追加時(2026-11-03)は GB7 未取得(gb7: null)で C1_EXCEPTIONS に載せていたが、2026-11-06 にユーザー提供の検索結果(6 件の中央値 ST 2624 / MT 20595)で GB7 を採用し、例外から外した(設計書 §2.4・§13 M5b-4)
   add({
     id: 'nv-gb10', name: 'GB10(DGX Spark)', vendor: 'NVIDIA', family: 'DGX', isa: 'arm', kind: 'pc', year: 2025, addedIn: 'M5b',
-    gb7: null,
+    gb7: 'GB10: GB10(DGX Spark, 3.9GHz, 20c)',
     dies: [
       die('S-die(CPU・メモリ・I/O、MediaTek)', 207.9, 'meas', 'tsmc-n3e', 'Kurnal 12.91×16.10mm。プロセス N3E は TechInsights(二次)'),
       die('G-die(Blackwell GPU)', 173.6, 'meas', 'tsmc-n3e', 'Kurnal 12.91×13.45mm。NVIDIA は「3nm」のみ公表で、N3E は推定(nodeId は N3E を当てただけ)'),
     ],
     power: { base: pw(140, 'pub', 'SoC のみ・typical(ホワイトペーパー Table 1)。DGX Spark の電源アダプタは 240W'), peak: null, range: null },
     cfg: { cores: [c('P', 'Cortex-X925', 10, 4.0), c('E', 'Cortex-A725', 10, 2.8)], l3MB: 24, memory: 'LPDDR5X-8533, 256bit, 273GB/s' },
-    notes: 'CPU(S-die。MediaTek と共同設計)と GPU(G-die)の 2 ダイを 2.5D パッケージと NVIDIA C2C で接続([公表])。クロックは X925 最大 4GHz・A725 最大 2.8GHz([公表]。lscpu 4004 / 2860MHz〔[実測]〕。一方の X925 クラスタは 3.9GHz〔[二次]〕)。L2 は X925 2MB・A725 512KB(コア当たり)、L3 は 16MB と 8MB の 2 クラスタ(合計 24MB)、SLC 16MB([二次])。GPU は Blackwell 48 SM・6,144 CUDA・2.4GHz・L2 24MiB([公表])。ダイ面積は Kurnal の計測([実測])。G-die のプロセスは 3nm のみ公表で N3E は推定。GB7 は未取得(PC 向け N1X の値は別製品なので入れない)。Geekbench 6 は参考の個別投稿 3 件(判定には使わない。[二次]): Dell Pro Max with GB10 ST 3123 / MT 19708(1 件。Jeff Geerling の測定、geerlingguy/sbc-reviews #92)、第三者の投稿 ST 3237 / MT 19794(1 件。同 issue に併記)、DGX Spark ST 2983 / MT 18183(1 件。daniel.lawrence.lu のブログ 2026-07-15)。件数はすべて 1 件で中央値ではない',
+    notes: 'CPU(S-die。MediaTek と共同設計)と GPU(G-die)の 2 ダイを 2.5D パッケージと NVIDIA C2C で接続([公表])。クロックは X925 最大 4GHz・A725 最大 2.8GHz([公表]。lscpu 4004 / 2860MHz〔[実測]〕。一方の X925 クラスタは 3.9GHz〔[二次]〕)。L2 は X925 2MB・A725 512KB(コア当たり)、L3 は 16MB と 8MB の 2 クラスタ(合計 24MB)、SLC 16MB([二次])。GPU は Blackwell 48 SM・6,144 CUDA・2.4GHz・L2 24MiB([公表])。ダイ面積は Kurnal の計測([実測])。G-die のプロセスは 3nm のみ公表で N3E は推定。GB7 は 2026-11-06 にユーザー提供の検索結果(先頭 8 件から仮想マシン 2 件を除いた 6 件の中央値 ST 2624 / MT 20595。マルチは 13639〜23929 とばらつく)を採用(旧記録: 2026-11-03 時点は「GB7 未取得」。PC 向け N1X の値は別製品なので入れない)。Geekbench 6 は参考の個別投稿 3 件(判定外。[二次]): Dell Pro Max with GB10 ST 3123 / MT 19708(1 件。Jeff Geerling の測定、geerlingguy/sbc-reviews #92)、第三者の投稿 ST 3237 / MT 19794(1 件。同 issue に併記)、DGX Spark ST 2983 / MT 18183(1 件。daniel.lawrence.lu のブログ 2026-07-15)。件数はすべて 1 件で中央値ではない',
   });
 
   // ---- M5b 波1 追加分(addedIn:'M5b'。calib は false。電力・キャッシュは未取得のまま null。メモリは任意項目で null のまま(§2.7.4 に 7 Gen 1・7 Gen 4 のメモリ LPDDR5/5X・32bit の記載はあるが未転記)。設計書 §13) ----
