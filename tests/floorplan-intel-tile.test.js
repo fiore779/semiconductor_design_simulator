@@ -206,14 +206,14 @@ test('325・320: 325 の GB7(n=25)の誤差と判定、320 は GB7 なし。ど�
   const r325 = E.evaluate(mk('intel-ptl-u5-325'), ctx); const r320 = E.evaluate(mk('intel-wcl-c5-320'), ctx);
   assert.ok(r325.st.ok && r325.mt.ok && r320.st.ok && r320.mt.ok);
   assert.deepStrictEqual([r325.st.published, r325.mt.published], [2337, 11018]); // 2026-11-04 に n=2 の旧値(1885 / 9500)を n=25 の取り直し値に更新
-  assert.ok(Math.abs(r325.st.errPct - 6.4515) < 0.001 && Math.abs(r325.mt.errPct + 14.4345) < 0.001); // MT 誤差は 2026-11-05 の帯 0 再校正(0.65 → 0.69)で -18.8091 → -14.4345
+  assert.ok(Math.abs(r325.st.errPct - 6.9182) < 0.001 && Math.abs(r325.mt.errPct + 14.0594) < 0.001); // MT 誤差は 2026-11-05 の帯 0 再校正(0.65 → 0.69)で -18.8091 → -14.4345。同日 2 回目: 265K の P boost 5.5→5.4 に伴う Lion Cove の u 再校正で ST 6.4515 → 6.9182、MT -14.4345 → -14.0594
   const rows325 = require('../js/ui/reproduce.js').reproductionRows(r325); // n=25 の「直近25件の中央値」は gray にならず ok / ng の判定が出る
   assert.strictEqual(rows325.find((x) => /シングル/.test(x.label)).verdict, 'ok');
   assert.strictEqual(rows325.find((x) => /マルチ/.test(x.label)).verdict, 'ng');
   assert.deepStrictEqual([r320.st.published, r320.mt.published], [2242, 7212]); // 2026-11-04 にユーザー提供の検索結果(スクリーンショット 3 枚、直近 25 件、n=25)の中央値を採用
-  assert.ok(Math.abs(r320.st.errPct - 9.8842) < 0.001 && Math.abs(r320.mt.errPct + 3.7717) < 0.001); // MT 誤差は 2026-11-05 の帯 0 再校正で -8.5311 → -3.7717
+  assert.ok(Math.abs(r320.st.errPct - 10.3659) < 0.001 && Math.abs(r320.mt.errPct + 3.3499) < 0.001); // MT 誤差は 2026-11-05 の帯 0 再校正で -8.5311 → -3.7717。同日 2 回目: Lion Cove の u 再校正で ST 9.8842 → 10.3659(許容 ±10% を超えて ok → ng)、MT -3.7717 → -3.3499
   const rows320 = require('../js/ui/reproduce.js').reproductionRows(r320);
-  assert.strictEqual(rows320.find((x) => /シングル/.test(x.label)).verdict, 'ok'); // n=25 は gray にならず判定が出る(ST +9.9%)
+  assert.strictEqual(rows320.find((x) => /シングル/.test(x.label)).verdict, 'ng'); // n=25 は gray にならず判定が出る(ST +10.4%。2026-11-05 の Lion Cove u 再校正前は +9.9% で ok)
   assert.strictEqual(rows320.find((x) => /マルチ/.test(x.label)).verdict, 'ok'); // MT -3.8%(2026-11-05 の再校正後。再校正前は -8.5%)
   assert.strictEqual(r325.area.totalMm2, null); assert.strictEqual(r320.area.totalMm2, null);
   assert.strictEqual(byId('intel-ptl-u5-325').calib, false); assert.strictEqual(byId('intel-wcl-c5-320').calib, false);

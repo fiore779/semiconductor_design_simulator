@@ -249,7 +249,7 @@ test('uCal: rep 校正で Golden/Raptor に u が入り、calib・n・usedPreset
   assert.strictEqual(c.u['Golden Cove'], 112.7); assert.strictEqual(c.u['Raptor Cove'], 112.7);
   assert.deepStrictEqual(Object.keys(c.uFixed).sort(), ['Golden Cove', 'Raptor Cove']);
   assert.strictEqual(c.n['Golden Cove'], undefined); assert.strictEqual(c.usedPresets['Golden Cove'], undefined);
-  assert.ok(Math.abs(c.uIsa.x86 - 107.36091595190973) < 1e-9); // ISA 平均は代表だけで決まるので不変
+  assert.ok(Math.abs(c.uIsa.x86 - 107.83154842233384) < 1e-9); // ISA 平均は代表だけで決まる(2026-11-05: 265K の P boost 5.5→5.4 で Lion Cove の u が 96.084→97.780 に再校正され、x86 平均も 107.361→107.832)
   assert.ok(!D.presets.some((p) => p.calib && /^(Golden|Raptor) Cove$/.test((F.topCore(p.cfg.cores) || {}).uarch)));
   const r = F.stScore(preset('intel-adl-12900k'), c, D.uarch);
   assert.strictEqual(r.corrSource, 'uarch'); assert.strictEqual(r.corr, 112.7);
@@ -303,7 +303,7 @@ test('mtScore: 帯の係数は mtScore の結果(clockFactor・clockInfo)に出�
   assert.strictEqual(F.mtScore(Object.assign({}, p, { kind: 'pc' }), c, D.uarch, null).clockFactor, 1);
 });
 
-// 【2026-11-05 再校正】Core 5 320(GB7 ST 2242 / MT 7212、n=25)を標本に入れ、帯 0 を 0.65 → 0.69 に再校正した(ユーザー指示「再校正してください」)。標本 11 件、帯 0 は 6 件で中央値 0.688(→0.69)、帯 1 は 5 件で 0.759(→0.76、不変)。再校正後の実測: LOO MAE 0.1056(325 を入れた時の 0.1140 から良化)、一律 0.81 の MAE 0.1230、誤差 10% 超 3 件(4 → 3)。閾値(LOO < 0.11、一律 0.81 > 0.12、10% 超 3 件)はこの実測に合わせた更新。主張(帯係数の LOO 誤差 0.1056 < 一律 0.81 の 0.1230)は保たれている。以下の記述のうち「10 件」「0.65」「再校正しない」は(当時の)再校正前の経緯(325 を入れた時点)。
+// 【2026-11-05 再校正】Core 5 320(GB7 ST 2242 / MT 7212、n=25)を標本に入れ、帯 0 を 0.65 → 0.69 に再校正した(ユーザー指示「再校正してください」)。標本 11 件、帯 0 は 6 件で中央値 0.688(→0.69)、帯 1 は 5 件で 0.759(→0.76、不変)。再校正後の実測(当時の値。同日の Lion Cove 再校正後の最新値は LOO 0.1050・一律 0.1247・10% 超 4 件): LOO MAE 0.1056(325 を入れた時の 0.1140 から良化)、一律 0.81 の MAE 0.1230、誤差 10% 超 3 件(4 → 3)。閾値(LOO < 0.11、一律 0.81 > 0.12、10% 超 3 件)はこの実測に合わせた更新。主張(帯係数の LOO 誤差 0.1056 < 一律 0.81 の 0.1230)は保たれている。以下の記述のうち「10 件」「0.65」「再校正しない」は(当時の)再校正前の経緯(325 を入れた時点)。
 // 帯の係数を、データから再現できるか(中央値)と leave-one-out(LOO)。標本 = MT を計算でき、GB7 マルチと公表電力がある mobile-pc(11 件。Kraken Point〔GB7 が原ページ未確認のため帯の標本から除外。id 指定〕を含めると帯 0 の中央値が変わるため標本から除く)。**Core Ultra 5 325 は標本に入れた(ユーザー指示「3つ全部やってください」〔判断待ち 3 点への包括的な指示〕による。閾値の緩和はそれに伴う実装側の対応)**。帯の中央値は 325 を入れても(当時の)MT_CLOCK_BANDS(0.65・0.76)と一致したまま。ただし 325 を入れた結果、精度指標が悪化した: LOO の MAE 0.0717 → 0.1140、一律 0.81 の MAE 0.1373 → 0.1253、誤差 10% 超の件数 2 → 4。325 の MT は公開値(11018、n=25)に -18.8% 届かず、逆算した k は 0.826 で帯 0 の 0.65 から離れ、HX370(0.869)と同じ傾向=帯係数の弱点が新標本で出たもの。以下の閾値(LOO MAE < 0.12、0.81 一律 MAE > 0.12、10% 超 4 件)は旧閾値(0.09・0.13・2 件)をこの実測に合わせて緩めたもので、このテストの主張(帯係数の LOO 誤差が一律 0.81 より小さい)は維持される(0.1140 < 0.1253)が、差は 0.0717 vs 0.1373 から 0.1140 vs 0.1253 へ縮んだ。帯係数は(当時)再校正しない
 test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係数」の中央値(小数 2 桁)が MT_CLOCK_BANDS と一致し、LOO の誤差が一律 0.81 より小さい', () => {
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
@@ -332,11 +332,12 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
     const k = o.length ? r2(med(o.map((x) => x.k))) : 0.81;
     return { e: mtAt(s.p, k) / s.pub - 1, e81: mtAt(s.p, 0.81) / s.pub - 1 };
   });
-  // 注意: 次の 2 つの絶対値閾値は、再校正後の実測(標本 11 件。LOO 0.1056、一律 0.81 は 0.1230、10% 超 3 件)に対して余裕が小さく脆い(LOO は 0.11 に対し約 0.005、一律 0.81 は 0.12 に対し約 0.003)。主張の中心は 3 つ目の相対比較(帯係数の LOO 誤差 < 一律 0.81 の誤差)
+  // 注意: 次の 2 つの絶対値閾値は、再校正後の実測(標本 11 件。2026-11-05 の Lion Cove 再校正後の最新値は LOO 0.1050、一律 0.81 は 0.1247、10% 超 4 件。帯 0 再校正直後の当時の値は 0.1056・0.1230・3 件)に対して余裕が小さく脆い(LOO は 0.11 に対し約 0.005、一律 0.81 は 0.12 に対し約 0.005)。主張の中心は 3 つ目の相対比較(帯係数の LOO 誤差 < 一律 0.81 の誤差)
   assert.ok(mae(loo.map((l) => l.e)) < 0.11, 'LOO MAE ' + mae(loo.map((l) => l.e)));
   assert.ok(mae(loo.map((l) => l.e81)) > 0.12);
   assert.ok(mae(loo.map((l) => l.e)) < mae(loo.map((l) => l.e81)));
-  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 3);
+  // 2026-11-05(265K の P boost 5.5→5.4 で Lion Cove の u を再校正): 帯 0 の中央値 0.6882→0.6856、帯 1 は 0.7595→0.7558(丸めた係数 0.69/0.76 は不変)。LOO MAE 0.1045→0.1050、一律 0.81 は 0.1217→0.1247。LOO 誤差が 10% を超えるのは 7735HS(9.66%→10.14%)が加わって 3→4 件(閾値は動かしていない)
+  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 4);
 });
 
 test('TDP 帯別係数: σ の校正(代表 3 件)は不変(代表は pc で係数 1.0)', () => {
@@ -360,9 +361,9 @@ test('ST の L3: l3Ccds を持つ SKU は 1 CCD 分(l3MB ÷ l3Ccds)で計算し�
     assert.ok(Math.abs(r.score - F.stScore(half, c, D.uarch).score) < 1e-9, id + ': 1 CCD 分 = l3MB/2 と同じ');
   });
 });
-test('ST の L3: 5950X は 2289.8 → 2239.6(従来比 -2.2%)に固定', () => {
+test('ST の L3: 5950X は 2289.8 → 2239.6(従来比 -2.2%)に固定。2026-11-05 に 2249.4(x86 平均 u が 265K の再校正で +0.44% 動いたため。L3 の効果は同じ -2.2%)', () => {
   const r = F.stScore(preset('amd-zen3-5950x'), cal(), D.uarch);
-  assert.ok(Math.abs(r.score - 2239.6) < 0.1, String(r.score));
+  assert.ok(Math.abs(r.score - 2249.4) < 0.1, String(r.score));
 });
 test('MT は L3 を合計で使う: l3Ccds の有無で MT は変わらない', () => {
   const c = cal();
