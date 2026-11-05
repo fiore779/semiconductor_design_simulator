@@ -11,11 +11,17 @@ const P = (id) => D.presets.find((p) => p.id === id);
 const ctx = E.makeContext();
 const ev = (id) => E.evaluate(design.fromPreset(P(id)), ctx);
 
-test('充実度: 13900K は ●、5800X(面積・電力が未取得)は ○、7700(IOD 面積未取得)は ◐', () => {
+test('充実度: 13900K は ●、5800X(面積が未取得)は ◐、7700(IOD 面積未取得)は ◐', () => {
   assert.strictEqual(PL.completeness(P('intel-rpl-13900k'), gb7ByName).symbol, '●');
-  const x = PL.completeness(P('amd-zen3-5800x'), gb7ByName);
-  assert.strictEqual(x.symbol, '○'); assert.deepStrictEqual(x.missing, ['面積', '電力']);
+  const x = PL.completeness(P('amd-zen3-5800x'), gb7ByName); // 2026-11-05: 5800X は電力(105W・PPT 142W)を取得したため、未取得は面積だけ(以前は面積・電力が未取得で ○)
+  assert.strictEqual(x.symbol, '◐'); assert.deepStrictEqual(x.missing, ['面積']);
   assert.strictEqual(PL.completeness(P('amd-zen4-7700'), gb7ByName).symbol, '◐');
+});
+
+test('充実度: 面積・電力がどちらも未取得なら ○(5800X を複製して power を null にした合成プリセット)', () => {
+  const s = JSON.parse(JSON.stringify(P('amd-zen3-5800x'))); s.power = { base: null, peak: null, range: null };
+  const x = PL.completeness(s, gb7ByName);
+  assert.strictEqual(x.symbol, '○'); assert.deepStrictEqual(x.missing, ['面積', '電力']);
 });
 
 test('区分ラベル: 未取得は「未取得」', () => {
@@ -49,8 +55,10 @@ test('再現度の行: 代表は注記つき ok、MT は確度低、面積は同
   assert.ok(rows[1].note.includes('確度「低」'));
   assert.strictEqual(rows[2].verdict, 'trivial');
   assert.strictEqual(rows[3].sim, null);
-  const r2 = R.reproductionRows(ev('amd-zen3-5800x'));
-  assert.strictEqual(r2[2].verdict, 'na'); assert.strictEqual(r2[3].published, null); assert.ok(r2[3].note.includes('未取得'));
+  const r2 = R.reproductionRows(ev('amd-zen3-5800x')); // 面積は未取得(電力は 2026-11-05 に取得したため、電力が未取得の例は Snapdragon 865)
+  assert.strictEqual(r2[2].verdict, 'na'); assert.ok(r2[3].published.includes('基準 105 W'));
+  const r3 = R.reproductionRows(ev('qc-865'));
+  assert.strictEqual(r3[3].published, null); assert.ok(r3[3].note.includes('未取得'));
 });
 
 test('再現度: 許容を超えるものは ng(Meteor Lake 185H はモデルの限界で外れる)', () => {

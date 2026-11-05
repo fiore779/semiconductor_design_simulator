@@ -34,26 +34,30 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     id, name, vendor: 'Apple', family: 'M シリーズ', isa: 'arm', kind: 'mobile-pc', year, gb7, dies, cfg: { cores, memory: null },
   }, extra || {}));
   m('apple-m1', 'M1', 2020, 'M1', [die('M1', 123.0, 'meas', 'tsmc-n5')],
-    [{ type: 'P', uarch: 'Firestorm', count: 4, maxGHz: 3.2 }, { type: 'E', uarch: 'Icestorm', count: 4 }]);
+    [{ type: 'P', uarch: 'Firestorm', count: 4, maxGHz: 3.2 }, { type: 'E', uarch: 'Icestorm', count: 4 }],
+    { power: { base: null, peak: pw(15, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): Cinebench R23 マルチ(CPU 全コア負荷)の平均パッケージ電力、MacBook Pro 13。MacBook Air は 13.2W。https://www.notebookcheck.net/Apple-M2-SoC-Analysis-Worse-CPU-efficiency-compared-to-the-M1.637834.0.html'), range: null } });
   m('apple-m1pro', 'M1 Pro', 2021, 'M1 Pro', [die('M1 Pro', 253.2, 'meas', 'tsmc-n5')],
     [{ type: 'P', uarch: 'Firestorm', count: 8, maxGHz: 3.228 }, { type: 'E', uarch: 'Icestorm', count: 2, maxGHz: 2.064 }],
-    { power: { base: null, peak: pw(21.5, 'meas', 'CPU のみ最大。パッケージ最大 約46W(CPU+GPU)'), range: null } });
+    { power: { base: null, peak: pw(27, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の M1 Pro / Max 分析の「8 コア版 21W・10 コア版 27W」。原ページ確認済みは本文の値のみ〔要約モデル経由〕。URL は調査担当が記録せず未記録): CPU 全コア負荷。10 コア版(8P+2E。このプリセットの構成)は 27W、8 コア版は 21W。以前の値 21.5W は出典を確認できなかった(8 コア版の値に近い)ため置き換えた。パッケージ最大 約46W(CPU+GPU)は従来の記録'), range: null } });
   m('apple-m1max', 'M1 Max', 2021, 'M1 Max', [die('M1 Max', 432, 'sec', 'tsmc-n5', '390〜432 の幅(MacPerformanceGuide)')],
     [{ type: 'P', uarch: 'Firestorm', count: 8, maxGHz: 3.228 }, { type: 'E', uarch: 'Icestorm', count: 2, maxGHz: 2.064 }],
     { power: { base: null, peak: pw(29, 'meas', 'CPU のみ最大。パッケージ最大 約86W。シングル時 CPU 約4〜5W'), range: null } });
   m('apple-m1ultra', 'M1 Ultra', 2022, 'M1 Ultra', [die('M1 Max ×2 (UltraFusion)', 864, 'sec', 'tsmc-n5', 'M1 Max の推定値 ×2')],
-    [{ type: 'P', uarch: 'Firestorm', count: 16 }, { type: 'E', uarch: 'Icestorm', count: 4 }]);
+    [{ type: 'P', uarch: 'Firestorm', count: 16 }, { type: 'E', uarch: 'Icestorm', count: 4 }],
+    { notes: '電力: チップ単体の電力は未取得(Max の 2 倍は推定になるため入れない)。参考: Mac Studio(M1 Ultra)の最大消費電力 215W は Apple の公表値だが、壁際・システム全体の値でチップの電力ではない([公表]。https://support.apple.com/en-us/102027)。power には入れない' });
   m('apple-m2', 'M2', 2022, 'M2', [die('M2', 153.2, 'meas', 'tsmc-n5')],
     [{ type: 'P', uarch: 'Avalanche', count: 4, maxGHz: 3.49 }, { type: 'E', uarch: 'Blizzard', count: 4, maxGHz: 2.42 }],
     { power: { base: null, peak: pw(20, 'meas', 'CPU 負荷時 約20W(Notebookcheck)'), range: null } });
-  m('apple-m2pro', 'M2 Pro', 2023, 'M2 Pro', [die('M2 Pro', 294.7, 'meas', 'tsmc-n5')], [{ type: 'P', count: 8 }, { type: 'E', count: 4 }]);
+  m('apple-m2pro', 'M2 Pro', 2023, 'M2 Pro', [die('M2 Pro', 294.7, 'meas', 'tsmc-n5')], [{ type: 'P', count: 8 }, { type: 'E', count: 4 }],
+    { power: { base: null, peak: pw(34, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): マルチ負荷での最大 CPU 電力、12 コア版(8P+4E。このプリセットの構成)。別記事では約 36W、10 コア版は 27〜28W。https://www.notebookcheck.net/Apple-M2-Pro-and-M2-Max-analysis-GPU-is-more-efficient-the-CPU-not-always.699140.0.html'), range: null } });
   m('apple-m2max', 'M2 Max', 2023, 'M2 Max', [die('M2 Max', 485.6, 'sec', 'tsmc-n5', 'NamuWiki のみ')],
     [{ type: 'P', count: 8, maxGHz: 3.7 }, { type: 'E', count: 4 }],
     { power: { base: null, peak: pw(36, 'meas', 'CPU のみ最大(powermetrics)。CPU+GPU のチップ約89W'), range: null } });
-  m('apple-m2ultra', 'M2 Ultra', 2023, 'M2 Ultra', [die('M2 Max ×2', 971.2, 'sec', 'tsmc-n5', '推定 ×2')], [{ type: 'P', count: 16 }, { type: 'E', count: 8 }]);
+  m('apple-m2ultra', 'M2 Ultra', 2023, 'M2 Ultra', [die('M2 Max ×2', 971.2, 'sec', 'tsmc-n5', '推定 ×2')], [{ type: 'P', count: 16 }, { type: 'E', count: 8 }],
+    { notes: '電力: チップ単体の電力は未取得(Max の 2 倍は推定になるため入れない)。参考: Mac Studio(M2 Ultra)の最大消費電力 295W は Apple の公表値だが、壁際・システム全体の値でチップの電力ではない([公表]。https://support.apple.com/en-us/102027)。power には入れない' });
   m('apple-m3', 'M3', 2023, 'M3', [die('M3', 152.5, 'meas', 'tsmc-n3b')],
     [{ type: 'P', uarch: 'Everest 2nd gen', count: 4, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
-    { power: { base: null, peak: null, range: null, single: pw(5.5, 'meas', 'シングル時 CPU(powermetrics。チップ特定が曖昧)') },
+    { power: { base: null, peak: pw(21, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): 全コア負荷の CPU 20〜21W。https://www.notebookcheck.com/Apple-M3-SoC-in-der-Analyse-Hoehere-Leistung-und-verbesserte-Effizienz.766392.0.html'), range: null, single: pw(5.5, 'meas', 'シングル時 CPU(powermetrics。チップ特定が曖昧)') },
       errCause: { st: 'P コアは Everest 2nd gen(9 幅・ROB 321。Geekerwan・jia.je の図〔二次〕)で、ST 補正 u は A16 の Everest(8 幅・ROB 274)から借用している(9 幅用の代表は無い)。基本 CPI が幅で決まり、幅 8→9 で ST が約 +12% 動くが、実機の A16→A17 Pro の IPC の伸びは数%(Apple の主張は P コア +10%、クロック込み)で、モデルの形による過大とみられる(調査メモの試算 +11.8%)。M3 の P が A17 Pro と同じコアという根拠は Geekerwan の図〔二次〕。設計書 §5.3.3 O' } });
   // M3 Pro・M3 Max(2026-11-01 にコア数とクロックを追記。docs/research/m3-pro-max.md)。uarch は M3 無印と同じく書かない(M3 系 P/E コアの幅・ROB・遅延が未取得で、A16 の Everest/Sawtooth を借りる根拠が無いため)。ST/MT は「uarch 未指定」で計算不能のまま
   m('apple-m3pro', 'M3 Pro', 2023, 'M3 Pro', [die('M3 Pro', 219.2, 'meas', 'tsmc-n3b')],
@@ -62,18 +66,20 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
       notes: '12 コア版(6P+6E)。11 コア版(5P+6E)もあり、12 コア版とした判断は [推定](GB7 の注記「12c」・フロアプランの枠 P6/E6・電力 27W の注記から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia「Apple silicon」・Notebookcheck。Apple は非公表)。GPU 18 コア(11 コア版は 14)・メモリ帯域 150GB/s・トランジスタ 370 億は [公表]。L2 は P 16MB(6 コア共有)/ E 4MB、SLC 12MB(Wikipedia・Notebookcheck。LowEndMac は P 32MB・SLC 24MB で食い違うが、出典が Wikipedia で読み違えとみられるため採らない)。uarch(幅・ROB・遅延)は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
   m('apple-m3max', 'M3 Max', 2023, 'M3 Max', [die('M3 Max', 477.1, 'sec', 'tsmc-n3b', 'NamuWiki のみ。2 つ目の出典は未取得(検索要約では 477 が多数だが 503・600〜700 mm² の記述もあり、原典は未確認)')],
     [{ type: 'P', uarch: 'Everest 2nd gen', count: 12, maxGHz: 4.05 }, { type: 'E', count: 4, maxGHz: 2.75 }],
-    { power: { base: null, peak: pw(56, 'meas', 'CPU マルチ最大。チップ全体約78W'), range: null },
+    { power: { base: null, peak: pw(56, 'meas', 'CPU マルチ最大。なお「約78W」は Notebookcheck の Cinebench マルチ時・外部モニター接続の「システム全体」の値で、チップの値ではない(2026-11-05 に訂正。以前はチップ全体と書いていた)'), range: null },
       notes: '16 コア版(12P+4E)。14 コア版(10P+4E)もあり、16 コア版とした判断は [推定](GB7 の注記「16c」・フロアプランの枠 P12/E4・電力 56W が 16 コア版の値から)。コア数は [公表](Apple support.apple.com/117736、Newsroom)、最大クロック 4.05 / 2.75GHz は [二次](Wikipedia・Notebookcheck。Apple は非公表)。GPU 40 コア(14 コア版は 30)・メモリ帯域 400GB/s(14 コア版は 300)・トランジスタ 920 億は [公表]。L2 は P 32MB(16MB × 2 クラスタは [推定])/ E 4MB、SLC 48MB([二次] Wikipedia。LowEndMac の出典も Wikipedia で独立した出典ではない)。ダイ面積 477.1mm² は NamuWiki のみで 2 つ目の出典が無い。uarch は未取得のため書かない。docs/research/m3-pro-max.md 参照' });
   m('apple-m4', 'M4', 2024, 'M4', [die('M4', 169.4, 'meas', 'tsmc-n3e')],
-    [{ type: 'P', count: 4, maxGHz: 4.4 }, { type: 'E', count: 6, maxGHz: 2.85 }]);
+    [{ type: 'P', count: 4, maxGHz: 4.4 }, { type: 'E', count: 6, maxGHz: 2.85 }],
+    { power: { base: null, peak: pw(24, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): MacBook Pro 14 のマルチ負荷での最大 CPU 電力。Mac mini は 21.5W。https://www.notebookcheck.net/Apple-MacBook-Pro-14-M4-review-The-M4-base-model-with-important-improvements.923443.0.html'), range: null } });
   m('apple-m4pro', 'M4 Pro', 2024, 'M4 Pro', [die('M4 Pro', 325, 'sec', 'tsmc-n3e', '約320〜330(TechInsights が解析済みだが面積は未確認)')],
     [{ type: 'P', count: 10, maxGHz: 4.51 }, { type: 'E', count: 4, maxGHz: 2.59 }],
     { power: { base: null, peak: pw(46, 'meas', 'マルチ最大(その後約40W)。シングル時 約6〜6.5W'), range: null },
       notes: '最大クロック P 4.51 / E 2.59GHz は [実測](Eclectic Light の powermetrics。P 4511MHz を観測、E の周波数段上限 2592MHz)で、Wikipedia・Notebookcheck([二次]、4512 / 2592MHz)と一致。docs/research/apple-pe-cores.md §3.2' });
   m('apple-m5', 'M5', 2025, 'M5', [die('M5', 157.5, 'sec', 'tsmc-n3p', 'NamuWiki のみ')], [{ type: 'super', count: 4 }, { type: 'E', count: 6, maxGHz: 3.0 }],
-    { notes: 'E コア 3.0GHz は [二次](Wikipedia 3.0 / Notebookcheck 3048MHz)。super コアの最大クロックは未確定のため null: Wikipedia は 4.4(3S 版)/ 4.46(4S 版)、Notebookcheck の仕様表は 4608MHz(本文は up to 4.4GHz。M5 Pro/Max の S と同値で流用の可能性 [推定])と資料が食い違う。docs/research/apple-pe-cores.md §3.2・§5-2' });
+    { power: { base: null, peak: pw(30.5, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): CPU だけの負荷での短時間の値。持続は 27.5W。https://www.notebookcheck.net/Analysis-of-the-Apple-M5-SoC-Apple-silicon-extends-its-lead-over-AMD-Intel-and-Qualcomm.1144213.0.html'), range: null },
+      notes: 'E コア 3.0GHz は [二次](Wikipedia 3.0 / Notebookcheck 3048MHz)。super コアの最大クロックは未確定のため null: Wikipedia は 4.4(3S 版)/ 4.46(4S 版)、Notebookcheck の仕様表は 4608MHz(本文は up to 4.4GHz。M5 Pro/Max の S と同値で流用の可能性 [推定])と資料が食い違う。docs/research/apple-pe-cores.md §3.2・§5-2' });
   m('apple-m5max', 'M5 Max', 2026, 'M5 Max', [], [{ type: 'super', count: 6, maxGHz: 4.6 }, { type: 'performance', count: 12, maxGHz: 4.4 }],
-    { power: { base: null, peak: null, range: null }, notes: '最大クロック super 4.6 / performance 4.4GHz は [二次](Notebookcheck の仕様ページ。Wikipedia 本文は S 約 4.61。Apple は非公表)。docs/research/apple-pe-cores.md §3.2。電力: 14インチは CPU 50W を維持できず、CPU+GPU のストレスで 96W(1〜2秒)→46W→42W([実測] Notebookcheck)。単一のピーク値としては採用しない' });
+    { power: { base: null, peak: pw(75, 'meas', 'Notebookcheck の測定(調査担当の報告 2026-11-05。Notebookcheck の原ページ確認済み。WebFetch で要約モデルを通して読んだため、文言は短い引用の範囲でのみ確認): 16 インチ MacBook Pro の CPU だけの負荷での最大。High Power と Auto のどちらでも最大は 75W で、持続は High Power モードで 70W、Auto モードで 54W に低下。peak の意味は CPU の最大・短時間値(M1 の 15W は Cinebench R23 の平均パッケージ電力で意味が違う)。14 インチは 50W を維持できない。https://www.notebookcheck.net/Apple-s-fastest-laptop-starts-to-show-its-age-Apple-MacBook-Pro-16-2026-M5-Max-Review.1250821.0.html'), range: null }, notes: '最大クロック super 4.6 / performance 4.4GHz は [二次](Notebookcheck の仕様ページ。Wikipedia 本文は S 約 4.61。Apple は非公表)。docs/research/apple-pe-cores.md §3.2。電力: peak 75W は 16 インチの CPU だけの負荷の最大値(2026-11-05 に追加)。14インチは CPU 50W を維持できず、CPU+GPU のストレスで 96W(1〜2秒)→46W→42W([実測] Notebookcheck)で、この値は peak に使っていない' });
 
   // ---- Qualcomm Snapdragon(コア: プライム+中間+小) ----
   const q = (id, name, year, gb7, mm2, nodeId, cores, extra) => add(Object.assign({
@@ -87,16 +93,16 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   q('qc-888', '888', 2020, '888', 112.2, 'samsung-5', [c('P', 'Cortex-X1', 1, 2.84), c('M', 'Cortex-A78', 3, 2.42), c('E', 'Cortex-A55', 4, 1.8)],
     { power: { base: pw(5, 'sec', 'Notebookcheck の推定'), peak: pw(8.9, 'sec', 'Geekerwan 実測ピーク(報道の引用)'), range: null } });
   q('qc-8gen1', '8 Gen 1', 2021, '8 Gen 1', 128.3, 'samsung-4', [c('P', 'Cortex-X2', 1, 3.0), c('M', 'Cortex-A710', 3, 2.5), c('E', 'Cortex-A510', 4, 1.8)],
-    { power: { base: null, peak: pw(11.1, 'sec', '全コアピーク(Geekerwan の引用)。シングル 4.2W'), range: null } });
+    { power: { base: null, peak: pw(11.1, 'sec', '全コアピーク(Geekerwan の引用)。シングル 4.2W。Geekbench 5 時代(2021 年)の値で、報道では 11.2W とも伝えられ食い違う'), range: null } });
   q('qc-8plus-gen1', '8+ Gen 1', 2022, '8+ Gen 1', 102.8, 'tsmc-n4', [c('P', 'Cortex-X2', 1, 3.2), c('M', 'Cortex-A710', 3, 2.75), c('E', 'Cortex-A510', 4, 2.0)]);
   q('qc-8gen2', '8 Gen 2', 2022, '8 Gen 2', 120.9, 'tsmc-n4', [c('P', 'Cortex-X3', 1, 3.19), c('M', 'Cortex-A715/A710', 4, 2.8), c('E', 'Cortex-A510', 3, 2.0)],
-    { power: { base: null, peak: null, range: null, bigCore: pw(4.9, 'sec', 'ビッグコア単体ピーク(SPECint)') } });
+    { power: { base: null, peak: null, range: null, bigCore: pw(4.9, 'sec', 'ビッグコア単体ピーク(SPECint)。「8 Gen 2 for Galaxy」(オーバークロック版)のピークの値で、無印の 8 Gen 2 の値ではない(Wccftech、Golden Reviewer、SPECint06 Big Core。2026-11-05 に訂正)') } });
   q('qc-8gen3', '8 Gen 3', 2023, '8 Gen 3', 137.3, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 3.3), c('M', 'Cortex-A720', 3, 3.15), c('M2', 'Cortex-A720', 2, 2.96), c('E', 'Cortex-A520', 2, 2.27)],
     { power: { base: null, peak: null, range: null, bigCore: pw(6.27, 'sec', 'ビッグコア単体ピーク(SPECint)') } });
   q('qc-8elite', '8 Elite', 2024, '8 Elite', 124.1, 'tsmc-n3e', [c('P', 'Oryon Prime', 2, 4.32), c('E', 'Oryon Performance', 6, 3.53)],
     { power: { base: null, peak: pw(16.5, 'sec', 'GB6 マルチ(Geekerwan の引用)。後続記事は約17W'), range: null, single: pw(6.9, 'sec', 'シングル(Notebookcheck が導出)') } });
   q('qc-8elite-gen5', '8 Elite Gen 5', 2025, '8 Elite Gen 5', 126.2, 'tsmc-n3p', [c('P', 'Oryon Prime', 2, 4.61), c('E', 'Oryon Performance', 6, 3.63)],
-    { power: { base: null, peak: pw(19.5, 'sec', 'GB6 マルチ 12,546 点時(評価機の値)'), range: null } });
+    { power: { base: null, peak: pw(19.5, 'sec', 'GB6 マルチ 12,546 点時(評価機の値)。エンジニアリングサンプル(ES)のボード電力で、市販機の SoC 単体の値ではない(2026-11-05 に明記)'), range: null } });
   q('qc-8s-gen3', '8s Gen 3', 2024, '8s Gen 3', 89.5, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 3.0), c('M', 'Cortex-A720', 4, 2.8), c('E', 'Cortex-A520', 3, 2.0)]);
   q('qc-8s-gen4', '8s Gen 4', 2025, '8s Gen 4', 105.6, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 3.21), c('M', 'Cortex-A720', 3, 3.0), c('M2', 'Cortex-A720', 2, 2.8), c('E', 'Cortex-A720', 2, 2.02)]);
   q('qc-7plus-gen3', '7+ Gen 3', 2024, '7+ Gen 3', 89.5, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 2.8), c('M', 'Cortex-A720', 4, 2.6), c('E', 'Cortex-A520', 3, 1.9)]);
@@ -109,15 +115,16 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     dies: mm2 ? [die('Dimensity ' + name, mm2, 'meas', nodeId)] : [], cfg: { cores, memory: null },
   }, extra || {}));
   d('mt-9000', '9000', 2021, '9000', 112.8, 'tsmc-n4', [c('P', 'Cortex-X2', 1, 3.05), c('M', 'Cortex-A710', 3, 2.85), c('E', 'Cortex-A510', 4, 1.8)],
-    { power: { base: null, peak: pw(9.8, 'sec', '全コアピーク(エンジニアリングサンプル。報道の引用)。シングル 3.5W'), range: null } });
+    { power: { base: null, peak: pw(9.8, 'sec', '全コアピーク(エンジニアリングサンプル。報道の引用)。シングル 3.5W。Geekbench 5 時代(2021 年)の値'), range: null } });
   d('mt-9200', '9200', 2022, '9200', 123.2, 'tsmc-n4', [c('P', 'Cortex-X3', 1, 3.05), c('M', 'Cortex-A715', 3, 2.85), c('E', 'Cortex-A510', 4, 1.8)],
     { power: { base: null, peak: pw(14, 'sec', 'GSMArena コメント欄の引用。信頼度低'), range: null } });
   d('mt-9300', '9300', 2023, '9300', 140.4, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 3.25), c('M', 'Cortex-X4', 3, 2.85), c('E', 'Cortex-A720', 4, 2.0)]);
   d('mt-9400', '9400', 2024, '9400', 126.3, 'tsmc-n3e', [c('P', 'Cortex-X925', 1, 3.63), c('M', 'Cortex-X4', 3, 3.3), c('E', 'Cortex-A720', 4, 2.4)],
     { power: { base: null, peak: pw(18, 'sec', 'GB6 マルチ 18W 超(Geekerwan の引用)。プライムコア 7.1W(SPECint)'), range: null } });
   d('mt-9500', '9500', 2025, 'Dimensity 9500(MT6993)', 140.6, 'tsmc-n3p', [c('P', 'C1-Ultra', 1, 4.21), c('M', 'C1-Premium', 3, 3.5), c('E', 'C1-Pro', 4, 2.7)],
-    { power: { base: null, peak: pw(18, 'sec', 'GB6 マルチ(GSMArena/Wccftech 経由)'), range: null }, notes: 'GB7 の値は Samsung のタブレット投稿が多く低すぎる疑い(要再確認)' });
-  d('mt-9600pro', '9600 Pro', 2026, 'Dimensity 9600 Pro(MT6995)', 134.0, 'tsmc-n2', [c('P', 'C2-Ultra', 2, 4.55), c('M', 'C2-Pro', 3, 4.35), c('E', 'C2-Pro', 3, 3.1)]);
+    { power: { base: null, peak: pw(18, 'sec', 'GB6 マルチ(GSMArena/Wccftech 経由)。エンジニアリングサンプル(ES)で GB6 マルチ 10,716 点のときの値(2026-11-05 に明記)'), range: null }, notes: 'GB7 の値は Samsung のタブレット投稿が多く低すぎる疑い(要再確認)' });
+  d('mt-9600pro', '9600 Pro', 2026, 'Dimensity 9600 Pro(MT6995)', 134.0, 'tsmc-n2', [c('P', 'C2-Ultra', 2, 4.55), c('M', 'C2-Pro', 3, 4.35), c('E', 'C2-Pro', 3, 3.1)],
+    { notes: '電力は未取得(値としては入れない)。参考値として記録のみ(不採用): IT之家(原ページ確認済み 2026-11-05。https://www.ithome.com/1/014/806.htm)に Geekbench 6 マルチ 12,765 点のとき 22.7W(Geekbench 7 マルチでは約 23.5W)とあるが、エンジニアリングサンプル(ES)の工程機で、端末全体か SoC かは不明、測定者も不明、MediaTek の「マルチのピーク電力 61% 減」の主張とも整合しない。8 Gen 2 や A16 / A18 Pro を不採用にした基準と揃えて power には入れない。docs/research/power-data-2026-11-05.md §3' });
   d('mt-8200', '8200', 2022, 'Dimensity 8200(MT6896)', 84.9, 'tsmc-n4', [c('P', 'Cortex-A78', 1, 3.1), c('M', 'Cortex-A78', 3, 3.0), c('E', 'Cortex-A55', 4, 2.0)]);
 
   // ---- NVIDIA ----
@@ -125,21 +132,21 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     id: 'nv-orin-agx', name: 'Orin (Jetson AGX Orin)', vendor: 'NVIDIA', family: 'Jetson', isa: 'arm', kind: 'embedded', year: 2022,
     gb7: 'Orin(AGX Orin、12コア)',
     dies: [die('Orin', 447.8, 'meas', 'samsung-8')],
-    power: { base: null, peak: null, range: { minW: 15, maxW: 60 }, modes: pw(null, 'pub', '15W / 30W(既定) / 50W / MAXN(64GB 版)') },
+    power: { base: null, peak: null, range: { minW: 15, maxW: 60 }, modes: pw(null, 'pub', '15W / 30W(既定) / 50W / MAXN(64GB 版)。既定が 30W(mode ID 2)であることは NVIDIA の公式ドキュメントで裏付け済み(2026-11-05)') },
     cfg: { cores: [c('P', 'Cortex-A78AE', 12, 2.2)], l3MB: null, memory: 'LPDDR5, 256bit, 204.8GB/s' },
   });
   add({
     id: 'nv-thor', name: 'Thor (Jetson AGX Thor)', vendor: 'NVIDIA', family: 'Jetson', isa: 'arm', kind: 'embedded', year: 2025,
     gb7: 'Thor(Jetson AGX Thor、14コア)',
     dies: [die('Thor', 402.2, 'meas', 'tsmc-n4')],
-    power: { base: null, peak: null, range: { minW: 40, maxW: 130 } },
+    power: { base: null, peak: null, range: { minW: 40, maxW: 130 }, modes: pw(null, 'pub', 'モード: MAXN / 120W(既定。T5000)/ 90W / 70W。モジュールの TDP 予算は 130W。40W は製品ページに書かれた下限。原ページ確認済み(2026-11-05): https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/ 、https://docs.nvidia.com/jetson/archives/r38.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonThor.html') },
     cfg: { cores: [c('P', 'Neoverse V3AE', 14, 2.6)], l3MB: 16, memory: 'LPDDR5X, 256bit, 273GB/s' },
   });
   add({
     id: 'nv-t239', name: 'Switch 2 の T239', vendor: 'NVIDIA', family: 'Tegra', isa: 'arm', kind: 'embedded', year: 2025,
     gb7: null,
     dies: [die('T239', 207, 'meas', 'samsung-8', 'ダイ写真計測(Tom\'s Hardware)')],
-    power: { base: pw(19, 'pub', 'TV モードのゲーム時(本体)。ホーム画面 8W'), peak: null, range: null },
+    power: { base: pw(19, 'pub', 'Nintendo 公式の Switch 2 本体全体・TV モード・マリオカート ワールドでの平均消費電力(Full HD / 4K の平均)。SoC 単体の値ではない(2026-11-05 に訂正)。ホーム画面 8W。Tom\'s Hardware のワットメーター実測(ドック時 18〜19W)とも一致(検索要約のみ)'), peak: null, range: null },
     cfg: { cores: [c('P', 'Cortex-A78C', 8, 1.1)], l3MB: 4, memory: 'LPDDR5X, 128bit' },
   });
   // GB10(DGX Spark)。2026-11-03 追加。調査: docs/research/nvidia-gb10.md。addedIn:'M5b'(calib は false)。GB7 は未取得(gb7: null)のため、validate-data.js の C1_EXCEPTIONS(id 指定。C1 だけを外し、C2〜C5 は検査する)に載せている(設計書 §13 M5b-4)

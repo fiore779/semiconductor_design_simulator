@@ -54,12 +54,15 @@ test('電力: モデル値は出さず公表値だけ', () => {
   assert.strictEqual(r.power.reason, null);
 });
 
-test('未取得のプリセット(5800X): 面積・電力は null と理由', () => {
+test('未取得のプリセット: 面積は 5800X、電力は Snapdragon 865 で null と理由(5800X は 2026-11-05 に TDP 105W・PPT 142W を入れた)', () => {
   const r = ev('amd-zen3-5800x');
   assert.strictEqual(r.area.totalMm2, null); assert.ok(r.area.reason);
   assert.strictEqual(r.area.yield, null);
-  assert.deepStrictEqual(r.power.published, { base: null, peak: null, range: null });
-  assert.ok(r.power.reason.includes('未取得'));
+  assert.deepStrictEqual([r.power.published.base.w, r.power.published.peak.w, r.power.published.range], [105, 142, null]);
+  assert.strictEqual(r.power.reason, null);
+  const n = ev('qc-865');
+  assert.deepStrictEqual(n.power.published, { base: null, peak: null, range: null });
+  assert.ok(n.power.reason.includes('未取得'));
 });
 
 test('ブロックを動かしても数値は変わらない(M2)', () => {

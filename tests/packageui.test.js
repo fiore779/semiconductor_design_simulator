@@ -166,7 +166,8 @@ test('L1: 過大寄り注記は A 再現(未編集)で推定が公表ピーク�
   const pm = (id) => E.evaluate(DS.fromPreset(pre(id)), ctx).powerModel;
   const n = PK.overEstimateNote(pm('intel-adl-12900k'), false);
   assert.ok(/^電力の推定が実測のピークより \+\d+% 大きいため、温度・持続クロックの低下は過大寄りです$/.test(n), n);
-  assert.strictEqual(PK.overEstimateNote(pm('amd-zen5-9700x'), false), ''); // ピークなし
+  assert.strictEqual(PK.overEstimateNote(pm('amd-zen1-1800x'), false), ''); // ピークなし(9700X は 2026-11-05 に PPT 88W を入れたため 1800X に変更)
+  assert.ok(/^電力の推定がピーク\(二次情報\)より \+\d+% 大きいため/.test(PK.overEstimateNote(pm('amd-zen5-9700x'), false))); // 9700X はピークあり(二次)で推定が 15% 超大きい
   assert.strictEqual(PK.overEstimateNote(pm('intel-adl-12900k'), true), ''); // 編集後
   const d = DS.fromPreset(pre('intel-adl-12900k'), { mode: 'improve' }); const g = d.cfg.cores[0];
   const edited = E.evaluate(DS.setClock(d, g.type, (g.boostGHz || g.maxGHz) * 1.05).design, ctx).powerModel;

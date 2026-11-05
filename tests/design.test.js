@@ -246,14 +246,16 @@ test('電力制限の初期値: ピーク→基本→null、変更で user、空
   const pre = (id) => D.presets.find((p) => p.id === id);
   const pk = (id) => design.fromPreset(pre(id)).package;
   assert.deepStrictEqual([pk('intel-adl-12900k').powerLimitW, pk('intel-adl-12900k').powerLimitSource], [258.6, 'peak']);
-  assert.deepStrictEqual([pk('amd-zen5-9700x').powerLimitW, pk('amd-zen5-9700x').powerLimitSource], [65, 'base']);
-  assert.deepStrictEqual([pk('amd-zen3-5800x').powerLimitW, pk('amd-zen3-5800x').powerLimitSource], [null, null]);
+  // 2026-11-05: 9700X に PPT 88W のピークを入れたため「ピーク優先」の例になった。基本のみの例は 1800X(95W、ピークなし)、どちらも無い例は Snapdragon 865(5800X は TDP 105W・PPT 142W を入れたため)
+  assert.deepStrictEqual([pk('amd-zen5-9700x').powerLimitW, pk('amd-zen5-9700x').powerLimitSource], [88, 'peak']);
+  assert.deepStrictEqual([pk('amd-zen1-1800x').powerLimitW, pk('amd-zen1-1800x').powerLimitSource], [95, 'base']);
+  assert.deepStrictEqual([pk('qc-865').powerLimitW, pk('qc-865').powerLimitSource], [null, null]);
   const d = design.fromPreset(pre('intel-adl-12900k'));
   const a = design.setPowerLimit(d, 100).design.package; assert.deepStrictEqual([a.powerLimitW, a.powerLimitSource], [100, 'user']);
   const b = design.setPowerLimit(d, null).design.package; assert.deepStrictEqual([b.powerLimitW, b.powerLimitSource], [null, null]);
   // package が無い古い設計も同じ規則で補う。冷却の変更は電力制限を変えない
-  const old = design.fromPreset(pre('amd-zen5-9700x')); delete old.package;
-  assert.strictEqual(design.ensurePackage(old, pre('amd-zen5-9700x')).package.powerLimitSource, 'base');
+  const old = design.fromPreset(pre('amd-zen1-1800x')); delete old.package;
+  assert.strictEqual(design.ensurePackage(old, pre('amd-zen1-1800x')).package.powerLimitSource, 'base');
   assert.strictEqual(design.setCooling(d, 'aio-360').design.package.powerLimitSource, 'peak');
   // 旧フィールド substrate / cooling は書かない
   assert.ok(!('substrate' in d) && !('cooling' in d));

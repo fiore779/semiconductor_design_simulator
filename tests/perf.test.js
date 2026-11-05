@@ -210,8 +210,9 @@ test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(
   assert.ok(rb.ok && rb.detail.every((d) => d.clockSource === 'base' && d.clockFactor === 1)); assert.strictEqual(rb.clockFactor, 1);
   assert.ok(Math.abs(a.score / b.score - 1) < 1e-12);
   assert.ok(a.detail.every((d) => d.clockFactor === 0.81));
-  // mobile-pc は電力が未取得なら 0.81(7840HS)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.69)、pc は 1.0
-  assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.81);
+  // mobile-pc は電力が未取得なら 0.81(8cx Gen 3。7840HS は 2026-11-05 に電力を取得して帯 0.69 になった)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.69)、pc は 1.0
+  assert.strictEqual(F.mtScore(preset('qc-8cx-gen3'), c, D.uarch, null).clockFactor, 0.81);
+  assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.69);
   assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.69);
   const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
   const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
@@ -283,10 +284,11 @@ test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォ�
   const ph = F.mtClockInfo(mk('mobile', both)); assert.deepStrictEqual([ph.factor, ph.band, ph.fallback], [0.81, null, false]);
   ['pc', 'server', 'embedded', undefined].forEach((k) => assert.strictEqual(F.mtClockInfo(mk(k, both)).factor, 1));
   assert.strictEqual(F.mtClockInfo(null).factor, 1);
-  // 実データ: 5800U(10〜25W)→0.69、HX370(54W)→0.69、PTL(80W)→0.76、7840HS(未取得)→0.81・fallback
+  // 実データ: 5800U(10〜25W)→0.69、HX370(54W)→0.69、PTL(80W)→0.76、7840HS(54W。2026-11-05 に取得)→0.69、8cx Gen 3(未取得)→0.81・fallback
   assert.strictEqual(F.mtClockInfo(preset('amd-zen3-5800u')).factor, 0.69);
   assert.strictEqual(F.mtClockInfo(preset('intel-ptl-x9-386h')).factor, 0.76);
-  assert.strictEqual(F.mtClockInfo(preset('amd-zen4-7840hs')).fallback, true);
+  assert.strictEqual(F.mtClockInfo(preset('amd-zen4-7840hs')).factor, 0.69);
+  assert.strictEqual(F.mtClockInfo(preset('qc-8cx-gen3')).fallback, true);
 });
 
 test('mtScore: 帯の係数は mtScore の結果(clockFactor・clockInfo)に出る。編集後の cfg でも元の公表電力で決まる(power は preset から引き継ぐ)', () => {
@@ -312,7 +314,8 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
   D.presets.forEach((p) => {
     const g = gb7ByName[p.gb7]; const w = F.mtPublishedW(p);
     // Core 5 320(intel-wcl-c5-320)は標本に含める(ユーザー指示 2026-11-05「再校正してください」。帯 0 を 0.65 → 0.69 に再校正した)
-    if (p.id === 'amd-kraken-350' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
+    // 7840HS(amd-zen4-7840hs)も標本から除く(2026-11-05 に電力 TDP 35W・cTDP 35〜54W を取得して帯 0 に入ったが、ユーザー指示「閾値は当て込みで動かさない」により帯の係数は再校正していない。含めると帯 0 は 7 件で中央値 0.7222〔0.72〕、LOO MAE 0.1110、10% 超 6 件になる)
+    if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, band: F.MT_CLOCK_BANDS.findIndex((b) => w.w <= b.maxW) });
   });

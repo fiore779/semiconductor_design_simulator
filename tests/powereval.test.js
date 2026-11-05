@@ -9,10 +9,11 @@ const pre = (id) => D.presets.find((p) => p.id === id);
 const mk = (id, mode) => design.fromPreset(pre(id), { mode });
 const ev = (d) => E.evaluate(d, ctx);
 
-test('base 未取得(5800X): powerModel.ok:false、thermal も ok:false', () => {
+test('校正できない(5800X): powerModel.ok:false、thermal も ok:false(2026-11-05 に base 105W を入れたため、理由は baseGHz 未取得に変わった。base 未取得は Snapdragon 865 で確認)', () => {
   const r = ev(mk('amd-zen3-5800x'));
   assert.strictEqual(r.powerModel.ok, false);
-  assert.ok(r.powerModel.reason);
+  assert.ok(/baseGHz が未取得/.test(r.powerModel.reason));
+  assert.ok(/power\.base/.test(ev(mk('qc-865')).powerModel.reason));
   assert.strictEqual(r.powerModel.confidence, 'low');
   assert.strictEqual(r.thermal.ok, false);
   assert.strictEqual(r.thermal.tentative, true);
