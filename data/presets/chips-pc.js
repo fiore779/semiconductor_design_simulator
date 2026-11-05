@@ -36,7 +36,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '13900K と同じダイとして流用(14900K 個別の実測は未取得)')],
     power: { base: pw(125, 'pub', 'プロセッサー・ベース・パワー(PBP)。Intel ARK の原ページを確認済み(2026-11-05): https://www.intel.com/content/www/us/en/products/sku/236773/intel-core-i9-processor-14900k-36m-cache-up-to-6-00-ghz/specifications.html。以前は区分 sec だったが、ARK で同じ値を確認したため pub に更新'), peak: pw(253, 'pub', '最大ターボ・パワー(Maximum Turbo Power)。Intel ARK の原ページを確認済み(2026-11-05): https://www.intel.com/content/www/us/en/products/sku/236773/intel-core-i9-processor-14900k-36m-cache-up-to-6-00-ghz/specifications.html'), range: null },
     // memory の「2 チャネル」は意図的: 電力モデル(js/sim/power.js の memChannels)が「数字+ch」の表記でチャネル数を読むため、2ch と書くと電力・温度が変わる。メモリ選択機能の追加では電力を変えない方針(設計書 §5.2.4)。電力の注記「メモリチャネル数が未取得」は追加前から出ており、そのまま
-    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: null, boostGHz: 5.6 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: null, boostGHz: 4.4 }], l3MB: 36, memory: 'DDR5-5600 / DDR4-3200(Intel ARK [公表]。2 チャネル)' },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: 3.2, boostGHz: 5.6 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: 2.4, boostGHz: 4.4 }], l3MB: 36, memory: 'DDR5-5600 / DDR4-3200(Intel ARK [公表]。2 チャネル)' },
+    notes: 'コアクロック(2026-11-05 に Chrome で Intel ARK の原ページを確認、[公表]): P コア ベース 3.2GHz・最大ターボ 5.6GHz、E コア ベース 2.4GHz・最大ターボ 4.4GHz(Performance-core / Efficient-core の Base・Max Turbo)。URL: https://www.intel.com/content/www/us/en/products/sku/236773/intel-core-i9-processor-14900k-36m-cache-up-to-6-00-ghz/specifications.html 。P・E のベースを 2026-11-05 に追加(旧: 未取得)。Turbo Boost Max 3.0 の 5.8GHz と Thermal Velocity Boost の 6.0GHz は cfg に入れない',
     calib: false,
   });
   P.push({
@@ -53,7 +54,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     gb7: 'Arrow Lake-S: Core Ultra 7 265K(3.9GHz, 20c)',
     dies: [die('Compute タイル', 117.4, 'sec', 'tsmc-n3b', '285K と同じ Compute タイルを流用(E コア4個無効の SKU)'), die('GPU タイル', 23.1, 'sec', 'tsmc-n5'), die('SoC タイル', 86.6, 'sec', 'tsmc-n6'), die('IO タイル', 24.7, 'sec', 'tsmc-n6')],
     power: { base: pw(125, 'sec', 'PBP'), peak: pw(250, 'sec', 'MTP'), range: null },
-    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 3.9, boostGHz: 5.5 }, { type: 'E', uarch: 'Skymont', count: 12, smt: 1, baseGHz: 3.3, boostGHz: null }], l3MB: 30, l2MB: 36, memory: 'DDR5-6400, 2ch' },
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 8, smt: 1, baseGHz: 3.9, boostGHz: 5.5 }, { type: 'E', uarch: 'Skymont', count: 12, smt: 1, baseGHz: 3.3, boostGHz: 4.6 }], l3MB: 30, l2MB: 36, memory: 'DDR5-6400, 2ch' },
+    notes: 'E コアの最大ターボ 4.6GHz を 2026-11-05 に追加(旧: 未取得)。Chrome で Intel ARK の原ページを確認、[公表]: Efficient-core Max Turbo 4.6GHz・Efficient-core Base 3.3GHz(既存と一致)・Performance-core Base 3.9GHz(既存と一致)。URL: https://www.intel.com/content/www/us/en/products/sku/241063/intel-core-ultra-7-processor-265k-30m-cache-up-to-5-50-ghz/specifications.html 。P コアの boost 5.5GHz は ARK の Max Turbo / Turbo Boost Max 3.0 の値で、ARK の Performance-core Max Turbo は 5.4GHz(2026-11-05 時点で未反映。影響は設計書に記載)',
     calib: true, calibNote: '全コア同種の P/E 構成で単純。TDP・クロック公表。GB7 チャート値あり(§5.3.1 の例)',
   });
   P.push({
