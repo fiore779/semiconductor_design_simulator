@@ -4,7 +4,7 @@
 // 電力・最大クロック・MT への寄与の単独値は出さない(未実装と画面に明記)。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const CF = root.SDS.ui.coreform;
   const MF = root.SDS.ui.mixform;
   const WN = root.SDS.ui.warnings;
@@ -109,8 +109,7 @@
       out.push(h('h4', { text: `確度・注意(${ev.warnings.length} 件)` }));
       out.push(ev.warnings.length ? ul : h('p', { class: 'small', text: '個別の警告はありません(確度は常に低です)。' }));
       ev.notes.forEach((t) => out.push(h('p', { class: 'low-banner', role: 'note' }, `⚠ ${t}`)));
-      out.push(h('p', { class: 'small', text: L3_NOTE }));
-      out.push(h('p', { class: 'small warn-note', text: NOT_OUTPUT }));
+      out.push(more('補足', { key: 'ce:more' }, h('p', { class: 'small', text: L3_NOTE }), h('p', { class: 'small warn-note', text: NOT_OUTPUT })));
       return out;
     }
     function refresh() {
@@ -168,7 +167,7 @@
 
     refresh();
     DG.open('コアエディタ(自作コア・確度:低)', h('div', { class: 'coreeditor' },
-      h('p', { class: 'note', text: '既存コアを複製し、発行幅・ROB・L2 容量・クロック・SMT を変えた自作コアを作ります。結果は基準コアの補正を借りた推定で、確度は常に低です。' }),
+      more('補足', { key: 'ce:intro' }, h('p', { class: 'note', text: '既存コアを複製し、発行幅・ROB・L2 容量・クロック・SMT を変えた自作コアを作ります。結果は基準コアの補正を借りた推定で、確度は常に低です。' })),
       h('div', { class: 'ce-grid' }, left, middle, right), addMsg, okMsg, actions));
   }
 

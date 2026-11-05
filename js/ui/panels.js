@@ -1,7 +1,7 @@
 // 下部パネル: プロパティ・履歴・検証(設計書 §8・§9・§8.12)。ブラウザ専用。状態は持たず、main.js から渡された値を描く。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const WN = root.SDS.ui.warnings;
 
   const KIND_NAME = { core: 'コア', l3: 'L3 キャッシュ', gpu: 'GPU', uncore: 'SoC / I/O', npu: 'NPU' };
@@ -45,9 +45,7 @@
   function renderHistory(el, history, onJump, onUndo, onRedo) {
     clear(el);
     el.appendChild(h('h3', { text: '履歴' }));
-    el.appendChild(h('div', { class: 'btnrow' },
-      h('button', { type: 'button', class: 'btn', disabled: !history.canUndo(), onclick: onUndo }, '↶ 元に戻す'),
-      h('button', { type: 'button', class: 'btn', disabled: !history.canRedo(), onclick: onRedo }, '↷ やり直す')));
+    // 元に戻す/やり直すはツールバーにあるため、ここには置かない(onUndo・onRedo は呼び出し側との互換のため受け取るだけ)
     const ol = h('ol', { class: 'hist', start: '0' });
     history.list().forEach((it) => ol.appendChild(h('li', {}, h('button', {
       type: 'button', class: 'hist-item' + (it.current ? ' cur' : ''), 'aria-current': it.current ? 'step' : null, onclick: () => onJump(it.index),
@@ -60,11 +58,14 @@
     const items = WN.decorate(warnings); const c = WN.counts(warnings);
     el.appendChild(h('h3', {}, '検証 ', h('span', { class: 'small', text: `✗ ${c.error} / ⚠ ${c.warn} / ⓘ ${c.info}` })));
     if (!items.length) { el.appendChild(h('p', { text: '問題は見つかりませんでした。' })); return; }
-    const ul = h('ul', { class: 'warns' });
-    items.forEach((w) => ul.appendChild(h('li', { class: `w-${w.level}` }, w.clickable
+    const li = (w) => h('li', { class: `w-${w.level}` }, w.clickable
       ? h('button', { type: 'button', class: 'linkbtn', title: 'クリックでこのブロックを選択', onclick: () => onPick(w.blockId) }, w.label)
-      : h('span', { text: w.label }))));
-    el.appendChild(ul);
+      : h('span', { text: w.label }));
+    // error・warn は常に見せ、info は折りたたむ(件数は見出しにも出ている)
+    const main = items.filter((w) => w.level !== 'info');
+    const infos = items.filter((w) => w.level === 'info');
+    if (main.length) el.appendChild(h('ul', { class: 'warns' }, main.map(li)));
+    if (infos.length) el.appendChild(more(`ⓘ 情報 ${infos.length} 件`, { key: 'val:info' }, h('ul', { class: 'warns' }, infos.map(li))));
   }
 
   root.SDS.ui.panels = { renderProps, renderHistory, renderValidation, findBlock };

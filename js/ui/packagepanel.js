@@ -2,7 +2,7 @@
 // 変更の検証と設計の更新は main.js のコールバック側(DS.setCooling など)で行い、失敗の理由は msg に入れて渡す。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const PK = root.SDS.ui.packageform;
 
   // cb: { onCooling(id), onSubstrate(id), onPowerLimit(str, input) }。msgs: { cooling, substrate, limit }
@@ -15,7 +15,9 @@
     const pkg = design.package || { coolingId: '', substrateId: '', powerLimitW: null };
     const m = msgs || {};
     const msgEl = (id, text) => (text ? h('p', { class: 'err pmsg', id, role: 'alert', text: `✗ ${text}` }) : null);
-    el.appendChild(h('p', { class: 'note', text: '環境の設定です。再現モード(ロック中)でも変更できます。' }));
+    el.appendChild(more('補足', { key: 'pkg:more' },
+      h('p', { class: 'note', text: '環境の設定です。再現モード(ロック中)でも変更できます。' }),
+      h('p', { class: 'small warn-note', text: `⚠ ${PK.COOLING_NOTE}` })));
 
     // 冷却
     const cSel = h('select', {
@@ -26,7 +28,6 @@
     if (!cur) cSel.appendChild(h('option', { value: pkg.coolingId, selected: true }, `${pkg.coolingId}(一覧に無い)`));
     el.appendChild(h('div', { class: 'pfield' }, h('label', { for: 'pk-cooling', text: '冷却' }), cSel,
       cur ? h('p', { class: 'small', text: `周囲 ${cur.tAmbC} ℃ / Tj 上限 ${cur.tjMaxC} ℃` }) : null,
-      h('p', { class: 'small warn-note', text: `⚠ ${PK.COOLING_NOTE}` }),
       msgEl('pk-cooling-msg', m.cooling)));
 
     // 基板

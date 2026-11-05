@@ -2,7 +2,7 @@
 // 状態は持たず、main.js から渡された値を描く。変更の検証と設計の更新は main.js のコールバック側(design.setDieSize など)。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const MF = root.SDS.ui.mixform;
   const PF = root.SDS.ui.paramform;
 
@@ -32,8 +32,7 @@
         h('p', { class: 'small', text: `${MF.DIE_MIN_MM}〜${MF.DIE_MAX_MM} mm。小さくするとき、ブロックがはみ出す大きさにはできません` }),
         m.die ? h('p', { class: 'err pmsg', role: 'alert', text: `✗ ${m.die}` }) : null,
         cb.onFitDie ? h('div', { class: 'btnrow' }, h('button', { type: 'button', class: 'btn', id: 'mx-fit', disabled: !die.blocks.length, title: die.blocks.length ? '配置済みブロックの外接矩形(0.1 mm 単位で切り上げ。下限 1 mm)にダイ寸法を合わせる' : 'ブロックがありません', onclick: () => cb.onFitDie() }, '中身に合わせて最小ダイ')) : null,
-        die.widthMm * die.heightMm > RETICLE_MM2 + 1e-9 ? h('p', { class: 'small warn-note', role: 'note', text: `⚠ ダイ面積 ${Math.round(die.widthMm * die.heightMm)} mm² は単一ダイの露光上限(約 ${RETICLE_MM2} mm²。出典未取得で要確認)を超えています。チップレット分割は未対応です` }) : null,
-        h('p', { class: 'small', text: '縦横比の入力・I/O 外周の制約は未実装です。歩留まりは指定したダイ面積で決まります' })));
+        die.widthMm * die.heightMm > RETICLE_MM2 + 1e-9 ? h('p', { class: 'small warn-note', role: 'note', text: `⚠ ダイ面積 ${Math.round(die.widthMm * die.heightMm)} mm² は単一ダイの露光上限(約 ${RETICLE_MM2} mm²。出典未取得で要確認)を超えています。チップレット分割は未対応です` }) : null));
     }
     el.appendChild(h('p', { class: 'small' }, 'プロセス: ', h('b', { text: node ? node.name : (nodeId || '未指定') }), '(変更はできません。部品のプロセスが違うと「移植」になります)'));
 
@@ -66,8 +65,10 @@
       ul.appendChild(li);
     });
     el.appendChild(ul);
-    el.appendChild(h('p', { class: 'note', text: `${MF.SCHEMATIC_NOTE}。` }));
-    el.appendChild(h('p', { class: 'note', text: 'ブロックの削除は、ダイビューで選んでから下の「プロパティ」欄の削除ボタンで行います。' }));
+    el.appendChild(more('補足', { key: 'mix:more' },
+      h('p', { class: 'note', text: '縦横比の入力・I/O 外周の制約は未実装です。歩留まりは指定したダイ面積で決まります' }),
+      h('p', { class: 'note', text: `${MF.SCHEMATIC_NOTE}。` }),
+      h('p', { class: 'note', text: 'ブロックの削除は、ダイビューで選んでから下の「プロパティ」欄の削除ボタンで行います。' })));
     if (keepFocusId) {
       const f = el.querySelector(`#${keepFocusId}`);
       if (f) f.focus();

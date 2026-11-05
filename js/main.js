@@ -24,11 +24,14 @@
   let design = null;
   const history = S.history.createHistory({ limit: 200 }) /* まとめるかどうかは commitplan が決める(時間の窓は使わない。ドラッグ中に止めても 1 手) */;
   let selection = []; let viewMode = 'place'; let view = null; let propMsg = ''; let ignoreUntil = 0; let saveTimer = null; let noticeTimer = null;
-  let baseline = null; let lastEval = null; let paramMsgs = {}; let pkgMsgs = {}; let mixMsgs = {}; let libMsg = ''; let mixParts = null;
+  let baseline = null; let lastEval = null; let paramMsgs = {}; let pkgMsgs = {}; let mixMsgs = {}; let libMsg = ''; let mixParts = null; let leftTab = 'library';
 
   // ---- 通知 ----
+  function closeNotice() { const n = $('notice'); clearTimeout(noticeTimer); n.textContent = ''; n.className = ''; }
   function notify(text, kind) {
-    const n = $('notice'); n.textContent = text; n.className = kind || 'info';
+    const n = $('notice'); clear(n); n.className = kind || 'info';
+    n.appendChild(h('span', { text }));
+    n.appendChild(h('button', { type: 'button', class: 'btn small-btn', 'aria-label': '通知を閉じる', onclick: closeNotice }, '×'));
     clearTimeout(noticeTimer);
     if (kind !== 'err') noticeTimer = setTimeout(() => { n.textContent = ''; n.className = ''; }, 8000);
   }
@@ -110,9 +113,14 @@
   // C 混合のときだけ、部品ライブラリ・混合設計パネルを出し、パラメータ欄と簡易パーツ欄を隠す
   function renderMixPanels() {
     const mix = isMix();
-    $('library').hidden = !mix; $('mixpanel').hidden = !mix; $('params').hidden = mix;
-    const pl = document.querySelector('.partslist'); if (pl) pl.hidden = mix;
+    $('parts-tabs').hidden = !mix;
+    $('library').hidden = !mix || leftTab !== 'library'; $('mixpanel').hidden = !mix || leftTab !== 'mix'; $('params').hidden = mix;
     if (!mix) { clear($('library')); clear($('mixpanel')); return; }
+    const nGroups = MF.blockGroups(design).length;
+    const tl = $('tab-library'); const tm = $('tab-mix');
+    tm.textContent = `混合設計(${nGroups})`;
+    tl.setAttribute('aria-selected', String(leftTab === 'library')); tl.tabIndex = leftTab === 'library' ? 0 : -1;
+    tm.setAttribute('aria-selected', String(leftTab === 'mix')); tm.tabIndex = leftTab === 'mix' ? 0 : -1;
     LB.renderLibrary($('library'), design, libraryParts(), Object.assign({ onAdd: onAddPart, onClone: onCloneCore, onEditDef: onEditCoreDef }, userLibCb()), libMsg, ctx.nodes, { uarch: ctx.uarch, areas: (window.SDS_DATA && window.SDS_DATA.blocklibAreas) || [] });
     MP.renderMix($('mixpanel'), design, lastEval, { onDieSize: onDieSizeEdit, onClock: onBlockClockEdit, onFitDie }, mixMsgs, ctx.nodes);
   }
@@ -186,7 +194,7 @@
   function applyColorMode() { if (view && typeof view.setColorMode === 'function') view.setColorMode(design && DS.isMix(design) ? 'origin' : 'kind'); }
   function loadDesign(d, how) {
     const prev = design;
-    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; mixMsgs = {}; libMsg = '';
+    dragRun = false; design = ensure(d); selection = []; propMsg = ''; paramMsgs = {}; pkgMsgs = {}; mixMsgs = {}; libMsg = ''; leftTab = 'library';
     try { renderAll(); } catch (e) {
       design = prev; try { renderAll(); } catch (e2) { /* 元の設計も描けないときは諦める */ }
       notify(`✗ この設計を表示できませんでした: ${e.message}`, 'err'); return false;
@@ -500,10 +508,32 @@
   $('v-fit').addEventListener('click', () => { if (view && view.fit) view.fit(); });
   $('m-help').addEventListener('click', () => { const hp = $('help'); hp.hidden = !hp.hidden; $('m-help').setAttribute('aria-expanded', String(!hp.hidden)); });
   document.querySelectorAll('.vm').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  // 左欄のタブ(部品ライブラリ / 混合設計)。←/→ で隣のタブへ移動
+  function setLeftTab(name, focusTab) {
+    leftTab = name; renderMixPanels();
+    if (focusTab) $(name === 'mix' ? 'tab-mix' : 'tab-library').focus();
+  }
+  $('tab-library').addEventListener('click', () => setLeftTab('library'));
+  $('tab-mix').addEventListener('click', () => setLeftTab('mix'));
+  $('parts-tabs').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setLeftTab(leftTab === 'library' ? 'mix' : 'library', true); }
+  });
   document.addEventListener('keydown', (e) => {
+    // ヘルプを開いている間は Esc で閉じて、フォーカスをヘルプボタンへ戻す
+    if (e.key === 'Escape' && !$('help').hidden && !(DG.isOpen() || document.querySelector('.dialog'))) {
+      $('help').hidden = true; $('m-help').setAttribute('aria-expanded', 'false'); $('m-help').focus(); return;
+    }
     if (DG.isOpen() || document.querySelector('.dialog')) return; // ダイアログを開いている間は裏の設計を変えない
     const t = e.target; const tag = t && t.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+    const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable);
+    // 「/」で部品ライブラリの検索欄へ(混合・新規設計のときだけ。入力欄の中では普通の文字)
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !inField && isMix()) {
+      if (leftTab !== 'library') setLeftTab('library');
+      const s = $('lib-search');
+      if (s) { e.preventDefault(); s.focus(); s.select(); }
+      return;
+    }
+    if (inField) return;
     if (!(e.ctrlKey || e.metaKey)) return;
     const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -513,6 +543,12 @@
   });
 
   // ---- 起動 ----
+  if (S.ui.layout && typeof S.ui.layout.initLayout === 'function') {
+    try {
+      let st = null; try { st = window.localStorage || null; } catch (e) { st = null; }
+      S.ui.layout.initLayout({ workarea: $('workarea'), resizer: $('parts-resizer'), menubar: $('menubar'), storage: st });
+    } catch (e) { /* 配置の保存ができなくても画面は動く */ }
+  }
   initView();
   const auto = loadAutosave();
   renderAll();

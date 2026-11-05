@@ -36,8 +36,10 @@
       <li>Esc: ダイアログを閉じる(ダイビューでは選択解除)</li>
       <li>ダイビュー 2D 編集: 矢印キー=選択ブロックを 1 グリッド移動 / Shift を押しながらドラッグ=スナップなし / ホイール=ズーム / 空きをドラッグ、または Space+ドラッグ=パン</li>
       <li>ダイビュー 3D 表示: ドラッグ=回転 / ホイール=拡大縮小 / 右・中・Shift+ドラッグ=移動 / 矢印=回転 / +/-=ズーム / 0=リセット / Esc=選択解除 / Shift+クリック=選択の追加/解除(編集は 2D 編集で)</li>
+      <li>/: 部品ライブラリの検索欄へ移動(混合・新規設計のとき)/ 検索欄で Esc: 検索語を消す・Enter: 先頭の部品へ移動</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
+    <p class="small">ブロックの配置は現実の CPU のレイアウトに倣った模式図で、大きさは実測ではありません(実チップのフロアプランではありません)。Uncore・iGPU・NPU は見た目だけの「飾り」で、計算に影響しません。</p>
     <p class="small">できること: 混合(C)=部品ライブラリから実在チップの部品を選んで空のダイに置く(性能は確度:低、電力・温度は出さない)。 実在チップを「再現」(A)で読み込み公開値と比べる。「改良」(B)でコア数・クロック・L3 を編集し、元のチップとの差分(性能の予測)を見る。ブロックの位置・大きさの編集(元に戻す対応)。保存と読み込み。<br>
     パッケージ設定(冷却・基板・電力制限)と、電力・温度の推定(確度:低・冷却の熱抵抗は仮置き)、電力密度・温度のマップ(模式図)。<br>
     D 新規=プロセスとダイ寸法を決めて空のダイを作り、既存コアを「複製して編集」した自作コア(発行幅・ROB・L2・クロック・SMT。面積は範囲、確度は常に低)を置く。<br>
@@ -45,17 +47,14 @@
   </div>
   <div id="notice" role="status" aria-live="polite"></div>
   <main id="workarea">
+    <div id="parts-resizer" role="separator" aria-orientation="vertical" aria-label="パーツ欄の幅" aria-valuemin="220" aria-valuemax="480" aria-valuenow="300" tabindex="0" title="ドラッグか ←/→ で幅を変更。ダブルクリックで元に戻す"></div>
     <aside id="parts" aria-label="パーツとパラメータ">
-      <div class="partslist">
-      <h2>パーツ</h2>
-      <p class="note">M2 では部品の追加はできません(簡易表示)。</p>
-      <ul class="small">
-        <li>コア</li><li>キャッシュ</li><li>SoC</li><li>I/O</li>
-      </ul>
-      <p class="note">ブロックの配置は現実の CPU のレイアウトに倣った<b>模式図</b>で、大きさは実測ではありません。実チップのフロアプランではありません。Uncore・iGPU・NPU は見た目だけの「飾り」で、計算に影響しません。</p>
+      <div id="parts-tabs" class="tabs" role="tablist" aria-label="左欄の表示" hidden>
+        <button type="button" class="tab" id="tab-library" role="tab" aria-controls="library" aria-selected="true" tabindex="0">部品ライブラリ</button>
+        <button type="button" class="tab" id="tab-mix" role="tab" aria-controls="mixpanel" aria-selected="false" tabindex="-1">混合設計</button>
       </div>
-      <section id="library" aria-label="部品ライブラリ" hidden></section>
-      <section id="mixpanel" aria-label="混合設計" hidden></section>
+      <section id="library" role="tabpanel" aria-labelledby="tab-library" aria-label="部品ライブラリ" hidden></section>
+      <section id="mixpanel" role="tabpanel" aria-labelledby="tab-mix" aria-label="混合設計" hidden></section>
       <section id="params" aria-label="パラメータ"></section>
       <section id="package" aria-label="パッケージ設定"></section>
     </aside>
@@ -145,6 +144,7 @@
 <script src="js/ui/coreeditor.js"></script>
 <script src="js/ui/mixpanel.js"></script>
 <script src="js/ui/panels.js"></script>
+<script src="js/ui/layout.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

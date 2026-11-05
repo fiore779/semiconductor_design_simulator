@@ -37,6 +37,26 @@
     return (Math.abs(p) < 0.05 ? '＝ ' : p > 0 ? '▲ ' : '▼ ') + s;
   }
 
-  const api = { h, clear, num, diff };
+  // 折りたたみ(<details class="more">)。key を渡すと、開閉状態を再描画をまたいで保つ。中身がすべて空なら null を返す
+  const openKeys = new Set();
+  const hasContent = (c) => (Array.isArray(c) ? c.some(hasContent) : !(c == null || c === false || c === ''));
+  function more(summary, opts, ...kids) {
+    const o = opts || {};
+    if (!kids.some(hasContent)) return null;
+    const isOpen = o.key ? openKeys.has(o.key) : !!o.open;
+    const props = { class: 'more' + (o.cls ? ' ' + o.cls : '') };
+    if (isOpen) props.open = true;
+    if (o.key) {
+      props.ontoggle = (e) => {
+        const t = (e && e.target) || null;
+        const nowOpen = !!(t && (t.open === true || (t.hasAttribute && t.hasAttribute('open'))));
+        if (nowOpen) openKeys.add(o.key); else openKeys.delete(o.key);
+      };
+    }
+    return h('details', props, h('summary', { text: summary }), kids);
+  }
+  function moreReset() { openKeys.clear(); }
+
+  const api = { h, clear, num, diff, more, moreReset };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.dom = api;
 })(window);

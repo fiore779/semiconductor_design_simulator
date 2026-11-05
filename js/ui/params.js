@@ -2,7 +2,7 @@
 // 編集の確定は change(blur / Enter)。検証と設計の更新は main.js のコールバック側で行い、エラー文は msgs に入れて渡す。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const PF = root.SDS.ui.paramform;
 
   let keepFocusId = null; // Enter で確定したときは同じ入力欄、Tab のときは移動先の入力欄へ、再描画後にフォーカスを戻す
@@ -47,6 +47,7 @@
     const v = PF.memoryView(design, ocOn);
     if (!v) return;
     const box = h('fieldset', { class: 'pgroup', id: 'pf-memory' }, h('legend', { text: 'メモリ' }));
+    const memNotes = [];
     if (v.kind === 'fixed') { box.appendChild(h('p', { class: 'note', text: v.text })); el.appendChild(box); return; }
     if (!v.selectable) {
       box.appendChild(h('p', { text: `メモリ構成: ${v.label}${v.isRef ? '(基準構成)' : ''}` }));
@@ -68,12 +69,13 @@
             else cb.onMemoryUi();
           } }))));
       }
-      box.appendChild(h('p', { class: 'small', text: `理論帯域 ${v.bwGBs.toFixed(1)} GB/s(基準 ${v.refLabel}: ${v.refBwGBs.toFixed(1)} GB/s、${v.bits} bit)。対応: ${v.srcText}` }));
-      box.appendChild(h('p', { class: 'small', text: v.ocNote }));
+      box.appendChild(h('p', { class: 'small', text: `理論帯域 ${v.bwGBs.toFixed(1)} GB/s(基準 ${v.refLabel}: ${v.refBwGBs.toFixed(1)} GB/s、${v.bits} bit)` }));
+      memNotes.push(h('p', { class: 'small', text: `対応: ${v.srcText}` }), h('p', { class: 'small', text: v.ocNote }));
       if (!v.isRef) box.appendChild(h('p', { class: 'small warn-note', text: `メモリ構成による係数は推定(確度:低)。MT 係数 ${v.mtPct >= 0 ? '+' : ''}${v.mtPct.toFixed(1)}%(感度は GB7 実測の区間ごとの値 0.14〜0.27)` }));
       if (v.oc) box.appendChild(h('p', { class: 'small warn-note', text: `OC は安定動作を保証しません。推定(確度:低)。${v.extrapolated ? 'この速度は GB7 の実測(DDR5-8000 まで)の範囲外で、外挿です。' : ''}` }));
     }
-    box.appendChild(h('p', { class: 'small', text: v.note }));
+    memNotes.push(h('p', { class: 'small', text: v.note }));
+    box.appendChild(more('補足', { key: 'params:mem' }, memNotes));
     if (msgs && msgs.memory) box.appendChild(h('p', { class: 'err pmsg', role: 'alert', text: `✗ ${msgs.memory}` }));
     el.appendChild(box);
   }
@@ -112,8 +114,9 @@
       field('pf-l3', 'L3 容量', PF.trimNum(rows.l3MB), { readonly: ro, unit: 'MB', msg: m.l3, onCommit: (v, i) => cb.onL3(v, i) })));
     memorySection(el, design, cb, m);
     if (mode.editable) {
-      el.appendChild(h('p', { class: 'note', text: '入力後に Enter か Tab で確定します。範囲外・不正な値は元に戻ります。' }));
-      el.appendChild(h('p', { class: 'note', text: 'コア数・L3 を変えると、ブロックは模式図として再配置されます(手で動かした位置は失われます)。' }));
+      el.appendChild(more('補足', { key: 'params:more' },
+        h('p', { class: 'note', text: '入力後に Enter か Tab で確定します。範囲外・不正な値は元に戻ります。' }),
+        h('p', { class: 'note', text: 'コア数・L3 を変えると、ブロックは模式図として再配置されます(手で動かした位置は失われます)。' })));
     }
     if (keepFocusId) {
       const f = el.querySelector(`#${keepFocusId}`);

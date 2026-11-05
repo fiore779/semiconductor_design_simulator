@@ -45,7 +45,7 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   assert.ok(srcs.length > 20, 'script が少なすぎる');
   const ctx = loadAll();
   const ui = ctx.SDS && ctx.SDS.ui;
-  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
+  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor', 'layout'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
   ['floorplan', 'design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
@@ -486,4 +486,126 @@ test('設定ダイアログ: ボタンが有効で、undo/redo が既存関数�
     byId('set-preset').listeners.click();
     assert.deepStrictEqual(calls, ['undo', 'redo', 'redo', 'presets']);
   } finally { delete FakeNode.prototype.focus; ctx.SDS.ui.dialogs.close(); }
+});
+
+// ---- UI 整理: 部品ライブラリの検索・並び・折りたたみ(docs/design/ui-cleanup.md §4.2, §8.2) ----
+// 平らにたどる(先に現れる順)
+const flat = (n, out) => { out = out || []; out.push(n); (n.children || []).forEach((c) => flat(c, out)); return out; };
+const idOf = (n) => (n.attrs && n.attrs.id) || null;
+const byIdIn = (root, id) => flat(root).find((n) => idOf(n) === id);
+const isMark = (n) => n.tag === 'mark';
+
+function libSetup(withCustom) {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate;
+  const DS = ctx.SDS.model.design; const BL = ctx.SDS.model.blocklib; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const parts = BL.build(c.presets, ctx.SDS_DATA.blocklibAreas, c.nodes);
+  let d = DS.fromScratch({ name: '検索テスト', widthMm: 60, heightMm: 60, nodeId: 'tsmc-n4', entry: 'new' });
+  if (withCustom) {
+    const ci = ui.coreform.cloneInfo(BL.get(parts, 'core:amd-zen1-1800x:P'), c.uarch, ctx.SDS_DATA.blocklibAreas);
+    const def = ui.coreform.assignId(ci.def, []);
+    const r = DS.addPart(d, Object.assign({}, ctx.SDS.model.coredef.toPart(def), { sourceChip: ui.coreform.customChip(def) }), { count: 1, nodes: c.nodes });
+    assert.ok(r.ok, r.reason); d = r.design;
+  }
+  const env = { uarch: c.uarch, areas: ctx.SDS_DATA.blocklibAreas };
+  const render = (el, msg, design) => ui.library.renderLibrary(el, design || d, parts, { onAdd() {}, onClone() {}, onEditDef() {}, onUseUser() {}, onImportUser() {}, userCores: { ok: true, cores: [] } }, msg || '', c.nodes, env);
+  return { ctx, ui, c, parts, d, render, evaluate, DS, BL };
+}
+const typeText = (lib, v) => { byIdIn(lib, 'lib-search').listeners.input({ target: { value: v } }); };
+const listItems = (lib) => byIdIn(lib, 'lib-list').children;
+
+test('部品ライブラリの並び: 検索欄・件数・メッセージが一覧より前、ユーザーライブラリの見出しより検索欄が前(R5)', () => {
+  const { render, ctx } = libSetup(true);
+  const lib = new FakeNode('div');
+  render(lib, '理由テスト');
+  const all = flat(lib);
+  const pos = (pred) => all.findIndex(pred);
+  const iSearch = pos((n) => idOf(n) === 'lib-search'); const iList = pos((n) => idOf(n) === 'lib-list');
+  const iCount = pos((n) => idOf(n) === 'lib-count'); const iMsg = pos((n) => idOf(n) === 'lib-msg');
+  const iUser = pos((n) => n.tag === 'summary' && n.textContent.includes('ユーザーライブラリの自作コア'));
+  assert.ok(iSearch >= 0 && iList >= 0 && iSearch < iList && iCount > iSearch && iCount < iList && iMsg > iCount && iMsg < iList);
+  assert.ok(iUser > iSearch && iUser < iList);
+  assert.ok(byIdIn(lib, 'lib-msg').textContent.includes('理由テスト'));
+  // 折りたたみ: 自作コア・ユーザーライブラリの 2 つ(使い方を除く)は既定で閉じている
+  const boxes = all.filter((n) => n.tag === 'details' && n.className.includes('lib-custom'));
+  assert.strictEqual(boxes.length, 2);
+  assert.ok(boxes.every((b) => !('open' in b.attrs)));
+  assert.ok(ctx.SDS.ui.dom.more);
+});
+
+test('部品ライブラリの a11y 属性(R14)', () => {
+  const { render } = libSetup(false);
+  const lib = new FakeNode('div'); render(lib);
+  const s = byIdIn(lib, 'lib-search');
+  assert.strictEqual(s.attrs.type, 'search'); assert.strictEqual(s.attrs['aria-controls'], 'lib-list');
+  assert.strictEqual(byIdIn(lib, 'lib-count').attrs.role, 'status');
+  assert.ok(byIdIn(lib, 'lib-clear').attrs['aria-label']);
+  assert.ok(flat(lib).some((n) => n.attrs && n.attrs.role === 'search'));
+});
+
+test('部品ライブラリの検索: 絞り込み・ハイライト・件数・クリア・Esc・0 件・さらに表示・状態保持(R7)', () => {
+  const { render, parts, ui } = libSetup(false);
+  const MF = ui.mixform;
+  let lib = new FakeNode('div'); render(lib);
+  // 全件: 先頭 60 件、「さらに表示」で 120
+  assert.strictEqual(listItems(lib).length, 60);
+  assert.ok(byIdIn(lib, 'lib-count').textContent.includes(`全 ${parts.length} 件`));
+  assert.ok(byIdIn(lib, 'lib-clear').hidden);
+  assert.ok(byIdIn(lib, 'lib-more-btn').listeners.click);
+  byIdIn(lib, 'lib-more-btn').listeners.click();
+  assert.strictEqual(listItems(lib).length, 120);
+  // 絞り込み
+  typeText(lib, 'zen 5');
+  const want = MF.filterParts(parts, { text: 'zen 5' }).length;
+  assert.strictEqual(listItems(lib).length, Math.min(60, want));
+  const marks = flat(byIdIn(lib, 'lib-list')).filter(isMark);
+  assert.ok(marks.length >= 1 && marks.some((m) => m.textContent.toLowerCase().includes('zen')));
+  assert.ok(byIdIn(lib, 'lib-count').textContent.includes('件が該当'));
+  assert.ok(!byIdIn(lib, 'lib-clear').hidden);
+  // 再描画しても検索語と絞り込みが残る
+  const lib2 = new FakeNode('div'); render(lib2);
+  assert.strictEqual(byIdIn(lib2, 'lib-search').value, 'zen 5');
+  assert.strictEqual(listItems(lib2).length, Math.min(60, want));
+  // Esc で消去
+  let prevented = false;
+  byIdIn(lib2, 'lib-search').listeners.keydown({ key: 'Escape', preventDefault() { prevented = true; } });
+  assert.ok(prevented && byIdIn(lib2, 'lib-search').value === '' && byIdIn(lib2, 'lib-clear').hidden);
+  assert.strictEqual(listItems(lib2).length, 60);
+  // 0 件
+  typeText(lib2, 'zzzzqqqq');
+  assert.strictEqual(listItems(lib2).length, 0);
+  assert.ok(byIdIn(lib2, 'lib-empty').textContent.includes('一致する部品はありません'));
+  assert.ok(byIdIn(lib2, 'lib-count').textContent.includes('0 件が該当'));
+  const clr = flat(byIdIn(lib2, 'lib-empty')).find((n) => n.tag === 'button' && n.textContent === '条件をすべてクリア');
+  assert.ok(clr); clr.listeners.click();
+  assert.strictEqual(listItems(lib2).length, 60);
+  assert.strictEqual(byIdIn(lib2, 'lib-search').value, '');
+  lib = null;
+});
+
+test('部品ライブラリ: 追加できない部品は 1 行の短文、「追加できるものだけ」で隠し件数を出す(R6)', () => {
+  const { render, ctx, ui, c, parts, BL, DS } = libSetup(false);
+  let d = DS.fromScratch({ name: 'x86', widthMm: 60, heightMm: 60, nodeId: 'tsmc-n4' });
+  const r = DS.addPart(d, BL.get(parts, 'core:amd-zen5-9700x:P'), { count: 1, nodes: c.nodes }); assert.ok(r.ok, r.reason); d = r.design;
+  const lib = new FakeNode('div'); render(lib, '', d);
+  // Arm のコアに絞る → 全行が追加不可
+  byIdIn(lib, 'lib-search').listeners.input({ target: { value: 'arm コア' } });
+  const items = listItems(lib).filter((li) => li.className.includes('lib-item'));
+  const blocked = items.filter((li) => li.className.includes('blocked'));
+  assert.ok(blocked.length > 0);
+  assert.ok(blocked[0].textContent.includes('命令セットが違うため追加不可'));
+  assert.ok(!lib.textContent.includes('x86 と Arm のコアは同じ設計に混在できません'));
+  byIdIn(lib, 'lib-addable').listeners.change({ target: { checked: true } });
+  assert.ok(listItems(lib).every((li) => !li.className.includes('blocked')));
+  assert.ok(byIdIn(lib, 'lib-count').textContent.includes('追加できない'));
+  assert.ok(ctx && ui);
+});
+
+test('index.html: 左欄タブ・仕切り・layout.js の読み込み順・a11y 属性(R4, R5, R14)', () => {
+  assert.ok(html.includes('role="tablist"') && (html.match(/role="tab"/g) || []).length === 2 && html.includes('aria-controls="library"') && html.includes('aria-controls="mixpanel"'));
+  assert.ok(/id="parts-resizer"[^>]*role="separator"/.test(html) && html.includes('aria-valuemin="220"') && html.includes('aria-valuemax="480"') && /id="parts-resizer"[^>]*tabindex="0"/.test(html));
+  const order = (f) => srcs.indexOf(f);
+  assert.ok(order('js/ui/layout.js') > order('js/ui/panels.js') && order('js/ui/layout.js') < order('js/main.js'));
+  assert.ok(!html.includes('partslist') && !html.includes('M2 では部品の追加はできません'));
 });

@@ -19,17 +19,102 @@
   const norm = (s) => String(s == null ? '' : s).replace(/[０-９．]/g, (c) => (c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0) - 0xFEE0))).trim();
 
   // ---- 絞り込み ----
-  // q: { isa, vendor, kind, text }。空・未指定の条件は無視。text は名称・元のチップ・マイクロアーキ・コア種別の部分一致(大文字小文字を区別しない)
-  function filterParts(parts, q) {
+  // q: { isa, vendor, kind, text }。空・未指定の条件は無視。opts: { nodes: [{ id, name }] }(省略可。プロセス名でも探す)
+  // text は空白(半角・全角)で分けた全語の AND。名称・元のチップ・マイクロアーキ・コア種別・メーカー・命令セット・種類・プロセスの部分一致
+  // (NFKC で正規化し、大文字小文字を区別しない。正規表現は使わない)
+  const MAX_TOKENS = 8; const MAX_QUERY_CHARS = 200;
+  const fold = (s) => String(s == null ? '' : s).normalize('NFKC').toLowerCase();
+  function searchTokens(text) {
+    if (text == null) return [];
+    const t = fold(String(text).slice(0, MAX_QUERY_CHARS));
+    return t.split(/[\s　]+/).filter(Boolean).slice(0, MAX_TOKENS);
+  }
+  function searchHaystack(p, nodes) {
+    const node = p.nodeId ? (nodes || []).find((n) => n && n.id === p.nodeId) : null;
+    return fold([p.label, p.sourceChip, p.uarch, p.coreType, partName(p), p.vendor, p.isa, ISA_LABEL[p.isa], p.kind, KIND_LABEL[p.kind], p.nodeId, node ? node.name : '']
+      .map((s) => (s == null ? '' : s)).join('\n'));
+  }
+  function filterParts(parts, q, opts) {
     const o = q || {};
-    const t = o.text ? norm(o.text).toLowerCase() : '';
+    const tokens = searchTokens(o.text);
+    const nodes = opts && opts.nodes;
     return (parts || []).filter((p) => {
       if (o.isa && p.isa !== o.isa) return false;
       if (o.vendor && p.vendor !== o.vendor) return false;
       if (o.kind && p.kind !== o.kind) return false;
-      if (t && ![p.label, p.sourceChip, p.uarch, p.coreType, partName(p)].some((s) => s && String(s).toLowerCase().includes(t))) return false;
+      if (tokens.length) {
+        const hay = searchHaystack(p, nodes);
+        if (!tokens.every((t) => hay.includes(t))) return false;
+      }
       return true;
     });
+  }
+  // text を tokens の一致部分で分ける: [{ text, hit }]。連結すると元の text に戻る。NFKC は掛けない(位置を保つため)
+  function highlightSegments(text, tokens) {
+    const s = text == null ? '' : String(text);
+    if (!s) return [];
+    const toks = (tokens || []).filter(Boolean);
+    const low = s.toLowerCase();
+    if (!toks.length || low.length !== s.length) return [{ text: s, hit: false }];
+    const ranges = [];
+    toks.forEach((t) => {
+      let i = low.indexOf(t);
+      while (i >= 0) { ranges.push([i, i + t.length]); i = low.indexOf(t, i + t.length); }
+    });
+    if (!ranges.length) return [{ text: s, hit: false }];
+    ranges.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const merged = [ranges[0].slice()];
+    for (let k = 1; k < ranges.length; k++) {
+      const last = merged[merged.length - 1];
+      if (ranges[k][0] <= last[1]) last[1] = Math.max(last[1], ranges[k][1]); else merged.push(ranges[k].slice());
+    }
+    const out = []; let pos = 0;
+    merged.forEach(([a, b]) => {
+      if (a > pos) out.push({ text: s.slice(pos, a), hit: false });
+      out.push({ text: s.slice(a, b), hit: true });
+      pos = b;
+    });
+    if (pos < s.length) out.push({ text: s.slice(pos), hit: false });
+    return out;
+  }
+  // 名称に全語が入る部品を先に並べる(安定整列。元の配列は変えない)
+  function relevanceSort(parts, tokens) {
+    const arr = (parts || []).slice();
+    const toks = (tokens || []).filter(Boolean);
+    if (!toks.length) return arr;
+    // 順位: 0 = 検索語全体(空白を保った連続した語句)が名前・uarch に含まれる / 1 = 全語が語頭で一致 / 2 = 全語が名前に部分一致 / 3 = それ以外。同順位は元の順
+    const phrase = toks.join(' ');
+    const isWord = (c) => /[a-z0-9]/.test(c);
+    const atWordStart = (n, t) => {
+      const digits = /^\d+$/.test(t);
+      for (let i = n.indexOf(t); i >= 0; i = n.indexOf(t, i + 1)) {
+        if (i > 0 && isWord(n[i - 1])) continue;
+        if (digits && i + t.length < n.length && /\d/.test(n[i + t.length])) continue; // 数字は他の数字列の途中に当たるだけなら不一致
+        return true;
+      }
+      return false;
+    };
+    // 語句全体の連続一致。開始位置が語頭のものだけ(「Ryzen 5」の中の「zen 5」は数えない)
+    // 数字だけの語句は、一致の直後が数字なら一致としない(「5」が「5800X」に当たらない)
+    const phraseDigits = /^\d+$/.test(phrase);
+    const phraseAtWordStart = (n) => {
+      for (let i = n.indexOf(phrase); i >= 0; i = n.indexOf(phrase, i + 1)) {
+        if (i > 0 && isWord(n[i - 1])) continue;
+        if (phraseDigits && i + phrase.length < n.length && /\d/.test(n[i + phrase.length])) continue;
+        return true;
+      }
+      return false;
+    };
+    const rank = (p) => {
+      const n = fold(partName(p)); const u = fold(p.uarch);
+      if (phraseAtWordStart(n) || (u && phraseAtWordStart(u))) return 0;
+      if (toks.every((t) => atWordStart(n, t))) return 1;
+      if (toks.every((t) => n.includes(t))) return 2;
+      return 3;
+    };
+    const keyed = arr.map((p, i) => ({ p, i, r: rank(p) }));
+    keyed.sort((a, b) => a.r - b.r || a.i - b.i);
+    return keyed.map((k) => k.p);
   }
   function vendorsOf(parts) {
     return [...new Set((parts || []).map((p) => p.vendor).filter(Boolean))].sort();
@@ -106,6 +191,44 @@
       out.push({ level: 'warn', code: 'ported', text: `元のプロセス(${nm(part.nodeId)})と設計のプロセス(${nm(toNode)})が違うため、移植として面積を密度比で換算します(目安)` });
     }
     return out;
+  }
+
+  // 追加できる(事前チェックに error が無い)か。一覧の絞り込み(「追加できるものだけ」)に使う
+  const isAddable = (design, part, nodes) => !preCheck(design, part, nodes).some((x) => x.level === 'error');
+  // 追加できない理由の短文(一覧の 1 行用)。error が無ければ null。原文は preCheck の text(title に残す)
+  function addBlockReason(design, part, nodes) {
+    const err = preCheck(design, part, nodes).find((x) => x.level === 'error');
+    if (!err) return null;
+    if (err.code !== 'isa-mix') return err.text;
+    const have = [];
+    ((design && design.dies) || []).forEach((d) => (d.blocks || []).forEach((b) => { if (b.kind === 'core' && b.isa && !have.includes(b.isa)) have.push(b.isa); }));
+    return `命令セットが違うため追加不可(この設計は ${have.map((i) => ISA_LABEL[i] || i).join('・')})`;
+  }
+
+  // ---- 部品ライブラリの件数・0 件の文 ----
+  // info: { matched, total, visible, hasCondition, addableOnly, hiddenByAddable }
+  function libCountText(info) {
+    const i = info || {};
+    const more = i.matched > i.visible ? `・先頭 ${i.visible} 件を表示` : '';
+    let s;
+    if (i.matched === 0) s = `0 件が該当(全 ${i.total} 件)`;
+    else if (i.hasCondition) s = `${i.matched} 件が該当(全 ${i.total} 件)${more}`;
+    else s = `全 ${i.total} 件${more}`;
+    if (i.hiddenByAddable > 0) s += `・追加できない ${i.hiddenByAddable} 件を除く`;
+    return s;
+  }
+  // 0 件のときの案内。q: { isa, vendor, kind, text }
+  function emptyText(q, addableOnly) {
+    const o = q || {};
+    const text = String(o.text == null ? '' : o.text).trim();
+    let s = text ? `「${text}」に一致する部品はありません。` : 'この条件に合う部品はありません。';
+    const f = [];
+    if (o.isa) f.push(`命令セット=${ISA_LABEL[o.isa] || o.isa}`);
+    if (o.vendor) f.push(`メーカー=${o.vendor}`);
+    if (o.kind) f.push(`種類=${KIND_LABEL[o.kind] || o.kind}`);
+    if (f.length) s += `絞り込み: ${f.join(' / ')}。`;
+    if (addableOnly) s += '「追加できるものだけ」も有効です。';
+    return s;
   }
 
   // ---- ダイ寸法 ----
@@ -198,7 +321,7 @@
 
   const api = {
     DIE_MIN_MM, DIE_MAX_MM, DEFAULT_DIE_MM, ISA_OPTIONS, KIND_OPTIONS, KIND_LABEL, ISA_LABEL, ESTIMATE_NOTE, SCHEMATIC_NOTE,
-    filterParts, vendorsOf, partName, placeAreaMm2, areaBadge, areaClassLabel, areaClassCounts, areaClassText, portLine, preCheck,
+    filterParts, searchTokens, highlightSegments, relevanceSort, isAddable, addBlockReason, libCountText, emptyText, vendorsOf, partName, placeAreaMm2, areaBadge, areaClassLabel, areaClassCounts, areaClassText, portLine, preCheck,
     parseDieSize, parseCapacity, parseCount, addLabel, dieSizeLabel, clockLabel, removeLabel, blockGroups, utilizationText,
   };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.mixform = api;

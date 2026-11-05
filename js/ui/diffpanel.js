@@ -1,7 +1,7 @@
 // 差分ビュー(設計書 §8.6)。元のチップとの パラメータ差・結果差・要約。ブラウザ専用。計算は SDS.model.diff に任せ、描くだけ。
 (function (root) {
   'use strict';
-  const { h, clear } = root.SDS.ui.dom;
+  const { h, clear, more } = root.SDS.ui.dom;
   const PF = root.SDS.ui.paramform;
 
   // cb: { onRevert(id, label), onRevertAll() }。ev は現在の評価(evaluate の結果)
@@ -30,13 +30,16 @@
       }
       el.appendChild(band);
     }
-    // 楽観側に偏る編集(クロック・コア数・L3 を上げた)のときは常に出す
+    // 注意と前提(折りたたみ): 楽観側に偏る編集(クロック・コア数・L3 を上げた)の帯、MT は常に低い旨、元のチップの公開値(参考)
+    const bp = (r) => (r.basePublished != null ? r.basePublished.toLocaleString('ja-JP') : '未取得');
+    const foldItems = [];
     if (rd.optimistic) {
       const ob = h('div', { class: 'low-banner', role: 'note' }, h('div', { text: `⚠ ${PF.OPTIMISTIC_NOTE}` }));
       if (rd.optimisticReasons.length) ob.appendChild(h('ul', {}, rd.optimisticReasons.map((t) => h('li', { text: t }))));
-      el.appendChild(ob);
+      el.appendChild(ob); // 偏りの向きの警告は常時表示(折りたたまない)
     }
-    el.appendChild(h('p', { class: 'note', text: PF.MT_ALWAYS_LOW }));
+    foldItems.push(h('p', { class: 'note', text: PF.MT_ALWAYS_LOW }));
+    foldItems.push(h('p', { class: 'small', text: `元のチップの公開値(参考): ST ${bp(ev.st)} / MT ${bp(ev.mt)}` }));
 
     // パラメータ差
     el.appendChild(h('h3', { text: 'パラメータの差' }));
@@ -63,11 +66,7 @@
     // 再計算しないもの(常に明記)
     const why = ev.area && ev.area.recomputedReason ? `(${ev.area.recomputedReason})` : '';
     el.appendChild(h('p', { class: 'caution' }, h('b', { text: PF.NOT_RECOMPUTED }), why ? ` ${why}` : ''));
-    el.appendChild(h('p', { class: 'note', text: '編集後の数値は予測で、公開値ではありません。公開値との差は出しません。' }));
-
-    // 元のチップの公開値(参考)
-    const bp = (r) => (r.basePublished != null ? r.basePublished.toLocaleString('ja-JP') : '未取得');
-    el.appendChild(h('p', { class: 'small', text: `元のチップの公開値(参考): ST ${bp(ev.st)} / MT ${bp(ev.mt)}` }));
+    el.appendChild(more(`⚠ 注意と前提(${foldItems.length} 件)`, { key: 'diff:more' }, foldItems));
   }
 
   root.SDS.ui.diffpanel = { renderDiff };
