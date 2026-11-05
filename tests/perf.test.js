@@ -149,7 +149,8 @@ test('幅が未取得のコアは decodeWidth を IPC の上限に使う(ROB 由
 
 // MT の検証(σ を AMD の代表 3 件で合わせた状態で、代表以外を ±10% で予測できるか)。通るのは一部だけ(設計書 §5.3.0)。
 // (amd-strix-hx370 は TDP 帯別の係数 0.65 の導入で -8.8% → -24.4% に悪化したため、この一覧から外した。設計書 §5.3.3 G の1)
-['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x', 'nv-orin-agx'].forEach((id) => {
+// (nv-orin-agx は 2026-11-05 に L3 6MB を取得〔公表〕して MT が -1.1% → -13.9% に悪化したため、この一覧から外した。ST は -6.6% → -0.3% に改善。以前の ok は L3 未取得時の参照値がスレッド数で割られないことによる見かけ。閾値は動かしていない。設計書 §2.7.7)
+['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x'].forEach((id) => {
   test(`検証 MT(±10%): ${id}`, () => {
     const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
     const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
@@ -159,9 +160,10 @@ test('幅が未取得のコアは decodeWidth を IPC の上限に使う(ROB 由
   });
 });
 
-test('MT の既知の外れ値(Oryon の E コアは ISA 平均補正で過大、13900K は予測が外れる。185H は TDP 帯別の係数で +14.2% → +8.2% に入った)', () => {
+test('MT の既知の外れ値(Oryon の E コアは ISA 平均補正で過大。185H は TDP 帯別の係数で +14.2% → +8.2% に入った。13900K は E の boost 未取得で -21.4% だったが、2026-11-05 に ARK で E の boost 4.3GHz を取得して +1.5% に入った)', () => {
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
-  ['qc-8elite-gen5', 'intel-rpl-13900k'].forEach((id) => {
+  // 2026-11-05: Orin(nv-orin-agx)も外れ値として固定する。L3 6MB〔公表〕を反映して MT が -13.9% になった。以前の -1.1%(ok)は、l3MB が null のとき参照値 l3Ref=2048KB がスレッド数で割られず(スレッドあたり 2MB 扱い)計算されていたことによる見かけ(設計書 §2.7.7)
+  ['qc-8elite-gen5', 'nv-orin-agx'].forEach((id) => {
     const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
     assert.ok(r.ok, id);
     assert.ok(Math.abs(r.score / gb7ByName[p.gb7].multi - 1) > 0.10, `${id} は外れなくなった。リストを更新すること`);
@@ -175,11 +177,14 @@ test('mtScore: fByType 省略時は最大クロック(boost)を使う', () => {
   assert.strictEqual(a.score, b.score);
 });
 
-test('mtScore: boost が無い E コアは base に落ち、mixedClock で知らせる(13900K の E は boost 未取得)', () => {
-  const r = F.mtScore(preset('intel-rpl-13900k'), cal(), D.uarch, null);
+test('mtScore: boost が無い E コアは base に落ち、mixedClock で知らせる(13900K の E の boost を外した合成プリセット)', () => {
+  // 2026-11-05: 13900K の E の boost 4.3GHz を ARK で取得したため、実プリセットには boost 未取得の E コアが無くなった。boost を外した複製で確かめる
+  const p = clone(preset('intel-rpl-13900k')); p.cfg.cores[1].boostGHz = null;
+  const r = F.mtScore(p, cal(), D.uarch, null);
   assert.ok(r.ok);
   assert.strictEqual(r.mixedClock, true);
   assert.deepStrictEqual(r.detail.map((d) => d.clockSource), ['boost', 'base']);
+  assert.strictEqual(F.mtScore(preset('intel-rpl-13900k'), cal(), D.uarch, null).mixedClock, false);
   assert.strictEqual(F.mtScore(preset('amd-zen5-9700x'), cal(), D.uarch, null).mixedClock, false);
 });
 
@@ -315,6 +320,9 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
     const g = gb7ByName[p.gb7]; const w = F.mtPublishedW(p);
     // Core 5 320(intel-wcl-c5-320)は標本に含める(ユーザー指示 2026-11-05「再校正してください」。帯 0 を 0.65 → 0.69 に再校正した)
     // 7840HS(amd-zen4-7840hs)も標本から除く(2026-11-05 に電力 TDP 35W・cTDP 35〜54W を取得して帯 0 に入ったが、ユーザー指示「閾値は当て込みで動かさない」により帯の係数は再校正していない。含めると帯 0 は 7 件で中央値 0.7222〔0.72〕、LOO MAE 0.1110、10% 超 6 件になる)
+    // 2026-11-05: ARK のクロック(LP-E・E の boost など)を入れて MT を計算できるようになった 5 件(268V・258V・256V・388H・275HX)も標本から除く(帯の係数は 11 件で校正した値のまま動かさない。
+    // 参考: 5 件を含めた 16 件の中央値は帯 0 が 0.6943、帯 1 が 0.7556 で、丸めると 0.69 / 0.76 のまま不変。標本外での MT の誤差は設計書 §2.7.7)
+    if (['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v', 'intel-ptl-x9-388h', 'intel-arl-275hx'].includes(p.id)) return;
     if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, band: F.MT_CLOCK_BANDS.findIndex((b) => w.w <= b.maxW) });

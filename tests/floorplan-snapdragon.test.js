@@ -172,16 +172,19 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
   assert.strictEqual(T('qc-8s-gen4', 'P').length, 1);
 });
 
-test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と、縦横比だけ採った 4 件以外の 70 件(Snapdragon の未反映 4 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
+test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と、縦横比だけ採った 4 件・Orin(2026-11-05 に L3 を取得)以外の 69 件(Snapdragon の未反映 4 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
   const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239', 'nv-gb10', 'intel-ptl-u5-325', 'intel-wcl-c5-320']);
   // 2026-11-04: 6 Gen 1・4 Gen 2・7 Gen 3・Dimensity 8200 は縦横比だけ写真に合わせた(幅・高さと layout が変わる。ブロックは従来の配置。縦横比は上のテストと floorplan-mediatek で検証)ので除く。除く前の 74 件のハッシュは a0fc1692…(それ以前と同じ)
   const ASPECT_4 = ['qc-6gen1', 'qc-4gen2', 'qc-7gen3', 'mt-8200'];
   // 2026-11-04: Raphael・Granite Ridge(7700・7950X・9700X・9950X)は IOD の縦横比・位置を写真に合わせて変えたので除く(その変更は floorplan-scale.test.js で検証。評価は不変)
   const IOD_MOVED = ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'];
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id));
-  assert.strictEqual(rest.length, 70);
+  // 2026-11-05: Orin(nv-orin-agx)は L3 6MB を取得して L3 のブロックが増えた(layout の schematic に L3 が入る)ので除く。ほかの 69 件は変更前の dump(評価・_design)と一致を確認
+  const ORIN_L3 = ['nv-orin-agx'];
+  assert.ok(mk('nv-orin-agx').dies[0].blocks.some((b) => b.kind === 'l3' && /6MB/.test(b.label)));
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id));
+  assert.strictEqual(rest.length, 69);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
   // 2026-11-04: 386H(intel-ptl-x9-386h)だけ、4Xe の GPU タイルの飾りと scaleNote を足したのでハッシュを更新(Panther Lake_dies.jpg)。388H・378H・358H・Platform タイルは一致を確認済み
-  assert.strictEqual(h.digest('hex'), '2a9232c909d49e286a7a9ab75cb2e832f3d8ff79b1a4c2ce443aae0a76b33e2c'); // 70 件の layout・寸法・ブロック・飾りダイは変更前(HEAD)のコードと一致を確認して更新(4 件を除いただけ)
+  assert.strictEqual(h.digest('hex'), '76fecf00969ec2455483f5eae580a7f984398857d20a770046ab4a424b967b84'); // 2026-11-05: Orin を除いた 69 件のハッシュ。変更前(HEAD)のデータ・コードで同じ 69 件を計算しても同じ値(今回のデータ追加で 69 件の layout・寸法・ブロック・飾りダイは不変)。旧(70 件、Orin を含む): 2a9232c9…
 });

@@ -95,7 +95,7 @@ test('IOD: Zen 4 以降の IOD には内蔵 GPU の飾りブロックが付き�
     const g = iod.blocks.filter((b) => b.kind === 'gpu');
     assert.strictEqual(g.length, 1, id); assert.strictEqual(g[0].decorative, true); assert.strictEqual(g[0].label, 'iGPU');
     assert.ok(!iod.blocks.find((b) => b.kind === 'uncore').decorative, 'SoC / I/O は従来どおり飾りではない');
-    assert.strictEqual(iod.areaKnown, false); // 面積未取得は仮寸法のまま
+    assert.strictEqual(iod.areaKnown, true); assert.strictEqual(iod.areaMm2, 117.8); // 2026-11-05: IOD 面積 117.8mm² を取得(旧: 未取得で仮寸法)。縦横比は IOD_PLACE のまま
     assert.deepStrictEqual(design.validate(d), [], id);
   });
   ['amd-zen3-5600x', 'amd-zen3-5950x'].forEach((id) => assert.ok(!mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'gpu')), id));
@@ -159,12 +159,13 @@ test('Kraken Point: Strix Point の写真の配置の流用(reuse)。Zen 5 ×4�
   assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'schematic'); assert.deepStrictEqual(design.validate(r.design), []);
 });
 
-test('Raphael・Granite Ridge の IOD(Zen 4/5 共通): 縦横比 1.30(GNR_Package_Annotated.jpg の目測)、CCD との隙間は CCD 高さの 0.48 倍、CCD 1 つは IOD が CCD の右寄り(delidded.jpg の向き。実写は 180° 回転)、2 つは中央。面積は未取得のまま', () => {
+test('Raphael・Granite Ridge の IOD(Zen 4/5 共通): 縦横比 1.30(GNR_Package_Annotated.jpg の目測)、CCD との隙間は CCD 高さの 0.48 倍、CCD 1 つは IOD が CCD の右寄り(delidded.jpg の向き。実写は 180° 回転)、2 つは中央。面積は 2026-11-05 から 117.8mm²', () => {
   const P = FP.IOD_PLACE; assert.strictEqual(P.aspect, 1.30);
   ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'].forEach((id) => {
     const d = mk(id); const ccd = d.dies.find((x) => x.layout); const iod = d.dies.find((x) => /IOD/.test(x.name));
     assert.ok(Math.abs(iod.widthMm / iod.heightMm - 1.30) < 1e-6, id);
-    assert.strictEqual(iod.areaKnown, false, id); assert.strictEqual(iod.areaMm2, null, id);
+    assert.strictEqual(iod.areaKnown, true, id); assert.strictEqual(iod.areaMm2, 117.8, id); // 2026-11-05: 面積 117.8mm² を取得(旧: 未取得)。縦横比 1.30 は面積に依らない
+    assert.ok(Math.abs(iod.widthMm * iod.heightMm - 117.8) < 0.01, id);
     assert.ok(Math.abs(iod.y - (ccd.y + ccd.heightMm) - ccd.heightMm * 0.48) < 1e-6, `${id} 隙間`);
     const dx = (iod.x + iod.widthMm / 2) - (ccd.x + ccd.widthMm / 2);
     const expect = ccd.layout.units === 1 ? 0.37 * iod.widthMm : 0;
@@ -189,5 +190,5 @@ test('評価(ST/MT/面積/電力など)は IOD の位置合わせの前後で全
   const E = require('../js/model/evaluate.js'); const ctx = E.makeContext(); const out = {};
   // 2026-11-04: Core Ultra 5 325・Core 5 320 は、この固定ハッシュの後に追加したプリセットなので対象外(既存 100 件のハッシュは追加の前後で一致を確認。追加分の評価は mix.test.js の BASE_M5B で固定)
   D.presets.filter((p) => !['intel-ptl-u5-325', 'intel-wcl-c5-320'].includes(p.id)).forEach((p) => { out[p.id] = E.evaluate(design.fromPreset(p), ctx); });
-  assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), '3ff6dcc87b898bb224afb3b07627da448f2ab986c98e80bd91f37e4377d102df'); // 2026-11-05(3 回目: レビュー対応で 265K・285K の notes に適用範囲の注記を追記しただけで、評価の数値は不変。旧 706f95bf…)(2 回目: 265K の P boost 5.5→5.4・285K の P boost 5.7→5.5 〔ARK の Performance-core Max Turbo〕 で Lion Cove の u を再校正。100 件のうち変わったのは 28 件〔325・320 は対象外〕。ST/MT のほか 265K・285K は電力モデル・温度も変わる。旧 8250e7cb…)(14900K の P・E ベース 3.2/2.4GHz と 265K の E ブースト 4.6GHz を ARK 原ページで追加。14900K は電力モデル・温度・持続クロックが出て、265K は MT が 23909 → 27617 に変わったため。他の 100 件は不変。旧 3f4f49dd…)(3 回目〔最終〕: Dimensity 9600 Pro の peak 22.7W を power から外して notes に移し、M5 Max の note を追記したため。評価の数値は不変。旧 399a9bbc…)(2 回目: Apple の peak の note に原ページ確認状況を反映しただけで、評価の数値は不変。旧 c98373a2…)(電力データの取得。ユーザー指示「TDP が取れていないものをできるだけ取得」): 37 件のプリセットの電力の公表値・注記が変わり、うち 12 件は電力モデル・温度・持続クロックが出る〔8 件〕/変わる〔4 件〕、7840HS は MT の帯が 0.81 → 0.69 に変わった(ST は 102 件すべて不変)ためハッシュを更新(旧 60e001b5…)。以下は旧ハッシュ時点の記録: // 2026-11-05(ユーザー申告で HX370 の Zen 5c を base 2.0 / boost 3.4GHz に更新): 変わったのは HX370 の評価だけ(MT・電力モデル・温度が出るように。errCause.mt と notes の文面を含む)のためハッシュを更新(旧 100c5b20…)。以下は旧ハッシュ時点の記録: 同日の 2 回目の更新: 評価値は不変のまま、レビュー対応で HX370・5800U の errCause.mt の文面だけを直したため(ハッシュは evaluate の結果全体で errCause 文面を含む) // 2026-11-05: MT の帯 0 係数を 0.65 → 0.69 に再校正したため MT の評価値が変わった(帯 0 の mobile-pc 5 件〔325・320 は対象外〕: 5800U・7735HS・HX370・14700HX・Kraken Point)。ST・面積・電力・温度は不変。あわせて 3 件(HX370・Kraken・5800U)の errCause.mt の文面も更新
+  assert.strictEqual(require('crypto').createHash('sha256').update(JSON.stringify(out)).digest('hex'), 'b022617fe359bb211214bed7889c19c77a3f84e2cc1967f7d662a2f240eef6f8'); // 2026-11-05(2 回目: レビュー対応で M3 Pro に cfg.l2 と notes の文面を追加しただけで、評価の数値は不変。旧 fddc1f9e…)(未取得データの追加。ユーザー指示「ほかの取得できていないデータがあるチップもできるだけ集めてください」): 評価が変わるのは 14 件(13900K・268V・258V・256V・388H・275HX・5800X・Kraken Point・7700・7950X・9700X・9950X・M1 Ultra・Orin)、ほかに notes・memory・l2 の文面が変わるプリセットが多数(ハッシュは evaluate の結果全体で preset の notes を含む)。校正(u・σ・γ)と MT 帯係数 0.69/0.76 は不変。旧 3ff6dcc8…)(3 回目: レビュー対応で 265K・285K の notes に適用範囲の注記を追記しただけで、評価の数値は不変。旧 706f95bf…)(2 回目: 265K の P boost 5.5→5.4・285K の P boost 5.7→5.5 〔ARK の Performance-core Max Turbo〕 で Lion Cove の u を再校正。100 件のうち変わったのは 28 件〔325・320 は対象外〕。ST/MT のほか 265K・285K は電力モデル・温度も変わる。旧 8250e7cb…)(14900K の P・E ベース 3.2/2.4GHz と 265K の E ブースト 4.6GHz を ARK 原ページで追加。14900K は電力モデル・温度・持続クロックが出て、265K は MT が 23909 → 27617 に変わったため。他の 100 件は不変。旧 3f4f49dd…)(3 回目〔最終〕: Dimensity 9600 Pro の peak 22.7W を power から外して notes に移し、M5 Max の note を追記したため。評価の数値は不変。旧 399a9bbc…)(2 回目: Apple の peak の note に原ページ確認状況を反映しただけで、評価の数値は不変。旧 c98373a2…)(電力データの取得。ユーザー指示「TDP が取れていないものをできるだけ取得」): 37 件のプリセットの電力の公表値・注記が変わり、うち 12 件は電力モデル・温度・持続クロックが出る〔8 件〕/変わる〔4 件〕、7840HS は MT の帯が 0.81 → 0.69 に変わった(ST は 102 件すべて不変)ためハッシュを更新(旧 60e001b5…)。以下は旧ハッシュ時点の記録: // 2026-11-05(ユーザー申告で HX370 の Zen 5c を base 2.0 / boost 3.4GHz に更新): 変わったのは HX370 の評価だけ(MT・電力モデル・温度が出るように。errCause.mt と notes の文面を含む)のためハッシュを更新(旧 100c5b20…)。以下は旧ハッシュ時点の記録: 同日の 2 回目の更新: 評価値は不変のまま、レビュー対応で HX370・5800U の errCause.mt の文面だけを直したため(ハッシュは evaluate の結果全体で errCause 文面を含む) // 2026-11-05: MT の帯 0 係数を 0.65 → 0.69 に再校正したため MT の評価値が変わった(帯 0 の mobile-pc 5 件〔325・320 は対象外〕: 5800U・7735HS・HX370・14700HX・Kraken Point)。ST・面積・電力・温度は不変。あわせて 3 件(HX370・Kraken・5800U)の errCause.mt の文面も更新
 });

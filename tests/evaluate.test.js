@@ -199,8 +199,10 @@ test('校正範囲: 収録チップの最大クロックの 1.05 倍を超える
   assert.strictEqual(E.maxClockOf(ctx.presets, 'x86'), 5.8); assert.strictEqual(E.maxClockOf(ctx.presets, 'none'), null);
 });
 
+// 2026-11-05: M1 の E コアの最大クロック 2.064GHz を取得したため、クロック未取得のコアを持つ実プリセットは無くなった。E のクロックを外した M1 の複製から作った設計で確かめる(baseCfg も未取得)
+const m1NoEClock = () => { const p = JSON.parse(JSON.stringify(D.presets.find((x) => x.id === 'apple-m1'))); delete p.cfg.cores.find((c) => c.type === 'E').maxGHz; return design.fromPreset(p, { mode: 'improve' }); };
 test('校正範囲: 元のクロックが未取得のコアにクロックを入れると範囲外(根拠がない)', () => {
-  const m1 = impD('apple-m1');
+  const m1 = m1NoEClock();
   const r = E.evaluate(design.setClock(m1, 'E', 2.0).design, ctx);
   assert.deepStrictEqual(r.outOfCalibration.map((o) => o.field), ['core:E:clock']);
   assert.ok(r.outOfCalibration[0].reason.includes('未取得'));
@@ -219,7 +221,7 @@ test('楽観: クロック・コア数・L3 を上げた編集は optimistic。�
     const e = E.evaluate(r.design, ctx);
     assert.strictEqual(e.optimistic, false); assert.deepStrictEqual(e.optimisticReasons, []);
   });
-  assert.strictEqual(E.evaluate(design.setClock(impD('apple-m1'), 'E', 2.0).design, ctx).optimistic, true); // 未取得→入力は上げた扱い
+  assert.strictEqual(E.evaluate(design.setClock(m1NoEClock(), 'E', 2.0).design, ctx).optimistic, true); // 未取得→入力は上げた扱い(2026-11-05: 実プリセットに未取得のクロックが無くなったため E を外した M1 の複製で確認)
 });
 
 test('楽観: ST の確度が落ちるのはクロックを上げたときだけ。コア数だけなら MT のみ', () => {

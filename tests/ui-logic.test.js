@@ -11,11 +11,11 @@ const P = (id) => D.presets.find((p) => p.id === id);
 const ctx = E.makeContext();
 const ev = (id) => E.evaluate(design.fromPreset(P(id)), ctx);
 
-test('充実度: 13900K は ●、5800X(面積が未取得)は ◐、7700(IOD 面積未取得)は ◐', () => {
+test('充実度: 13900K は ●、5800X(面積が未取得)は ◐、7700 は ●(2026-11-05 に IOD 面積 117.8mm² を取得。旧: IOD 面積未取得で ◐)', () => {
   assert.strictEqual(PL.completeness(P('intel-rpl-13900k'), gb7ByName).symbol, '●');
   const x = PL.completeness(P('amd-zen3-5800x'), gb7ByName); // 2026-11-05: 5800X は電力(105W・PPT 142W)を取得したため、未取得は面積だけ(以前は面積・電力が未取得で ○)
   assert.strictEqual(x.symbol, '◐'); assert.deepStrictEqual(x.missing, ['面積']);
-  assert.strictEqual(PL.completeness(P('amd-zen4-7700'), gb7ByName).symbol, '◐');
+  assert.strictEqual(PL.completeness(P('amd-zen4-7700'), gb7ByName).symbol, '●');
 });
 
 test('充実度: 面積・電力がどちらも未取得なら ○(5800X を複製して power を null にした合成プリセット)', () => {
@@ -27,7 +27,8 @@ test('充実度: 面積・電力がどちらも未取得なら ○(5800X を複�
 test('区分ラベル: 未取得は「未取得」', () => {
   assert.deepStrictEqual(['meas', 'pub', 'sec', null].map(PL.sourceLabel), ['実測', '公表', '二次', '未取得']);
   assert.strictEqual(PL.areaSummary(P('amd-zen3-5800x')).text, '未取得');
-  assert.ok(PL.areaSummary(P('amd-zen4-7700')).partial);
+  assert.ok(!PL.areaSummary(P('amd-zen4-7700')).partial); // 2026-11-05: IOD 面積を取得して一部未取得ではなくなった
+  assert.ok(PL.areaSummary(P('intel-mtl-185h')).partial); // 一部未取得の例(Base タイル面積が未取得)
 });
 
 test('絞り込み: メーカー・種別・検索・年・充実度', () => {

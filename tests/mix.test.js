@@ -49,8 +49,11 @@ test('blocklib.build: 面積不明は unknown で 0 にならない / ブロッ�
   const l3p = P('l3:amd-zen5-9700x');
   assert.strictEqual(l3p.capacityMB, 32); assert.strictEqual(l3p.area.origin, 'estimated');
   assert.ok(Math.abs(l3p.area.mm2 - 70.2 * 0.15) < 0.01);
+  // 2026-11-05: Ryzen の IOD(9700X など)は面積 117.8mm² を取得したので table。面積不明の例は Core 5 320 の uncore に替えた
   const iod = parts.find((p) => p.id === 'uncore:amd-zen5-9700x:1');
-  assert.ok(iod); assert.strictEqual(iod.area.origin, 'unknown'); assert.strictEqual(iod.area.mm2, null);
+  assert.ok(iod); assert.strictEqual(iod.area.origin, 'table'); assert.strictEqual(iod.area.mm2, 117.8);
+  const unk = parts.find((p) => p.id === 'uncore:intel-wcl-c5-320:1');
+  assert.ok(unk); assert.strictEqual(unk.area.origin, 'unknown'); assert.strictEqual(unk.area.mm2, null);
 });
 
 test('blocklib.search / get', () => {
@@ -99,7 +102,7 @@ test('compat: プロセス違いは warn(移植)、同じ N4 は出ない', () =
 });
 
 test('compat: 面積未取得の警告 / メモリ食い違い / 性能低下なしの info / 使用率', () => {
-  let d = mk('tsmc-n6'); d = add(d, 'uncore:amd-zen5-9700x:1');
+  let d = mk('tsmc-n6'); d = add(d, 'uncore:intel-wcl-c5-320:1'); // 面積不明の例(2026-11-05: Ryzen の IOD は 117.8mm² を取得したため Core 5 320 の uncore に替えた)
   let r = C.check(d, parts, D.nodes);
   assert.ok(r.some((x) => x.code === 'area-unknown' && x.level === 'warn'));
   assert.ok(r.some((x) => x.code === 'no-mix-penalty' && x.level === 'info' && x.text.includes('混合による性能低下は反映していません')));
@@ -166,7 +169,7 @@ test('addPart: 異なるチップの同じ種別名は type を分ける / 異�
 });
 
 test('addPart: 面積不明の部品は areaMm2:null で置ける', () => {
-  let d = mk('tsmc-n6'); d = add(d, 'uncore:amd-zen5-9700x:1');
+  let d = mk('tsmc-n6'); d = add(d, 'uncore:intel-wcl-c5-320:1'); // 2026-11-05: 面積不明の例を Ryzen の IOD(117.8mm² を取得)から Core 5 320 の uncore に替えた
   assert.strictEqual(d.dies[0].blocks[0].areaMm2, null); assert.strictEqual(d.dies[0].blocks[0].areaOrigin, 'unknown');
 });
 
@@ -256,7 +259,8 @@ test('evaluate(mix): 面積の区分は出所 × 移植の 2 軸(表のまま移
 // 2026-10-31: ST の L3 を 1 CCD 分にしたため 7950X・9950X・395(BASE)と 5950X(BASE_M5B)の ST を更新(旧値 2728.973 / 3165.364 / 2844.253 / 2289.758。MT は不変。設計書 §5.3.3 G の3)
 // 2026-10-30(M6 第 4 段): Golden/Raptor Cove の専用 u 導入で 12900K・13900K・14900K の ST/MT を更新(旧値は設計書 §5.3.0 の M6 第 4 段)。他は不変
 // 2026-11-05: 265K の P boost 5.5→5.4・285K の P boost 5.7→5.5(ARK の Performance-core Max Turbo)で Lion Cove の u を再校正(96.084→97.780、x86 平均 107.361→107.832)。285K・268V・388H の ST と、x86 平均 u を使う全プリセットの ST/MT(Zen 3 など)・E コアの MT を更新。旧値は設計書 §5.3.0 の 2026-11-05 の節
-const BASE = {"intel-adl-12900k":[2338.415,18266.225],"intel-rpl-13900k":[2675.373,17940.976],"intel-rpl-14900k":[2586.937,23024.188],"intel-arl-285k":[2796.734,30783.416],"intel-arl-265k":[2737,27713.66],"intel-mtl-185h":[2205.681,12562.015],"intel-lnl-268v":[2481.213,null],"intel-ptl-x9-388h":[2847.213,null],"amd-zen1-1800x":[1126,6449.595],"amd-zenplus-2700x":[1441.925,8040.932],"amd-zen3-5800x":[2164.203,12618.031],"amd-zen4-7700":[2503,15164.404],"amd-zen4-7950x":[2680.434,24530.897],"amd-zen5-9700x":[3010,18350.075],"amd-zen5-9950x":[3113.309,28827.567],"amd-strix-hx370":[2780.417,12543.316],"amd-strixhalo-395":[2802.154,20887.487],"apple-a12":[null,null],"apple-a13":[null,null],"apple-a14":[2053.875,null],"apple-a15":[2050.705,null],"apple-a16":[2352,null],"apple-a17pro":[2824.846,null],"apple-a18":[null,null],"apple-a18pro":[null,null],"apple-a19pro":[null,null],"apple-a20pro":[null,null],"apple-m1":[2169,null],"apple-m1pro":[2184.935,null],"apple-m1max":[2184.935,null],"apple-m1ultra":[null,null],"apple-m2":[2366,null],"apple-m2pro":[null,null],"apple-m2max":[null,null],"apple-m2ultra":[null,null],"apple-m3":[2986.669,null],"apple-m3pro":[2986.669,null],"apple-m3max":[2986.669,null],"apple-m4":[null,null],"apple-m4pro":[null,null],"apple-m5":[null,null],"apple-m5max":[null,null],"qc-855":[682.526,2177.746],"qc-865":[871.889,2660.845],"qc-888":[1143.089,2930.539],"qc-8gen1":[1069,3189.929],"qc-8plus-gen1":[1128.944,3470.663],"qc-8gen2":[1426,4473.836],"qc-8gen3":[1364,null],"qc-8elite":[1866,10607.227],"qc-8elite-gen5":[1970.9,10960.481],"qc-8s-gen3":[1258.063,null],"qc-8s-gen4":[1332.54,null],"qc-7plus-gen3":[1185.707,null],"qc-780g":[794.496,2576.165],"mt-9000":[1084.098,3463.462],"mt-9200":[1372.797,3772.659],"mt-9300":[1346.556,null],"mt-9400":[1741,null],"mt-9500":[null,null],"mt-9600pro":[null,null],"mt-8200":[980.379,3208.371],"nv-orin-agx":[738.15,6807.888],"nv-thor":[null,null],"nv-t239":[408.401,2477.815]};
+// 2026-11-05(未取得データの追加): 13900K の MT 17940.976 → 23160.329(E の boost 4.3GHz を ARK で取得)、268V の MT null → 9337.213(P/LP-E の base と LP-E の boost を ARK で取得)、388H の MT null → 17373.303(P/E/LP-E のクロックを ARK で取得)、M1 Ultra の ST null → 2184.935(P の最大クロック 3.228GHz を Eclectic Light の実測で取得)、Orin の ST 738.15 → 787.743 / MT 6807.888 → 5925.276(L3 6MB を公表値で取得)。ほかは不変
+const BASE = {"intel-adl-12900k":[2338.415,18266.225],"intel-rpl-13900k":[2675.373,23160.329],"intel-rpl-14900k":[2586.937,23024.188],"intel-arl-285k":[2796.734,30783.416],"intel-arl-265k":[2737,27713.66],"intel-mtl-185h":[2205.681,12562.015],"intel-lnl-268v":[2481.213,9337.213],"intel-ptl-x9-388h":[2847.213,17373.303],"amd-zen1-1800x":[1126,6449.595],"amd-zenplus-2700x":[1441.925,8040.932],"amd-zen3-5800x":[2164.203,12618.031],"amd-zen4-7700":[2503,15164.404],"amd-zen4-7950x":[2680.434,24530.897],"amd-zen5-9700x":[3010,18350.075],"amd-zen5-9950x":[3113.309,28827.567],"amd-strix-hx370":[2780.417,12543.316],"amd-strixhalo-395":[2802.154,20887.487],"apple-a12":[null,null],"apple-a13":[null,null],"apple-a14":[2053.875,null],"apple-a15":[2050.705,null],"apple-a16":[2352,null],"apple-a17pro":[2824.846,null],"apple-a18":[null,null],"apple-a18pro":[null,null],"apple-a19pro":[null,null],"apple-a20pro":[null,null],"apple-m1":[2169,null],"apple-m1pro":[2184.935,null],"apple-m1max":[2184.935,null],"apple-m1ultra":[2184.935,null],"apple-m2":[2366,null],"apple-m2pro":[null,null],"apple-m2max":[null,null],"apple-m2ultra":[null,null],"apple-m3":[2986.669,null],"apple-m3pro":[2986.669,null],"apple-m3max":[2986.669,null],"apple-m4":[null,null],"apple-m4pro":[null,null],"apple-m5":[null,null],"apple-m5max":[null,null],"qc-855":[682.526,2177.746],"qc-865":[871.889,2660.845],"qc-888":[1143.089,2930.539],"qc-8gen1":[1069,3189.929],"qc-8plus-gen1":[1128.944,3470.663],"qc-8gen2":[1426,4473.836],"qc-8gen3":[1364,null],"qc-8elite":[1866,10607.227],"qc-8elite-gen5":[1970.9,10960.481],"qc-8s-gen3":[1258.063,null],"qc-8s-gen4":[1332.54,null],"qc-7plus-gen3":[1185.707,null],"qc-780g":[794.496,2576.165],"mt-9000":[1084.098,3463.462],"mt-9200":[1372.797,3772.659],"mt-9300":[1346.556,null],"mt-9400":[1741,null],"mt-9500":[null,null],"mt-9600pro":[null,null],"mt-8200":[980.379,3208.371],"nv-orin-agx":[787.743,5925.276],"nv-thor":[null,null],"nv-t239":[408.401,2477.815]};
 test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(L3 未取得 null は従来の扱いのまま)', () => {
   Object.keys(BASE).forEach((id) => {
     const r = E.evaluate(design.fromPreset(D.presets.find((p) => p.id === id)), ctx);
@@ -277,7 +281,8 @@ test('指摘1: 既存の全プリセットの ST/MT は変更前と一致する(
 // 2026-10-31(M6 第 5 段): Zen 3 デスクトップ 2 件(5600X・5950X)を追加(初回値。GB7 との差は設計書 §5.3.0)
 // 2026-10-31(M6 第 5 段 E5): Snapdragon 8cx Gen 3(qc-8cx-gen3)を追加(初回値 [1188.55, 5554.659]。GB7 1315/6722 との差は ST -9.6% / MT -17.4%。設計書 §5.3.0)。Oryon Performance の l2KB を 3072→2048 に修正(8 Elite 系 3 件の MT のみ下がる。qc-8elite 10605.004→10554.884、qc-8elite-gen5 10958.045→10906.818、qc-8elite-x-gen6 11892.725→11837.519。ST・校正は不変。設計書 §5.3.0)
 // 2026-11-05: Lion Cove の u 再校正(265K/285K の P boost 変更)で、Lion Cove 系(258V・256V・275HX・386H・378H・358H・325・320)の ST と、x86 平均 u を使うものの ST/MT(この表では計 20 件)を更新(詳細は上の BASE の注記と設計書 §5.3.0)
-const BASE_M5B = {"intel-ptl-u5-325":[2498.677,9468.933],"intel-wcl-c5-320":[2474.403,6970.406],"nv-gb10":[2132.513,17860.879],"intel-adl-12700k":[2241.89,15924.88],"intel-rpl-13700k":[2488.745,19302.257],"intel-rpl-14700k":[2538.03,21236.913],"intel-lnl-258v":[2388.273,null],"amd-zenplus-2600x":[1411.36,6679.001],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,10189.108],"amd-zen3-5800u":[1979.902,8321.084],"qc-7gen3":[1061.707,3190.156],"qc-7gen4":[null,null],"qc-7gen1":[930.731,2976.013],"qc-720g":[571.457,1466.7],"qc-8elite-x-gen6":[2108.635,11895.999],"intel-adl-12600k":[2230.558,13562.064],"intel-rpl-13600k":[2344.762,16269.073],"intel-ptl-x9-386h":[2742.8,16837.009],"intel-arl-275hx":[2748.032,null],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[738.15,2510.772],"qc-4gen2":[738.15,1756.331],"intel-rpl-14600k":[2432.331,16716.316],"intel-rpl-14700hx":[2538.03,15122.782],"intel-adl-12100":[1945.05,7429.236],"intel-lnl-256v":[2388.273,null],"intel-ptl-x9-378h":[2795.075,17195.675],"intel-ptl-x7-358h":[2690.386,16199.998],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2121.68,8827.932],"amd-zen3-5600x":[2121.405,10417.516],"amd-zen3-5950x":[2249.408,19876.188],"qc-8cx-gen3":[1196.383,5591.269],"amd-kraken-350":[2694.581,10245.686]}; // 2026-11-05: MT の帯 0 係数 0.65 → 0.69 の再校正で、hx370(BASE)・325・320・5800u・14700hx・7735hs・kraken の MT を更新(旧値 11732.546 / 8945.613 / 6596.74 / 7905.687 / 14341.28 / 8393.862 / 9736.787)。ST は不変 // 2026-11-05(電力データ取得): 7840HS に range 35〜54W を入れたため MT の帯が 0.81(電力未取得のフォールバック)→ 0.69(帯 0)に変わり、MT 11589.846 → 10189.108(GB7 との差 -2.5% → -14.3%)。ST は不変。帯の係数は再校正していない
+// 2026-11-05(未取得データの追加): 258V・256V の MT null → 9146.23、275HX の MT null → 24318.524(ARK で LP-E / E のクロックを取得して MT を計算できるようになった)。ほかは不変
+const BASE_M5B = {"intel-ptl-u5-325":[2498.677,9468.933],"intel-wcl-c5-320":[2474.403,6970.406],"nv-gb10":[2132.513,17860.879],"intel-adl-12700k":[2241.89,15924.88],"intel-rpl-13700k":[2488.745,19302.257],"intel-rpl-14700k":[2538.03,21236.913],"intel-lnl-258v":[2388.273,9146.23],"amd-zenplus-2600x":[1411.36,6679.001],"amd-zen1-1500x":[1047.775,3874.26],"amd-zen4-7840hs":[2360.25,10189.108],"amd-zen3-5800u":[1979.902,8321.084],"qc-7gen3":[1061.707,3190.156],"qc-7gen4":[null,null],"qc-7gen1":[930.731,2976.013],"qc-720g":[571.457,1466.7],"qc-8elite-x-gen6":[2108.635,11895.999],"intel-adl-12600k":[2230.558,13562.064],"intel-rpl-13600k":[2344.762,16269.073],"intel-ptl-x9-386h":[2742.8,16837.009],"intel-arl-275hx":[2748.032,24318.524],"amd-zen1-1200":[942.019,3183.718],"amd-raven-2400g":[1021.01,3392.886],"amd-raven-2200g":[975.84,3171.638],"qc-6gen1":[738.15,2510.772],"qc-4gen2":[738.15,1756.331],"intel-rpl-14600k":[2432.331,16716.316],"intel-rpl-14700hx":[2538.03,15122.782],"intel-adl-12100":[1945.05,7429.236],"intel-lnl-256v":[2388.273,9146.23],"intel-ptl-x9-378h":[2795.075,17195.675],"intel-ptl-x7-358h":[2690.386,16199.998],"amd-epyc-7401":[888.492,9834.905],"amd-zen3p-7735hs":[2121.68,8827.932],"amd-zen3-5600x":[2121.405,10417.516],"amd-zen3-5950x":[2249.408,19876.188],"qc-8cx-gen3":[1196.383,5591.269],"amd-kraken-350":[2694.581,10245.686]}; // 2026-11-05: MT の帯 0 係数 0.65 → 0.69 の再校正で、hx370(BASE)・325・320・5800u・14700hx・7735hs・kraken の MT を更新(旧値 11732.546 / 8945.613 / 6596.74 / 7905.687 / 14341.28 / 8393.862 / 9736.787)。ST は不変 // 2026-11-05(電力データ取得): 7840HS に range 35〜54W を入れたため MT の帯が 0.81(電力未取得のフォールバック)→ 0.69(帯 0)に変わり、MT 11589.846 → 10189.108(GB7 との差 -2.5% → -14.3%)。ST は不変。帯の係数は再校正していない
 test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分はすべて addedIn:M5b・calib:false', () => {
   const added = D.presets.filter((p) => p.addedIn === 'M5b');
   assert.deepStrictEqual(added.map((p) => p.id).sort(), Object.keys(BASE_M5B).sort());
@@ -290,8 +295,8 @@ test('M5b 波1・波2: 追加分の ST/MT が固定値と一致し、追加分�
 });
 
 // 2026-10-31: Kraken Point(Ryzen AI 7 350。addedIn:'M5b'。C2 の例外)。初回値 ST 2694.581 / MT 9508.475(公表 GB7 2116 / 11354 との差は ST +27.3% / MT -16.3%。補正で合わせない)。
-// GB7 は検索要約(原ページ未確認)。ダイ面積は未取得、Zen 5c の baseGHz が未取得のため電力モデルは校正できない(公表値の範囲のみ)
-test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。面積は未取得のまま歩留まりも未取得、電力は推定できない', () => {
+// GB7 は検索要約(原ページ未確認)。ダイ面積は未取得(Zen 5c の baseGHz は 2026-11-05 に取得済みで、電力モデルは校正できる)
+test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。面積は未取得のまま歩留まりも未取得、電力は仮モデルで推定できる(2026-11-05 から)', () => {
   const p = D.presets.find((x) => x.id === 'amd-kraken-350');
   assert.strictEqual(p.addedIn, 'M5b'); assert.strictEqual(p.calib, false);
   const d = design.fromPreset(p);
@@ -303,7 +308,8 @@ test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。
   assert.ok(Math.abs(r.st.errPct - 27.34) < 0.01 && Math.abs(r.mt.errPct + 9.76) < 0.01); // MT は 2026-11-02 に -16.25 → -14.24(Zen 5c が Zen 5 の u を借りる。§5.3.3 K)、2026-11-05 に帯 0 再校正(0.65 → 0.69)で -9.76(判定は ng → ok)
   assert.strictEqual(r.area.totalMm2, null); assert.strictEqual(r.area.yield, null);
   assert.strictEqual(r.power.published.base.w, 28); assert.deepStrictEqual(r.power.published.range, { minW: 15, maxW: 54 });
-  assert.strictEqual(r.powerModel.ok, false);
+  // 2026-11-05: Zen 5c の base 2.0GHz を TechPowerUp で取得したため、電力モデルは校正できる(旧: baseGHz 未取得で ok:false)。estW 162W は base 28W に合わせた仮モデルの全コア boost 推定で、公表ピークは未取得のため差は出ない
+  assert.strictEqual(r.powerModel.ok, true); assert.strictEqual(r.powerModel.calibratedToW, 28); assert.strictEqual(r.powerModel.vsPublishedPeak, undefined);
   // 再現度パネル: 公開値が検索要約(原ページ未確認)なら注記が付き、判定(✗)は変わらない
   const rows = require('../js/ui/reproduce.js').reproductionRows(r);
   const st = rows.find((x) => /シングル/.test(x.label)); const mt = rows.find((x) => /マルチ/.test(x.label));
@@ -321,9 +327,9 @@ test('M5b 波1: 追加分を足しても校正(σ・γ・uarch ごとの u・uIs
   assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));
 });
 
-test('M5b 波1: 部品ライブラリの既存 177 件は追加前と同じ(追加分の部品が増えるだけ。173 件は M3 Pro・M3 Max のコア追記 +4 件の前、2026-11-01)', () => {
+test('M5b 波1: 部品ライブラリの既存 178 件は追加前と同じ(追加分の部品が増えるだけ。173 件は M3 Pro・M3 Max のコア追記 +4 件の前、2026-11-01。177 → 178 は 2026-11-05 に Orin の L3 6MB を取得して L3 の部品が +1)', () => {
   const before = BL.build(D.presets.filter((p) => !p.addedIn), areas, D.nodes);
-  assert.strictEqual(before.length, 177);
+  assert.strictEqual(before.length, 178);
   const byId = new Map(parts.map((p) => [p.id, p]));
   before.forEach((p) => assert.deepStrictEqual(byId.get(p.id), p, p.id));
   assert.ok(parts.length > 173);
