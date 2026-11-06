@@ -25,7 +25,7 @@
 - NanoReview(https://nanoreview.net/en/gpu/radeon-820m): HTTP 403。
 - Guru3D(https://www.guru3d.com/story/ryzen-ai-5-330-detailed-specs-zen-5-zen-5c-and-radeon-4-cu-gpu/): HTTP 403。
 
-**AMD 公式(amd.com)は再取得していない。** W300 の各 SKU 名は amd.com の製品ページにリンクしており、W300 の値は AMD 公表値の転記と思われるが、本メモでは W300 経由の [二次] として扱う。
+**AMD 公式(amd.com)は再取得していない(本メモ作成時点。2026-11-06 更新: Chrome の通常閲覧なら取得でき、350 は公式で確認済み。amd-official-audit-2026-11-06.md 参照)。** W300 の各 SKU 名は amd.com の製品ページにリンクしており、W300 の値は AMD 公表値の転記と思われるが、本メモでは W300 経由の [二次] として扱う。
 
 ## 1. SKU 一覧
 

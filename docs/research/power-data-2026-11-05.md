@@ -29,7 +29,7 @@ URL は https://www.techpowerup.com/cpu-specs/<slug>
 | Ryzen 9 5950X | ryzen-9-5950x.c2364 | peak 142W(PPT) |
 | Ryzen 7 7700 | ryzen-7-7700.c2960 | peak 88W(PPT) |
 | Ryzen 7 9700X | ryzen-7-9700x.c3651 | peak 88W(PPT)。拡張 cTDP 105W のとき PPT 142W(note に記載) |
-| Ryzen AI Max+ 395 | ryzen-ai-max-395.c3994 | base 55W(range 45〜120W は既存)。amd.com は使わない方針で TechPowerUp を根拠とした(amd.com 由来の検索要約も 55W) |
+| Ryzen AI Max+ 395 | ryzen-ai-max-395.c3994 | base 55W(range 45〜120W は既存)。amd.com は使わない方針で TechPowerUp を根拠とした(amd.com 由来の検索要約も 55W)〔2026-11-06 更新: amd.com は Chrome の通常閲覧なら取得できる〕 |
 | Ryzen 7 5800U | ryzen-7-5800u.c2746 | base 15W(range 10〜25W は既存) |
 | Ryzen 5 2400G | ryzen-5-2400g.c1976 | base 65W(range 46〜65W は既存) |
 | Ryzen 3 2200G | ryzen-3-2200g.c1978 | base 65W(range 46〜65W は既存) |

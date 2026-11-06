@@ -3,7 +3,7 @@
 - 調査日: 2026-11-03。コードは変更していない(この文書だけ新規作成)。
 - 目的: `data/presets/chips-soc.js` の NVIDIA 節(nv-orin-agx / nv-thor / nv-t239)と同じ形式で GB10 を追加できるよう、値と出典・区分をそろえる。
 - 区分の付け方は設計書 §2.2 と同じ。**[実測]** = ダイ写真の計測(Kurnal)や実機の読み出し(lscpu・dmidecode・測定記事)/ **[公表]** = NVIDIA の公式資料 / **[二次]** = 報道・解説記事 / **[推定]** = 私の計算・推測 / **未取得** = 見つからなかった。推測で埋めた値は無い。
-- Geekbench Browser(browser.geekbench.com)は開いていない(403 のため。回避もしていない)。Geekbench の値はすべて二次資料に載った数字。amd.com は開いていない。
+- Geekbench Browser(browser.geekbench.com)は開いていない(403 のため。回避もしていない)。Geekbench の値はすべて二次資料に載った数字。amd.com は開いていない(2026-11-06 更新: amd.com は Chrome の通常閲覧なら取得できる)。
 
 ## 1. 既存プリセットの形式(確認結果)
 
