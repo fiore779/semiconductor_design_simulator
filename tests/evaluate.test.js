@@ -121,7 +121,7 @@ test('編集: cfg 無しの古い設計は従来どおり評価できる', () =>
 
 test('編集: クロック↑で ST↑(範囲内でも上げたので楽観側=ST は low)。errPct は null、basePublished が残る', () => {
   const d0 = impD(T); const base = E.evaluate(d0, ctx);
-  const r = E.evaluate(design.setClock(d0, 'P', 6.0).design, ctx); // 5.7 → 6.0(+5%)
+  const r = E.evaluate(design.setClock(d0, 'P', 5.9).design, ctx); // 5.7 → 5.9(+3.5%)。2026-11-06: x86 の最大クロックが 13900K の 5.8 から 5.7 に下がり、1.05 倍の上限が 6.09 → 5.985 GHz になったため、6.0 から 5.9 に変更
   assert.ok(r.st.score > base.st.score);
   assert.strictEqual(r.st.edited, true); assert.strictEqual(r.mt.edited, true);
   assert.strictEqual(r.st.errPct, null); assert.strictEqual(r.st.published, null);
@@ -149,7 +149,7 @@ test('編集: 校正範囲外の判定(クロック ±25%、コア数 半分未�
   const d0 = impD(T);
   const hi = E.evaluate(design.setClock(d0, 'P', 7.2).design, ctx); // +26%
   assert.strictEqual(hi.outOfCalibration[0].field, 'core:P:clock'); assert.strictEqual(hi.st.confidence, 'low');
-  // +24.6% でも x86 の収録最大クロック(5.8 GHz)の 1.05 倍を超えるので、最大クロック側で範囲外
+  // +24.6% でも x86 の収録最大クロック 5.7 GHz の 1.05 倍(=5.985)を超えるので、最大クロック側で範囲外
   assert.ok(E.evaluate(design.setClock(d0, 'P', 7.1).design, ctx).outOfCalibration[0].reason.includes('最大クロック'));
   const lo = E.evaluate(design.setClock(d0, 'P', 4.2).design, ctx); // -26%
   assert.strictEqual(lo.outOfCalibration.length, 1); assert.ok(lo.outOfCalibration[0].reason.includes('校正した範囲の外'));
@@ -189,14 +189,15 @@ test('校正範囲: L3(元 64 MB)は 0.5〜2 倍が範囲内。0 や、元が 0 
 });
 
 test('校正範囲: 収録チップの最大クロックの 1.05 倍を超えるクロックは範囲外', () => {
-  const d0 = impD(T); // x86 の最大は 5.8 GHz → 6.09 まで
-  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 6.0).design), []);
-  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 6.09).design), []);
-  const r = E.evaluate(design.setClock(d0, 'P', 6.2).design, ctx);
+  const d0 = impD(T); // x86 の最大は 5.7 GHz → 5.985 まで(2026-11-06: 13900K の P boost 5.8 → 5.4 で、最大は 5.8 から 5.7 に下がった。旧: 6.09 まで、6.0・6.09・6.2 で確認)
+  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.9).design), []);
+  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.985).design), []); // 上限ちょうど(範囲内)
+  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.986).design).map((o) => o.field), ['core:P:clock']); // わずかに超えると範囲外
+  const r = E.evaluate(design.setClock(d0, 'P', 6.1).design, ctx);
   assert.deepStrictEqual(r.outOfCalibration.map((o) => o.field), ['core:P:clock']);
-  assert.ok(r.outOfCalibration[0].reason.includes('収録しているチップの最大クロック(5.8 GHz)を超えています'));
+  assert.ok(r.outOfCalibration[0].reason.includes('収録しているチップの最大クロック(5.7 GHz)を超えています'));
   assert.strictEqual(r.st.confidence, 'low');
-  assert.strictEqual(E.maxClockOf(ctx.presets, 'x86'), 5.8); assert.strictEqual(E.maxClockOf(ctx.presets, 'none'), null);
+  assert.strictEqual(E.maxClockOf(ctx.presets, 'x86'), 5.7); assert.strictEqual(E.maxClockOf(ctx.presets, 'none'), null);
 });
 
 // 2026-11-05: M1 の E コアの最大クロック 2.064GHz を取得したため、クロック未取得のコアを持つ実プリセットは無くなった。E のクロックを外した M1 の複製から作った設計で確かめる(baseCfg も未取得)
@@ -227,7 +228,7 @@ test('楽観: クロック・コア数・L3 を上げた編集は optimistic。�
 test('楽観: ST の確度が落ちるのはクロックを上げたときだけ。コア数だけなら MT のみ', () => {
   const d0 = impD(T); const base = E.evaluate(d0, ctx);
   assert.notStrictEqual(base.st.confidence, 'low');
-  const clk = E.evaluate(design.setClock(d0, 'P', 6.0).design, ctx);
+  const clk = E.evaluate(design.setClock(d0, 'P', 5.9).design, ctx); // 2026-11-06: 6.0 → 5.9(x86 の最大クロックが 5.7 に下がり、6.0 は範囲外になるため)
   assert.deepStrictEqual(clk.outOfCalibration, []); assert.strictEqual(clk.st.confidence, 'low'); assert.strictEqual(clk.mt.confidence, 'low');
   const cnt = E.evaluate(design.setCoreCount(d0, 'P', 20).design, ctx);
   assert.strictEqual(cnt.st.confidence, base.st.confidence); assert.strictEqual(cnt.mt.confidence, 'low');
@@ -239,7 +240,8 @@ test('楽観: ST の確度が落ちるのはクロックを上げたときだけ
 test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さい L3 は下限)', () => {
   // 2026-10-30(M6 第 4 段): Golden Cove の専用 u(112.3)導入で更新(2026-11-01: 14700HX を標本から外して u=112.7、値を更新)。旧値 0:[1696.09,14773.73] 1:[1882.25,14773.73] 4:[2079.46,14773.73] 30:[2227.63,17654.36]
   // 2026-11-05: 265K の P boost 5.5→5.4 の再校正で x86 平均 u が動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15291.32 30:18240.5
-  const exp = { 0: [1780.43, 15310.46], 1: [1975.86, 15310.46], 4: [2182.87, 15310.46], 30: [2338.42, 18266.22] };
+  // 2026-11-06: 13900K・13700K の P boost を ARK の P コア最大ターボに揃え、Golden/Raptor の uCal が 112.7→114.1 に動いた。旧 0:[1780.43,15310.46] 1:[1975.86,15310.46] 4:[2182.87,15310.46] 30:[2338.42,18266.22]
+  const exp = { 0: [1802.55, 15446.18], 1: [2000.40, 15446.18], 4: [2209.99, 15446.18], 30: [2367.46, 18419.92] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
