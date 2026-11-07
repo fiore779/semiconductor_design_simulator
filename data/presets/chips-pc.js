@@ -114,7 +114,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     dies: [],
     power: { base: pw(105, 'pub', 'TDP 105W。AMD 公式(製品ページ、Chrome の通常閲覧、2026-11-06、[公表])と一致。区分 sec → pub(2026-11-05 は TechPowerUp https://www.techpowerup.com/cpu-specs/ryzen-7-5800x.c2362 で取得。65W ではなく 105W)'), peak: pw(142, 'sec', 'PPT 142W(TDP 105W の PPT)。TechPowerUp CPU データベースの原ページを確認済み(2026-11-05): https://www.techpowerup.com/cpu-specs/ryzen-7-5800x.c2362 。PPT は公表されたソケットの電力上限で、実測ではない'), range: null },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 4.7 }], l3MB: 32, l2: '合計 4MB', memory: 'DDR4-3200, 2ch' },
-    calib: false, notes: 'AMD 公式の製品ページ(2026-11-06、[公表])とコア・クロック・L3・TDP・メモリが一致(PPT 142W は公式に項目なしで [二次] のまま)。L2 合計 4MB は依頼(2026-11-06)で示された公式値(原ページ未再取得)。以下は 2026-11-05 の記録: P コアのベース 3.8GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-7-5800x.c2362 。面積は設計書で未取得。TDP 105W・PPT 142W は 2026-11-05 に TechPowerUp(二次)で取得',
+    calib: true, calibNote: 'Zen 3 の代表(8コア 1 CCD、全コア同種。2026-11-07 追加。ユーザー指示「NG の原因をできれば特定して直して」の調査で、Zen 3 に代表がなく ISA 平均 u を使っていたことが 5800X・5600X・5950X の誤差の一因と分かったため。通常の手順 §5.3.1)', notes: 'AMD 公式の製品ページ(2026-11-06、[公表])とコア・クロック・L3・TDP・メモリが一致(PPT 142W は公式に項目なしで [二次] のまま)。L2 合計 4MB は依頼(2026-11-06)で示された公式値(原ページ未再取得)。以下は 2026-11-05 の記録: P コアのベース 3.8GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-7-5800x.c2362 。面積は設計書で未取得。TDP 105W・PPT 142W は 2026-11-05 に TechPowerUp(二次)で取得',
   });
   // ---- M6 第5段(2026-10-31): Zen 3 デスクトップ 2 件(C5 の上限 2 件。mobile 補正と分離する標本用。addedIn:'M5b'、calib は false) ----
   P.push({
@@ -188,7 +188,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false,
     errCause: {
       st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 掲載の Geekbench Browser 転載 0.92(2567 は Framework 13、2784 は HX 370 のミニ PC。各 1 件で [二次])と相対値は近いが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
-      mt: '公開値(11354)は検索要約で原ページ未確認。Zen 5c の ST 補正を Zen 5 の u に揃えて -16.3% → -14.2%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -9.8%(判定 ng → ok)。残りは帯係数 0.69 に対し公開値と一致する係数 0.780。HX 370(0.869、-17.7%)と同じ向きで、原因は未特定。設計書 §5.3.3 K',
+      mt: '公開値(11354)は検索要約で原ページ未確認。Zen 5c の ST 補正を Zen 5 の u に揃えて -16.3% → -14.2%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -9.8%(判定 ng → ok)。【2026-11-07 更新】Zen 3 を校正代表に加えて σ が 0.0274 → 0.0289 に増え、MT は -11.2%(判定 ok → ng に戻った)。公開値と一致する係数は帯係数 0.69 に対し 0.795(旧 0.780)。HX 370 も 0.892(旧 0.869)で、同じ向き。原因は未特定。設計書 §5.3.3 K',
     },
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック 2.0GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-ai-7-350.c4004 。ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照。2026-11-06: AMD 公式ページでクロック・L3 16MB・TDP 28W(cTDP 15〜54W)の一致を確認し電力の区分を pub に。L2 合計 8MB(ノート: 上の「L2 1MB/コア」× 8)は依頼で示された公式値(原ページ未再取得)',
   });
@@ -491,4 +491,19 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     ],
   };
   P.forEach((p) => { if (GB7_REF[p.id]) p.gb7Ref = GB7_REF[p.id]; });
+
+  // 2026-11-07(ユーザー指示「NG の原因をできれば特定して直して」): 調べた原因のうち、直せなかったもの(データ待ち)を再現度パネルの「原因(調査済み)」に追記。数値は変えない。
+  // 直したもの: Zen+ の uFrom・Zen 3 の校正代表・Arrow Lake の L3 遅延。設計書 §5.3.0・§5.3.3・§13.4
+  const MOBILE_X86_ST = '【2026-11-07 調査】主因は公開値側: Geekbench のチャートは全投稿の平均で、省電力の投稿に引き下げられる。Notebookcheck のレビュー機と比べると 14700HX -0.3%、7840HS +0.2%、275HX -3.9% で、モデルの ST はほぼ合う。公開値の取り直しが必要(Geekbench Browser は 403 で取得できず。データ待ち)';
+  const ERR_ADD = {
+    'amd-strix-hx370': { st: MOBILE_X86_ST, mt: '【2026-11-07 調査】モバイル x86 の MT 帯係数は合わせ込みの限界。HX 370 は Zen 5c に係数を掛けないと +0.2% だが、出典がなく推測(採用していない)' },
+    'amd-kraken-350': { st: MOBILE_X86_ST },
+    'amd-zen3-5800u': { st: MOBILE_X86_ST },
+    'amd-zen3p-7735hs': { st: MOBILE_X86_ST },
+    'intel-arl-275hx': { st: MOBILE_X86_ST },
+    'amd-zen3-5950x': { mt: '【2026-11-07 調査】MT +23% の主因は全コアクロック: PPT 142W を 16 コアで分けると約 3.85〜4.0GHz(boost の 0.8 倍。HEXUS・KitGuru の測定 [二次]、取得日 2026-11-07〔調査担当が確認〕: https://m.hexus.net/tech/reviews/cpu/146440-amd-ryzen-9-5950x-ryzen-9-5900x/?page=3 、https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-9-5950x-zen-3-cpu-review/3 、5800X は https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-7-5800x-cpu-review/2 )。任意項目 allCoreGHz の追加と、σ の代表の全コアクロックの揃えが必要(データ待ち)' },
+    'intel-arl-285k': { mt: '【2026-11-07 調査】Arrow Lake の MT +13〜15% の残りは原因未特定(SMT なしの並列効率 η、ダイ間遅延の疑い)。L3 遅延は Chips and Cheese の実測 [二次](Lion Cove 84 サイクル: https://old.chipsandcheese.com/?p=34012 、Skymont 69 サイクル: https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed 。取得日 2026-11-07、調査担当が確認)に直した。DRAM 遅延 99ns の機種別 dramNs は未実装' },
+    'intel-arl-265k': { mt: '【2026-11-07 調査】285K と同じ。残りは原因未特定(η、ダイ間遅延の疑い)' },
+  };
+  P.forEach((p) => { if (ERR_ADD[p.id]) { const e = p.errCause = Object.assign({}, p.errCause || {}); ['st', 'mt'].forEach((k) => { if (ERR_ADD[p.id][k]) e[k] = (e[k] ? e[k] + ' ' : '') + ERR_ADD[p.id][k]; }); } });
 })();

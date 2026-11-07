@@ -305,12 +305,32 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     p.notes = (p.notes ? p.notes + ' ' : '') + s;
   });
 
+  // 2026-11-07(ユーザー指示「NG の原因をできれば特定して直して」): 調べた原因のうち、SoC で ±10% 外のまま残るものの説明(再現度パネルの「原因(調査済み)」)。数値は変えない。設計書 §5.3.0・§5.3.3・§13.4、docs/research/mobile-mt-factor-2026-11-07.md
+  const ERR_CAUSE = {
+    'qc-8cx-gen3': {
+      st: '【調べた原因】X1 の u を Android の Snapdragon 888(機種中央値 n が多い)で決めている(2026-11-07 に 855・865・888 を代表にした)ため、Windows 機の 8cx Gen 3(GB7 は機種が混在する 17 件の中央値)とはプラットフォーム差があり ST が -13.6%(ng)。代表を入れる前は ISA 平均 u で -7.0%(ok)だった。X1 の u を Windows の測定で決めるには標本が足りない(データ待ち)',
+      mt: '8cx Gen 3 は mobile-pc で、電力未取得のフォールバック係数 0.81 を使う(スマホ SoC の 0.91 とは別)。MT -25% は X1/A78 の u と係数の両方が Windows とずれている疑い。データ待ち',
+    },
+    'qc-8elite-x-gen6': {
+      st: '【調べた原因】公開値の出所の差。直近 25 件の中央値は Honor 機が多く GB7/GB6 = 0.77、Gen 5 のチャートは 0.55 と食い違う。P の 6 コアは実際は 4.03×3 + 3.74×3 GHz で、プリセットの 5.0 / 4.0GHz(公表の最大)とも違う。ST -28% は公開値側とクロックの入力の問題で、モデルでは直せない(データ待ち)',
+    },
+    'qc-8elite': { mt: '【調べた原因】8 Elite 系の MT は電力制約が強い(予測 = 公開値となる係数 k ≈ 0.78、スマホ共通の 0.91 では過大)。コアごとの電力データが無いと合わせられない(データ待ち)' },
+    'qc-8elite-gen5': { mt: '【調べた原因】8 Elite と同じ。電力制約(k ≈ 0.75)で MT が過大。コア電力のデータ待ち' },
+    'nv-gb10': {
+      st: '【調べた原因】Dimensity 9400 と GB10 の差は Android の GB7 の出所による(GB7/GB6 が高い群 0.84・低い群 0.48 の混在)。GB10(Linux)の GB7 は 9400(Android)より約 40% 高く、X925 の u を 2 件の中央値にした(GB10 を X925 の 2 件目の代表にした。ユーザー選択)ので 9400 が +17.6%、GB10 が -13.0%。nv-gb10 を calib:false に戻す案(9400 ST 0%・GB10 -26% / -18%)もある。判断待ち(設計書 §13.4)',
+    },
+  };
+  P.forEach((p) => { if (ERR_CAUSE[p.id]) p.errCause = Object.assign({}, p.errCause || {}, ERR_CAUSE[p.id]); });
+
   // 校正の代表 SKU(§5.3.1)。同じ P コアを使う他のチップは検証用(代表の補正係数で予測して誤差を見る)。
   // 条件: GB7 が機種中央値で n が比較的多い([中央値])、コア構成が単純、電力モードの影響が小さい。
   const reps = {
     'apple-m1': 'Firestorm の代表(M1。A14・M1 Pro/Max が検証用)。機種中央値 n=6',
     'apple-m2': 'Avalanche の代表(M2。A15 が検証用)。機種中央値 n=4',
     'apple-a16': 'Everest の代表(A16)。機種中央値 n=4',
+    'qc-855': 'Cortex-A76 の代表(Snapdragon 855。720G が検証用。2026-11-07 追加)。機種中央値 n=19',
+    'qc-865': 'Cortex-A77 の代表(Snapdragon 865。A77 を持つ SKU は 1 件で検証用の SKU なし〔GB7 の n=14〕。2026-11-07 追加)。機種中央値 n=14',
+    'qc-888': 'Cortex-X1 の代表(Snapdragon 888。8cx Gen 3 が検証用だが Windows とのプラットフォーム差で外れる。2026-11-07 追加)。機種中央値 n=15',
     'qc-8gen1': 'Cortex-X2 の代表(8 Gen 1。8+ Gen 1・Dimensity 9000 が検証用)。機種中央値 n=7',
     'qc-8gen2': 'Cortex-X3 の代表(8 Gen 2。Dimensity 9200 が検証用)。機種中央値 n=21',
     'qc-8gen3': 'Cortex-X4 の代表(8 Gen 3。8s Gen 3・7+ Gen 3・Dimensity 9300 が検証用)。機種中央値 n=13',

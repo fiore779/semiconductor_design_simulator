@@ -161,11 +161,13 @@
 
   // MT の持続クロック係数(§5.3.0)。全コア負荷時のクロック = 係数 × boost。[推定・校正値]で、実際の熱・電力制限を表すものではない。
   // preset.kind で引く(pc=1.0 に丸める。kind なし・混合設計・embedded・server は 1.0)。fByType を明示指定したときは掛けない。
-  // 'mobile'(スマホ SoC)は一律 0.92。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)で、mobile とは別の値(変えない)。
+  // 'mobile'(スマホ SoC)は一律 0.91。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)で、mobile とは別の値(変えない)。
   // 【2026-11-07 再校正 mobile 0.81 → 0.92】ユーザー指示「NG になっているものも修正して」。kind==='mobile' で MT が計算でき公開値がある 18 件(qc-855/865/888/8gen1/8plus-gen1/8gen2/8elite/8elite-gen5/8elite-x-gen6/780g/7gen1/7gen3/720g/6gen1/4gen2、
   // mt-9000/9200/8200)について、予測が公開値と一致する係数を二分法で逆算した中央値が 0.925(範囲 0.629〜1.292)。0.92 にすると MT の ±10% 外が 15 件 → 9 件。
   // 世代でばらつく(8 Elite 系 0.63〜0.76、古い 855/865/888/720G は 1.1〜1.3)ので 1 つの係数では表せない。チャート値からの逆算で偏りを含む。[推測・未検証]。docs/research/mobile-mt-factor-2026-11-07.md
-  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.92, 'mobile-pc': 0.81 };
+  // 【2026-11-07 再々校正 mobile 0.92 → 0.91】ユーザー指示「NG の原因をできれば特定して直して」。Zen+ の uFrom・Zen 3 の代表・Arm の u(Oryon Performance の uFrom、A76/A77/X1 の代表、A78 の uCal)・Arrow Lake の L3 遅延を直した後に、
+  // 同じ 18 件で逆算し直した中央値が 0.912(範囲 0.748〜1.036)。小数 2 桁で 0.91。直前の 0.92 は u の直し前の値。推測・未検証(チャート値からの逆算で偏りを含む)。docs/research/mobile-mt-factor-2026-11-07.md
+  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.91, 'mobile-pc': 0.81 };
   // mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
   // 値は、MT を計算できる x86 mobile-pc 11 件(Kraken Point を除く)で「予測がチャート値と一致する係数」の帯内の中央値を小数 2 桁に丸めたもの(チャートの偏りを含む逆算。推測・未検証)。
   // 2026-11-05: 7840HS は range 35〜54W を取得して帯 0 に入ったが、帯の係数は再校正していない(標本 11 件に含めていない。含めると帯 0 の中央値は 0.72。設計書 §2.5.1)。
@@ -208,7 +210,7 @@
     const clockInfo = mtClockInfo(preset); const kf = clockInfo.factor;
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
-      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.92、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
+      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.91、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
       const f0 = given || c.boostGHz || c.maxGHz || c.baseGHz;
       const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
@@ -244,6 +246,10 @@
     const gamma = cal && cal.mt && cal.mt.gammaSmt != null ? cal.mt.gammaSmt : MT_DEFAULTS.gammaSmt;
     const reps = presets.filter((p) => {
       if (!(p.calib && p.gb7 && gb7ByName[p.gb7] && gb7ByName[p.gb7].multi)) return false;
+      // 2026-11-07: kind:'mobile' の代表は σ の代表から除く(今回の実装上の判断。設計書 §5.3.3 の旧記述は「全コアが uarch 専用の補正を持つ代表 3 件〔AMD〕」で、kind による除外の記述はなかった)。
+      // 8 Elite は Oryon Performance が uFrom: Oryon Prime で全コア uarch 専用の補正になり代表条件を満たすようになったが、電力制約の強い MT(k≈0.78)で σ を歪めるため除く。
+      // GB10(kind:pc)や M1/M2(mobile-pc)は、将来 E コアの u が入ると σ の代表に入り得る(この除外では防がない)
+      if (p.kind === 'mobile') return false;
       const r = mtScore(p, cal, uarchDb, fByTypeOf ? fByTypeOf(p) : null, { sigma: 0, gammaSmt: gamma });
       return r.ok && !r.fallback && r.detail.every((d) => d.corrSource === 'uarch');
     });

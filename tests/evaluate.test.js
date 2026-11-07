@@ -243,7 +243,8 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   // 2026-10-30(M6 第 4 段): Golden Cove の専用 u(112.3)導入で更新(2026-11-01: 14700HX を標本から外して u=112.7、値を更新)。旧値 0:[1696.09,14773.73] 1:[1882.25,14773.73] 4:[2079.46,14773.73] 30:[2227.63,17654.36]
   // 2026-11-05: 265K の P boost 5.5→5.4 の再校正で x86 平均 u が動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15291.32 30:18240.5
   // 2026-11-06: 13900K・13700K の P boost を ARK の P コア最大ターボに揃え、Golden/Raptor の uCal が 112.7→114.1 に動いた。旧 0:[1780.43,15310.46] 1:[1975.86,15310.46] 4:[2182.87,15310.46] 30:[2338.42,18266.22]
-  const exp = { 0: [1802.55, 15446.18], 1: [2000.40, 15446.18], 4: [2209.99, 15446.18], 30: [2367.46, 18419.92] };
+  // 2026-11-07: Zen 3 の代表を加えて σ が 0.02737→0.02888 に動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15446.18 30:18419.92
+  const exp = { 0: [1802.55, 15084.05], 1: [2000.40, 15084.05], 4: [2209.99, 15084.05], 30: [2367.46, 17981.96] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -257,7 +258,9 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
 
 test('inUCalSet: Golden/Raptor 10 件の ST だけ true(代表ではない学習内)。標本から除外した 14700HX・ISA 代用・代表・MT は false', () => {
   const ids = D.presets.filter((p) => ev(p.id).st.inUCalSet).map((p) => p.id).sort();
-  assert.strictEqual(ids.length, 10);
+  // 2026-11-07: Cortex-A78 の uCal(780G・6 Gen 1・4 Gen 2・Dimensity 8200 の 4 件)が加わって 10 → 14 件(Golden/Raptor 10 件 + A78 4 件)
+  assert.strictEqual(ids.length, 14);
+  assert.ok(['qc-780g', 'qc-6gen1', 'qc-4gen2', 'mt-8200'].every((id) => ids.includes(id)));
   assert.ok(!ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
   assert.strictEqual(ev('intel-rpl-14700hx').st.inUCalSet, false); // 学習に使っていない(検証に使える)
   assert.strictEqual(ev('intel-arl-265k').st.inUCalSet, false);

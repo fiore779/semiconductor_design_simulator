@@ -20,7 +20,7 @@ window.SDS_DATA.uarch = (function () {
   return {
     // ---- AMD ----
     'Zen 1': u({ decodeWidth: 4, width: 6, rob: 192, brPenalty: 19, l1dKB: 32, l1dLat: 4, l2KB: 512, l2Lat: 17, l3Lat: 40, smt: 2, vecBits: 128, note: 'AVX2 は128bit×2サイクル。ROB は WikiChip の検索要約(Zen 1 そのものかは未確認)' }),
-    'Zen+': u({ decodeWidth: 4, width: 6, rob: 192, note: 'width・ROB・分岐ミスは Zen 1 の値を準用(WikiChip は Zen+ のパイプラインを Zen と同一と記載)', brPenalty: 19, l1dKB: 32, l1dLat: 4, l2KB: 512, l2Lat: 12, l3Lat: 35, smt: 2, vecBits: 128 }),
+    'Zen+': u({ uFrom: 'Zen 1', decodeWidth: 4, width: 6, rob: 192, note: 'width・ROB・分岐ミスは Zen 1 の値を準用(WikiChip は Zen+ のパイプラインを Zen と同一と記載)。ST 補正 u は Zen 1 のものを借りる(uFrom。2026-11-07 追加。Zen+ は Zen 1 と同じパイプラインで差はクロックと L2/L3 遅延。ISA 平均 u より近い)', brPenalty: 19, l1dKB: 32, l1dLat: 4, l2KB: 512, l2Lat: 12, l3Lat: 35, smt: 2, vecBits: 128 }),
     'Zen 3': u({ rob: 256, l2KB: 512, l2Lat: 12, l3Lat: 46, smt: 2, vecBits: 256, note: '整数発行10/clk。MSHR: L2→L3 最大64、L3→DRAM 最大192' }),
     'Zen 4': u({ decodeWidth: 4, width: 6, rob: 320, l2KB: 1024, l2Lat: 14, smt: 2, vecBits: 512, note: 'AVX-512 は256bit×2で実行。op cache から最大9 macro-op/clk' }),
     'Zen 5': u({ decodeWidth: 8, width: 8, rob: 448, l1dKB: 48, l1dLat: 4, l2KB: 1024, l2Lat: 14, l3Lat: 46, smt: 2, vecBits: 512, note: 'モバイルは256bit。L3 遅延は Strix Point 実測(モバイル品)' }),
@@ -31,8 +31,8 @@ window.SDS_DATA.uarch = (function () {
     'Gracemont': u({ decodeWidth: 6, rob: 256, l1dLat: 3, l2KB: 512, l2Lat: 17, vecBits: 128, note: 'デコード6(3×2クラスタ)。rename 幅は未取得なので上限は decodeWidth を使う。L2 は 2MB/4コア共有 → コアあたり 512KB に換算' }),
     'Crestmont': u({ decodeWidth: 6, rob: 256, l1dLat: 3, l2Lat: 20, vecBits: 128, note: 'rename 幅は未取得(設計書 §2.7.1 は 6-wide と記載。デコード幅として扱い、上限は decodeWidth)。L2 容量は未取得' }),
     'Redwood Cove': u({ decodeWidth: 6, l2KB: 2048, l2Lat: 16, smt: 2, vecBits: 256, note: 'rename 幅は未取得(デコード6のみ)' }),
-    'Lion Cove': u({ width: 8, decodeWidth: 8, rob: 576, l1dKB: 192, l1dLat: 9, l2KB: 3072, l2Lat: 17, l3Lat: 75, mshr: 80, smt: 1, vecBits: 256, note: 'L0D 48KB は4サイクル、L1.5 192KB は9サイクル。L3 遅延は Arrow Lake の約75(代表 265K に合わせた値。Lunar Lake は約51)。L2 ミスキュー80' }),
-    'Skymont': u({ width: 8, decodeWidth: 9, rob: 416, l1dLat: 4, l2KB: 1024, l2Lat: 19, vecBits: 128, note: 'L2 は 4MB/4コアクラスタ共有 → コアあたり 1024KB に換算。op cache なし' }),
+    'Lion Cove': u({ width: 8, decodeWidth: 8, rob: 576, l1dKB: 192, l1dLat: 9, l2KB: 3072, l2Lat: 17, l3Lat: 84, mshr: 80, smt: 1, vecBits: 256, note: 'L0D 48KB は4サイクル、L1.5 192KB は9サイクル。L3 遅延は Arrow Lake の約84サイクル(2026-11-07 に 75→84。Chips and Cheese の Arrow Lake のメモリ階層の実測 [二次]: https://old.chipsandcheese.com/?p=34012 。単位はサイクル(クロック換算なし)。取得日 2026-11-07(調査担当が確認)。DRAM 遅延 99ns(285K・DDR5-8000 で 565 サイクル超を 5.7GHz 換算)は https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed の記述で、機種別の dramNs は未実装。旧: 約75 は代表 265K に合わせた値。Lunar Lake は約51)。L2 ミスキュー80' }),
+    'Skymont': u({ width: 8, decodeWidth: 9, rob: 416, l1dLat: 4, l2KB: 1024, l2Lat: 19, l3Lat: 69, vecBits: 128, note: 'L2 は 4MB/4コアクラスタ共有 → コアあたり 1024KB に換算。op cache なし。L3 遅延は Arrow Lake の約69サイクル(2026-11-07 追加。Chips and Cheese の実測 [二次]: https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed 。単位はサイクル(クロック換算なし)。取得日 2026-11-07(調査担当が確認)。旧: 未設定で既定の 40)' }),
     'Cougar Cove': u({ width: 8, decodeWidth: 8, l1dKB: 192, l2KB: 3072, note: 'ROB・遅延は未取得(Lion Cove から据え置きとの説明)。L2 は 3MB(wccftech)/2.5MB(Wikipedia)で食い違い' }),
     'Darkmont': u({ decodeWidth: 9, rob: 416, l2KB: 1024, vecBits: 128, note: 'L2 は 4MB/クラスタ共有 → コアあたり 1024KB に換算(クラスタのコア数は4と仮定)' }),
     'Sandy Bridge': u({ width: 4, decodeWidth: 4, rob: 168, brPenalty: 14, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 28, mshr: 10, smt: 2, vecBits: 256 }),
@@ -54,7 +54,7 @@ window.SDS_DATA.uarch = (function () {
     'Cortex-A55': u({ decodeWidth: 2, inOrder: true, l1dLat: 2, l2Lat: 9 }),
     'Cortex-A76': u({ decodeWidth: 4, width: 4, rob: 128, l1dLat: 4, l2Lat: 9, vecBits: 128 }),
     'Cortex-A77': u({ decodeWidth: 4, width: 6, rob: 160, vecBits: 128 }),
-    'Cortex-A78': u({ decodeWidth: 4, width: 6, rob: 160, l1dLat: 4, l2Lat: 9, vecBits: 128, note: 'width は Arm SOG(6 MOP/12 µOP)' }),
+    'Cortex-A78': u({ uCal: { u: 117.4, n: 4, date: '2026-11-07', basis: 'Cortex-A78 を P コアに持つ 4 件(Snapdragon 780G 120.4・6 Gen 1 125.4・4 Gen 2 114.4、Dimensity 8200 110.3)の SKU 別 u〔GB7 ST ÷ 補正前の予測〕の中央値 117.39(114.4 と 120.4 の平均。丸めて 117.4)。Golden Cove の uCal と同じ方式。代表(calib)は無く、この 4 件で u を決めたので、この 4 件の ST は検証にならない(学習内。n=4 で標本が少なく、スマホ GB7 チャートの偏りを含む)。ユーザー指示「NG の原因をできれば特定して直して」の調査(Android の A78 は ISA 平均 u 103.8 では -11〜-23% だった)で追加' }, decodeWidth: 4, width: 6, rob: 160, l1dLat: 4, l2Lat: 9, vecBits: 128, note: 'width は Arm SOG(6 MOP/12 µOP)' }),
     'Cortex-A78C': u({ decodeWidth: 4, width: 6, rob: 160, l1dLat: 4, l2Lat: 9, vecBits: 128, note: 'A78 に準じる(A78C 個別の数値は未取得)' }),
     'Cortex-A78AE': u({ decodeWidth: 4, width: 6, rob: 160, l1dLat: 4, l2Lat: 9, vecBits: 128, note: 'A78 に準じる(個別の数値は未取得)' }),
     'Cortex-X1': u({ decodeWidth: 5, width: 8, rob: 224, vecBits: 128 }),
@@ -75,7 +75,7 @@ window.SDS_DATA.uarch = (function () {
     'C2-Ultra': u({ note: '数値は未取得', vecBits: 128 }),
     'C2-Pro': u({ note: '数値は未取得', vecBits: 128 }),
     'Oryon Prime': u({ decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 3072, l2Lat: 18, vecBits: 128, note: 'Oryon(Phoenix, X Elite)の値。8 Elite 系 Gen2/Gen3 は非公開のため Phoenix に準じる仮置き(信頼度低)。L2 は 12MB/4コアクラスタ共有 → コアあたり 3072KB に換算。L2 遅延は 17〜20 の代表値' }),
-    'Oryon Performance': u({ decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 2048, l2Lat: 18, vecBits: 128, note: 'Oryon Prime と同じ値を仮置き(信頼度低)。ただし l2KB は 2026-10-31 に 3072→2048(Performance 6 コアで 12MB 共有÷6。8 Elite は Notebookcheck・Android Authority・Wikipedia・m1k.tech の 4 サイト、第 3 世代 X2 Elite とも一致。設計書 §5.3.2 E5)。幅 8・ROB 680 は第 2 世代で未確認のまま(第 3 世代 Performance は 4-wide の測定あり)なので変えていない' }),
+    'Oryon Performance': u({ uFrom: 'Oryon Prime', decodeWidth: 8, width: 8, rob: 680, brPenalty: 13, l1dKB: 96, l2KB: 2048, l2Lat: 18, vecBits: 128, note: 'Oryon Prime と同じ値を仮置き(信頼度低)。ただし l2KB は 2026-10-31 に 3072→2048(Performance 6 コアで 12MB 共有÷6。8 Elite は Notebookcheck・Android Authority・Wikipedia・m1k.tech の 4 サイト、第 3 世代 X2 Elite とも一致。設計書 §5.3.2 E5)。幅 8・ROB 680 は第 2 世代で未確認のまま(第 3 世代 Performance は 4-wide の測定あり)なので変えていない' }),
     'Neoverse V2': u({ decodeWidth: 6, width: 8, rob: 320, vecBits: 128 }),
     'Neoverse V3AE': u({ vecBits: 128, note: '数値は未取得' }),
   };
