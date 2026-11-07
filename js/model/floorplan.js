@@ -533,6 +533,7 @@
   // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
   Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
+  TILE_FRAMES.gb10.l3Frac = 0.6; // 2026-11-07: GB10 の cfg.l3MB は L3 24 + SLC 16 = 40MB(SLC 全体を L3 相当)。写真の L3 枠(16 + 8MB)が表すのは 24/40
   TILE_FRAMES['gb10-gpu'].live = true; // GB10 の G-die も同じ(従来の「GPU」1 ブロックは飾りではなかった。'deco' を付けた「未判別」だけ飾り)
   TILE_FRAMES['gb10-gpu'].coreless = true; // コアも L3 も持たないダイ専用の枠(parse〔checkShape〕が、コア・L3 のブロックがあるダイへの誤用を拒否する。design.validate〔DRC〕は拒否しない)
   const AMD_SRC = {
@@ -801,14 +802,23 @@
   function usesTileFrame(layout) { return !!layout && (layout.template === 'x86-tile' || layout.template === 'amd-apu' || layout.template === 'x86-mono' || layout.template === 'arm-soc'); }
   const EDITED_NOTE = '編集でコア数が元のダイの枠を超えたため、ブロックの大きさに根拠はありません';
   // 編集後の layout(枠を超えたら根拠を schematic に落とす。超えなければそのまま)
-  function afterEdit(layout, cores, l3MB) {
+  function afterEdit(layout, cores, l3MB, baseL3MB) {
     if (!layout || layout.scaleBasis === 'schematic') return layout;
-    // Apple・Snapdragon・Dimensity は cfg に L3 が無く(SLC・L3 は飾り)、写真の枠に L3 の置き場所が無い。編集で L3 を足したら根拠なしの従来配置に落とす。
+    // Apple・Snapdragon・Dimensity は写真の枠に L3 の置き場所が無い(SLC・L3 は飾り)。cfg.l3MB は SLC 全体を L3 相当として入れてある(2026-11-07、GPU 未実装のため)ので、
+    // 元の容量(baseL3MB。省略時 0)から変えて L3 が 0 より大きいときだけ、根拠なしの従来配置に落とす(元のままなら飾りの SLC が L3 を表すので photo のまま)。
     // frame に l3 がある枠(T239)は L3 を変えても photo のまま(ラベルだけ更新。L3 を 0 にすると L3 ブロックが無くなるだけ)
-    if ((layout.template === 'apple-soc' || (layout.template === 'arm-soc' && !(TILE_FRAMES[layout.frame] && TILE_FRAMES[layout.frame].l3))) && typeof l3MB === 'number' && l3MB > 0) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: `編集で L3 を追加したため、ブロックの大きさに根拠はありません(写真の枠に L3 は無い)` });
-    if (fits(layout, cores)) return layout;
+    const base = typeof baseL3MB === 'number' ? baseL3MB : 0;
+    if ((layout.template === 'apple-soc' || (layout.template === 'arm-soc' && !(TILE_FRAMES[layout.frame] && TILE_FRAMES[layout.frame].l3))) && typeof l3MB === 'number' && l3MB > 0 && l3MB !== base) return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: base > 0 ? `編集で L3(SLC 相当)の容量を変えたため、ブロックの大きさに根拠はありません(写真の枠に L3 は無い)` : `編集で L3 を追加したため、ブロックの大きさに根拠はありません(写真の枠に L3 は無い)` });
+    if (fits(layout, cores)) {
+      // 写真の枠に L3 が無い SoC で L3 を 0 にした場合、図には飾りの SLC が残るが評価は L3 なしになる、と一言添える(scaleNote は 600 文字以内)
+      const noSlot = layout.template === 'apple-soc' || (layout.template === 'arm-soc' && !(TILE_FRAMES[layout.frame] && TILE_FRAMES[layout.frame].l3));
+      const sn = String(layout.scaleNote || '');
+      if (noSlot && base > 0 && l3MB === 0 && !sn.includes(ZERO_L3_NOTE) && sn.length + ZERO_L3_NOTE.length + 1 <= 600) return Object.assign({}, layout, { scaleNote: sn ? sn + ' ' + ZERO_L3_NOTE : ZERO_L3_NOTE });
+      return layout;
+    }
     return Object.assign({}, layout, { scaleBasis: 'schematic', scaleNote: EDITED_NOTE });
   }
+  const ZERO_L3_NOTE = '【L3 を 0 に編集】図の飾りの SLC は残るが、評価は L3 なし。';
 
   const checkLayout = (l) => {
     if (!l || typeof l !== 'object' || Array.isArray(l)) return 'layout: 形式が違います';
@@ -889,9 +899,10 @@
       const bigs = flat.filter((g) => !isSmall(g.type)); const lps = flat.filter(isLp); const es = flat.filter((g) => isSmall(g.type) && !isLp(g));
       [[bigs, TF.big], [es, TF.small], [lps, TF.lp]].forEach((pr) => pr[0].forEach((g, i) => { const r = pr[1][i]; coreBlock(g, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy); }));
       if (hasL3 && TF.l3) {
+        const l3Show = Math.round(l3MB * (TF.l3Frac || 1) * 100) / 100; // l3Frac: cfg の l3MB のうち写真の L3 枠が表す割合(GB10 は L3 24 + SLC 16 の 40MB のうち 24MB = 0.6。SLC は飾りで表す)
         const rs = Array.isArray(TF.l3[0]) ? TF.l3 : [TF.l3]; // 複数枠(Zeppelin の 2 CCX)は容量を等分。枠の 5 番目の数(重み)があれば容量をその比で分ける(GB10 の 16MB + 8MB クラスタ = 重み 2:1)
         const wsum = rs.reduce((a, r) => a + (r[4] || 1), 0);
-        rs.forEach((r, i) => put(rs.length === 1 ? `${die.id}-l3` : `${die.id}-l3-${i}`, 'l3', `L3 ${rs.length === 1 ? l3MB : Math.round((l3MB * (r[4] || 1) / wsum) * 100) / 100}MB`, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy));
+        rs.forEach((r, i) => put(rs.length === 1 ? `${die.id}-l3` : `${die.id}-l3-${i}`, 'l3', `L3 ${rs.length === 1 ? l3Show : Math.round((l3Show * (r[4] || 1) / wsum) * 100) / 100}MB`, X(r[0]), Y(r[1]), r[2] * sx, r[3] * sy));
       }
       TF.deco.forEach((d) => put(`${die.id}-${d[0]}`, KIND[d[2]], d[1], X(d[3]), Y(d[4]), d[5] * sx, d[6] * sy, TF.live && d[7] !== 'deco' ? undefined : deco));
       return blocks;

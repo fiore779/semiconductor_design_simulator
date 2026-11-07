@@ -118,13 +118,16 @@ test('Apple: 保存データの検証(frame の値・units)と保存の往復', 
   assert.ok(FP.TEMPLATE_IDS.includes('apple-soc') && Object.keys(FP.APPLE_FRAMES).length === 21);
 });
 
-test('Apple: 改良モードで L3 を足す(setL3 0 → 4MB)と根拠なし(schematic)の従来配置に落ち、L3 ブロックが 1 つ出る。0 に戻して枠内に戻る編集はしない', () => {
+test('Apple: 改良モードで L3(SLC 相当。2026-11-07 から cfg.l3MB に SLC 全体が入る)の容量を変える(setL3 → 4MB)と根拠なし(schematic)の従来配置に落ち、L3 ブロックが 1 つ出る。元の容量のままなら photo。0 にしても photo', () => {
   ['apple-m1', 'apple-m1ultra', 'apple-m5', 'apple-m3pro'].forEach((id) => {
     const u = design.unlock(mk(id));
     const r = design.setL3(u, 4); assert.ok(r.ok, id);
     const die = r.design.dies[0];
     assert.strictEqual(r.design.cfg.l3MB, 4, id);
-    assert.strictEqual(die.layout.scaleBasis, 'schematic', id); assert.ok(die.layout.scaleNote.includes('L3 を追加'), id);
+    assert.strictEqual(die.layout.scaleBasis, 'schematic', id); assert.ok(die.layout.scaleNote.includes('L3(SLC 相当)の容量を変えた'), id);
+    // 実際に afterEdit を通る経路: L3 は元の容量(SLC 相当)のままコア数だけ編集 → 枠内なら元の根拠(photo / reuse)のまま(baseCfg.l3MB が afterEdit に渡るため schematic に落ちない)
+    const ec = design.setCoreCount(design.unlock(mk(id)), 'E', mk(id).cfg.cores.find((g) => g.type === 'E').count - 1); assert.ok(ec.ok, id);
+    assert.strictEqual(ec.design.cfg.l3MB, mk(id).cfg.l3MB, id); assert.strictEqual(ec.design.dies[0].layout.scaleBasis, mk(id).dies[0].layout.scaleBasis, id + ': 元の容量のままなら photo(飾りの SLC が L3 を表す)');
     const l3 = die.blocks.filter((b) => b.kind === 'l3'); assert.strictEqual(l3.length, 1, id); assert.strictEqual(l3[0].label, 'L3 4MB', id);
     assert.ok(!die.blocks.some((b) => b.decorative), `${id}: 従来配置には飾りが無い`);
     assert.deepStrictEqual(design.validate(r.design), [], id);
@@ -135,8 +138,9 @@ test('Apple: 改良モードで L3 を足す(setL3 0 → 4MB)と根拠なし(sch
     // 評価はブロックを見ないので、L3 の設計値(cfg)の評価だけが変わる(ダイ面積は不変)
     assert.strictEqual(die.areaMm2, byId(id).dies[0].mm2);
   });
-  // L3 を足さない編集(クロック・L3 0 のまま)は photo のまま
+  // L3 を 0 にする編集は photo のまま(L3 ブロックは元から無い)。図には飾りの SLC が残るが評価は L3 なし、と scaleNote に一言添える
   const u = design.unlock(mk('apple-m1')); const r = design.setL3(u, 0); assert.ok(r.ok); assert.strictEqual(r.design.dies[0].layout.scaleBasis, 'photo');
+  assert.ok(r.design.dies[0].layout.scaleNote.includes('飾りの SLC は残るが、評価は L3 なし'));
 });
 
 test('checkLayout: template と frame の対応(apple-soc は APPLE_FRAMES、amd-apu は FRAMES、ほかは frame なし)。型違い・__proto__ でも例外にならない(fuzz)', () => {

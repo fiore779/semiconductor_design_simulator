@@ -42,7 +42,7 @@ test('calibrate rep: 代表 SKU は補正の元データなので一致する(�
 const VALIDATION_PAIRS = [
   ['intel-arl-285k', 'Lion Cove(代表 265K)'], ['amd-zen5-9950x', 'Zen 5(代表 9700X)'], ['amd-zen4-7950x', 'Zen 4(代表 7700)'],
   ['apple-m1pro', 'Firestorm(代表 M1)'], ['apple-m1max', 'Firestorm(代表 M1)'], ['apple-a15', 'Avalanche(代表 M2)'],
-  ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'],
+  ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'], ['mt-9300', 'Cortex-X4(代表 8 Gen 3。2026-11-07 に外れ値から移動。基準の混在による見かけの改善)'],
 ];
 VALIDATION_PAIRS.forEach(([id, why]) => {
   test(`検証 ST(±10%): ${id} — ${why}`, () => {
@@ -55,7 +55,9 @@ VALIDATION_PAIRS.forEach(([id, why]) => {
 
 // 既知の外れ値(電力制限・機種差・仮の補正などで予測が外れる)。直ったら通常の検証に移す。
 // 外れることを記録しておき、モデルが「全部合う」と誤解されないようにする。
-const KNOWN_MISSES = ['amd-strix-hx370', 'intel-lnl-268v', 'amd-strixhalo-395', 'qc-7plus-gen3', 'mt-9300'];
+// 2026-11-07: mt-9300 は l3MB 18 を入れて ST -11.2% → -0.9% に入ったため外した(検証ペアへ移した)。ただしこれは基準の混在による見かけの改善: 代表の 8 Gen 3 は l3MB 未定義(参照値 2MB で校正)なのに 9300 は 18MB で計算している。
+// 同じ混在(l3MB が null の Arm SoC は、L3 を持つ代表で下がった u と参照 2MB の組合せ)が 780G・7 Gen 系・6 Gen 1 などにもある。8 Gen 3 の記録済み L3 12MB を入れるかは設計書 §13.4 の判断待ち
+const KNOWN_MISSES = ['amd-strix-hx370', 'intel-lnl-268v', 'amd-strixhalo-395', 'qc-7plus-gen3'];
 test('既知の外れ値は ±10% を超える(記録。直ったらリストから外す)', () => {
   const c = cal();
   KNOWN_MISSES.forEach((id) => assert.ok(F.stScore(preset(id), c, D.uarch).ok, `${id} が計算不能(外れ値ではなく対象外)`));

@@ -212,12 +212,25 @@
   }
 
   // 古い設計(cfg なし。M2 で保存したもの)に cfg/baseCfg/locks を補った新しい設計を返す。cfg があればそのまま(複製)返す。
+  // 旧保存データの L3 補正(2026-11-07): 以前は l3MB が未定義(null)のプリセットから作った設計が cfg.l3MB=0 / baseCfg.l3MB=0 で保存されていた。
+  // その後プリセットに l3MB(SLC 全体を L3 相当、Orin は L3 6MB)が入ったので、preset の l3MB>0 なのに baseCfg.l3MB===0 のものは旧データとみなし、
+  // baseCfg.l3MB を preset の値に直す。cfg.l3MB も 0 のままなら同じ値に直す。ユーザーが L3 を 0 に編集した設計(cfg=0、baseCfg=preset の値)は触らない。
+  function fixLegacyL3(d, preset) {
+    const p = preset || (d.presetId != null ? ((root.SDS_DATA || {}).presets || []).find((q) => q.id === d.presetId) : null);
+    const mb = p && p.cfg && p.cfg.l3MB;
+    if (typeof mb === 'number' && mb > 0 && d.baseCfg && typeof d.baseCfg === 'object' && d.baseCfg.l3MB === 0) {
+      d.baseCfg.l3MB = mb;
+      if (d.cfg && typeof d.cfg === 'object' && d.cfg.l3MB === 0) d.cfg.l3MB = mb;
+    }
+    return d;
+  }
   function ensureCfg(design, preset) {
     const d = clone(design);
     if (!d.cfg || !d.baseCfg) {
       const cfg = preset ? cfgFromPreset(preset) : null;
       if (cfg) { if (!d.cfg) d.cfg = cfg; if (!d.baseCfg) d.baseCfg = clone(cfg); }
     }
+    fixLegacyL3(d, preset);
     if (!d.locks) d.locks = { params: !!(d.origin && d.origin.mode === 'reproduce') };
     return d;
   }
@@ -238,7 +251,7 @@
     if (die) {
       const FP = floorplanApi();
       // コア数が元のダイの枠を超えたら、大きさの根拠(scaleBasis)を schematic に落とす
-      if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores, d.cfg.l3MB);
+      if (die.layout && FP) die.layout = FP.afterEdit(die.layout, d.cfg.cores, d.cfg.l3MB, d.baseCfg ? d.baseCfg.l3MB : 0);
       // 根拠なしに落ちた Apple(apple-soc で schematic)は、写真の枠を使わず従来の配置にする(layout は注記のために残す)
       const legacy = !die.layout || !FP || ((die.layout.template === 'apple-soc' || die.layout.template === 'arm-soc') && die.layout.scaleBasis === 'schematic');
       die.blocks = legacy ? layoutCompute(die, d.cfg.cores, d.cfg.l3MB) : FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout);
@@ -623,6 +636,7 @@
       if (c) d.cfg.mem = c.oc === true ? { type: c.type, mts: c.mts, oc: true } : { type: c.type, mts: c.mts };
       else if (d.cfg && typeof d.cfg === 'object') d.cfg.mem = { type: ref.type, mts: ref.mts }; // cfg に選択が無ければ基準
     }
+    fixLegacyL3(d, null);
     return { ok: true, design: d };
   }
 

@@ -183,9 +183,11 @@ test('校正範囲: L3(元 64 MB)は 0.5〜2 倍が範囲内。0 や、元が 0 
     assert.deepStrictEqual(r.outOfCalibration.map((o) => o.field), ['l3'], String(mb));
     assert.ok(/[぀-ヿ]/.test(r.outOfCalibration[0].reason)); assert.strictEqual(r.mt.confidence, 'low'); assert.strictEqual(r.st.confidence, 'low');
   });
-  const m1 = impD('apple-m1'); // 元は L3 なし
+  // 2026-11-07: M1 は SLC 8MB を L3 相当として cfg.l3MB に入れた(GPU 未実装のため)。元が L3 なし(未取得)の例は M4 Pro(SLC 未取得で l3MB が無い)
+  const m1 = impD('apple-m4pro'); // 元は L3 なし
   assert.deepStrictEqual(oocOf(design.setL3(m1, 0).design), []);
   assert.deepStrictEqual(fields(design.setL3(m1, 8).design), ['l3']);
+  assert.deepStrictEqual(oocOf(design.setL3(impD('apple-m1'), 8).design), []); // 元の SLC 相当 8MB のまま
 });
 
 test('校正範囲: 収録チップの最大クロックの 1.05 倍を超えるクロックは範囲外', () => {

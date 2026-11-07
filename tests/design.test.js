@@ -305,3 +305,24 @@ test('parse: package の検証', () => {
   assert.strictEqual(ok({ coolingId: 'a', substrateId: 'organic', powerLimitW: 0 }), false);
   assert.strictEqual(ok({ coolingId: 'a', substrateId: 'organic', powerLimitW: 65 }), true);
 });
+
+// 2026-11-07: SLC 全体を L3 相当として l3MB を入れた(Orin は 6→10)。変更前に保存した設計は cfg.l3MB=0 / baseCfg.l3MB=0 で保存されているので、読み込み時に補正する
+test('旧保存データ: baseCfg.l3MB=0(プリセットは l3MB>0)の設計は読み込み時に直り、ST が新プリセットと一致する。ユーザーが L3 を 0 にした設計は壊さない', () => {
+  const E = require('../js/model/evaluate.js'); const ctx = E.makeContext();
+  ['apple-m1', 'qc-8gen2', 'mt-9400', 'nv-orin-agx', 'nv-gb10'].forEach((id) => {
+    const p = preset(id); const fresh = design.fromPreset(p);
+    const old = JSON.parse(design.serialize(fresh)); old.cfg.l3MB = 0; old.baseCfg.l3MB = 0; // 旧保存データ相当
+    const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, id);
+    assert.strictEqual(r.design.baseCfg.l3MB, p.cfg.l3MB, id); assert.strictEqual(r.design.cfg.l3MB, p.cfg.l3MB, id);
+    assert.strictEqual(E.evaluate(r.design, ctx).st.score, E.evaluate(fresh, ctx).st.score, id);
+    // ensureCfg(preset を渡す経路)でも同じ
+    const e = design.ensureCfg(old, p); assert.strictEqual(e.baseCfg.l3MB, p.cfg.l3MB, id); assert.strictEqual(e.cfg.l3MB, p.cfg.l3MB, id);
+    // ユーザーが本当に L3 を 0 に編集した設計(cfg=0、baseCfg=プリセットの値)は直さない
+    const edited = JSON.parse(design.serialize(fresh)); edited.cfg.l3MB = 0;
+    const r2 = design.parse(JSON.stringify(edited)); assert.ok(r2.ok, id);
+    assert.strictEqual(r2.design.cfg.l3MB, 0, id); assert.strictEqual(r2.design.baseCfg.l3MB, p.cfg.l3MB, id);
+  });
+  // l3MB が未定義のプリセット(M4 Pro)や、元から L3 のある x86 は何も変わらない
+  const m4 = JSON.parse(design.serialize(design.fromPreset(preset('apple-m4pro')))); assert.strictEqual(design.parse(JSON.stringify(m4)).design.baseCfg.l3MB, 0);
+  const x = design.fromPreset(preset('amd-zen5-9700x')); assert.deepStrictEqual(design.parse(design.serialize(x)).design.baseCfg, x.baseCfg);
+});

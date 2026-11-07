@@ -56,7 +56,8 @@ test('MediaTek・T239: ダイ面積・ダイ数はプリセットのまま、縦
     assert.strictEqual(cores(die).length, p.cfg.cores.reduce((s, g) => s + g.count, 0), id);
     p.cfg.cores.forEach((g) => assert.strictEqual(cores(die).filter((b) => b.coreType === g.type).length, g.count, `${id} ${g.type}`));
     const l3 = die.blocks.filter((b) => b.kind === 'l3');
-    if (p.cfg.l3MB) { assert.strictEqual(l3.length, 1, id); assert.strictEqual(l3[0].label, `L3 ${p.cfg.l3MB}MB`, id); } else assert.strictEqual(l3.length, 0, id); // Dimensity は cfg に L3 なし(写真の L3 は飾り)
+    // 2026-11-07: Dimensity の cfg.l3MB は L3 + SLC の合計(GPU 未実装のため SLC 全体を L3 相当にした)。写真の枠に L3 の置き場所が無いので L3 ブロックは出ない(写真の L3・SLC は飾り)。T239 は枠に L3 がある
+    if (p.cfg.l3MB && tf.l3) { assert.strictEqual(l3.length, 1, id); assert.strictEqual(l3[0].label, `L3 ${p.cfg.l3MB}MB`, id); } else assert.strictEqual(l3.length, 0, id);
     die.blocks.filter((b) => b.kind !== 'core' && b.kind !== 'l3').forEach((b) => assert.strictEqual(b.decorative, true, `${id} ${b.label}`));
     assert.ok(die.blocks.some((b) => b.kind === 'gpu') && die.blocks.some((b) => b.kind === 'uncore'), id);
     if (id !== 'nv-t239') assert.ok(die.blocks.some((b) => b.kind === 'npu'), id); // T239 に NPU 相当の注記は無い

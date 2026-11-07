@@ -22,17 +22,17 @@ test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分
   assert.ok(p.dies[1].note.includes('推定'));
   assert.ok(Math.abs(12.91 * 16.10 - 207.9) < 0.05 && Math.abs(12.91 * 13.45 - 173.6) < 0.05);
   assert.deepStrictEqual(p.cfg.cores.map((g) => [g.type, g.uarch, g.count, g.maxGHz]), [['P', 'Cortex-X925', 10, 4.0], ['E', 'Cortex-A725', 10, 2.8]]);
-  assert.strictEqual(p.cfg.l3MB, 24); assert.strictEqual(p.cfg.memory, 'LPDDR5X-8533, 256bit, 273GB/s');
+  assert.strictEqual(p.cfg.l3MB, 40); /* 2026-11-07: L3 24 + SLC 16([二次])。旧 24 */ assert.strictEqual(p.cfg.memory, 'LPDDR5X-8533, 256bit, 273GB/s');
   assert.strictEqual(p.power.base.w, 140); assert.strictEqual(p.power.base.s, 'pub'); assert.strictEqual(p.power.peak, null);
   // GB6 の個別 3 件は notes に参考として(判定には使わない)
   ['3123', '19708', '3237', '19794', '2983', '18183', '1 件'].forEach((s) => assert.ok(p.notes.includes(s), s));
   assert.ok(p.notes.includes('GB7 は 2026-11-06 にユーザー提供の検索結果') && p.notes.includes('GB7 未取得')); // 旧記録(2026-11-03 時点は未取得)も残す
 });
 
-test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -18.5%・MT 約 -13.1%(両方 ng・原因未特定。2026-11-07 に 9400 の P を公式 3.62 にして X925 の u が動き、旧 -18.73% / -13.28%)', () => {
+test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -26.0%・MT 約 -18.0%(両方 ng・原因未特定。2026-11-07 に 9400 の P を公式 3.62 にして X925 の u が動き、旧 -18.73% / -13.28%。同日、SLC 全体を L3 相当として Dimensity 9400 に l3MB 22 を入れ、Arm の校正〔X925 の u 90.692→81.389〕が動いて -18.54% / -13.13% から変わり、さらに GB10 自身の l3MB を 24→40〔L3 24 + SLC 16〕にして -26.9% / -21.5% から -26.0% / -18.0% になった)', () => {
   const r = E.evaluate(mk(), E.makeContext());
-  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -18.54) < 0.01);
-  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -13.13) < 0.01);
+  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -26.03) < 0.01);
+  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -18.02) < 0.01);
   const rows = require('../js/ui/reproduce.js').reproductionRows(r);
   assert.deepStrictEqual([rows[0].verdict, rows[1].verdict], ['ng', 'ng']); // 許容 ±10% を超える。n=6 でも gray にはならない(gray は「個別投稿」だけ)
   assert.strictEqual(r.st.corrSource, 'uarch'); // X925 は Dimensity 9400 の代表の u
@@ -105,7 +105,7 @@ test('GB10: 評価結果は配置に依存しない(ブロックを全部取り�
 });
 
 test('GB10: L3 を変えても photo のまま(frame に l3 枠がある)。ラベルは重み 2:1 で更新、位置は同じ。0 にすると L3 ブロックが無くなるだけ', () => {
-  const t0 = mk(); const r = design.setL3(design.unlock(t0), 12); assert.ok(r.ok);
+  const t0 = mk(); const r = design.setL3(design.unlock(t0), 20); assert.ok(r.ok); // 2026-11-07: cfg は 40(L3 24 + SLC 16)。写真の L3 枠は l3Frac 0.6 なので 20 → 12 = 8 + 4MB(旧: 12 → 8 + 4MB)
   const d1 = r.design.dies[0]; assert.strictEqual(d1.layout.scaleBasis, 'photo');
   const l30 = t0.dies[0].blocks.filter((b) => b.kind === 'l3'); const l31 = d1.blocks.filter((b) => b.kind === 'l3');
   assert.deepStrictEqual(l31.map((b) => b.label), ['L3 8MB', 'L3 4MB']);

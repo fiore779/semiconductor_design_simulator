@@ -139,6 +139,9 @@ test('Snapdragon: 編集で枠を超えたら schematic の従来配置に落ち
   assert.strictEqual(ed('qc-8elite', 'P', 3).layout.scaleBasis, 'schematic');
   // 空き枠: プライムを減らしても photo
   assert.strictEqual(ed('qc-8elite', 'P', 1).layout.scaleBasis, 'photo');
+  // 2026-11-07: qc-888 の cfg.l3MB は 7(L3 4 + SLC 3)。コア数だけの編集(L3 は元のまま)は photo のまま、L3 の容量を変えると schematic、0 にすると photo + 注記
+  const ec = design.setCoreCount(design.unlock(mk('qc-888')), 'E', 3); assert.ok(ec.ok); assert.strictEqual(ec.design.dies[0].layout.scaleBasis, 'photo');
+  const z = design.setL3(design.unlock(mk('qc-888')), 0); assert.ok(z.ok); assert.strictEqual(z.design.dies[0].layout.scaleBasis, 'photo'); assert.ok(z.design.dies[0].layout.scaleNote.includes('評価は L3 なし'));
   const u = design.unlock(mk('qc-888')); const r = design.setL3(u, 8); assert.ok(r.ok);
   const die = r.design.dies[0]; assert.strictEqual(die.layout.scaleBasis, 'schematic'); assert.strictEqual(die.blocks.filter((b) => b.kind === 'l3').length, 1);
   assert.deepStrictEqual(design.validate(r.design), []);
@@ -172,7 +175,7 @@ test('Snapdragon: 8 Gen 2 の A510 は注釈どおり「2 コアクラスタ」�
   assert.strictEqual(T('qc-8s-gen4', 'P').length, 1);
 });
 
-test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と、縦横比だけ採った 4 件・Orin(2026-11-05 に L3 を取得)以外の 69 件(Snapdragon の未反映 4 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
+test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と、縦横比だけ採った 4 件・Orin(2026-11-05 に L3 を取得)・M5 Max・8+ Gen 1(2026-11-07 に SLC を L3 相当で入れた)以外の 67 件(Snapdragon の未反映 3 件を含む)の layout・寸法・ブロック・飾りダイは、今回の追加で変わらない(固定のハッシュ。2026-11-03 の MediaTek・T239 追加の前後で一致を確認)', () => {
   const MAPPED = Object.keys(FRAME_OF).concat(['mt-9000', 'mt-9200', 'mt-9300', 'mt-9400', 'mt-9500', 'mt-9600pro', 'nv-t239', 'nv-gb10', 'intel-ptl-u5-325', 'intel-wcl-c5-320']);
   // 2026-11-04: 6 Gen 1・4 Gen 2・7 Gen 3・Dimensity 8200 は縦横比だけ写真に合わせた(幅・高さと layout が変わる。ブロックは従来の配置。縦横比は上のテストと floorplan-mediatek で検証)ので除く。除く前の 74 件のハッシュは a0fc1692…(それ以前と同じ)
   const ASPECT_4 = ['qc-6gen1', 'qc-4gen2', 'qc-7gen3', 'mt-8200'];
@@ -180,11 +183,15 @@ test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と�
   const IOD_MOVED = ['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen5-9700x', 'amd-zen5-9950x'];
   // 2026-11-05: Orin(nv-orin-agx)は L3 6MB を取得して L3 のブロックが増えた(layout の schematic に L3 が入る)ので除く。ほかの 69 件は変更前の dump(評価・_design)と一致を確認
   const ORIN_L3 = ['nv-orin-agx'];
-  assert.ok(mk('nv-orin-agx').dies[0].blocks.some((b) => b.kind === 'l3' && /6MB/.test(b.label)));
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id));
-  assert.strictEqual(rest.length, 69);
+  assert.ok(mk('nv-orin-agx').dies[0].blocks.some((b) => b.kind === 'l3' && /10MB/.test(b.label))); // 2026-11-07: L3 6MB + System Cache 4MB = 10MB(旧: 6MB)
+  // 2026-11-07: SLC 全体を L3 相当として cfg.l3MB に入れた(GPU 未実装のため。ユーザー指示)。写真の枠に L3 が無い Apple・Snapdragon・Dimensity は L3 ブロックが増えない(飾りの SLC のまま)が、
+  // 従来の配置(写真なし)で描く M5 Max(dies が空)と 8+ Gen 1 だけ L3 のブロックが増えた(SLC 48MB / 10MB)ので除く。ほかの 67 件は変更前のデータ・コードで同じ 67 件を計算しても同じハッシュ
+  const SLC_L3 = ['apple-m5max', 'qc-8plus-gen1'];
+  SLC_L3.forEach((id) => assert.ok(mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'l3')), id));
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id));
+  assert.strictEqual(rest.length, 67);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
   // 2026-11-04: 386H(intel-ptl-x9-386h)だけ、4Xe の GPU タイルの飾りと scaleNote を足したのでハッシュを更新(Panther Lake_dies.jpg)。388H・378H・358H・Platform タイルは一致を確認済み
-  assert.strictEqual(h.digest('hex'), '76fecf00969ec2455483f5eae580a7f984398857d20a770046ab4a424b967b84'); // 2026-11-05: Orin を除いた 69 件のハッシュ。変更前(HEAD)のデータ・コードで同じ 69 件を計算しても同じ値(今回のデータ追加で 69 件の layout・寸法・ブロック・飾りダイは不変)。旧(70 件、Orin を含む): 2a9232c9…
+  assert.strictEqual(h.digest('hex'), 'aeb0ca091ad7a610dab3c8dda6b39d91097a8b87eb2ab9efa8e4ac65cc93275b'); // 2026-11-07: M5 Max と 8+ Gen 1 を除いた 67 件のハッシュ(旧: 69 件 76fecf00…。上の SLC_L3 の注記)。(以下は前の記録) 2026-11-05:Orin を除いた 69 件のハッシュ。変更前(HEAD)のデータ・コードで同じ 69 件を計算しても同じ値(今回のデータ追加で 69 件の layout・寸法・ブロック・飾りダイは不変)。旧(70 件、Orin を含む): 2a9232c9…
 });
