@@ -242,9 +242,9 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     id: 'nv-t239', name: 'Switch 2 の T239', vendor: 'NVIDIA', family: 'Tegra', isa: 'arm', kind: 'embedded', year: 2025,
     gb7: null,
     dies: [die('T239', 207, 'meas', 'samsung-8', 'ダイ写真計測(Tom\'s Hardware)')],
-    power: { base: pw(19, 'pub', 'Nintendo 公式(日本の仕様ページ https://www.nintendo.com/jp/hardware/switch2/specs/index.html )の Switch 2 本体全体・TV モード・ゲームプレイ時 約 19W(本体全体)。メニュー表示時 約 8W。SoC 単体の値ではない(2026-11-05 に訂正、2026-11-07 にページに書かれていない条件〔ゲーム名・Full HD / 4K の平均〕を外した)。Tom\'s Hardware のワットメーター実測(ドック時 18〜19W)とも一致(検索要約のみ)'), peak: null, range: null },
+    power: { base: pw(19, 'pub', 'Nintendo 公式(日本の仕様ページ https://www.nintendo.com/jp/hardware/switch2/specs/index.html )の Switch 2 本体全体・TV モード・ゲームプレイ時 約 19W(本体全体)。メニュー表示時 約 8W。SoC 単体の値ではない(2026-11-05 に訂正、2026-11-07 にページに書かれていない条件〔ゲーム名・Full HD / 4K の平均〕を外した)。Tom\'s Hardware のワットメーター実測(ドック時 18〜19W)とも一致(検索要約のみ)'), peak: null, range: { minW: 8, maxW: 19 } },
     cfg: { cores: [c('P', 'Cortex-A78C', 8, 1.1)], l3MB: 4, memory: 'LPDDR5X, 128bit' },
-    notes: '【公式照合 2026-11-07、原ページ確認済み】Nintendo 日本の仕様ページ https://www.nintendo.com/jp/hardware/switch2/specs/index.html : 消費電力は TV モードのゲームプレイ時 約 19W・メニュー表示時 約 8W・スリープ 約 0.5W / 5W([公表]、本体全体)。CPU/GPU は「NVIDIA 社製カスタムプロセッサー」とだけで、CPU 構成・クロック・キャッシュ・メモリ・プロセスは公式に非公表(cfg のコア構成・クロック・L3・メモリ・プロセスは公式の裏付けなし。元の区分のまま)。',
+    notes: '【公式照合 2026-11-07、原ページ確認済み】Nintendo 日本の仕様ページ https://www.nintendo.com/jp/hardware/switch2/specs/index.html : 消費電力は TV モードのゲームプレイ時 約 19W・メニュー表示時 約 8W・スリープ 約 0.5W / 5W([公表]、本体全体)。CPU/GPU は「NVIDIA 社製カスタムプロセッサー」とだけで、CPU 構成・クロック・キャッシュ・メモリ・プロセスは公式に非公表(cfg のコア構成・クロック・L3・メモリ・プロセスは公式の裏付けなし。元の区分のまま)。【可変 TDP】Switch 2 は動作モードで消費電力が変わるため、power.range に 8〜19W(本体全体。下限=メニュー表示時 約 8W、上限=TV モードのゲームプレイ時 約 19W。どちらも Nintendo 公式 [公表])を置き、パッケージ設定の TDP で選べるようにした。携帯モードの消費電力は公式ページに記載がなく未取得(推測では入れない)。範囲の値は SoC 単体ではなく本体全体。',
   });
   // GB10(DGX Spark)。2026-11-03 追加。調査: docs/research/nvidia-gb10.md。addedIn:'M5b'(calib は false)。追加時(2026-11-03)は GB7 未取得(gb7: null)で C1_EXCEPTIONS に載せていたが、2026-11-06 にユーザー提供の検索結果(6 件の中央値 ST 2624 / MT 20595)で GB7 を採用し、例外から外した(設計書 §2.4・§13 M5b-4)
   add({

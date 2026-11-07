@@ -6,7 +6,7 @@
   const PK = root.SDS.ui.packageform;
 
   // cb: { onCooling(id), onSubstrate(id), onPowerLimit(str, input) }。msgs: { cooling, substrate, limit }
-  function renderPackage(el, design, cb, msgs, peakItem) {
+  function renderPackage(el, design, cb, msgs, peakItem, range) {
     clear(el);
     el.appendChild(h('h2', { text: 'パッケージ設定' }));
     if (!design) { el.appendChild(h('p', { class: 'note', text: '設計を読み込むと、冷却・基板・電力制限を設定できます。' })); return; }
@@ -43,6 +43,20 @@
       dl.appendChild(h('dd', {}, h('span', { text: r.text }), ' ', h('span', { class: `badge src-${r.badge.kind}`, title: '値の区分', text: `[${r.badge.text}]` }), r.note ? h('span', { class: 'small', text: ` ${r.note}` }) : null));
     });
     el.appendChild(h('div', { class: 'pfield' }, h('label', { for: 'pk-substrate', text: '基板' }), sSel, dl, msgEl('pk-substrate-msg', m.substrate)));
+
+    // TDP(公表の設定範囲があるチップだけ。範囲内で選ぶ。空欄=既定=範囲の上限)
+    if (range && typeof range.minW === 'number' && typeof range.maxW === 'number') {
+      el.appendChild(h('div', { class: 'pfield' },
+        h('label', { for: 'pk-tdp', text: `TDP(設定範囲 ${range.minW}〜${range.maxW} W。空欄=上限)` }),
+        h('div', { class: 'pinput' }, h('input', {
+          id: 'pk-tdp', type: 'text', inputmode: 'decimal', autocomplete: 'off', value: pkg.tdpW == null ? '' : String(pkg.tdpW),
+          placeholder: `${range.maxW}`, 'aria-invalid': m.tdp ? 'true' : null, 'aria-describedby': m.tdp ? 'pk-tdp-msg' : null,
+          onchange: (e) => cb.onTdp(e.target.value, e.target),
+          onkeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
+        }), h('span', { class: 'small', text: 'W' })),
+        h('p', { class: 'small', text: '選ぶと電力制限も同じ値になります。MT の持続クロック係数は 60W 以下/超の 2 段階でしか変わりません(モバイル PC のみ)。既定以外では公開値との比較は出しません。' }),
+        msgEl('pk-tdp-msg', m.tdp)));
+    }
 
     // 電力制限
     el.appendChild(h('div', { class: 'pfield' },

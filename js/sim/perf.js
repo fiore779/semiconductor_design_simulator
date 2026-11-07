@@ -172,6 +172,9 @@
   // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
   function mtPublishedW(preset) {
     const pw = (preset && preset.power) || {};
+    // ユーザーが設定範囲内で選んだ TDP(package.tdpW を evaluate が power.tdpW として渡す)があればそれを優先
+    const sel = pw.tdpW; const rg = pw.range;
+    if (rg && typeof sel === 'number' && sel >= rg.minW && sel <= rg.maxW) return { w: sel, source: 'selected' };
     const mx = pw.range && pw.range.maxW;
     if (typeof mx === 'number' && mx > 0) return { w: mx, source: 'range.maxW' };
     const b = pw.base && pw.base.w;

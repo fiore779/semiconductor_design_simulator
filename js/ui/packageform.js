@@ -103,6 +103,7 @@
   function powerLimitSourceText(pkg, peakItem) {
     if (!pkg || pkg.powerLimitW == null) return '';
     if (pkg.powerLimitSource === 'peak') return `初期値: ${peakKindText(peakItem && peakItem.s)}から(${pkg.powerLimitW} W)`;
+    if (pkg.powerLimitSource === 'tdp') return `選んだ TDP から(${pkg.powerLimitW} W)`;
     if (pkg.powerLimitSource === 'base') return `初期値: 公表の基本電力から(${pkg.powerLimitW} W)`;
     return '';
   }

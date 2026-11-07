@@ -167,6 +167,23 @@
   }
   function setCooling(design, id) { return setPackageField(design, 'coolingId', id, 'cooling', '冷却'); }
   function setSubstrate(design, id) { return setPackageField(design, 'substrateId', id, 'substrates', '基板'); }
+  // TDP の選択(公表の設定範囲 range があるチップ用)。w が null なら既定(範囲の上限=従来の扱い)に戻し、電力制限も既定に戻す。
+  // 数値なら範囲 [minW, maxW] 内に限り、package.tdpW に記録して電力制限(powerLimitW)も同じ値にする(出所 'tdp')。
+  function setTdp(design, w, range) {
+    if (!range || !isNum(range.minW) || !isNum(range.maxW)) return fail('このチップには TDP の設定範囲がありません');
+    const d = clone(design);
+    const pkg = Object.assign(defaultPackage(null), d.package || {});
+    if (w === null) {
+      delete pkg.tdpW;
+      const def = defaultPowerLimit({ power: { peak: range.peak || null, base: range.base || null } });
+      pkg.powerLimitW = def.powerLimitW; pkg.powerLimitSource = def.powerLimitSource;
+    } else {
+      if (!(isNum(w) && w >= range.minW && w <= range.maxW)) return fail(`TDP は設定範囲 ${range.minW}〜${range.maxW} W の数にしてください`);
+      pkg.tdpW = w; pkg.powerLimitW = w; pkg.powerLimitSource = 'tdp';
+    }
+    d.package = pkg;
+    return { ok: true, design: d };
+  }
   function setPowerLimit(design, w) {
     if (w !== null && !(typeof w === 'number' && isFinite(w) && w >= 1 && w <= 1000)) return fail('電力制限は 1〜1000 W の数か、制限なし(null)にしてください');
     const d = clone(design);
@@ -677,6 +694,7 @@
       if (k.powerLimitW === undefined) k.powerLimitW = null; // 欠落は制限なしとして受ける
       if (k.powerLimitSource != null && typeof k.powerLimitSource !== 'string') return 'package.powerLimitSource が文字列ではありません';
       if (k.powerLimitW !== null && !(isNum(k.powerLimitW) && k.powerLimitW >= 1 && k.powerLimitW <= 1000)) return 'package.powerLimitW は null か 1〜1000 の数にしてください';
+      if (k.tdpW !== undefined && !(isNum(k.tdpW) && k.tdpW >= 1 && k.tdpW <= 1000)) return 'package.tdpW は 1〜1000 の数にしてください';
     }
     return null;
   }
@@ -791,7 +809,7 @@
 
   const api = {
     SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse, addCoreDef, fitDieToBlocks,
-    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setCoreCount, setClock, setL3, setMemory, unlock, withCfg, clockOf, relayoutCompute,
+    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setTdp, setCoreCount, setClock, setL3, setMemory, unlock, withCfg, clockOf, relayoutCompute,
   };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

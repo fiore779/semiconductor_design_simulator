@@ -129,8 +129,9 @@
     PM.renderParams($('params'), design, { onCount: (t, v, i) => onParamEdit('count', t, v, i), onClock: (t, v, i) => onParamEdit('clock', t, v, i), onL3: (v, i) => onParamEdit('l3', null, v, i), onMemory: onMemoryEdit, onMemoryUi: renderParamsPanel, onUnlock }, paramMsgs);
   }
   const peakOf = (d) => { const p = d && ctx.presets.find((q) => q.id === d.presetId); return (p && p.power && p.power.peak) || null; };
+  const rangeOf = (d) => { const p = d && ctx.presets.find((q) => q.id === d.presetId); return (p && p.power && p.power.range) || null; };
   function renderPackagePanel() {
-    PP.renderPackage($('package'), design, { onCooling: (id) => onPackageEdit('cooling', id), onSubstrate: (id) => onPackageEdit('substrate', id), onPowerLimit: (s) => onPackageEdit('limit', s) }, pkgMsgs, peakOf(design));
+    PP.renderPackage($('package'), design, { onCooling: (id) => onPackageEdit('cooling', id), onSubstrate: (id) => onPackageEdit('substrate', id), onPowerLimit: (s) => onPackageEdit('limit', s), onTdp: (s) => onPackageEdit('tdp', s) }, pkgMsgs, peakOf(design), rangeOf(design));
   }
   // ヒートマップのデータ接続。電力密度・温度のモードのときだけ計算する。ダイビューに setHeatmap が無ければ何もしない
   function updateHeat() {
@@ -304,6 +305,13 @@
     } else if (kind === 'substrate') {
       if (value === pkg.substrateId) { pkgMsgs = {}; renderPackagePanel(); return; }
       res = DS.setSubstrate(design, value); label = PK.packageLabel('substrate', (window.SDS_DATA || {}).substrates, pkg.substrateId, value);
+    } else if (kind === 'tdp') {
+      const rg = rangeOf(design); const pre = ctx.presets.find((q) => q.id === design.presetId);
+      const p = PK.parsePowerLimit(value);
+      if (!p.ok) { fail(p.reason.replace('電力制限', 'TDP')); return; }
+      if (p.value === (pkg.tdpW == null ? null : pkg.tdpW)) { pkgMsgs = {}; renderPackagePanel(); return; }
+      res = DS.setTdp(design, p.value, rg && Object.assign({ peak: pre.power.peak, base: pre.power.base }, rg));
+      label = `TDP: ${pkg.tdpW == null ? '既定' : pkg.tdpW + ' W'}→${p.value == null ? '既定' : p.value + ' W'}`;
     } else {
       const p = PK.parsePowerLimit(value);
       if (!p.ok) { fail(p.reason); return; }

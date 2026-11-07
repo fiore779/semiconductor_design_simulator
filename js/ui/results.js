@@ -221,7 +221,7 @@
       if (ev.mt.clockFactor && ev.mt.clockFactor !== 1) {
         const ci = ev.mt.clockInfo || {};
         const base = (ev.mt.detail || []).some((d) => d.clockFactor !== 1 && d.clockSource === 'boost') ? 'boost' : '最大クロック';
-        let how = ci.band ? `公表電力 ${ci.powerW}W(${ci.source === 'range.maxW' ? '設定範囲の上限' : '基準電力'})→ 帯「${ci.band}」の係数。編集後も元のチップの公表電力で決まります`
+        let how = ci.band ? `公表電力 ${ci.powerW}W(${ci.source === 'selected' ? '選んだ TDP' : ci.source === 'range.maxW' ? '設定範囲の上限' : '基準電力'})→ 帯「${ci.band}」の係数。編集後も元のチップの公表電力で決まります`
           : ci.fallback ? '公表電力が未取得のため、従来の一律 0.81 を使用' : 'モバイル(スマホ SoC)は一律の係数';
         if (ci.applied === 'partial') how += '。boost が未取得のコアには掛けていません(基本クロックのまま)';
         mtExtra.push(note(`MT の全コア負荷時クロックは ${base} × ${ev.mt.clockFactor}(${how}。[推定・校正値]で、実際の熱・電力制限を表すものではありません。係数はチャート値からの逆算で、チャートの偏りを含みます〔推測・未検証〕)。`, 'warn-note'));

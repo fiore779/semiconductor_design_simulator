@@ -347,8 +347,13 @@
     const hasCfg = !!(preset0 && design.cfg && Array.isArray(design.cfg.cores));
     // 基準以外のメモリ構成が選ばれていれば、cfg と baseCfg が(読み込みの不整合などで)同じでも編集済み扱い: 公開値との差は補正後の値になるので出さない
     const memNonRef = hasCfg && !!design.cfg.mem && !!sims().memory && (() => { const m = sims().memory.evaluate({ id: preset0.id, cfg: { mem: design.cfg.mem } }); return m.active && !m.isRef; })();
-    const edited = hasCfg && (isEdited(design) || memNonRef);
-    const preset = hasCfg ? effectivePreset(preset0, design.cfg) : preset0;
+    // 設定範囲(power.range)内で選んだ TDP(package.tdpW)。範囲の上限(既定)以外なら、公開値(既定の設定での測定)とは条件が違うので編集済み扱い
+    const rg = preset0 && preset0.power && preset0.power.range;
+    const tdpSel = rg && design.package && typeof design.package.tdpW === 'number' && design.package.tdpW >= rg.minW && design.package.tdpW <= rg.maxW ? design.package.tdpW : null;
+    const tdpNonDefault = hasCfg && tdpSel != null && tdpSel !== rg.maxW;
+    const edited = hasCfg && (isEdited(design) || memNonRef || tdpNonDefault);
+    let preset = hasCfg ? effectivePreset(preset0, design.cfg) : preset0;
+    if (preset && tdpSel != null) preset = Object.assign({}, preset, { power: Object.assign({}, preset.power, { tdpW: tdpSel }) });
     const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
     const area = evalArea(design, ctx);
     const warnings = V ? V.validate(design).map((w) => Object.assign({}, w)) : [];
