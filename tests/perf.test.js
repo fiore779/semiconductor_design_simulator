@@ -209,22 +209,22 @@ test('mtScore: maxGHz だけのコア(Arm)は max を使い、fByType の部分�
   assert.ok(part.score < F.mtScore(p, c, D.uarch, null).score);
 });
 
-// MT の持続クロック係数(設計書 §5.3.0・§5.3.3 G の1。[推定・校正値]。mobile は 0.81、mobile-pc は TDP 帯別(電力未取得は 0.81)、それ以外は 1.0)
-test('MT 持続クロック係数: mobile は boost × 0.81 を使い、desktop(pc)と kind なしは 1.0 で不変', () => {
+// MT の持続クロック係数(設計書 §5.3.0・§5.3.3 G の1。[推定・校正値]。mobile は 0.92(2026-11-07 に 0.81 から再校正。docs/research/mobile-mt-factor-2026-11-07.md)、mobile-pc は TDP 帯別(電力未取得は 0.81)、それ以外は 1.0)
+test('MT 持続クロック係数: mobile は boost × 0.92 を使い、desktop(pc)と kind なしは 1.0 で不変', () => {
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
-  assert.deepStrictEqual(F.MT_CLOCK_FACTOR, { pc: 1.0, mobile: 0.81, 'mobile-pc': 0.81 });
-  // mobile: fByType に boost×0.81 を明示した値と一致(係数は fByType の明示指定には掛からない)
+  assert.deepStrictEqual(F.MT_CLOCK_FACTOR, { pc: 1.0, mobile: 0.92, 'mobile-pc': 0.81 });
+  // mobile: fByType に boost×0.92 を明示した値と一致(係数は fByType の明示指定には掛からない)
   const m = preset('qc-8gen2'); assert.strictEqual(m.kind, 'mobile');
   const a = F.mtScore(m, c, D.uarch, null);
-  const explicit = {}; m.cfg.cores.forEach((g) => { explicit[g.type] = (g.boostGHz || g.maxGHz || g.baseGHz) * 0.81; });
+  const explicit = {}; m.cfg.cores.forEach((g) => { explicit[g.type] = (g.boostGHz || g.maxGHz || g.baseGHz) * 0.92; });
   const b = F.mtScore(m, c, D.uarch, explicit);
-  assert.ok(a.ok && b.ok); assert.strictEqual(a.clockFactor, 0.81); assert.ok(b.detail.every((d) => d.clockFactor === 1)); assert.strictEqual(b.clockFactor, 1);
+  assert.ok(a.ok && b.ok); assert.strictEqual(a.clockFactor, 0.92); assert.ok(b.detail.every((d) => d.clockFactor === 1)); assert.strictEqual(b.clockFactor, 1);
   // base にフォールバックしたコアには係数を掛けない(トップレベルは実際に掛けた係数)
   const nb = JSON.parse(JSON.stringify(m)); nb.cfg.cores.forEach((g) => { g.baseGHz = g.maxGHz; delete g.boostGHz; delete g.maxGHz; });
   const rb = F.mtScore(nb, c, D.uarch, null);
   assert.ok(rb.ok && rb.detail.every((d) => d.clockSource === 'base' && d.clockFactor === 1)); assert.strictEqual(rb.clockFactor, 1);
   assert.ok(Math.abs(a.score / b.score - 1) < 1e-12);
-  assert.ok(a.detail.every((d) => d.clockFactor === 0.81));
+  assert.ok(a.detail.every((d) => d.clockFactor === 0.92));
   // mobile-pc は電力が未取得なら 0.81(8cx Gen 3。7840HS は 2026-11-05 に電力を取得して帯 0.69 になった)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.69)、pc は 1.0
   assert.strictEqual(F.mtScore(preset('qc-8cx-gen3'), c, D.uarch, null).clockFactor, 0.81);
   assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.69);
@@ -295,8 +295,8 @@ test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォ�
   const fb = F.mtClockInfo(mk('mobile-pc', { base: null, peak: null, range: null }));
   assert.deepStrictEqual([fb.factor, fb.band, fb.fallback], [0.81, null, true]);
   assert.strictEqual(F.mtClockInfo({ kind: 'mobile-pc' }).factor, 0.81);
-  // mobile(スマホ SoC)は電力があっても一律 0.81、pc・その他は 1.0
-  const ph = F.mtClockInfo(mk('mobile', both)); assert.deepStrictEqual([ph.factor, ph.band, ph.fallback], [0.81, null, false]);
+  // mobile(スマホ SoC)は電力があっても一律 0.92(2026-11-07 に 0.81 から再校正)、pc・その他は 1.0
+  const ph = F.mtClockInfo(mk('mobile', both)); assert.deepStrictEqual([ph.factor, ph.band, ph.fallback], [0.92, null, false]);
   ['pc', 'server', 'embedded', undefined].forEach((k) => assert.strictEqual(F.mtClockInfo(mk(k, both)).factor, 1));
   assert.strictEqual(F.mtClockInfo(null).factor, 1);
   // 実データ: 5800U(10〜25W)→0.69、HX370(54W)→0.69、PTL(80W)→0.76、7840HS(54W。2026-11-05 に取得)→0.69、8cx Gen 3(未取得)→0.81・fallback

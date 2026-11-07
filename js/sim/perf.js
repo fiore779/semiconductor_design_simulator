@@ -161,8 +161,11 @@
 
   // MT の持続クロック係数(§5.3.0)。全コア負荷時のクロック = 係数 × boost。[推定・校正値]で、実際の熱・電力制限を表すものではない。
   // preset.kind で引く(pc=1.0 に丸める。kind なし・混合設計・embedded・server は 1.0)。fByType を明示指定したときは掛けない。
-  // 'mobile'(スマホ SoC)は一律 0.81。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)。
-  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.81, 'mobile-pc': 0.81 };
+  // 'mobile'(スマホ SoC)は一律 0.92。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)で、mobile とは別の値(変えない)。
+  // 【2026-11-07 再校正 mobile 0.81 → 0.92】ユーザー指示「NG になっているものも修正して」。kind==='mobile' で MT が計算でき公開値がある 18 件(qc-855/865/888/8gen1/8plus-gen1/8gen2/8elite/8elite-gen5/8elite-x-gen6/780g/7gen1/7gen3/720g/6gen1/4gen2、
+  // mt-9000/9200/8200)について、予測が公開値と一致する係数を二分法で逆算した中央値が 0.925(範囲 0.629〜1.292)。0.92 にすると MT の ±10% 外が 15 件 → 9 件。
+  // 世代でばらつく(8 Elite 系 0.63〜0.76、古い 855/865/888/720G は 1.1〜1.3)ので 1 つの係数では表せない。チャート値からの逆算で偏りを含む。[推測・未検証]。docs/research/mobile-mt-factor-2026-11-07.md
+  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.92, 'mobile-pc': 0.81 };
   // mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
   // 値は、MT を計算できる x86 mobile-pc 11 件(Kraken Point を除く)で「予測がチャート値と一致する係数」の帯内の中央値を小数 2 桁に丸めたもの(チャートの偏りを含む逆算。推測・未検証)。
   // 2026-11-05: 7840HS は range 35〜54W を取得して帯 0 に入ったが、帯の係数は再校正していない(標本 11 件に含めていない。含めると帯 0 の中央値は 0.72。設計書 §2.5.1)。
@@ -205,7 +208,7 @@
     const clockInfo = mtClockInfo(preset); const kf = clockInfo.factor;
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
-      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.81、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
+      // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.92、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
       const f0 = given || c.boostGHz || c.maxGHz || c.baseGHz;
       const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
@@ -234,7 +237,7 @@
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。
-  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)に mtClockInfo の係数(pc=1.0、mobile=0.81、mobile-pc は TDP 帯別。base には掛けない)を掛けたもの。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
+  // 全コア負荷時のクロックは、既定では最大クロック(boost。なければ maxGHz、それもなければ baseGHz)に mtClockInfo の係数(pc=1.0、mobile=0.92、mobile-pc は TDP 帯別。base には掛けない)を掛けたもの。電力モデルは未接続(設計書 §5.3.0)。fByTypeOf(preset) で差し替え可能。
   // 対数誤差の二乗和を最小化する σ を、区間 [0, 0.2] の黄金分割探索で求める。
   function calibrateMt(presets, gb7ByName, uarchDb, cal, fByTypeOf) {
     // 代表のうち、全コアが uarch 専用の補正を持ち、仮の IPC を含まないものだけを使う(ISA 平均の代用は σ を歪める)
