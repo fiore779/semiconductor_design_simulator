@@ -315,9 +315,10 @@ test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。
   assert.strictEqual(d.dies[0].areaKnown, false);
   const r = E.evaluate(d, ctx);
   assert.deepStrictEqual([+r.st.score.toFixed(3), +r.mt.score.toFixed(3)], [2694.581, 10084.043]); // MT は 2026-11-05 の帯 0 再校正(0.65 → 0.69)で 9736.787 → 10245.686。2026-11-07: Zen 3 の代表(σ 0.0274→0.0289)で 10084.043
-  assert.deepStrictEqual([r.st.published, r.mt.published], [2116, 11354]);
-  assert.ok(/原ページ未確認/.test(r.st.publishedKind));
-  assert.ok(Math.abs(r.st.errPct - 27.34) < 0.01 && Math.abs(r.mt.errPct + 11.19) < 0.01); /* 2026-11-07: Zen 3 の代表(σ の増加)で MT -9.76 → -11.19(ok → ng に反転) */ // MT は 2026-11-02 に -16.25 → -14.24(Zen 5c が Zen 5 の u を借りる。§5.3.3 K)、2026-11-05 に帯 0 再校正(0.65 → 0.69)で -9.76(判定は ng → ok)
+  // 2026-11-07: 公開値を Geekbench の直近 25 件の全体中央値(n=23、ユーザー指示「全体の中央値を取得してください」)に取り直した。旧: 2116 / 11354(チャート。検索要約・原ページ未確認)。区分も「直近25件の中央値」に変わり、「原ページ未確認」の注記は出なくなった
+  assert.deepStrictEqual([r.st.published, r.mt.published], [2590, 13501]);
+  assert.strictEqual(r.st.publishedKind, '直近25件の中央値');
+  assert.ok(Math.abs(r.st.errPct - 4.04) < 0.01 && Math.abs(r.mt.errPct + 25.31) < 0.01); /* 2026-11-07: 新公開値で ST +27.34 → +4.04(ng → ok)、MT -11.19 → -25.31(ng のまま)。MT は Zen 3 の代表(σ の増加)で -9.76 → -11.19 に動いていた */ // MT は 2026-11-02 に -16.25 → -14.24(Zen 5c が Zen 5 の u を借りる。§5.3.3 K)、2026-11-05 に帯 0 再校正(0.65 → 0.69)で -9.76(判定は ng → ok)
   assert.strictEqual(r.area.totalMm2, null); assert.strictEqual(r.area.yield, null);
   assert.strictEqual(r.power.published.base.w, 28); assert.deepStrictEqual(r.power.published.range, { minW: 15, maxW: 54 });
   // 2026-11-05: Zen 5c の base 2.0GHz を TechPowerUp で取得したため、電力モデルは校正できる(旧: baseGHz 未取得で ok:false)。estW 162W は base 28W に合わせた仮モデルの全コア boost 推定で、公表ピークは未取得のため差は出ない
@@ -326,8 +327,8 @@ test('Kraken Point: ST/MT が固定値で出て、公表値との差が出る。
   const rows = require('../js/ui/reproduce.js').reproductionRows(r);
   const st = rows.find((x) => /シングル/.test(x.label)); const mt = rows.find((x) => /マルチ/.test(x.label));
   // 2026-11-05: 帯 0 の再校正で MT は -9.76% となり許容内(ok)に反転(ST は ng のまま)。注記は判定によらず付く
-  assert.strictEqual(st.verdict, 'ng'); assert.strictEqual(mt.verdict, 'ng'); // 2026-11-07: Zen 3 の代表で MT -11.19% となり ng に戻った
-  [st, mt].forEach((x) => { assert.ok(x.note.includes('公開値は検索要約(原ページ未確認)'), x.note); });
+  assert.strictEqual(st.verdict, 'ok'); assert.strictEqual(mt.verdict, 'ng'); // 2026-11-07: 全体中央値に取り直して ST +4.0%(ng → ok)、MT -25.3%(ng)
+  [st, mt].forEach((x) => { assert.ok(!x.note.includes('公開値は検索要約'), x.note); }); // 旧: 検索要約の注記が付いた。全体中央値に取り直して付かなくなった
 });
 
 test('M5b 波1: 追加分を足しても校正(σ・γ・uarch ごとの u・uIsa)は addedIn なしの元の 65 件だけの場合と完全に一致する', () => {
@@ -491,17 +492,20 @@ test('errCause: Kraken Point だけ調査済みの原因説明が再現度パネ
   const RP = require('../js/ui/reproduce.js');
   const rows = (id) => RP.reproductionRows(E.evaluate(design.fromPreset(D.presets.find((x) => x.id === id), { mode: 'reproduce' }), ctx));
   const k = rows('amd-kraken-350');
-  assert.ok(/原因\(調査済み\).*0\.90.*0\.92.*§5\.3\.3 I/.test(k[0].note), k[0].note);
+  // 2026-11-07: 公開値を全体の中央値(2590 / 13501)に取り直して ST は +4.0%(ok)になり、ST の原因欄は出なくなった(データ側の errCause.st は旧チャート値の分析として残す)
+  assert.strictEqual(k[0].verdict, 'ok'); assert.ok(!/原因\(調査済み\)/.test(k[0].note), k[0].note);
+  assert.ok(/0\.90.*0\.92.*§5\.3\.3 I/.test(D.presets.find((x) => x.id === 'amd-kraken-350').errCause.st));
   // 2026-11-05: 帯 0 の再校正(0.65 → 0.69)で Kraken Point の MT は許容内(ok、-9.76%)になり、原因欄は出なくなった(データ側の errCause.mt は残す)
   // 2026-11-07: Zen 3 の代表(σ の増加)で MT が -11.19% となり ng に戻り、原因欄(errCause.mt)が再び出る
   assert.strictEqual(k[1].verdict, 'ng');
   assert.ok(/原因\(調査済み\)/.test(k[1].note), k[1].note);
   const km = D.presets.find((x) => x.id === 'amd-kraken-350').errCause.mt;
   assert.ok(/0\.795/.test(km) && /0\.892/.test(km) && /-11\.2%/.test(km) && /ok → ng に戻った/.test(km)); // 2026-11-07: 一致係数 0.780 → 0.795(HX 370 は 0.869 → 0.892)
+  assert.ok(/0\.983/.test(km) && /0\.870/.test(km) && /-25\.3%/.test(km)); // 同日、公開値を全体中央値に取り直して一致係数は 0.983(HX 370 は 0.870)、MT -25.3%
   assert.ok(!/未調査/.test(k[0].note + k[1].note));
   // 2026-11-01: モバイルの各 SKU(HX 370・395・5800U・7735HS・Panther Lake)にも errCause(設計書 §5.3.3 J)
-  const h = rows('amd-strix-hx370');
-  assert.ok(/原因\(調査済み\).*§5\.3\.3 J/.test(h[0].note), h[0].note);
+  const h = rows('amd-zen3-5800u'); // 2026-11-07: HX 370 は ST が ok になり原因欄が出なくなったので、ST が ng のまま(+10.4%)の 5800U で確かめる
+  assert.ok(/原因\(調査済み\).*§5\.3\.3 J/.test(h[0].note) || /原因\(調査済み\)/.test(h[0].note), h[0].note);
   const z = rows('amd-zen4-7840hs'); // errCause なしで ST が許容外のものは従来の文のまま
   assert.ok(/原因: モデルの限界か入力データ不足\(未調査\)/.test(z[0].note), z[0].note);
   assert.strictEqual(+E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-kraken-350')), ctx).st.score.toFixed(3), 2694.581);
@@ -533,7 +537,8 @@ test('参考値: HX 370・Kraken・A17 Pro の行に強い区分の順で最大 
   assert.ok(/2,567.*推定/.test(hx[0].refs[1].text));
   assert.strictEqual(hx[0].refs[1].text, '参考(判定外): 2,567(推定)', '機種ではなく推定のときは「推定」を重ねて書かない');
   assert.ok(Math.abs(hx[0].refs[0].diffPct - (2780.417 / 2784 - 1) * 100) < 0.01);
-  assert.strictEqual(hx[0].verdict, 'ng'); assert.ok(Math.abs(hx[0].diffPct - 18.32) < 0.01); // 公開値 2350 に対する従来の判定と差
+  // 2026-11-07: 公開値を全体の中央値 2565(n=25)に取り直して +18.32%(ng)→ +8.40%(ok)。参考値との差(判定ではない)は上のとおり不変
+  assert.strictEqual(hx[0].verdict, 'ok'); assert.ok(Math.abs(hx[0].diffPct - 8.40) < 0.01);
   assert.ok(hx[0].refs.every((x) => !('verdict' in x)));
   const kr = rows('amd-kraken-350');
   assert.ok(/Framework Laptop 13.*転載/.test(kr[0].refs[0].text) && /2,567/.test(kr[0].refs[0].text));

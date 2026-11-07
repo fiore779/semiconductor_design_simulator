@@ -85,18 +85,18 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake(モバイル): Core i7-14700HX(2.1GHz, 20c)",
-  "single": 2156,
-  "multi": 14420,
-  "kind": "チャート",
-  "n": null
+  "single": 2177,
+  "multi": 13768,
+  "kind": "直近25件の中央値",
+  "n": 18
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Meteor Lake: Core Ultra 9 185H(2.3GHz, 16c)",
-  "single": 1850,
-  "multi": 11557,
-  "kind": "チャート",
-  "n": null
+  "single": 2174,
+  "multi": 13731,
+  "kind": "直近25件の中央値",
+  "n": 14
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -125,10 +125,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-HX: Core Ultra 9 275HX(2.7GHz, 24c)",
-  "single": 2425,
-  "multi": 20507,
-  "kind": "チャート",
-  "n": null
+  "single": 2655,
+  "multi": 20974,
+  "kind": "直近25件の中央値",
+  "n": 24
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -149,26 +149,26 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 268V(2.2GHz, 8c)",
-  "single": 2134,
-  "multi": 9389,
-  "kind": "チャート",
-  "n": null
+  "single": 2360,
+  "multi": 10128,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 258V(2.2GHz, 8c)",
-  "single": 2096,
-  "multi": 9227,
-  "kind": "チャート",
-  "n": null
+  "single": 1957,
+  "multi": 9807,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 256V(2.2GHz, 8c)",
-  "single": 2017,
-  "multi": 8971,
-  "kind": "チャート",
-  "n": null
+  "single": 2259,
+  "multi": 9384,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "AMD",
@@ -269,18 +269,18 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "AMD",
   "name": "Zen 4 モバイル(Phoenix): Ryzen 7 7840HS(3.8GHz, 8c)",
-  "single": 2037,
-  "multi": 11886,
-  "kind": "チャート",
-  "n": null
+  "single": 2071,
+  "multi": 12142,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "AMD",
   "name": "Zen 4 モバイル(Rembrandt-R): Ryzen 7 7735HS(3.2GHz, 8c)",
-  "single": 1737,
-  "multi": 8279,
-  "kind": "チャート",
-  "n": null
+  "single": 1916,
+  "multi": 10175,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "AMD",
@@ -301,34 +301,34 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "AMD",
   "name": "Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)",
-  "single": 2350,
-  "multi": 15014,
-  "kind": "チャート",
-  "n": null
+  "single": 2565,
+  "multi": 14713,
+  "kind": "直近25件の中央値",
+  "n": 25
  },
  {
   "group": "AMD",
   "name": "Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)",
-  "single": 2423,
-  "multi": 20787,
-  "kind": "チャート",
-  "n": null
+  "single": 2764,
+  "multi": 29916,
+  "kind": "直近25件の中央値",
+  "n": 24
  },
  {
   "group": "AMD",
   "name": "Kraken Point: Ryzen AI 7 350(2.0GHz, 8c)",
-  "single": 2116,
-  "multi": 11354,
-  "kind": "チャート(検索要約・原ページ未確認)",
-  "n": null
+  "single": 2590,
+  "multi": 13501,
+  "kind": "直近25件の中央値",
+  "n": 23
  },
  {
   "group": "AMD",
   "name": "Cezanne: Ryzen 7 5800U(1.9GHz, 8c)",
-  "single": 1505,
-  "multi": 6368,
-  "kind": "チャート",
-  "n": null
+  "single": 1701,
+  "multi": 6963,
+  "kind": "直近25件の中央値",
+  "n": 20
  },
  {
   "group": "Apple(A シリーズ=iPhone/iPad の機種中央値、M シリーズ=Mac/iPad の機種中央値)",
@@ -872,10 +872,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra X9 388H(2.1GHz, 16c)",
-  "single": 2515,
-  "multi": 15820,
+  "single": 2667,
+  "multi": 18249,
   "kind": "直近25件の中央値",
-  "n": null
+  "n": 24
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",

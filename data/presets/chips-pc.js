@@ -187,8 +187,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 5.0 }, { type: 'C', uarch: 'Zen 5c', count: 4, smt: 2, baseGHz: 2.0, boostGHz: 3.5 }], l3MB: 16, l3Note: '合計 16MB は AMD 公式ページで確認(2026-11-06、[公表]。https://www.amd.com/en/products/processors/laptop/ryzen/ai-300-series/amd-ryzen-ai-7-350.html )。TechPowerUp の 8MB は誤り。Zen 5 側 / Zen 5c 側の内訳は未取得', l2: '合計 8MB', memory: 'DDR5-5600 / LPDDR5X-8000' },
     calib: false,
     errCause: {
-      st: '公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 掲載の Geekbench Browser 転載 0.92(2567 は Framework 13、2784 は HX 370 のミニ PC。各 1 件で [二次])と相対値は近いが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
-      mt: '公開値(11354)は検索要約で原ページ未確認。Zen 5c の ST 補正を Zen 5 の u に揃えて -16.3% → -14.2%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -9.8%(判定 ng → ok)。【2026-11-07 更新】Zen 3 を校正代表に加えて σ が 0.0274 → 0.0289 に増え、MT は -11.2%(判定 ok → ng に戻った)。公開値と一致する係数は帯係数 0.69 に対し 0.795(旧 0.780)。HX 370 も 0.892(旧 0.869)で、同じ向き。原因は未特定。設計書 §5.3.3 K',
+      st: '【2026-11-07 更新】公開値を Geekbench 7 の直近 25 件の全体中央値(2590 / 13501、n=23。ユーザー指示「全体の中央値を取得してください」)に取り直し、ST は +4.0%(ok)になった。以下は旧チャート値(2116)に対する分析で、現在は当てはまらない(旧チャートは省電力投稿に引き下げられていた疑い)。【旧】公開値(2116)は Geekbench チャートの検索要約で原ページ未確認。HX 370 比で公開値 0.90(2116/2350)・Notebookcheck 掲載の Geekbench Browser 転載 0.92(2567 は Framework 13、2784 は HX 370 のミニ PC。各 1 件で [二次])と相対値は近いが、モデルは 0.97(クロック差 0.98 と L3 差 0.99 だけ)。残りの約 5〜7% は原因未特定(チャート標本の偏りか、モデル未対応の要因か切り分けられていない)。モバイルのチャートは HX 370・Strix Halo でも +16〜18% 高く出ており、その偏りを除いても約 +9% が残る。設計書 §5.3.3 I',
+      mt: '【旧チャート値 11354(検索要約・原ページ未確認)に対する分析。現在の公開値は全体中央値 13501】Zen 5c の ST 補正を Zen 5 の u に揃えて -16.3% → -14.2%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -9.8%(判定 ng → ok)。【2026-11-07 更新】Zen 3 を校正代表に加えて σ が 0.0274 → 0.0289 に増え、MT は -11.2%(判定 ok → ng に戻った)。公開値と一致する係数は帯係数 0.69 に対し 0.795(旧 0.780)。HX 370 も 0.892(旧 0.869)で、同じ向き。【さらに同日】公開値を全体中央値(MT 13501、n=23)に取り直したため MT は -25.3%(ng)、一致する係数は 0.983(HX 370 は 0.870)。原因は未特定。設計書 §5.3.3 K',
     },
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック 2.0GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-ai-7-350.c4004 。ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照。2026-11-06: AMD 公式ページでクロック・L3 16MB・TDP 28W(cTDP 15〜54W)の一致を確認し電力の区分を pub に。L2 合計 8MB(ノート: 上の「L2 1MB/コア」× 8)は依頼で示された公式値(原ページ未再取得)',
   });
@@ -494,7 +494,14 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
 
   // 2026-11-07(ユーザー指示「NG の原因をできれば特定して直して」): 調べた原因のうち、直せなかったもの(データ待ち)を再現度パネルの「原因(調査済み)」に追記。数値は変えない。
   // 直したもの: Zen+ の uFrom・Zen 3 の校正代表・Arrow Lake の L3 遅延。設計書 §5.3.0・§5.3.3・§13.4
-  const MOBILE_X86_ST = '【2026-11-07 調査】主因は公開値側: Geekbench のチャートは全投稿の平均で、省電力の投稿に引き下げられる。Notebookcheck のレビュー機と比べると 14700HX -0.3%、7840HS +0.2%、275HX -3.9% で、モデルの ST はほぼ合う。公開値の取り直しが必要(Geekbench Browser は 403 で取得できず。データ待ち)';
+  const MOBILE_X86_ST = '【2026-11-07 調査】主因は公開値側だった: 旧チャート値は全投稿の平均で省電力の投稿に引き下げられる(Notebookcheck のレビュー機と比べると 14700HX -0.3%、7840HS +0.2%、275HX -3.9% でモデルの ST はほぼ合う)。【同日】公開値を Geekbench 7 の直近 25 件の全体中央値に取り直した(ユーザー指示「全体の中央値を取得してください」。docs/research/gb7-recollect-2026-11-07.md)。下の偏りは認識したうえでの採用で、Windows のみに切り替えるかは判断待ち(設計書 §13.4)';
+  const GB7_BIAS = {
+    'intel-lnl-258v': '【2026-11-07 注意】Linux の同一機種 7 件が MT 約 2000 と異常で全体中央値を下げている(Windows のみなら 2270 / 10407)。全体の中央値はユーザー指示で、この偏りは認識したうえでの採用(Windows のみへの切り替えは判断待ち)',
+    'amd-strixhalo-395': '【2026-11-07 注意】MT は Linux 15 件がすべて ROG Flow Z13(約 30,000)で 1 機種に偏る(Windows のみなら 22543)。全体の中央値はユーザー指示で、この偏りは認識したうえでの採用(Windows のみへの切り替えは判断待ち)',
+    'amd-zen3p-7735hs': '【2026-11-07 注意】Shenzhen DOKE の 11 件が中央値を決める。全体の中央値はユーザー指示で、この偏りは認識したうえでの採用(判断待ち)',
+    'intel-mtl-185h': '【2026-11-07 注意】macOS を名乗る偽装投稿が多く n=14 と小さい(全部除くと 2192 / 14121)。全体の中央値はユーザー指示で、この偏りは認識したうえでの採用(判断待ち)',
+    'intel-rpl-14700hx': '【2026-11-07 注意】macOS を名乗る偽装投稿 7 件を除外して n=18 と小さい。全体の中央値はユーザー指示で、この偏りは認識したうえでの採用(判断待ち)',
+  };
   const ERR_ADD = {
     'amd-strix-hx370': { st: MOBILE_X86_ST, mt: '【2026-11-07 調査】モバイル x86 の MT 帯係数は合わせ込みの限界。HX 370 は Zen 5c に係数を掛けないと +0.2% だが、出典がなく推測(採用していない)' },
     'amd-kraken-350': { st: MOBILE_X86_ST },
@@ -505,5 +512,6 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'intel-arl-285k': { mt: '【2026-11-07 調査】Arrow Lake の MT +13〜15% の残りは原因未特定(SMT なしの並列効率 η、ダイ間遅延の疑い)。L3 遅延は Chips and Cheese の実測 [二次](Lion Cove 84 サイクル: https://old.chipsandcheese.com/?p=34012 、Skymont 69 サイクル: https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed 。取得日 2026-11-07、調査担当が確認)に直した。DRAM 遅延 99ns の機種別 dramNs は未実装' },
     'intel-arl-265k': { mt: '【2026-11-07 調査】285K と同じ。残りは原因未特定(η、ダイ間遅延の疑い)' },
   };
+  Object.keys(GB7_BIAS).forEach((id) => { ERR_ADD[id] = Object.assign({}, ERR_ADD[id] || {}); ['st', 'mt'].forEach((k) => { ERR_ADD[id][k] = (ERR_ADD[id][k] ? ERR_ADD[id][k] + ' ' : '') + GB7_BIAS[id]; }); });
   P.forEach((p) => { if (ERR_ADD[p.id]) { const e = p.errCause = Object.assign({}, p.errCause || {}); ['st', 'mt'].forEach((k) => { if (ERR_ADD[p.id][k]) e[k] = (e[k] ? e[k] + ' ' : '') + ERR_ADD[p.id][k]; }); } });
 })();
