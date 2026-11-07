@@ -29,10 +29,10 @@ test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分
   assert.ok(p.notes.includes('GB7 は 2026-11-06 にユーザー提供の検索結果') && p.notes.includes('GB7 未取得')); // 旧記録(2026-11-03 時点は未取得)も残す
 });
 
-test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -18.7%・MT 約 -13.3%(両方 ng・原因未特定)', () => {
+test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -18.5%・MT 約 -13.1%(両方 ng・原因未特定。2026-11-07 に 9400 の P を公式 3.62 にして X925 の u が動き、旧 -18.73% / -13.28%)', () => {
   const r = E.evaluate(mk(), E.makeContext());
-  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -18.73) < 0.01);
-  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -13.28) < 0.01);
+  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -18.54) < 0.01);
+  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -13.13) < 0.01);
   const rows = require('../js/ui/reproduce.js').reproductionRows(r);
   assert.deepStrictEqual([rows[0].verdict, rows[1].verdict], ['ng', 'ng']); // 許容 ±10% を超える。n=6 でも gray にはならない(gray は「個別投稿」だけ)
   assert.strictEqual(r.st.corrSource, 'uarch'); // X925 は Dimensity 9400 の代表の u
