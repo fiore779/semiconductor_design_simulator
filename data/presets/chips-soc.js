@@ -170,7 +170,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
       power: { base: null, peak: null, range: null, bigCore: pw(4.9, 'sec', 'ビッグコア単体ピーク(SPECint)。「8 Gen 2 for Galaxy」(オーバークロック版)のピークの値で、無印の 8 Gen 2 の値ではない(Wccftech、Golden Reviewer、SPECint06 Big Core。2026-11-05 に訂正)') } });
   q('qc-8gen3', '8 Gen 3', 2023, '8 Gen 3', 137.3, 'tsmc-n4', [c('P', 'Cortex-X4', 1, 3.3), c('M', 'Cortex-A720', 3, 3.15), c('M2', 'Cortex-A720', 2, 2.96), c('E', 'Cortex-A520', 2, 2.3)],
     { memory: 'LPDDR5X-9600, 64bit, 76.8GB/s',
-      notes: QO('8-series/snapdragon-8-gen-3-mobile-platform', 'メモリ LPDDR5X-9600・64bit は [公表]。帯域 76.8GB/s は公式に記載なく [二次]/換算。プロセス 4nm [公表]。クロック: E 2.27→2.3(公式 Efficiency 最大 2.3。旧 2.27 は [二次])、P 3.3 は公式の 3.3GHz 版として一致、中間クラスタ 3.15 / 2.96 の分け方は公式になく [二次] のまま。') + '旧記録: メモリは [二次](Wikipedia の raw で確認、2026-11-05)。キャッシュ(同日追加、[二次]): L3 12MB(Android Authority・ComputerBase。Notebookcheck は 8MB とし食い違う)。SLC の容量は未取得で L3 と SLC の合計が不明なため、cfg.l3MB は未定義のまま(SLC 全体を L3 相当として使う方針〔GPU 未実装のため。設計書 §5.3.0〕だが、合計が分からないので入れない。2026-11-07 ユーザー指示)。docs/research/missing-data-2026-11-05.md',
+      notes: QO('8-series/snapdragon-8-gen-3-mobile-platform', 'メモリ LPDDR5X-9600・64bit は [公表]。帯域 76.8GB/s は公式に記載なく [二次]/換算。プロセス 4nm [公表]。クロック: E 2.27→2.3(公式 Efficiency 最大 2.3。旧 2.27 は [二次])、P 3.3 は公式の 3.3GHz 版として一致、中間クラスタ 3.15 / 2.96 の分け方は公式になく [二次] のまま。') + '旧記録: メモリは [二次](Wikipedia の raw で確認、2026-11-05)。キャッシュ(同日追加、[二次]): L3 12MB(Android Authority・ComputerBase。Notebookcheck は 8MB とし食い違う)。SLC の容量は未取得のため、cfg.l3MB には L3 12MB だけを入れた(SLC 全体を L3 相当として使う方針〔GPU 未実装のため。設計書 §5.3.0〕のうち、SLC ぶんは未取得で含まない。2026-11-07 ユーザー指示「8 Gen 3 の L3 キャッシュも入れて下さい」)。docs/research/missing-data-2026-11-05.md',
       power: { base: null, peak: null, range: null, bigCore: pw(6.27, 'sec', 'ビッグコア単体ピーク(SPECint)') } });
   q('qc-8elite', '8 Elite', 2024, '8 Elite', 124.1, 'tsmc-n3e', [c('P', 'Oryon Prime', 2, 4.32), c('E', 'Oryon Performance', 6, 3.53)],
     { memory: 'LPDDR5X-10667, 最大 24GB',
@@ -286,6 +286,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'apple-m2': [8, '二次', 'SLC 8MB'], 'apple-m2pro': [24, '二次', 'SLC 24MB'], 'apple-m2max': [48, '二次', 'SLC 48MB'], 'apple-m2ultra': [96, '二次', 'SLC 96MB'],
     'apple-m3': [8, '二次', 'SLC 8MB'], 'apple-m3pro': [12, '二次', 'SLC 12MB'], 'apple-m3max': [48, '二次', 'SLC 48MB'], 'apple-m4': [8, '二次', 'SLC 8MB'], 'apple-m5': [8, '二次', 'SLC 8MB'], 'apple-m5max': [48, '二次', 'SLC 48MB'],
     'qc-855': [5, '二次', 'L3 2MB + SLC 3MB'], 'qc-865': [7, '二次', 'L3 4MB + SLC 3MB'], 'qc-888': [7, '二次', 'L3 4MB + SLC 3MB'], 'qc-8gen1': [10, '二次', 'L3 6MB + SLC 4MB'], 'qc-8plus-gen1': [10, '二次', 'L3 6MB + SLC 4MB'], 'qc-8gen2': [12, '二次', 'L3 8MB + SLC 4MB'],
+    'qc-8gen3': [12, '二次', 'L3 12MB(SLC は未取得で含まない)', 'Android Authority・ComputerBase。Notebookcheck は 8MB と食い違う'],
     'qc-8elite': [8, '二次', 'L3 なし・SLC 8MB'], 'qc-8elite-gen5': [8, '二次', 'L3 なし・SLC 8MB'], 'qc-8elite-x-gen6': [8, '二次', 'L3 なし・SLC 8MB'], 'qc-8cx-gen3': [14, '二次', 'L3 8MB + SLC 6MB'],
     'mt-9000': [14, '公表', 'L3 8MB + SLC 6MB'], 'mt-9200': [14, '二次', 'L3 8MB + SLC 6MB', 'Notebookcheck。公式に記載なし'], 'mt-9300': [18, '公表', 'L3 と SLC の合計 18MB', '内訳 L3 8MB + SLC 10MB は Notebookcheck がプレスリリースを引用したもの〔二次〕'],
     'mt-9400': [22, '公表', 'L3 12MB + SLC 10MB'], 'mt-9500': [26, '公表', 'L3 16MB + SLC 10MB'], 'mt-9600pro': [26, '公表', 'L3 16MB + SLC 10MB'],
@@ -315,6 +316,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'qc-8gen3': 'Cortex-X4 の代表(8 Gen 3。8s Gen 3・7+ Gen 3・Dimensity 9300 が検証用)。機種中央値 n=13',
     'qc-8elite': 'Oryon(8 Elite)の代表。8 Elite Gen 5 が検証用。機種中央値 n=17',
     'mt-9400': 'Cortex-X925 の代表(Dimensity 9400)。機種中央値 n=4',
+    'nv-gb10': 'Cortex-X925 の 2 件目の代表(GB10。Linux 上の GB7 が 9400 より約 40% 高いプラットフォーム差を u の中央値に反映。2026-11-07 ユーザー選択)。6 件の中央値',
   };
   P.forEach((p) => { if (reps[p.id]) { p.calib = true; p.calibNote = reps[p.id]; } });
   // 参考値(判定外)。再現度パネルに公開値と並べて出す。値は docs/research/apple-uarch.md・nbc-gb7-mobile.md のものだけ(設計書 §2.4 の Notebookcheck 併記と同じ)。評価・判定には使わない(設計書 §5.3.3 J-7)

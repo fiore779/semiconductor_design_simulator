@@ -15,7 +15,9 @@ const cores = (die) => die.blocks.filter((b) => b.kind === 'core');
 test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分)', () => {
   assert.ok(p);
   assert.strictEqual(p.kind, 'pc'); assert.strictEqual(p.isa, 'arm'); assert.strictEqual(p.year, 2025); assert.strictEqual(p.gb7, 'GB10: GB10(DGX Spark, 3.9GHz, 20c)'); // 2026-11-06 に採用(追加時の 2026-11-03 は null)
-  assert.strictEqual(p.addedIn, 'M5b'); assert.strictEqual(p.calib, false);
+  assert.strictEqual(p.addedIn, 'M5b');
+  // 2026-11-07: GB10 は Cortex-X925 の 2 件目の校正代表にした(ユーザー選択「X925 の校正に GB10 も加える」)ので calib:true(旧: false)。addedIn は M5b のまま
+  assert.strictEqual(p.calib, true); assert.ok(p.calibNote.includes('Cortex-X925 の 2 件目の代表'));
   assert.strictEqual(p.dies.length, 2);
   assert.deepStrictEqual([p.dies[0].mm2, p.dies[0].s, p.dies[0].nodeId], [207.9, 'meas', 'tsmc-n3e']);
   assert.deepStrictEqual([p.dies[1].mm2, p.dies[1].s], [173.6, 'meas']);
@@ -29,13 +31,13 @@ test('GB10: プリセットの値(面積・構成・電力・GB7 なし・区分
   assert.ok(p.notes.includes('GB7 は 2026-11-06 にユーザー提供の検索結果') && p.notes.includes('GB7 未取得')); // 旧記録(2026-11-03 時点は未取得)も残す
 });
 
-test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -26.0%・MT 約 -18.0%(両方 ng・原因未特定。2026-11-07 に 9400 の P を公式 3.62 にして X925 の u が動き、旧 -18.73% / -13.28%。同日、SLC 全体を L3 相当として Dimensity 9400 に l3MB 22 を入れ、Arm の校正〔X925 の u 90.692→81.389〕が動いて -18.54% / -13.13% から変わり、さらに GB10 自身の l3MB を 24→40〔L3 24 + SLC 16〕にして -26.9% / -21.5% から -26.0% / -18.0% になった)', () => {
+test('GB10: ST/MT は計算できる(fallback ではない)。公開値は 2026-11-06 採用の 6 件の中央値 2624 / 20595 で、誤差は ST 約 -13.0%(ng)・MT 約 -8.6%(ok)。2026-11-07 に GB10 を X925 の 2 件目の校正代表にして、X925 の u が 9400 と GB10 の中央値 95.707(旧 81.389)になった結果。ST がまだ ng なのはプラットフォーム差の疑い(Linux 上の GB7 が 9400 より約 40% 高い)。旧記録: ST -26.0%・MT -18.0%(両方 ng・原因未特定。2026-11-07 に 9400 の P を公式 3.62 にして X925 の u が動き、旧 -18.73% / -13.28%。同日、SLC 全体を L3 相当として Dimensity 9400 に l3MB 22 を入れ、Arm の校正〔X925 の u 90.692→81.389〕が動いて -18.54% / -13.13% から変わり、さらに GB10 自身の l3MB を 24→40〔L3 24 + SLC 16〕にして -26.9% / -21.5% から -26.0% / -18.0% になった)', () => {
   const r = E.evaluate(mk(), E.makeContext());
-  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -26.03) < 0.01);
-  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -18.02) < 0.01);
+  assert.strictEqual(r.st.ok, true); assert.strictEqual(r.st.fallback, false); assert.strictEqual(r.st.published, 2624); assert.ok(Math.abs(r.st.errPct - -13.01) < 0.01);
+  assert.strictEqual(r.mt.ok, true); assert.strictEqual(r.mt.fallback, false); assert.strictEqual(r.mt.published, 20595); assert.ok(Math.abs(r.mt.errPct - -8.60) < 0.01);
   const rows = require('../js/ui/reproduce.js').reproductionRows(r);
-  assert.deepStrictEqual([rows[0].verdict, rows[1].verdict], ['ng', 'ng']); // 許容 ±10% を超える。n=6 でも gray にはならない(gray は「個別投稿」だけ)
-  assert.strictEqual(r.st.corrSource, 'uarch'); // X925 は Dimensity 9400 の代表の u
+  assert.deepStrictEqual([rows[0].verdict, rows[1].verdict], ['ng', 'ok']); // ST は許容 ±10% を超える(-13.0%)。MT は 2026-11-07 から許容内(-8.6%)。n=6 でも gray にはならない(gray は「個別投稿」だけ)
+  assert.strictEqual(r.st.corrSource, 'uarch'); // X925 は Dimensity 9400 と GB10 の 2 件の代表の u(中央値)
   assert.deepStrictEqual(r.mt.corrSources, ['uarch', 'isa']); // A725 は専用の u がなく命令セット平均
   assert.strictEqual(r.mt.threads, 20);
 });

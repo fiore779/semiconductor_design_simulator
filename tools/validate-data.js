@@ -106,7 +106,8 @@ const isIntelGen12Plus = (p) => p.vendor === 'Intel' && ((p.cfg && p.cfg.cores) 
   // C5 代表性(uarch・ダイ・コア数が同じ SKU は既存と合わせて最大 2 件)
   // 例外(ユーザー決定 2026-10-29。設計書 §13 M5b-4): 第12世代以降の Intel(P コアが Golden Cove 以降)には C5 を適用しない
   ok(isIntelGen12Plus(p) || sigCount.get(sig(p)) <= 2, `${id}: C5 uarch・ダイ・コア数が同じ SKU が 3 件以上 (${sigCount.get(sig(p))})`);
-  ok(p.calib === false, `${id}: 追加分の calib は false`);
+  // 例外(ユーザー選択 2026-11-07): GB10 は Cortex-X925 の 2 件目の校正代表(calib:true)。ほかの追加分は false
+  ok(p.id === 'nv-gb10' ? p.calib === true : p.calib === false, `${id}: 追加分の calib は false(nv-gb10 だけ true)`);
 });
 
 // メモリ構成の選択肢(data/memory.js。設計書 §5.2.4): id が実在し、基準が選択肢に含まれ、速度は対応最大以下で、区分・出典が付いていること

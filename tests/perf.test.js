@@ -31,18 +31,26 @@ test('calibrate rep: 代表 SKU は補正の元データなので一致する(�
   const c = cal();
   assert.ok(rep.length > 0);
   assert.strictEqual(c.isValidation, true);
-  rep.forEach((p) => {
+  // 2026-11-07: Cortex-X925 の代表は 2 件(Dimensity 9400 と GB10。ユーザー選択)なので u は 2 件の中央値(= 平均)。2 件とも 0% にはならず、
+  // 9400 は +17.6%・GB10 は -13.0% 程度に分かれる(GB10 の GB7 が Linux 上で 9400 より約 40% 高い=プラットフォーム差の疑い)。ここでは X925 の 2 件を別扱いにする
+  const x925 = rep.filter((p) => p.cfg.cores.some((g) => g.uarch === 'Cortex-X925'));
+  assert.deepStrictEqual(x925.map((p) => p.id).sort(), ['mt-9400', 'nv-gb10']);
+  rep.filter((p) => !x925.includes(p)).forEach((p) => {
     const r = F.stScore(p, c, D.uarch);
     if (!r.ok) return;
     assert.ok(Math.abs(r.score / gb7ByName[p.gb7].single - 1) < 0.005, p.id);
   });
+  // X925 の 2 件: 各 SKU に合う u は u × gb7 / 予測 で、その 2 件の平均が採用した u(= 中央値)と一致する
+  const ratios = x925.map((p) => gb7ByName[p.gb7].single / F.stScore(p, c, D.uarch).score);
+  assert.ok(Math.abs((ratios[0] + ratios[1]) / 2 - 1) < 0.001, ratios.join(','));
+  assert.ok(ratios.every((x) => Math.abs(x - 1) > 0.05), '2 件目の代表があるので予測は 0% にならない');
 });
 
 // 検証: 代表で決めた補正係数で、同じコアを使う別 SKU を予測して ±10% を見る(設計書 §5.3.1 / §11)。
 const VALIDATION_PAIRS = [
   ['intel-arl-285k', 'Lion Cove(代表 265K)'], ['amd-zen5-9950x', 'Zen 5(代表 9700X)'], ['amd-zen4-7950x', 'Zen 4(代表 7700)'],
   ['apple-m1pro', 'Firestorm(代表 M1)'], ['apple-m1max', 'Firestorm(代表 M1)'], ['apple-a15', 'Avalanche(代表 M2)'],
-  ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'], ['mt-9300', 'Cortex-X4(代表 8 Gen 3。2026-11-07 に外れ値から移動。基準の混在による見かけの改善)'],
+  ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'],
 ];
 VALIDATION_PAIRS.forEach(([id, why]) => {
   test(`検証 ST(±10%): ${id} — ${why}`, () => {
@@ -55,9 +63,9 @@ VALIDATION_PAIRS.forEach(([id, why]) => {
 
 // 既知の外れ値(電力制限・機種差・仮の補正などで予測が外れる)。直ったら通常の検証に移す。
 // 外れることを記録しておき、モデルが「全部合う」と誤解されないようにする。
-// 2026-11-07: mt-9300 は l3MB 18 を入れて ST -11.2% → -0.9% に入ったため外した(検証ペアへ移した)。ただしこれは基準の混在による見かけの改善: 代表の 8 Gen 3 は l3MB 未定義(参照値 2MB で校正)なのに 9300 は 18MB で計算している。
-// 同じ混在(l3MB が null の Arm SoC は、L3 を持つ代表で下がった u と参照 2MB の組合せ)が 780G・7 Gen 系・6 Gen 1 などにもある。8 Gen 3 の記録済み L3 12MB を入れるかは設計書 §13.4 の判断待ち
-const KNOWN_MISSES = ['amd-strix-hx370', 'intel-lnl-268v', 'amd-strixhalo-395', 'qc-7plus-gen3'];
+// 2026-11-07: mt-9300 は l3MB 18 を入れた直後は ST -0.9% に入ったが(8 Gen 3 が l3MB 未定義のままだった基準の混在による見かけの改善)、その後 8 Gen 3 に L3 12MB を入れて X4 の u が下がった(82.587→74.868)ため
+// ST -10.2% で再び ±10% の外になり、外れ値側に戻した(ユーザー指示「8 Gen 3 の L3 キャッシュも入れて」)。
+const KNOWN_MISSES = ['amd-strix-hx370', 'intel-lnl-268v', 'amd-strixhalo-395', 'qc-7plus-gen3', 'mt-9300'];
 test('既知の外れ値は ±10% を超える(記録。直ったらリストから外す)', () => {
   const c = cal();
   KNOWN_MISSES.forEach((id) => assert.ok(F.stScore(preset(id), c, D.uarch).ok, `${id} が計算不能(外れ値ではなく対象外)`));
