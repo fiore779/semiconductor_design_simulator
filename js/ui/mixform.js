@@ -12,7 +12,9 @@
   // 面積の区分の表示名(blocklib の origin と、評価の class('ported' を含む))
   const AREA_CLASS_LABEL = { table: '表', estimated: '推定', unknown: '未取得', ported: '移植', mixed: '混在', derived: '導出(範囲)' };
   const SCHEMATIC_NOTE = 'ブロックの大きさは模式図です。面積は部品の値で、ブロックの大きさを変えても面積は変わりません';
-  const ESTIMATE_NOTE = '推定は「ダイ面積 × 仮の比率」で出した目安です(比率は根拠のない仮の値)';
+  // 2026-11-09: コアの推定式(ダイ面積 × 仮の比率 ÷ コア数)は廃止した。推定は根拠つき(流用・比からの推定・移植換算。根拠は各部品の note)。L3 だけは今もダイ面積 × 仮の比率(根拠のない仮の値)
+  const ESTIMATE_NOTE = '推定は目安です。コアは根拠つきの値(同じ uarch の流用・比からの推定・別プロセスからの移植換算。根拠は部品の説明に書いてあります)、L3 はダイ面積 × 仮の比率(根拠のない仮の値)で出しています';
+  const BASIS_LABEL = { reuse: '推定(流用)', estimate: '推定', port: '推定(移植)' };
 
   const num = (x) => typeof x === 'number' && isFinite(x);
   const r2 = (x) => Math.round(x * 100) / 100;
@@ -139,10 +141,13 @@
     const origin = p && p.area && p.area.origin;
     const cls = origin === 'table' || origin === 'estimated' ? origin : 'unknown';
     const mm2 = cls === 'unknown' ? null : placeAreaMm2(p);
-    const label = AREA_CLASS_LABEL[cls];
+    const basis = p && p.area && p.area.basis;
+    const label = cls === 'estimated' && p.kind === 'core' && BASIS_LABEL[basis] ? BASIS_LABEL[basis] : AREA_CLASS_LABEL[cls];
     const unit = p && p.kind === 'l3' ? ` (${p.capacityMB} MB 時)` : '';
     const text = mm2 == null ? '面積 未取得' : `${label} ${r2(mm2)} mm²${unit}`;
-    return { cls: mm2 == null ? 'unknown' : cls, label: mm2 == null ? AREA_CLASS_LABEL.unknown : label, text, mm2, note: cls === 'estimated' ? ESTIMATE_NOTE : (p && p.area && p.area.note) || '' };
+    // コアの推定(根拠つき)は部品の note(根拠)を出す。L3 の推定は仮の比率の注記
+    const note = cls === 'estimated' && !(p.kind === 'core' && basis) ? ESTIMATE_NOTE : (p && p.area && p.area.note) || '';
+    return { cls: mm2 == null ? 'unknown' : cls, label: mm2 == null ? AREA_CLASS_LABEL.unknown : label, text, mm2, note };
   }
   // 評価の区分('table'|'estimated'|'unknown'|'ported'|'mixed')の表示名
   const areaClassLabel = (c) => AREA_CLASS_LABEL[c] || '未取得';

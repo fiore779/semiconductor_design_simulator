@@ -93,7 +93,7 @@ test('RD3: ISA・継承項目は変えられない / 範囲 / 整数 / 基準が
 
 test('RD5: 基準の面積が推定・未取得・L2 込みのみなら導出せず、幅・ROB・L2 の編集を拒否(クロック・SMT は可)', () => {
   const zen4 = cl('core:amd-zen4-7700:P');      // L2 込みのみ
-  const est = cl('core:amd-zen5-9700x:P');       // estimated
+  const est = cl('core:intel-arl-285k:P');       // estimated(2026-11-09: 9700x の Zen 5 は表の測定値になったので、推定の Lion Cove〔Arrow Lake。Lunar Lake の値 + L2 増分〕に変えた)
   const unk = CD.clone(Object.assign({}, P(ZEN1), { area: { origin: 'unknown', mm2: null, withL2Mm2: null, l2KB: null, s: null } }), D.uarch, []).def;
   [zen4, est, unk].forEach((d) => {
     assert.strictEqual(CD.areaDerivable(d).ok, false);
@@ -345,7 +345,7 @@ test('RD12: 壊れた coreDefs / coreDefId / entry を parse が拒否', () => {
   bad((x) => { x.origin.entry = 'old'; }, 'entry');
   bad((x) => { x.dies[0].blocks[0].areaOrigin = 'derived'; delete x.dies[0].blocks[0].coreDefId; }, 'derived なのに定義なし');
   // 編集できない基準(推定面積)で幅を変えた params
-  const est = design.addCoreDef(mk('tsmc-n4'), cl('core:amd-zen5-9700x:P')).design;
+  const est = design.addCoreDef(mk('tsmc-n4'), cl('core:intel-arl-285k:P')).design; // 2026-11-09: 推定の基準(Zen 5 は表の値になったため Arrow Lake の Lion Cove に変更)
   const x = JSON.parse(JSON.stringify(est)); x.coreDefs[0].params.width = 7;
   assert.strictEqual(design.parse(JSON.stringify(x)).ok, false);
   const many = JSON.parse(JSON.stringify(good)); for (let i = 0; i < 20; i++) { const c = JSON.parse(JSON.stringify(good.coreDefs[0])); c.id = `z${i}`; many.coreDefs.push(c); }

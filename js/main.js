@@ -79,7 +79,7 @@
 
   // ---- 描画 ----
   const isMix = () => !!design && DS.isMix(design);
-  const ORIGIN_TEXT = { table: '表(出典あり)', estimated: '推定(仮の比率)', unknown: '未取得', derived: '導出(範囲。大きい側を配置に使用。ロジックの上限は仮定)' };
+  const ORIGIN_TEXT = { table: '表(出典あり)', estimated: '推定(コアは根拠つき。L3 は仮の比率)', unknown: '未取得', derived: '導出(範囲。大きい側を配置に使用。ロジックの上限は仮定)' };
   function mixPropsExtra() {
     return {
       origin(b) {
@@ -90,8 +90,7 @@
         const pl = MF.portLine(b);
         const portText = pl ? ` / 移植(密度比で換算): ${pl}` : '';
         const est = cls === 'estimated' ? ` / ${MF.ESTIMATE_NOTE}` : '';
-        const core = b.kind === 'core' && cls === 'estimated' ? ' / コア面積は P/E の区別なし' : '';
-        return `出所: ${b.sourceChip || '—'}${custom} / 面積: ${area}(${ORIGIN_TEXT[cls] || '未取得'})${portText}${est}${core}${b.portNote ? ` / ${b.portNote}` : ''} / ${MF.SCHEMATIC_NOTE}`;
+        return `出所: ${b.sourceChip || '—'}${custom} / 面積: ${area}(${ORIGIN_TEXT[cls] || '未取得'})${portText}${est}${b.portNote ? ` / ${b.portNote}` : ''} / ${MF.SCHEMATIC_NOTE}`;
       },
       onRemove: onRemoveBlock,
     };

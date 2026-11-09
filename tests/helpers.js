@@ -6,6 +6,7 @@ const root = path.join(__dirname, '..');
 [
   'data/benchmarks/gb7-scores.js', 'data/nodes.js', 'data/substrates.js', 'data/cooling.js', 'data/uarch.js',
   'data/presets/chips-pc.js', 'data/presets/chips-soc.js', 'data/memory.js',
+  'data/blocklib.js', // 2026-11-09: ブラウザ(index.html)と同じ条件にする(読まないと D.blocklibAreas が undefined になり、表に当たるコアも全部「不明」になる)
 ].forEach((f) => require(path.join(root, f)));
 const sim = {};
 ['memory', 'perf', 'power', 'thermal', 'area'].forEach((m) => { try { sim[m] = require(path.join(root, 'js', 'sim', m + '.js')); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; } });

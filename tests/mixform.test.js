@@ -37,8 +37,11 @@ test('areaBadge: 表 / 推定(仮の比率の注記)/ 未取得', () => {
   const t = MF.areaBadge(P('core:mt-9400:P'));
   assert.strictEqual(t.cls, 'table'); assert.strictEqual(t.label, '表'); assert.ok(t.text.startsWith('表 ') && t.text.endsWith('mm²'));
   assert.strictEqual(t.mm2, 3.335); // L2 込み
-  const e = MF.areaBadge(P('core:amd-zen5-9700x:P'));
-  assert.strictEqual(e.cls, 'estimated'); assert.ok(e.text.startsWith('推定 ')); assert.ok(e.note.includes('仮'));
+  // 2026-11-09: コアの推定は根拠つき(Arrow Lake の Lion Cove = Lunar Lake の値 + L2 増分)。note は部品の根拠。L3 の推定は従来どおり仮の比率の注記
+  const e = MF.areaBadge(P('core:intel-arl-285k:P'));
+  assert.strictEqual(e.cls, 'estimated'); assert.ok(e.text.startsWith('推定 ')); assert.ok(e.note.includes('推定(根拠'));
+  const el3 = MF.areaBadge(P('l3:amd-zen5-9700x')); assert.strictEqual(el3.cls, 'estimated'); assert.ok(el3.note.includes('仮'));
+  const ep = MF.areaBadge(P('core:qc-8gen3:P')); assert.strictEqual(ep.label, '推定(移植)'); assert.ok(ep.note.includes('移植'));
   const u = MF.areaBadge({ kind: 'core', area: { mm2: null, origin: 'unknown' } });
   assert.strictEqual(u.cls, 'unknown'); assert.strictEqual(u.mm2, null); assert.ok(u.text.includes('未取得'));
   assert.strictEqual(MF.areaBadge({}).cls, 'unknown');

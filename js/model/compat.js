@@ -121,7 +121,7 @@
     const unk = blocks.filter((b) => !num(b.areaMm2));
     if (unk.length) out.push({ level: 'warn', code: 'area-unknown', blockId: unk[0].id, blockIds: unk.map((b) => b.id), text: `面積が未取得の部品が ${unk.length} 個あります(使用率・ダイに入るかの判定に含めていません。ブロックの大きさは仮の寸法です)` });
     const est = blocks.filter((b) => b.areaOrigin === 'estimated');
-    if (est.length) out.push({ level: 'info', code: 'area-estimated', blockId: est[0].id, blockIds: est.map((b) => b.id), text: `${est.length} 個の部品は面積が推定です(ダイ面積に仮の比率を掛けた値。実チップの面積ではありません)` });
+    if (est.length) out.push({ level: 'info', code: 'area-estimated', blockId: est[0].id, blockIds: est.map((b) => b.id), text: `${est.length} 個の部品は面積が推定です(コアは同じ uarch の流用・比からの推定・別プロセスからの移植換算などの根拠つき、L3 はダイ面積に仮の比率を掛けた値。実測の面積ではありません)` });
 
     // (d) ダイに入りきらない
     const u = utilization(design);

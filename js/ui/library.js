@@ -24,7 +24,7 @@
 
     clear(el);
     el.appendChild(h('h2', { text: '部品ライブラリ' }));
-    el.appendChild(more('使い方・用語', { key: 'lib:help' }, h('p', { class: 'note', text: '実在チップから取り出した部品を、混合設計のダイに追加します。面積の区分: 表(出典あり)/推定(仮の比率)/未取得。「/」キーで検索欄に移動できます。' })));
+    el.appendChild(more('使い方・用語', { key: 'lib:help' }, h('p', { class: 'note', text: '実在チップから取り出した部品を、混合設計のダイに追加します。面積の区分: 表(出典あり)/推定(コアは根拠つき〔流用・移植など〕、L3 は仮の比率)/未取得。「/」キーで検索欄に移動できます。' })));
 
     const listEl = h('ul', { class: 'lib-list', id: 'lib-list' });
     const countEl = h('p', { class: 'small', id: 'lib-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' });
@@ -61,7 +61,7 @@
         h('div', { class: 'small' }, hl(meta, tokens)),
         h('div', { class: 'lib-meta' },
           h('span', { class: `badge area-${badge.cls}`, title: badge.note || '' }, badge.text),
-          badge.cls === 'estimated' ? h('span', { class: 'small warn-note', text: isCore ? ' 仮の比率・P/E の区別なし' : ' 仮の比率' }) : null,
+          badge.cls === 'estimated' ? h('span', { class: 'small warn-note', text: isCore ? ' 根拠つきの推定(説明を参照)' : ' 仮の比率' }) : null,
           ci ? h('span', { class: 'small' }, '面積の導出: ', h('span', { class: `badge ${ci.cloneable && ci.derivable ? 'area-table' : 'area-unknown'}`, text: ci.cloneable && ci.derivable ? '可' : '不可' }), ci.cloneable ? (ci.derivable ? '' : ` ${ci.derivReason}`) : ` 複製できません: ${ci.reason}`) : null),
         reason ? h('p', { class: 'small err lib-block', role: 'note', title: pre[0].text }, `⚠ ${reason}`) : null,
         h('div', { class: 'lib-add' },

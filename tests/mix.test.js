@@ -20,25 +20,80 @@ const add = (d, id, o) => { const r = design.addPart(d, P(id), o); assert.ok(r.o
 const addMixed = (d, id, o) => add(d, id, Object.assign({ allowIsaMix: true }, o));
 
 // ---- blocklib ----
-test('blocklibAreas: 収録 8 件、Firestorm などは入れていない', () => {
-  assert.strictEqual(areas.length, 8);
+test('blocklibAreas: uarch × プロセスの表 30 件(2026-11-09 に 8 → 30 件)、Firestorm などは入れていない。区分(s・basis)つき', () => {
+  // 2026-11-09: 調査 docs/research/core-areas-2026-11-09.md に基づき、Intel・AMD の測定値と、推定・流用の行(s:'est')を足した(Kraken Point の流用 2 行と Darkmont の LP-E の流用 1 行を含む)
+  assert.strictEqual(areas.length, 30);
   assert.ok(!areas.some((a) => /Firestorm|Avalanche|Everest|Carmel/.test(a.uarch)));
+  areas.forEach((a) => { assert.ok(['pub', 'sec', 'est'].includes(a.s), a.uarch + ' s'); assert.ok(['measured', 'reuse', 'estimate'].includes(a.basis), a.uarch + ' basis'); assert.ok(a.note && a.note.length > 10, a.uarch + ' note'); });
+  // 推定・流用の行は s:'est'(実測・公表と区別)。Zen 4 の区分は block-areas.md に合わせて sec(旧 pub)
+  assert.ok(areas.filter((a) => a.basis !== 'measured').length > 0 && areas.filter((a) => a.basis === 'reuse').every((a) => a.s === 'est'));
+  assert.strictEqual(areas.find((a) => a.uarch === 'Zen 4' && a.nodeId === 'tsmc-n5').s, 'sec');
   const z1 = areas.find((a) => a.uarch === 'Zen 1');
   assert.deepStrictEqual([z1.noL2Mm2, z1.withL2Mm2, z1.s], [5.5, 7, 'pub']);
   assert.strictEqual(areas.find((a) => a.uarch === 'Zen 4').noL2Mm2, null);
 });
 
-test('blocklib.build: 収録チップは table、無いものは estimated(式と仮の比率が note)', () => {
+test('blocklib.build: 収録チップは table(測定値)、推定・流用・移植は estimated(根拠が note)、無いものは unknown(推定式は廃止)', () => {
   const x925 = P('core:mt-9400:P');
   assert.strictEqual(x925.area.origin, 'table'); assert.strictEqual(x925.area.withL2Mm2, 3.335); assert.strictEqual(x925.area.mm2, 2.784);
+  // 2026-11-09: Zen 5 は表の測定値(Granite Ridge CCD、Fritzchens Fritz)。旧: ダイ × 0.4 ÷ コア数の推定 3.51
   const zen5 = P('core:amd-zen5-9700x:P');
-  assert.strictEqual(zen5.area.origin, 'estimated');
-  assert.ok(Math.abs(zen5.area.mm2 - Math.round(70.2 * 0.4 / 8 * 1000) / 1000) < 1e-9);
-  assert.ok(zen5.area.note.includes('0.4') && zen5.area.note.includes('仮'));
+  assert.strictEqual(zen5.area.origin, 'table'); assert.strictEqual(zen5.area.withL2Mm2, 4.772); assert.strictEqual(zen5.area.mm2, 3.723); assert.strictEqual(zen5.area.s, 'sec');
   assert.strictEqual(zen5.nodeId, 'tsmc-n4'); assert.strictEqual(zen5.isa, 'x86'); assert.strictEqual(zen5.defaultClockGHz, 5.5); assert.strictEqual(zen5.smt, 2);
-  // X4 は 8 Gen 3(N4)では表(N3E の 9400 の値)に一致しないので推定
-  assert.strictEqual(P('core:qc-8gen3:P').area.origin, 'estimated');
+  // X4 は 8 Gen 3(N4)では 9400(N3E)の値を移植式で換算(区分: 移植。basis 'port'、s 'est')
+  const x4 = P('core:qc-8gen3:P');
+  assert.strictEqual(x4.area.origin, 'estimated'); assert.strictEqual(x4.area.basis, 'port'); assert.strictEqual(x4.area.s, 'est'); assert.ok(x4.area.note.includes('移植') && x4.area.note.includes('1.687'));
   assert.strictEqual(P('core:intel-adl-12900k:P').area.origin, 'table');
+  // 推定・流用(区分 est): Arrow Lake の Lion Cove は Lunar Lake の値 + L2 増分の推定、Skymont は流用
+  const lc = P('core:intel-arl-285k:P'); assert.deepStrictEqual([lc.area.origin, lc.area.basis, lc.area.s, lc.area.withL2Mm2], ['estimated', 'estimate', 'est', 4.75]); assert.ok(lc.area.note.includes('推定(根拠'));
+  const sk = P('core:intel-arl-285k:E'); assert.deepStrictEqual([sk.area.origin, sk.area.basis, sk.area.withL2Mm2], ['estimated', 'reuse', 1.73]); assert.ok(sk.area.note.includes('流用'));
+  // 推定式(ダイ面積 × 0.4 ÷ コア数)は廃止: BL に CORE_FRACTION はなく、表にも移植の元にも無いコアは不明(面積 null。0.4 や「仮」の式は note に出ない)
+  assert.strictEqual(BL.CORE_FRACTION, undefined);
+  const unk = P('core:qc-8gen1:P'); assert.strictEqual(unk.area.origin, 'unknown'); assert.strictEqual(unk.area.mm2, null); assert.strictEqual(unk.area.withL2Mm2, null);
+  assert.ok(unk.area.note.includes('不明') && !/0\.4/.test(unk.area.note));
+});
+
+// ---- 2026-11-09: コア面積の整合(ユーザー指摘「285K の P コアより 388H の E コアが大きいのはおかしい」) ----
+test('コア面積: 同じ uarch・同じプロセス・同じ L2 構成なら SKU が違っても同じ面積 / 285K の P > 388H の E / 実測のあるチップ内で E < P', () => {
+  const cores = parts.filter((p) => p.kind === 'core' && p.area.withL2Mm2 != null);
+  const groups = new Map();
+  // グループキーは表の行ではなく、プリセット側の L2 容量(data/uarch.js の l2KB。コアあたり)を使う(表の l2KB で分けると、行を分けたこと自体が同値を保証してしまうため)
+  cores.forEach((p) => { const k = `${p.uarch}|${p.nodeId}|${p.area.variant || ''}|${D.uarch[p.uarch].l2KB}`; (groups.get(k) || groups.set(k, []).get(k)).push(p); });
+  // 例外(明記): uarch.js の l2KB が世代違いの SKU に同じ値を使っているため、プリセット側の L2 容量では分けられない 2 グループ。値はチップの世代で決まる:
+  //   Lion Cove(N3B): Lunar Lake 4.53(L2 2.5MB)と Arrow Lake 4.75(L2 3MB。uarch.js の l2KB 3072 が Lunar Lake にも使われている)/ Gracemont(Intel 7): Alder Lake 2.17(クラスタ L2 2MB)と Raptor Lake 2.57(4MB)
+  const SPLIT = { 'Lion Cove|tsmc-n3b||3072': { 4.53: /^intel-lnl-/, 4.75: /^intel-arl-/ }, 'Gracemont|intel-7||512': { 2.17: /^intel-adl-/, 2.57: /^intel-rpl-/ } };
+  groups.forEach((g, k) => {
+    const s = new Set(g.map((p) => p.area.withL2Mm2));
+    if (SPLIT[k]) { g.forEach((p) => assert.ok(SPLIT[k][p.area.withL2Mm2] && SPLIT[k][p.area.withL2Mm2].test(p.sourcePresetId), `${k}: ${p.id}=${p.area.withL2Mm2}`)); return; }
+    assert.strictEqual(s.size, 1, `${k}: ${g.map((p) => p.id + '=' + p.area.withL2Mm2).join(', ')}`);
+  });
+  // 同じ uarch・プロセス・variant の中で、値のある部品と不明(面積 null)が混在しない(例外は一覧で明記): 同じコアなのに SKU で値の有無が分かれるのは不自然
+  const ALL = parts.filter((p) => p.kind === 'core'); const mix = new Map();
+  ALL.forEach((p) => { const k = `${p.uarch}|${p.nodeId}|${p.area.variant || ''}`; (mix.get(k) || mix.set(k, []).get(k)).push(p); });
+  // 例外: Zen 3(N7)の 5800X はダイ未取得でプロセスが不明(nodeId なし)なので別グループ(下の件も同じ)。Zen 5 の CCD と Strix Point は variant で分けてある。Crestmont の LP-E は SoC タイル(別構成)
+  const MIXED_OK = [];
+  mix.forEach((g, k) => { const has = g.some((p) => p.area.origin !== 'unknown'); const unk = g.some((p) => p.area.origin === 'unknown'); if (has && unk) assert.ok(MIXED_OK.includes(k), `値のある部品と不明が混在: ${k}: ${g.map((p) => p.id + ':' + p.area.origin).join(', ')}`); });
+  // 285K の P(Lion Cove)> 388H の E(Darkmont)。旧: 推定式で 1.957 < 2.878 と逆転していた
+  assert.ok(P('core:intel-arl-285k:P').area.withL2Mm2 > P('core:intel-ptl-x9-388h:E').area.withL2Mm2);
+  // 同じチップ内で、P と E の両方に値がある(区分 table か estimated)なら E < P
+  const byChip = new Map();
+  cores.forEach((p) => { (byChip.get(p.sourcePresetId) || byChip.set(p.sourcePresetId, []).get(p.sourcePresetId)).push(p); });
+  let checked = 0;
+  byChip.forEach((g, id) => {
+    const P_ = g.filter((p) => p.coreType === 'P'); const E_ = g.filter((p) => /^(E|LP-E)$/.test(p.coreType));
+    if (!P_.length || !E_.length) return;
+    E_.forEach((e) => { assert.ok(e.area.withL2Mm2 < P_[0].area.withL2Mm2, `${id}: ${e.coreType} ${e.area.withL2Mm2} < P ${P_[0].area.withL2Mm2}`); checked++; });
+  });
+  assert.ok(checked >= 15, 'E < P を確かめたコア数: ' + checked);
+  // 不明のコアは面積 null で 0 にならない。件数(2026-11-09): 表 49・推定/流用/移植 49・不明 111(コア部品 209 件。Kraken Point の Zen 5/5c 2 件を流用にして不明 113 → 111)
+  const cnt = {}; parts.filter((p) => p.kind === 'core').forEach((p) => { cnt[p.area.origin] = (cnt[p.area.origin] || 0) + 1; });
+  assert.deepStrictEqual(cnt, { table: 49, estimated: 49, unknown: 111 });
+  // Kraken Point の Zen 5・Zen 5c は Strix Point の値の流用(区分 est・basis reuse)。LP-E の Darkmont は E の値の流用(reuse。バッジは「推定」になる理由が note に書いてある)
+  ['core:amd-kraken-350:P', 'core:amd-kraken-350:C'].forEach((id) => { const a = P(id).area; assert.deepStrictEqual([a.origin, a.basis, a.s], ['estimated', 'reuse', 'est'], id); assert.ok(a.note.includes('Strix Point') && a.note.includes('流用'), id); });
+  assert.strictEqual(P('core:amd-kraken-350:P').area.withL2Mm2, P('core:amd-strix-hx370:P').area.withL2Mm2); assert.strictEqual(P('core:amd-kraken-350:C').area.withL2Mm2, P('core:amd-strix-hx370:C').area.withL2Mm2);
+  const lp = P('core:intel-ptl-x9-388h:LP-E').area; assert.deepStrictEqual([lp.basis, lp.s, lp.withL2Mm2], ['reuse', 'est', 1.62]); assert.ok(lp.note.includes('LP-E') && lp.note.includes('流用'));
+  assert.deepStrictEqual([P('core:intel-ptl-x9-388h:E').area.basis, P('core:intel-ptl-x9-388h:E').area.s], ['estimate', 'sec']); // E はクラスタ÷4(二次の測定値の割り算)なので s は sec
+  parts.filter((p) => p.kind === 'core' && p.area.origin === 'unknown').forEach((p) => { assert.strictEqual(p.area.mm2, null); assert.strictEqual(p.area.withL2Mm2, null); });
 });
 
 test('blocklib.build: 面積不明は unknown で 0 にならない / ブロック部品', () => {
@@ -245,13 +300,18 @@ test('evaluate(mix): 補正のない uarch は ISA 平均(low)、x86+Arm の混�
 
 test('evaluate(mix): 面積の区分は出所 × 移植の 2 軸(表のまま移植 / 推定のまま移植)', () => {
   let d = mk('tsmc-n4'); d = add(d, 'core:intel-adl-12900k:P'); // 表(Intel 7 → N4 に移植)
-  d = add(d, 'core:intel-adl-12900k:E'); // 推定(同じ Intel 7 → N4 に移植)
-  d = add(d, 'core:amd-zen5-9700x:P'); // 推定(N4 のまま。移植なし)
+  d = add(d, 'core:intel-adl-12900k:E'); // 推定(同じ Intel 7 → N4 に移植。2026-11-09: Gracemont の ADL 値はクラスタ÷4 の推定)
+  d = add(d, 'core:intel-arl-285k:P'); // 推定(Lion Cove の Arrow Lake 値。N3B → N4 に移植)。旧: Zen 5 の推定式(N4 のまま。移植なし)
   const r = E.evaluate(d, ctx);
   const b = r.area.mix.blocks;
-  assert.deepStrictEqual(b.map((x) => [x.class, x.portConverted]), [['table', true], ['estimated', true], ['estimated', false]]);
-  assert.strictEqual(r.area.mix.portedCount, 2);
+  assert.deepStrictEqual(b.map((x) => [x.class, x.portConverted]), [['table', true], ['estimated', true], ['estimated', true]]);
+  assert.strictEqual(r.area.mix.portedCount, 3);
   assert.strictEqual(b[0].areaFromMm2, 7.43); assert.ok(b[0].areaRangeMm2[0] < b[0].mm2);
+  // 2026-11-09: 『推定・移植なし』のケースを戻した(2 軸の網羅: 表×移植 / 推定×移植 / 推定×移植なし / 表×移植なし)。N3B の設計に Arrow Lake の Lion Cove(推定。元も N3B)と Lunar Lake の Lion Cove(表。元も N3B)
+  let d2 = mk('tsmc-n3b'); d2 = add(d2, 'core:intel-arl-285k:P'); d2 = add(d2, 'core:intel-lnl-268v:P');
+  const b2 = E.evaluate(d2, ctx).area.mix.blocks;
+  assert.deepStrictEqual(b2.map((x) => [x.class, x.portConverted]), [['estimated', false], ['table', false]]);
+  assert.strictEqual(E.evaluate(d2, ctx).area.mix.portedCount, 0);
 });
 
 // ---- M3b 修正(reviewer 指摘) ----
