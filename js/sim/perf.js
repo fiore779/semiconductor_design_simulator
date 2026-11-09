@@ -168,7 +168,7 @@
   // 【2026-11-07 再々校正 mobile 0.92 → 0.91】ユーザー指示「NG の原因をできれば特定して直して」。Zen+ の uFrom・Zen 3 の代表・Arm の u(Oryon Performance の uFrom、A76/A77/X1 の代表、A78 の uCal)・Arrow Lake の L3 遅延を直した後に、
   // 同じ 18 件で逆算し直した中央値が 0.912(範囲 0.748〜1.036)。小数 2 桁で 0.91。直前の 0.92 は u の直し前の値。推測・未検証(チャート値からの逆算で偏りを含む)。docs/research/mobile-mt-factor-2026-11-07.md
   const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.91, 'mobile-pc': 0.81 };
-  // mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
+  // 【2026-11-09 以降は下の連続式 MT_CLOCK_POWER。以下は 2 段の帯の経緯(履歴)】mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
   // 値は、MT を計算できる x86 mobile-pc 11 件(Kraken Point を除く)で「予測がチャート値と一致する係数」の帯内の中央値を小数 2 桁に丸めたもの(チャートの偏りを含む逆算。推測・未検証)。
   // 2026-11-05: 7840HS は range 35〜54W を取得して帯 0 に入ったが、帯の係数は再校正していない(標本 11 件に含めていない。含めると帯 0 の中央値は 0.72。設計書 §2.5.1)。
   // 帯 0 は 0.65 → 0.69 に再校正(Core 5 320 を標本に含めた。ユーザー指示 2026-11-05)。帯 0 は 6 件の中央値 0.688、帯 1 は 5 件の中央値 0.759(再校正時の値)。
@@ -176,7 +176,13 @@
   // 【2026-11-09 再校正 帯 0: 0.69 → 0.84、帯 1: 0.76 → 0.81】ユーザー指示「取り直しのあと再校正」(2026-11-07 に公開値を直近 25 件の全体中央値に取り直し、395・258V は 2026-11-09 に 200 件の全体中央値へ広げた)。
   // 標本は従来と同じ 11 件(id の除外ルールは据え置き: 7840HS・Kraken Point・268V/258V/256V/388H/275HX は除く)。公開値は**チャート値ではなく検索結果の全体中央値**。帯 0 は n=5・中央値 0.8398、帯 1 は n=6・0.8058(丸めて 0.84 / 0.81)。
   // 係数の値は逆算の結果で、実装上の判断(ユーザーが指示したのは再校正)。推測・未検証。docs/research/band-recalibration-2026-11-09.md
-  const MT_CLOCK_BANDS = [{ maxW: 60, factor: 0.84, label: '60W 以下' }, { maxW: Infinity, factor: 0.81, label: '60W 超' }];
+  // 【2026-11-09 2 段の帯をやめて連続式に: factor(W) = min(1, c · W^(1/3))】ユーザー指示「TDP が上がればスコアが上がるのが自然なので、係数を直して進めてください」。
+  // 2 段の帯(0.84 / 0.81)は帯 0 > 帯 1 の逆転(TDP を下げると MT が上がる)が起きて不自然だった。電力が制限要因のとき動的電力 ∝ f³(電圧が周波数に比例すると単純化)で、持続クロック ∝ W^(1/3)。
+  // **指数 1/3 は物理的な単純化による仮定 [推定]。c = 0.191 も [推定・校正値](実装上の判断)**: 従来と同じ標本 11 件(id の除外ルール据え置き)で、各 SKU の「予測 = 公開値」となる係数 k_i を W_i^(1/3) で割った値の中央値 0.1909 を小数 3 桁に丸めた。
+  // 公開値はチャート値ではなく検索結果の全体中央値(2026-11-07 に 25 件、395・258V は 2026-11-09 に 200 件)。W は mtPublishedW(選んだ TDP も反映)。上限は 1.0(boost 超えにならない。115W 超で頭打ち)。
+  // 一律 0.81 より誤差が大きい(標本内 MAE 0.113 対 0.089、LOO 0.133)が、単調性を優先するのがユーザーの意向。docs/research/band-recalibration-2026-11-09.md
+  const MT_CLOCK_POWER = { c: 0.191, exp: 1 / 3, max: 1.0 };
+  const mtClockByPower = (w) => Math.min(MT_CLOCK_POWER.max, MT_CLOCK_POWER.c * Math.pow(w, MT_CLOCK_POWER.exp));
   // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
   function mtPublishedW(preset) {
     const pw = (preset && preset.power) || {};
@@ -197,8 +203,8 @@
     if (kind !== 'mobile-pc') return { factor: flat, band: null, powerW: null, source: null, fallback: false };
     const p = mtPublishedW(preset);
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
-    const b = MT_CLOCK_BANDS.find((x) => p.w <= x.maxW);
-    return { factor: b.factor, band: b.label, powerW: p.w, source: p.source, fallback: false };
+    // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.191。min(1, c·W^(1/3)))
+    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}。min(1, c·W^(1/3)))`, powerW: p.w, source: p.source, fallback: false };
   }
   const mtClockFactor = (preset) => mtClockInfo(preset).factor;
 
@@ -274,7 +280,7 @@
     return Object.assign({}, cal, { mt: { sigma, gammaSmt: gamma, fitted: ['sigma'], usedPresets: used, rmsLogError: Math.sqrt(cost(sigma)) } });
   }
 
-  const api = { DEFAULT_PARAMS, MT_DEFAULTS, MT_CLOCK_FACTOR, MT_CLOCK_BANDS, mtPublishedW, mtClockInfo, mtClockFactor, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
+  const api = { DEFAULT_PARAMS, MT_DEFAULTS, MT_CLOCK_FACTOR, MT_CLOCK_POWER, mtClockByPower, mtPublishedW, mtClockInfo, mtClockFactor, coreCpi, topCore, stScore, calibrate, calibrateMt, mtScore };
   root.SDS = root.SDS || {}; root.SDS.sim = root.SDS.sim || {}; root.SDS.sim.perf = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

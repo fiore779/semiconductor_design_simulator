@@ -54,7 +54,7 @@
           onchange: (e) => cb.onTdp(e.target.value, e.target),
           onkeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
         }), h('span', { class: 'small', text: 'W' })),
-        h('p', { class: 'small', text: '選ぶと電力制限も同じ値になります。MT の持続クロック係数は 60W 以下/超の 2 段階でしか変わりません(モバイル PC のみ)。既定以外では公開値との比較は出しません。' }),
+        h('p', { class: 'small', text: '選ぶと電力制限も同じ値になります。MT の持続クロック係数は電力 W に応じた連続式(TDP が上がるほど上がる。上限 1.0。モバイル PC のみ)で変わります。既定以外では公開値との比較は出しません。' }),
         msgEl('pk-tdp-msg', m.tdp)));
     }
 

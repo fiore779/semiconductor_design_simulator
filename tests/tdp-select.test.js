@@ -20,15 +20,17 @@ test('setTdp: 範囲内なら tdpW と電力制限が入り、null で既定に�
   assert.ok(design.parse(design.serialize(a.design)).ok !== false);
 });
 
-test('TDP を選ぶと MT の帯が変わり編集済み扱い。既定(上限)なら従来と同じ', () => {
+test('TDP を選ぶと MT の係数(電力 W の連続式)が変わり編集済み扱い。TDP を上げるほど MT が単調に上がる。既定(上限)なら従来と同じ', () => {
   const id = 'intel-mtl-185h'; const d = mk(id);
   const base = E.evaluate(d, ctx);
   assert.strictEqual(base.mt.clockInfo.source, 'range.maxW');
   const lo = E.evaluate(design.setTdp(d, 45, rg(id)).design, ctx);
-  assert.strictEqual(lo.mt.clockInfo.source, 'selected'); assert.strictEqual(lo.mt.clockInfo.band, '60W 以下');
-  // 2026-11-09(帯係数の再校正): 帯 0 の係数 0.84 > 帯 1 の 0.81 になり、TDP を 45W に下げた方が MT が**高く**なる逆転が起きている(物理的には不自然。旧: 0.69 < 0.76 で下がった)。
-  // 逆算の中央値のとおりに更新した結果で、不自然さは隠さず事実を固定する。単調にするか(帯を揃える等)は設計書 §13.4 の判断待ち
-  assert.ok(lo.mt.score > base.mt.score); assert.strictEqual(lo.edited, true);
+  assert.strictEqual(lo.mt.clockInfo.source, 'selected'); assert.ok(/連続式/.test(lo.mt.clockInfo.band));
+  // 2026-11-09: 2 段の帯の逆転(0.84 > 0.81 で TDP を下げると MT が上がる)をやめ、連続式 min(1, c·W^(1/3)) にした。TDP を下げると MT が下がる(自然な向き)が復活した
+  assert.ok(lo.mt.score < base.mt.score); assert.strictEqual(lo.edited, true);
+  // 単調性: 35(設定範囲の下限)→ 45 → 65 → 80 → 115W で MT が単調に上がる
+  const scores = [35, 45, 65, 80, 115].map((w) => E.evaluate(design.setTdp(d, w, rg(id)).design, ctx).mt.score);
+  for (let i = 1; i < scores.length; i++) assert.ok(scores[i] > scores[i - 1], `TDP を上げると MT が上がる: ${scores[i - 1]} → ${scores[i]}`);
   const top = E.evaluate(design.setTdp(d, 115, rg(id)).design, ctx);
   assert.strictEqual(top.mt.score, base.mt.score); assert.strictEqual(top.edited, false);
 });

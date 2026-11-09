@@ -286,8 +286,10 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   const e = p.cfg.cores.find((g) => g.type === 'E'); delete e.boostGHz; delete e.maxGHz; e.baseGHz = e.baseGHz || 1.5;
   const r = perfM.mtScore(p, ctx.cal, ctx.uarch, null);
   assert.ok(r.ok); assert.strictEqual(r.clockInfo.applied, 'partial');
-  assert.strictEqual(r.clockInfo.factor, 0.81); // 帯の係数(掛けなかったコアがあっても factor は帯のまま)
-  assert.ok(r.clockFactor === 0.81 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
+  // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.191·115^(1/3)) ≈ 0.928(旧: 帯 1 の 0.81)
+  const f185 = Math.min(1, 0.191 * Math.cbrt(115));
+  assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
+  assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });
 
 test('改良 B(編集後): MT の係数は元のチップの公表電力で決まり、コア数・クロックを編集しても帯は変わらない(clockInfo の band・powerW・factor が元と同じ)', () => {
