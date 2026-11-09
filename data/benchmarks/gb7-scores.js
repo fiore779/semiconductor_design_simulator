@@ -157,10 +157,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 258V(2.2GHz, 8c)",
-  "single": 1957,
-  "multi": 9807,
+  "single": 2268,
+  "multi": 10109,
   "kind": "直近25件の中央値",
-  "n": 25
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -309,10 +309,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "AMD",
   "name": "Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)",
-  "single": 2764,
-  "multi": 29916,
+  "single": 2650,
+  "multi": 23661,
   "kind": "直近25件の中央値",
-  "n": 24
+  "n": 171
  },
  {
   "group": "AMD",

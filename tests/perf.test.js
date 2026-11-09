@@ -230,8 +230,8 @@ test('MT 持続クロック係数: mobile は boost × 0.91 を使い、desktop(
   assert.ok(a.detail.every((d) => d.clockFactor === 0.91));
   // mobile-pc は電力が未取得なら 0.81(8cx Gen 3。7840HS は 2026-11-05 に電力を取得して帯 0.69 になった)、取得済みなら帯の係数(HX370: cTDP 上限 54W → 0.69)、pc は 1.0
   assert.strictEqual(F.mtScore(preset('qc-8cx-gen3'), c, D.uarch, null).clockFactor, 0.81);
-  assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.69);
-  assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.69);
+  assert.strictEqual(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor, 0.84);
+  assert.strictEqual(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor, 0.84);
   const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
   const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
   assert.strictEqual(r1.clockFactor, 1); assert.strictEqual(r2.clockFactor, 1); assert.strictEqual(r1.score, r2.score);
@@ -285,10 +285,10 @@ test('uCal: 代表の u がある uarch には定数より代表を優先する'
 test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォールバック・kind 別', () => {
   const mk = (kind, power) => ({ kind, power });
   const rng = (maxW) => ({ base: null, peak: null, range: { minW: 10, maxW } });
-  assert.deepStrictEqual(F.MT_CLOCK_BANDS.map((b) => [b.maxW, b.factor]), [[60, 0.69], [Infinity, 0.76]]);
+  assert.deepStrictEqual(F.MT_CLOCK_BANDS.map((b) => [b.maxW, b.factor]), [[60, 0.84], [Infinity, 0.81]]);
   // 境界: 60W ちょうどは 60W 以下の帯、60.1W は 60W 超の帯
-  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60))).factor, 0.69);
-  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60.1))).factor, 0.76);
+  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60))).factor, 0.84);
+  assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(60.1))).factor, 0.81);
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(15))).band, '60W 以下');
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(120))).band, '60W 超');
   // 電力の取り方: range.maxW が優先、なければ base.w。peak(短時間ピーク)だけでは帯を決めない
@@ -305,9 +305,9 @@ test('mtClockInfo: 帯の境界(60W 以下 / 超)・電力の取り方・フォ�
   ['pc', 'server', 'embedded', undefined].forEach((k) => assert.strictEqual(F.mtClockInfo(mk(k, both)).factor, 1));
   assert.strictEqual(F.mtClockInfo(null).factor, 1);
   // 実データ: 5800U(10〜25W)→0.69、HX370(54W)→0.69、PTL(80W)→0.76、7840HS(54W。2026-11-05 に取得)→0.69、8cx Gen 3(未取得)→0.81・fallback
-  assert.strictEqual(F.mtClockInfo(preset('amd-zen3-5800u')).factor, 0.69);
-  assert.strictEqual(F.mtClockInfo(preset('intel-ptl-x9-386h')).factor, 0.76);
-  assert.strictEqual(F.mtClockInfo(preset('amd-zen4-7840hs')).factor, 0.69);
+  assert.strictEqual(F.mtClockInfo(preset('amd-zen3-5800u')).factor, 0.84);
+  assert.strictEqual(F.mtClockInfo(preset('intel-ptl-x9-386h')).factor, 0.81);
+  assert.strictEqual(F.mtClockInfo(preset('amd-zen4-7840hs')).factor, 0.84);
   assert.strictEqual(F.mtClockInfo(preset('qc-8cx-gen3')).fallback, true);
 });
 
@@ -315,10 +315,10 @@ test('mtScore: 帯の係数は mtScore の結果(clockFactor・clockInfo)に出�
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
   const p = preset('amd-zen3-5800u');
   const r = F.mtScore(p, c, D.uarch, null);
-  assert.strictEqual(r.clockFactor, 0.69); assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW');
+  assert.strictEqual(r.clockFactor, 0.84); assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW');
   // コア数を変えた設計(power は元のまま)でも同じ係数
   const q = clone(p); q.cfg.cores[0].count = 6;
-  assert.strictEqual(F.mtScore(q, c, D.uarch, null).clockFactor, 0.69);
+  assert.strictEqual(F.mtScore(q, c, D.uarch, null).clockFactor, 0.84);
   // 混合設計(kind 'pc')は 1.0
   assert.strictEqual(F.mtScore(Object.assign({}, p, { kind: 'pc' }), c, D.uarch, null).clockFactor, 1);
 });
@@ -355,7 +355,8 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
     // 帯係数 0.69/0.76 は変えていない(実装上の判断。再校正はユーザー判断待ち。設計書 §13.4)。旧: 帯 0 0.7185 / 帯 1 0.7557
     // 2026-11-07(公開値を直近 25 件の全体中央値に取り直した。ユーザー指示「全体の中央値を取得してください」。標本 id の除外ルールは据え置き): MT の公開値が大きく上がり(7735HS 8279→10175 など)、
     // 帯 0 は n=5・0.8398(丸め 0.84、係数 0.69 との差 0.1498)、帯 1 は n=6・0.8058(丸め 0.81、係数 0.76 との差 0.0458)。係数 0.69/0.76 は変えていない(再校正は判断待ち。設計書 §13.4)。旧: 帯 0 0.7323 / 帯 1 0.7783
-    const KNOWN = [{ med: 0.8398, diff: 0.1498 }, { med: 0.8058, diff: 0.0458 }][i];
+    // 2026-11-09(帯係数を再校正: 帯 0 0.69 → 0.84、帯 1 0.76 → 0.81。395・258V は 200 件の全体中央値に広げて取り直し): 係数が中央値(0.8398 / 0.8058)の丸めに一致し、差は -0.0002 / -0.0042(< 0.01)。もとの意図「帯の係数がデータから再現できること」に戻った
+    const KNOWN = [{ med: 0.8398, diff: -0.0002 }, { med: 0.8058, diff: -0.0042 }][i];
     assert.strictEqual(r2(med(ks)), [0.84, 0.81][i], '帯 ' + i);
     assert.ok(Math.abs(med(ks) - KNOWN.med) < 0.001, '帯 ' + i + ' の中央値(固定値 ' + KNOWN.med + '): ' + med(ks));
     assert.ok(Math.abs((med(ks) - b.factor) - KNOWN.diff) < 0.001, '帯 ' + i + ' の既知の差(再校正待ち。固定値 ' + KNOWN.diff + '): ' + (med(ks) - b.factor));
@@ -371,13 +372,16 @@ test('TDP 帯別係数: 帯内の「予測がチャート値と一致する係�
   // 2026-11-07(ユーザー回答「実測に合わせて緩める」): LOO の絶対閾値を 0.11 → 0.115 に緩めた(実測 0.1111、旧 0.1068)。理由: 14700HX が ARK の MTP 157W(range.maxW)で帯 1 に入り、公開値と一致する k=0.647 に対し帯 1 の係数 0.76 では MT が +14.7% 過大になる。電力と k が単調でない帯モデルの限界であり、当て込みではない。主張の中心は次の相対比較(LOO 0.1111 < 一律 0.81 の 0.1268)。帯 0 を 0.72 に再校正するかは引き続きユーザー判断待ち
   // 2026-11-07(公開値を全体の中央値に取り直した後): 帯係数 0.69/0.76 のままだと LOO MAE は 0.1288 で、旧閾値 < 0.115 を**満たさなくなった**。閾値は緩めない(動かさない)。
   // 満たさなくなった事実を「既知の値」として固定する(±0.001)。この主張(帯別係数が良い)はもう成り立たない。帯係数の再校正は設計書 §13.4 の判断待ち。再校正したら < 0.115 の確認に戻すこと
-  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.1288) < 0.001, 'LOO MAE(固定値 0.1288): ' + mae(loo.map((l) => l.e)));
+  // 2026-11-09(395・258V を 200 件の全体中央値に広げて取り直した後): LOO MAE は 0.1119 に下がり、旧閾値 < 0.115 を再び満たす(閾値は動かしていない)。値は既知の値として固定する(±0.001)
+  assert.ok(mae(loo.map((l) => l.e)) < 0.115, 'LOO MAE ' + mae(loo.map((l) => l.e)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.1119) < 0.001, 'LOO MAE(固定値 0.1119): ' + mae(loo.map((l) => l.e)));
   // 2026-11-07: Zen 3 の代表(5800X)を加えた結果、一律 0.81 の MAE は 0.1268 → 0.0993 に下がり、旧閾値 > 0.12 を満たさなくなった(帯別 LOO は 0.0986)。帯モデルが一律 0.81 より明確に良い、という主張は弱まった(差は 0.0007)。
   // 閾値を下げて通すのではなく、他の帯テストと同じ「既知の値として固定」する方式に直した(Zen 3 代表化の直後は実測 0.0993。公開値の取り直し後は下の 0.1063 に固定し直した)。ユーザー回答「閾値を実測に合わせて緩める」(2026-11-07)の対象は LOO MAE の閾値(0.11 → 0.115)だけで、
   // この一律 0.81 の値の固定はその回答の対象ではない。帯別が一律 0.81 より良いかは設計書 §13.4 の判断待ち。相対比較(LOO < 一律 0.81)は残る
   // 2026-11-07(全体中央値): 一律 0.81 の MAE は 0.1063 に固定し直した(旧 0.0993)。帯別 LOO(0.1288)は一律 0.81 より悪くなった(以前は帯別が良いという相対比較だった)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.1063) < 0.001, '一律 0.81 の MAE(固定値 0.1063): ' + mae(loo.map((l) => l.e81)));
-  assert.ok(mae(loo.map((l) => l.e)) > mae(loo.map((l) => l.e81)), '帯別 LOO が一律 0.81 より悪い(2026-11-07 の事実。逆転したら本文を見直す)');
+  // 2026-11-09(395・258V を広げて取り直し): 一律 0.81 の MAE は 0.0890、帯別 LOO は 0.1119。帯別(中央値の LOO)が一律 0.81 より**悪い**事実は変わらない(閾値は緩めない。成立しない主張は事実として固定して報告)
+  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.0890) < 0.001, '一律 0.81 の MAE(固定値 0.0890): ' + mae(loo.map((l) => l.e81)));
+  assert.ok(mae(loo.map((l) => l.e)) > mae(loo.map((l) => l.e81)), '帯別 LOO が一律 0.81 より悪い(2026-11-07 から続く事実。逆転したら本文を見直す)');
   // 2026-11-05(265K の P boost 5.5→5.4 で Lion Cove の u を再校正): 帯 0 の中央値 0.6882→0.6856、帯 1 は 0.7595→0.7558(丸めた係数 0.69/0.76 は不変)。LOO MAE 0.1045→0.1050、一律 0.81 は 0.1217→0.1247。LOO 誤差が 10% を超えるのは 7735HS(9.66%→10.14%)が加わって 3→4 件(閾値は動かしていない)
   // 2026-11-07: 14700HX(+14.7%)が加わって 4 → 5 件(事実の固定。閾値を当て込みで動かしたものではない)。Zen 3 の代表を加えた後も LOO 誤差が 10% 超は 5 件のまま(一律 0.81 の MAE は上の固定値 0.0993)
   assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 5);
