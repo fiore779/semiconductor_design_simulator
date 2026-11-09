@@ -286,8 +286,8 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   const e = p.cfg.cores.find((g) => g.type === 'E'); delete e.boostGHz; delete e.maxGHz; e.baseGHz = e.baseGHz || 1.5;
   const r = perfM.mtScore(p, ctx.cal, ctx.uarch, null);
   assert.ok(r.ok); assert.strictEqual(r.clockInfo.applied, 'partial');
-  // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.191·115^(1/3)) ≈ 0.928(旧: 帯 1 の 0.81)
-  const f185 = Math.min(1, 0.191 * Math.cbrt(115));
+  // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.429·115^0.15) ≈ 0.875(旧: 帯 1 の 0.81 → 指数 1/3 の連続式 0.928)
+  const f185 = Math.min(1, 0.429 * Math.pow(115, 0.15));
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });

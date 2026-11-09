@@ -26,7 +26,7 @@ test('TDP を選ぶと MT の係数(電力 W の連続式)が変わり編集済�
   assert.strictEqual(base.mt.clockInfo.source, 'range.maxW');
   const lo = E.evaluate(design.setTdp(d, 45, rg(id)).design, ctx);
   assert.strictEqual(lo.mt.clockInfo.source, 'selected'); assert.ok(/連続式/.test(lo.mt.clockInfo.band));
-  // 2026-11-09: 2 段の帯の逆転(0.84 > 0.81 で TDP を下げると MT が上がる)をやめ、連続式 min(1, c·W^(1/3)) にした。TDP を下げると MT が下がる(自然な向き)が復活した
+  // 2026-11-09: 2 段の帯の逆転(0.84 > 0.81 で TDP を下げると MT が上がる)をやめ、連続式 min(1, c·W^p) にした(p は 1/3 → 2026-11-09 続きで 0.15、c=0.429。傾きは緩やかになった)。TDP を下げると MT が下がる(自然な向き)が復活した
   assert.ok(lo.mt.score < base.mt.score); assert.strictEqual(lo.edited, true);
   // 単調性: 35(設定範囲の下限)→ 45 → 65 → 80 → 115W で MT が単調に上がる
   const scores = [35, 45, 65, 80, 115].map((w) => E.evaluate(design.setTdp(d, w, rg(id)).design, ctx).mt.score);

@@ -181,7 +181,10 @@
   // **指数 1/3 は物理的な単純化による仮定 [推定]。c = 0.191 も [推定・校正値](実装上の判断)**: 従来と同じ標本 11 件(id の除外ルール据え置き)で、各 SKU の「予測 = 公開値」となる係数 k_i を W_i^(1/3) で割った値の中央値 0.1909 を小数 3 桁に丸めた。
   // 公開値はチャート値ではなく検索結果の全体中央値(2026-11-07 に 25 件、395・258V は 2026-11-09 に 200 件)。W は mtPublishedW(選んだ TDP も反映)。上限は 1.0(boost 超えにならない。115W 超で頭打ち)。
   // 一律 0.81 より誤差が大きい(標本内 MAE 0.113 対 0.089、LOO 0.133)が、単調性を優先するのがユーザーの意向。docs/research/band-recalibration-2026-11-09.md
-  const MT_CLOCK_POWER = { c: 0.191, exp: 1 / 3, max: 1.0 };
+  // 【2026-11-09 指数を 1/3 → 0.15、c を 0.191 → 0.429 に(ユーザー指示「指数を小さくして進めてください」)】指数 p を 0.10〜0.333 で 0.025 刻みに動かし、各 p で c = 標本 11 件の k_i ÷ W_i^p の中央値(小数 3 桁)として、
+  // LOO MAE が最小の p を採用した(p=0.15 で LOO 0.0801・標本内 0.0791。一律 0.81 の標本内 0.0890 より小さい。p=1/3 は LOO 0.1329)。下限 0.10 は「TDP が上がれば MT が上がる」が実用上見える最低限の傾きとして置いた実装上の判断(0.15 は下限に張り付いていない)。
+  // p が 0 に近いほど一律(定数)に近づく。指数 0.15 も c も [推定・校正値]で、物理的な根拠(f³)から離れた経験的な値。docs/research/band-recalibration-2026-11-09.md の §7
+  const MT_CLOCK_POWER = { c: 0.429, exp: 0.15, max: 1.0 };
   const mtClockByPower = (w) => Math.min(MT_CLOCK_POWER.max, MT_CLOCK_POWER.c * Math.pow(w, MT_CLOCK_POWER.exp));
   // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
   function mtPublishedW(preset) {
@@ -203,8 +206,8 @@
     if (kind !== 'mobile-pc') return { factor: flat, band: null, powerW: null, source: null, fallback: false };
     const p = mtPublishedW(preset);
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
-    // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.191。min(1, c·W^(1/3)))
-    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}。min(1, c·W^(1/3)))`, powerW: p.w, source: p.source, fallback: false };
+    // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.429、指数 0.15。min(1, c·W^0.15))
+    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false };
   }
   const mtClockFactor = (preset) => mtClockInfo(preset).factor;
 
