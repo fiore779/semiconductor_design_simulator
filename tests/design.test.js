@@ -326,3 +326,13 @@ test('旧保存データ: baseCfg.l3MB=0(プリセットは l3MB>0)の設計は�
   const m4 = JSON.parse(design.serialize(design.fromPreset(preset('apple-m4pro')))); assert.strictEqual(design.parse(JSON.stringify(m4)).design.baseCfg.l3MB, 0);
   const x = design.fromPreset(preset('amd-zen5-9700x')); assert.deepStrictEqual(design.parse(design.serialize(x)).design.baseCfg, x.baseCfg);
 });
+
+// 2026-11-10: 任意項目 allCoreGHz(全コア負荷時の実測クロック)。設計の cfg に引き継がれ、検証され、クロック編集でスケールする
+test('allCoreGHz: fromPreset の cfg に残り、setClock で boost との比を保ってスケールし、範囲外は parse が拒否する', () => {
+  const d = design.unlock(design.fromPreset(preset('amd-zen3-5950x')));
+  assert.strictEqual(d.cfg.cores[0].allCoreGHz, 3.925);
+  const r = design.setClock(d, 'P', 4.9 * 0.9); assert.ok(r.ok);
+  assert.ok(Math.abs(r.design.cfg.cores[0].allCoreGHz - 3.925 * 0.9) < 0.001);
+  const bad = JSON.parse(design.serialize(d)); bad.cfg.cores[0].allCoreGHz = 9; assert.strictEqual(design.parse(JSON.stringify(bad)).ok, false);
+  const ok = JSON.parse(design.serialize(d)); assert.strictEqual(design.parse(JSON.stringify(ok)).ok, true);
+});

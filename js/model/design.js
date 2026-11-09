@@ -196,7 +196,7 @@
   // 編集用パラメータ(§3.3)。プリセットの cfg から性能に効く項目だけをコピーする(値のないキーは作らない)
   function cfgFromPreset(preset) {
     const c = preset.cfg || {};
-    const keys = ['type', 'uarch', 'count', 'smt', 'baseGHz', 'boostGHz', 'maxGHz'];
+    const keys = ['type', 'uarch', 'count', 'smt', 'baseGHz', 'boostGHz', 'maxGHz', 'allCoreGHz']; // allCoreGHz: 全コア負荷時の実測クロック(任意。出典つき [二次]。2026-11-10 追加。js/sim/perf.js の MT が使う)
     const cores = (c.cores || []).map((g) => { const r = {}; keys.forEach((k) => { if (g[k] != null) r[k] = g[k]; }); return r; });
     const out = { cores, l3MB: typeof c.l3MB === 'number' ? c.l3MB : 0 };
     // メモリ構成の選択(設計書 §5.2.4)。選択肢のあるチップだけ、既定は基準構成。メモリ固定・混合は持たない
@@ -286,7 +286,10 @@
     const d = clone(design);
     const g = d.cfg.cores.find((c) => c.type === type);
     // boost を更新(boost がなく max があれば max。どちらも無ければ boost を新設)。base は変えない
+    const old = g.boostGHz != null ? g.boostGHz : g.maxGHz;
     if (g.boostGHz == null && g.maxGHz != null) g.maxGHz = ghz; else g.boostGHz = ghz;
+    // 全コアの実測クロックは、元の boost との比を保ってスケールする(実測値は元のクロックでのもの。範囲 0.5〜8GHz に収める)
+    if (g.allCoreGHz != null && old) g.allCoreGHz = Math.min(8, Math.max(0.5, Math.round((g.allCoreGHz * ghz / old) * 1000) / 1000));
     return { ok: true, design: d, relaid: false };
   }
 
@@ -816,7 +819,7 @@
       if (types.has(g.type)) return `${t}: コア種別「${g.type}」が重複しています`;
       types.add(g.type);
       if (!Number.isInteger(g.count) || g.count < 1 || g.count > 64) return `${t}: count は 1〜64 の整数にしてください`;
-      for (const k of ['baseGHz', 'boostGHz', 'maxGHz']) if (g[k] != null && !(isNum(g[k]) && g[k] >= 0.5 && g[k] <= 8)) return `${t}: ${k} は 0.5〜8 GHz の有限の数にしてください`;
+      for (const k of ['baseGHz', 'boostGHz', 'maxGHz', 'allCoreGHz']) if (g[k] != null && !(isNum(g[k]) && g[k] >= 0.5 && g[k] <= 8)) return `${t}: ${k} は 0.5〜8 GHz の有限の数にしてください`;
     }
     return null;
   }

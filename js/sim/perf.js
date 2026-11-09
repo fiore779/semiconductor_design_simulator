@@ -224,8 +224,10 @@
     for (const c of cores) {
       // 既定は最大クロック(boost)× kind の係数(pc=1.0、mobile=0.91、mobile-pc は TDP 帯別。mtClockInfo)。電力制限モデルで決めた持続クロック(fByType)を渡せるが、現状の仮の電力モデルでは精度が下がる(設計書 §5.3.0)
       const given = fByType && fByType[c.type];
-      const f0 = given || c.boostGHz || c.maxGHz || c.baseGHz;
-      const clockSource = given ? 'given' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
+      // 任意項目 allCoreGHz(全コア負荷時の実測クロック。出典つき [二次]。2026-11-10 追加)があればそれを使う(係数は掛けない。実測なので)。無ければ従来どおり boost/max × 係数
+      const allc = typeof c.allCoreGHz === 'number' && c.allCoreGHz > 0 ? c.allCoreGHz : null;
+      const f0 = given || allc || c.boostGHz || c.maxGHz || c.baseGHz;
+      const clockSource = given ? 'given' : allc ? 'allcore' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
       // 係数は boost/max がある場合のみ掛ける(base へのフォールバックと fByType 指定には掛けない)
       const applied = clockSource === 'boost' || clockSource === 'max' ? kf : 1;
       const f = f0 ? f0 * applied : f0;

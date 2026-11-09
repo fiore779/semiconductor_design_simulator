@@ -516,3 +516,17 @@ test('Zen 3 の代表: 5800X が calib で、Zen 3 の u が入り(約 102.3)、
   assert.strictEqual(preset('amd-zen3-5800x').calib, true); assert.deepStrictEqual(c.usedPresets['Zen 3'], ['amd-zen3-5800x']);
   assert.ok(Math.abs(c.u['Zen 3'] - 102.29) < 0.01, String(c.u['Zen 3']));
 });
+
+// ---- 2026-11-10: 任意項目 allCoreGHz(全コア負荷時の実測クロック。5950X だけ。出典 HEXUS・KitGuru [二次]) ----
+test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛けない。clockSource "allcore")、無ければ従来どおり boost。5950X の MT +23.0% → +3.5%', () => {
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  const p = preset('amd-zen3-5950x'); assert.strictEqual(p.cfg.cores[0].allCoreGHz, 3.925);
+  const r = F.mtScore(p, c, D.uarch, null);
+  assert.ok(r.ok); assert.strictEqual(r.detail[0].clockSource, 'allcore'); assert.strictEqual(r.detail[0].fGHz, 3.925); assert.strictEqual(r.detail[0].clockFactor, 1);
+  assert.ok(Math.abs(r.score / gb7ByName[p.gb7].multi - 1 - 0.0353) < 0.001, String(r.score / gb7ByName[p.gb7].multi - 1));
+  const q = clone(p); delete q.cfg.cores[0].allCoreGHz;
+  const r0 = F.mtScore(q, c, D.uarch, null); assert.strictEqual(r0.detail[0].clockSource, 'boost'); assert.strictEqual(r0.detail[0].fGHz, 4.9);
+  assert.ok(Math.abs(r0.score / gb7ByName[p.gb7].multi - 1 - 0.2296) < 0.001); // 旧: +23.0%
+  // 他のデスクトップ SKU は allCoreGHz を持たず、結果は不変(5800X〔σ の代表〕にも付けていない。付けると σ が 0.0289 → 0.0283 に動き、ほかのデスクトップ・SoC 33 件の誤差が悪化したため)
+  D.presets.filter((x) => x.id !== 'amd-zen3-5950x').forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, undefined, x.id)));
+});
