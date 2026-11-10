@@ -528,5 +528,10 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   const r0 = F.mtScore(q, c, D.uarch, null); assert.strictEqual(r0.detail[0].clockSource, 'boost'); assert.strictEqual(r0.detail[0].fGHz, 4.9);
   assert.ok(Math.abs(r0.score / gb7ByName[p.gb7].multi - 1 - 0.2296) < 0.001); // 旧: +23.0%
   // 他のデスクトップ SKU は allCoreGHz を持たず、結果は不変(5800X〔σ の代表〕にも付けていない。付けると σ が 0.0289 → 0.0283 に動き、ほかのデスクトップ・SoC 33 件の誤差が悪化したため)
-  D.presets.filter((x) => x.id !== 'amd-zen3-5950x').forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, undefined, x.id)));
+  // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
+  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 } };
+  D.presets.forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
+  // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)
+  const a = F.mtScore(preset('intel-arl-285k'), c, D.uarch, null); assert.strictEqual(a.detail[0].fGHz, 5.4); assert.strictEqual(a.detail[0].clockSource, 'allcore'); assert.strictEqual(a.detail[1].clockSource, 'boost');
+  assert.ok(Math.abs(a.score / gb7ByName[preset('intel-arl-285k').gb7].multi - 1 - 0.142) < 0.002);
 });
