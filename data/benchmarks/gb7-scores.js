@@ -85,10 +85,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake(モバイル): Core i7-14700HX(2.1GHz, 20c)",
-  "single": 2177,
-  "multi": 13768,
+  "single": 2259,
+  "multi": 14816,
   "kind": "直近25件の中央値",
-  "n": 18
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -125,10 +125,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-HX: Core Ultra 9 275HX(2.7GHz, 24c)",
-  "single": 2655,
-  "multi": 20974,
+  "single": 2607,
+  "multi": 21569,
   "kind": "直近25件の中央値",
-  "n": 24
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
