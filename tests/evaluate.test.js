@@ -244,7 +244,8 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   // 2026-11-05: 265K の P boost 5.5→5.4 の再校正で x86 平均 u が動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15291.32 30:18240.5
   // 2026-11-06: 13900K・13700K の P boost を ARK の P コア最大ターボに揃え、Golden/Raptor の uCal が 112.7→114.1 に動いた。旧 0:[1780.43,15310.46] 1:[1975.86,15310.46] 4:[2182.87,15310.46] 30:[2338.42,18266.22]
   // 2026-11-07: Zen 3 の代表を加えて σ が 0.02737→0.02888 に動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15446.18 30:18419.92
-  const exp = { 0: [1802.55, 15084.05], 1: [2000.40, 15084.05], 4: [2209.99, 15084.05], 30: [2367.46, 17981.96] };
+  // 2026-11-10: γ(SMT の効果)0.25 → 0.30 で σ が 0.0289 → 0.0327 に動き MT が変わった(ST は不変)。旧 MT 0/1/4:15084.05 30:17981.96
+  const exp = { 0: [1802.55, 14738.81], 1: [2000.40, 14738.81], 4: [2209.99, 14738.81], 30: [2367.46, 17545.83] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -287,7 +288,8 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   const r = perfM.mtScore(p, ctx.cal, ctx.uarch, null);
   assert.ok(r.ok); assert.strictEqual(r.clockInfo.applied, 'partial');
   // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.429·115^0.15) ≈ 0.875(旧: 帯 1 の 0.81 → 指数 1/3 の連続式 0.928)
-  const f185 = Math.min(1, 0.429 * Math.pow(115, 0.15));
+  // 2026-11-10: γ=0.30 に合わせて c=0.443(185H で ≈ 0.903)
+  const f185 = Math.min(1, 0.443 * Math.pow(115, 0.15));
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });
