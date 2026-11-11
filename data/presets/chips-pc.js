@@ -241,6 +241,30 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false, notes: 'コアクロック(2026-11-05 に Chrome で Intel ARK の原ページを確認、[公表]): P ベース 2.2GHz・LP-E ベース 2.2GHz・最大ターボ 3.7GHz(旧: 未取得)。P の最大ターボ 4.8GHz は既存と一致。URL: https://www.intel.com/content/www/us/en/products/sku/240957/intel-core-ultra-7-processor-258v-12m-cache-up-to-4-80-ghz/specifications.html 。メモリ(同 ARK): LPDDR5X-8533、最大 32GB、2 チャネル(「オンパッケージ」は ARK の記述ではないので書かない。「2 チャネル」は意図的: 電力モデルが「数字+ch」の表記でチャンネル数を読むため、2ch と書くと電力・温度が変わる)。電力は 2026-11-05 に Intel ARK の原ページで取得し、power に入れた。L3 12MB は Wikipedia「Lunar Lake」の Smart cache 列(288V〜256V の結合セル、脚注「Only the P-cores can access this L3 cache」。直接取得、2026-10-30)。メモリサイドキャッシュ 8MB は 258V については未確認のため入れない(268V は設計書 §2.7.2 で memorySideCacheMB:8)',
   });
 
+  P.push({
+    id: 'intel-rpl-13980hx', name: 'Core i9-13980HX', vendor: 'Intel', family: 'Raptor Lake-HX', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Raptor Lake(モバイル): Core i9-13980HX(2.4GHz, 24c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '14700K・13900K と同じ 8P+16E ダイの流用(Wikipedia「Raptor Lake」の『HX はデスクトップ向けプロセッサのモバイル転用』という記述に基づく。[二次・直接]。ダイ写真での照合は未了。13980HX 個別の実測は未取得。14700HX の書き方を踏襲)')],
+    power: { base: pw(55, 'pub', 'プロセッサー・ベース・パワー(PBP)55W。Intel ARK の原ページ(2026-11-11、[公表]): https://www.intel.com/content/www/us/en/products/sku/232138/intel-core-i913980hx-processor-36m-cache-up-to-5-60-ghz/specifications.html'), peak: pw(157, 'pub', '最大ターボ・パワー(MTP)157W。Intel ARK の原ページ(2026-11-11、[公表])。範囲の下限(最小保証パワー)は ARK の取得結果に含まれず未取得のため、range.minW は null。上限 157W は最大ターボ・パワー'), range: { minW: null, maxW: 157 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: null, boostGHz: 5.6 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: null, boostGHz: 4.0 }], l3MB: 36, memory: 'DDR5-5600 / DDR4-3200, 最大 192GB(Intel ARK [公表]。2 チャネル)' },
+    calib: false, notes: '2026-11-11 に Intel ARK の原ページ(https://www.intel.com/content/www/us/en/products/sku/232138/intel-core-i913980hx-processor-36m-cache-up-to-5-60-ghz/specifications.html 、ID 232138、[公表])で確認: P 8・E 16・32 スレッド、最大ターボ 5.60GHz(P の最大ターボ 5.60GHz、E の最大ターボ 4.00GHz。Turbo Boost Max 3.0 は 5.50GHz)、L3 36MB(Intel Smart Cache)、Intel 7、発売 2023 年第 1 四半期、メモリ DDR5-5600 / DDR4-3200・最大 192GB・2 チャネル(「2 チャネル」は意図的: 電力モデルが「数字+ch」の表記でチャンネル数を読むため)、PBP 55W・MTP 157W。**P・E のベースクロックは ARK の取得結果に出ず未取得(推測しない。baseGHz は null)**。最小保証パワーも未取得。GB7 は Geekbench Browser v7 の直近 200 件の全体中央値(OS 混在、2026-11-11、[実測])。HX 系の MT 過大(設計書 §13.4 項目⑦)の検証用の標本で、校正には入れない(calib:false)',
+  });
+  P.push({
+    id: 'intel-rpl-14900hx', name: 'Core i9-14900HX', vendor: 'Intel', family: 'Raptor Lake-HX Refresh', isa: 'x86', kind: 'mobile-pc', year: 2024, addedIn: 'M5b',
+    gb7: 'Raptor Lake Refresh(モバイル): Core i9-14900HX(2.2GHz, 24c)',
+    dies: [die('Raptor Lake-S 8P+16E', 252.3, 'sec', 'intel-7', '14900K と同じ 8P+16E ダイの流用(Wikipedia「Raptor Lake」の『HX はデスクトップ向けプロセッサのモバイル転用』という記述に基づく。[二次・直接]。ダイ写真での照合は未了。14900HX 個別の実測は未取得。14700HX の書き方を踏襲)')],
+    power: { base: pw(55, 'pub', 'プロセッサー・ベース・パワー(PBP)55W。Intel ARK の原ページ(2026-11-11、[公表]): https://www.intel.com/content/www/us/en/products/sku/235995/intel-core-i9-processor-14900hx-36m-cache-up-to-5-80-ghz/specifications.html'), peak: pw(157, 'pub', '最大ターボ・パワー(MTP)157W。Intel ARK の原ページ(2026-11-11、[公表])。範囲の下限(最小保証パワー)は ARK の取得結果に含まれず未取得のため、range.minW は null。上限 157W は最大ターボ・パワー'), range: { minW: null, maxW: 157 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Raptor Cove', count: 8, smt: 2, baseGHz: 2.2, boostGHz: 5.8 }, { type: 'E', uarch: 'Gracemont', count: 16, smt: 1, baseGHz: 1.6, boostGHz: 4.1 }], l3MB: 36 },
+    calib: false, notes: '2026-11-11 に Intel ARK の原ページ(https://www.intel.com/content/www/us/en/products/sku/235995/intel-core-i9-processor-14900hx-36m-cache-up-to-5-80-ghz/specifications.html 、ID 235995、[公表])で確認: P 8・E 16・32 スレッド、最大ターボ 5.8GHz(P 5.8・E 4.1。Turbo Boost Max 3.0 は 5.7GHz、Thermal Velocity Boost は 5.8GHz)、P ベース 2.2GHz・E ベース 1.6GHz、L3 36MB、Intel 7、発売 2024 年第 1 四半期、PBP 55W・MTP 157W。**メモリは ARK の取得結果に無く未取得(14700HX の書き方は使わない。cfg.memory なし。メモリの選択肢も作らない)**。最小保証パワーも未取得。GB7 は Geekbench Browser v7 の直近 200 件の全体中央値(OS 混在、2026-11-11、[実測])。HX 系の MT 過大(設計書 §13.4 項目⑦)の検証用の標本で、校正には入れない(calib:false)',
+  });
+  P.push({
+    id: 'intel-arl-285h', name: 'Core Ultra 9 285H', vendor: 'Intel', family: 'Arrow Lake-H', isa: 'x86', kind: 'mobile-pc', year: 2025, addedIn: 'M5b',
+    gb7: 'Arrow Lake-H: Core Ultra 9 285H(2.9GHz, 16c)',
+    dies: [die('Compute タイル 6P+8E+2LP-E', null, null, null, 'Arrow Lake-H の compute tile(6P+8E)は 285K・275HX の 8P+16E タイル(117.4mm²)とは別のダイで、面積は未取得(docs/research と設計書 §2.x の「取れなかった」に記載。推測しない)。CPU タイルは TSMC N3B(Intel ARK、2026-11-11)')],
+    power: { base: pw(45, 'pub', 'プロセッサー・ベース・パワー(PBP)45W。Intel ARK の原ページ(2026-11-11、[公表]): https://www.intel.com/content/www/us/en/products/sku/241747/intel-core-ultra-9-processor-285h-24m-cache-up-to-5-40-ghz/specifications.html'), peak: pw(115, 'pub', '最大ターボ・パワー(MTP)115W。Intel ARK の原ページ(2026-11-11、[公表])。範囲の下限(最小保証パワー)は ARK の取得結果に含まれず未取得のため、range.minW は null。上限 115W は最大ターボ・パワー'), range: { minW: null, maxW: 115 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Lion Cove', count: 6, smt: 1, baseGHz: 2.9, boostGHz: 5.4 }, { type: 'E', uarch: 'Skymont', count: 8, smt: 1, baseGHz: 2.7, boostGHz: 4.5 }, { type: 'LP-E', uarch: 'Skymont', count: 2, smt: 1, baseGHz: 1.0, boostGHz: 2.5 }], l3MB: 24 },
+    calib: false, notes: '2026-11-11 に Intel ARK の原ページ(https://www.intel.com/content/www/us/en/products/sku/241747/intel-core-ultra-9-processor-285h-24m-cache-up-to-5-40-ghz/specifications.html 、ID 241747、[公表])で確認: 16 コア・16 スレッド(P 6・E 8・LP-E 2)、最大ターボ 5.4GHz(P 5.4・E 4.5・LP-E 2.5)、ベース P 2.9・E 2.7・LP-E 1.0GHz、L3 24MB、CPU タイル TSMC N3B、発売 2025 年第 1 四半期、PBP 45W・MTP 115W。**ダイ面積・メモリは未取得**(メモリは ARK の取得結果に無く、cfg.memory なし。メモリの選択肢も作らない)。最小保証パワーも未取得。GB7 は Geekbench Browser v7 の直近 200 件の全体中央値(OS 混在、2026-11-11、[実測])。旧 GB7 値(チャート 2228 / 14912)を置き換えた。HX 系の MT 過大(設計書 §13.4 項目⑦)の検証用の標本で、校正には入れない(calib:false)',
+  });
   // AMD
   P.push({
     id: 'amd-zenplus-2600x', name: 'Ryzen 5 2600X', vendor: 'AMD', family: 'Zen+ (Pinnacle Ridge)', isa: 'x86', kind: 'pc', year: 2018, addedIn: 'M5b',
@@ -257,6 +281,14 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     power: { base: pw(65, 'pub', 'TDP 65W。AMD 公式の仕様一覧(2026-11-06、[公表])と一致。区分 sec → pub'), peak: null, range: null },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 1', count: 4, smt: 2, baseGHz: 3.5, boostGHz: 3.7 }], l3MB: 16, l2: '合計 2MB', l3Note: '総容量(2 CCX × 8MB)16MB。AMD 公式の仕様一覧で確認(2026-11-06、[公表])。CCX 内訳は旧 [二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)', memory: 'DDR4-2666(AMD 公式 [公表]。2 チャネル)' },
     calib: false, notes: '2026-11-06: AMD 公式の仕様一覧でコア・クロック・L3 16MB・TDP 65W・DDR4-2666 の一致を確認([公表]。メモリの出典を TechPowerUp から公式へ。チャネル数「2」は TechPowerUp の値のまま)。L2 合計 2MB は依頼で示された公式値(原ページ未再取得)。以下は 2026-11-05 の記録: メモリ DDR4-2666・2 チャネルは TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。URL の slug は記録が無く未記録)。「2 チャネル」は意図的: 電力モデルが「数字+ch」の表記でチャンネル数を読むため、2ch と書くと電力・温度が変わる。L3 16MB は[二次] Wikipedia「List of AMD Ryzen processors」(原ページ直接取得、2026-10-30)の L3 cache (total) 列(1800X〜1500X の結合セル=16 MB、CCX 構成 2×2)。2026-10-30 に追加(それまで null)',
+  });
+  P.push({
+    id: 'amd-zen4-7945hx', name: 'Ryzen 9 7945HX', vendor: 'AMD', family: 'Zen 4 (Dragon Range)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Zen 4 モバイル(Dragon Range): Ryzen 9 7945HX(2.5GHz, 16c)',
+    dies: [die('Zen 4 CCD ×2', 142, 'pub', 'tsmc-n5', '71 mm² × 2。AMD 公式の製品ページ(2026-11-11、[公表]): https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-9-7945hx.html'), die('IOD', 122, 'pub', 'tsmc-n6', 'AMD 公式の製品ページ(2026-11-11、[公表])。ダイ数 3(CCD 2 + IOD)')],
+    power: { base: pw(55, 'pub', '既定 TDP 55W。AMD 公式の製品ページ(2026-11-11、[公表]): https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-9-7945hx.html'), peak: null, range: { minW: 55, maxW: 75 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 16, smt: 2, baseGHz: 2.5, boostGHz: 5.4 }], l3MB: 64, l3Ccds: 2, l2: '合計 16MB', memory: 'DDR5-5200 SO-DIMM, 最大 64GB(AMD 公式 [公表]。2 チャネル)' },
+    calib: false, notes: '2026-11-11 に AMD 公式の製品ページ(https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-9-7945hx.html 、[公表])で確認: Zen 4(Dragon Range)16 コア 32 スレッド、ブースト最大 5.4GHz、ベース 2.5GHz、L1 1024KB・L2 16MB・L3 64MB、既定 TDP 55W・cTDP 55〜75W、CCD は TSMC 5nm 71mm²・IOD は TSMC 6nm 122mm²(ダイ数 3: CCD 2 + IOD)、SMT あり、AVX-512 対応、メモリ DDR5-5200・2 チャネル SO-DIMM・最大 64GB、ソケット FL1、発売 2023-02-28。GB7 は Geekbench Browser v7 の直近 200 件の全体中央値(OS 混在、2026-11-11、[実測])。HX 系の MT 過大(設計書 §13.4 項目⑦)の検証用の標本で、校正には入れない(calib:false)。MT の電力は range.maxW の 75W を使う',
   });
   P.push({
     id: 'amd-zen4-7840hs', name: 'Ryzen 7 7840HS', vendor: 'AMD', family: 'Zen 4 (Phoenix)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',

@@ -187,8 +187,10 @@ test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と�
   // 2026-11-07: SLC 全体を L3 相当として cfg.l3MB に入れた(GPU 未実装のため。ユーザー指示)。写真の枠に L3 が無い Apple・Snapdragon・Dimensity は L3 ブロックが増えない(飾りの SLC のまま)が、
   // 従来の配置(写真なし)で描く M5 Max(dies が空)と 8+ Gen 1 だけ L3 のブロックが増えた(SLC 48MB / 10MB)ので除く。ほかの 67 件は変更前のデータ・コードで同じ 67 件を計算しても同じハッシュ
   const SLC_L3 = ['apple-m5max', 'qc-8plus-gen1'];
+  // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX)は変更前のデータに無いので除く。ほかの 67 件のハッシュは不変
+  const HX_NEW = ['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'];
   SLC_L3.forEach((id) => assert.ok(mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'l3')), id));
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id));
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id));
   assert.strictEqual(rest.length, 67);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });

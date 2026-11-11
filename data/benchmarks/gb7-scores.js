@@ -92,6 +92,22 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel(Alder Lake 以降)",
+  "name": "Raptor Lake(モバイル): Core i9-13980HX(2.4GHz, 24c)",
+  "single": 2504,
+  "multi": 18283,
+  "kind": "直近25件の中央値",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Raptor Lake Refresh(モバイル): Core i9-14900HX(2.2GHz, 24c)",
+  "single": 2422,
+  "multi": 17016,
+  "kind": "直近25件の中央値",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
   "name": "Meteor Lake: Core Ultra 9 185H(2.3GHz, 16c)",
   "single": 2174,
   "multi": 13731,
@@ -133,10 +149,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-H: Core Ultra 9 285H(2.9GHz, 16c)",
-  "single": 2228,
-  "multi": 14912,
-  "kind": "チャート",
-  "n": null
+  "single": 2446,
+  "multi": 15928,
+  "kind": "直近25件の中央値",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -265,6 +281,14 @@ window.SDS_DATA.gb7Scores = [
   "multi": 22461,
   "kind": "チャート",
   "n": null
+ },
+ {
+  "group": "AMD",
+  "name": "Zen 4 モバイル(Dragon Range): Ryzen 9 7945HX(2.5GHz, 16c)",
+  "single": 2451,
+  "multi": 18741,
+  "kind": "直近25件の中央値",
+  "n": 200
  },
  {
   "group": "AMD",

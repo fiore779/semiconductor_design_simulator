@@ -75,7 +75,8 @@ Object.keys(D.uarch || {}).forEach((name) => {
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
 // 2026-11-04: Core Ultra 5 325・Core 5 320 もダイ面積が未取得(Kraken Point と同じ扱い。ユーザーは 2 件の追加を指示しただけで、例外の登録は実装上の判断)
-const C2_EXCEPTIONS = new Set(['amd-kraken-350', 'intel-ptl-u5-325', 'intel-wcl-c5-320']);
+// 2026-11-11: Core Ultra 9 285H(Arrow Lake-H)もダイ面積が未取得(6P+8E の compute tile は 285K・275HX の 8P+16E タイルとは別のダイ。推測しない。ユーザーは HX 系の標本 4 件の追加を指示しただけで、例外の登録は実装上の判断)
+const C2_EXCEPTIONS = new Set(['amd-kraken-350', 'intel-ptl-u5-325', 'intel-wcl-c5-320', 'intel-arl-285h']);
 // GB10(DGX Spark)は 2026-11-03 に GB7 未取得の例外として追加したが、2026-11-06 にユーザー提供の検索結果(6 件の中央値)で GB7 を採用したため、例外から外した(設計書 §13 M5b-4)
 // Core 5 320(Wildcat Lake)は 2026-11-04 にユーザー提供の検索結果(先頭 8 件の中央値)で GB7 を採用したため、例外から外した
 const C1_EXCEPTIONS = new Set([]);

@@ -351,6 +351,8 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-05: ARK のクロック(LP-E・E の boost など)を入れて MT を計算できるようになった 5 件(268V・258V・256V・388H・275HX)も標本から除く(帯の係数は 11 件で校正した値のまま動かさない。
     // 参考: 5 件を含めた 16 件の中央値は帯 0 が 0.6943、帯 1 が 0.7556 で、丸めると 0.69 / 0.76 のまま不変。標本外での MT の誤差は設計書 §2.7.7)
     if (['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v', 'intel-ptl-x9-388h', 'intel-arl-275hx'].includes(p.id)) return;
+    // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX。calib:false)は連続式の標本に入れない(係数は動かさない。検証用。設計書 §13.4 項目⑦)
+    if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id)) return;
     if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, W: w.w, r: (lo + hi) / 2 / Math.pow(w.w, F.MT_CLOCK_POWER.exp) });
@@ -426,7 +428,7 @@ test('TDP 帯別係数: σ の校正(x86 の代表 4 件。スマホ SoC は除�
 });
 
 // ---- ST の L3 は 1 CCD 分(設計書 §5.3.3 G の3。cfg.l3Ccds) ----
-const CCD_IDS = ['amd-zen3-5950x', 'amd-zen4-7950x', 'amd-zen5-9950x', 'amd-strixhalo-395'];
+const CCD_IDS = ['amd-zen3-5950x', 'amd-zen4-7950x', 'amd-zen5-9950x', 'amd-strixhalo-395', 'amd-zen4-7945hx']; // 2026-11-11: 7945HX(l3Ccds 2)を追加
 test('ST の L3: l3Ccds を持つ SKU は 1 CCD 分(l3MB ÷ l3Ccds)で計算し、合計で計算した値より低い', () => {
   const c = cal();
   CCD_IDS.forEach((id) => {

@@ -15,7 +15,7 @@ window.SDS_DATA = window.SDS_DATA || {};
 const LNL = ['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'];
 const ARL = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx'];
 const ADL_E = ['intel-adl-12900k', 'intel-adl-12700k', 'intel-adl-12600k'];
-const RPL_E = ['intel-rpl-13900k', 'intel-rpl-14900k', 'intel-rpl-13700k', 'intel-rpl-14700k', 'intel-rpl-13600k', 'intel-rpl-14600k', 'intel-rpl-14700hx'];
+const RPL_E = ['intel-rpl-13900k', 'intel-rpl-14900k', 'intel-rpl-13700k', 'intel-rpl-14700k', 'intel-rpl-13600k', 'intel-rpl-14600k', 'intel-rpl-14700hx', 'intel-rpl-13980hx', 'intel-rpl-14900hx'];
 window.SDS_DATA.blocklibAreas = [
   // ---- AMD ----
   { uarch: 'Zen 1', chip: null, nodeId: 'gf-14', noL2Mm2: 5.5, withL2Mm2: 7, l2KB: 512, s: 'pub', basis: 'measured', note: 'Zeppelin(14nm)。AMD の ISSCC 資料(4コアのブロックで 44 mm²、L3 16 mm² 込み)。L2 なしは 7 − 1.5(L2 512KB)の計算値' },

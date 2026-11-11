@@ -37,7 +37,7 @@
   add(['intel-adl-12900k'], { type: 'DDR4', mts: 3200 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 4800, 'pub', ARK)]);
   add(['intel-adl-12700k', 'intel-adl-12600k', 'intel-adl-12100'], { type: 'DDR4', mts: 3200 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 4800, 'pub', ARK)]);
   add(['intel-rpl-13900k', 'intel-rpl-13700k', 'intel-rpl-13600k'], { type: 'DDR5', mts: 5600 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 5600, 'pub', ARK)]);
-  add(['intel-rpl-14900k', 'intel-rpl-14700hx'], { type: 'DDR5', mts: 5600 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 5600, 'pub', ARK)]);
+  add(['intel-rpl-14900k', 'intel-rpl-14700hx', 'intel-rpl-13980hx'], { type: 'DDR5', mts: 5600 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 5600, 'pub', ARK)]);
   add(['intel-rpl-14700k', 'intel-rpl-14600k'], { type: 'DDR5', mts: 5600 }, [o('DDR4', 3200, 'pub', ARK), o('DDR5', 5600, 'pub', ARK)]);
   add(['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx'], { type: 'DDR5', mts: 6400 }, [o('DDR5', 6400, 'pub', ARK)]);
   add(['intel-mtl-185h'], { type: 'LPDDR5X', mts: 7467 }, [o('LPDDR5X', 7467, 'pub', ARK), o('DDR5', 5600, 'pub', ARK)]);
@@ -50,7 +50,7 @@
   add(['amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x'], { type: 'DDR4', mts: 3200 }, [o('DDR4', 3200, 'pub', AMD)]);
   add(['amd-zen3-5800u'], { type: 'DDR4', mts: 3200 }, [o('DDR4', 3200, 'pub', AMD), o('LPDDR4X', 4266, 'pub', AMD + '(公式の表記は LPDDR4-4266)')]);
   add(['amd-zen3p-7735hs'], { type: 'DDR5', mts: 4800 }, [o('DDR5', 4800, 'pub', AMD), o('LPDDR5', 6400, 'pub', AMD)]);
-  add(['amd-zen4-7700', 'amd-zen4-7950x'], { type: 'DDR5', mts: 5200 }, [o('DDR5', 5200, 'pub', AMD)]);
+  add(['amd-zen4-7700', 'amd-zen4-7950x', 'amd-zen4-7945hx'], { type: 'DDR5', mts: 5200 }, [o('DDR5', 5200, 'pub', AMD)]);
   add(['amd-zen5-9700x', 'amd-zen5-9950x'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD)]);
   add(['amd-zen4-7840hs'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 7500, 'pub', AMD)]);
   add(['amd-strix-hx370', 'amd-kraken-350'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 8000, 'pub', AMD)]);

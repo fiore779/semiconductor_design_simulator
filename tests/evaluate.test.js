@@ -191,15 +191,15 @@ test('校正範囲: L3(元 64 MB)は 0.5〜2 倍が範囲内。0 や、元が 0 
 });
 
 test('校正範囲: 収録チップの最大クロックの 1.05 倍を超えるクロックは範囲外', () => {
-  const d0 = impD(T); // x86 の最大は 5.7 GHz → 5.985 まで(2026-11-06: 13900K の P boost 5.8 → 5.4 で、最大は 5.8 から 5.7 に下がった。旧: 6.09 まで、6.0・6.09・6.2 で確認)
+  const d0 = impD(T); // 2026-11-11: 14900HX の P boost 5.8 を収録して、x86 の最大は 5.7 から 5.8 GHz に戻った → 6.09 まで(旧 5.7 GHz → 5.985 まで)。以前の記録: x86 の最大は 5.7 GHz → 5.985 まで(2026-11-06: 13900K の P boost 5.8 → 5.4 で、最大は 5.8 から 5.7 に下がった。旧: 6.09 まで、6.0・6.09・6.2 で確認)
   assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.9).design), []);
-  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.985).design), []); // 上限ちょうど(範囲内)
-  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 5.986).design).map((o) => o.field), ['core:P:clock']); // わずかに超えると範囲外
+  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 6.09).design), []); // 上限ちょうど(範囲内)
+  assert.deepStrictEqual(oocOf(design.setClock(d0, 'P', 6.091).design).map((o) => o.field), ['core:P:clock']); // わずかに超えると範囲外
   const r = E.evaluate(design.setClock(d0, 'P', 6.1).design, ctx);
   assert.deepStrictEqual(r.outOfCalibration.map((o) => o.field), ['core:P:clock']);
-  assert.ok(r.outOfCalibration[0].reason.includes('収録しているチップの最大クロック(5.7 GHz)を超えています'));
+  assert.ok(r.outOfCalibration[0].reason.includes('収録しているチップの最大クロック(5.8 GHz)を超えています'));
   assert.strictEqual(r.st.confidence, 'low');
-  assert.strictEqual(E.maxClockOf(ctx.presets, 'x86'), 5.7); assert.strictEqual(E.maxClockOf(ctx.presets, 'none'), null);
+  assert.strictEqual(E.maxClockOf(ctx.presets, 'x86'), 5.8); assert.strictEqual(E.maxClockOf(ctx.presets, 'none'), null);
 });
 
 // 2026-11-05: M1 の E コアの最大クロック 2.064GHz を取得したため、クロック未取得のコアを持つ実プリセットは無くなった。E のクロックを外した M1 の複製から作った設計で確かめる(baseCfg も未取得)
