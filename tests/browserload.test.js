@@ -622,3 +622,38 @@ test('index.html: 表示切替ボタン(結果・下段・配置)の aria-presse
   assert.ok(/<aside id="right"[^>]*\bhidden\b/.test(html) && /<footer id="bottom"[^>]*\bhidden\b/.test(html), '既定で隠すパネルに hidden');
   assert.ok(html.includes('id="t-right-badge"') && html.includes('id="t-bottom-badge"'));
 });
+
+// 2026-11-11: 設定範囲の下限(最小保証パワー)が未取得(range.minW が null)の SKU は「null〜157 W」と出さず、「最大 157 W」と書く(13980HX・14900HX・285H)
+test('設定範囲の表示: range.minW が null なら「最大 N W」。null〜 は出ない(詳細ダイアログ・結果・再現の表)', () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  ['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h'].forEach((id) => {
+    const p = c.presets.find((x) => x.id === id);
+    assert.strictEqual(p.power.range.minW, null, id);
+    const ev = evaluate(DS.fromPreset(p, { mode: 'reproduce' }), c);
+    const out = new FakeNode('div');
+    ui.results.renderResults(out, ev, DS.fromPreset(p, { mode: 'reproduce' }));
+    assert.ok(out.textContent.includes(`最大 ${p.power.range.maxW} W`) && !/null〜|undefined/.test(out.textContent), id + ' (結果)');
+    const rows = ctx.SDS.ui.reproduce.reproductionRows(ev);
+    assert.ok(rows.some((r) => typeof r.published === 'string' && r.published.includes(`最大 ${p.power.range.maxW} W`)) && rows.every((r) => !/null〜/.test(String(r.published))), id + ' (再現)');
+  });
+  // 範囲が両方ある SKU(14700HX)は従来どおり
+  const p2 = c.presets.find((x) => x.id === 'intel-rpl-14700hx');
+  const ev2 = evaluate(DS.fromPreset(p2, { mode: 'reproduce' }), c); const out2 = new FakeNode('div'); ui.results.renderResults(out2, ev2, DS.fromPreset(p2, { mode: 'reproduce' }));
+  assert.ok(out2.textContent.includes('45〜157 W'));
+  // 詳細ダイアログ
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  FakeNode.prototype.focus = function () {};
+  try {
+    ui.dialogs.openPresets(c, { onReproduce() {}, onImprove() {} });
+    const heads = findAll(body, (n) => n.tag === 'button' && n.className === 'group-head'); heads.forEach((h) => h.listeners.click());
+    const row = () => findAll(body, (n) => n.tag === 'button' && n.attrs.role === 'option' && n.dataset.id === 'intel-rpl-13980hx')[0];
+    let r = row();
+    if (!r) { findAll(body, (n) => n.tag === 'button' && n.className === 'group-head').forEach((h) => h.attrs['aria-expanded'] === 'false' && h.listeners.click()); r = row(); }
+    assert.ok(r, '13980HX の行がある');
+    r.listeners.click();
+    assert.ok(body.textContent.includes('範囲: 最大 157 W') && !/null〜/.test(body.textContent));
+  } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
+});

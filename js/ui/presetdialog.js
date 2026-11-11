@@ -67,7 +67,7 @@
       rows.push(h('p', { class: 'small', text: `L3: ${p.cfg.l3MB != null ? p.cfg.l3MB + ' MB' : '未取得'} / メモリ: ${p.cfg.memory || '未取得'}` }));
       rows.push(h('h4', { text: 'ダイ面積' }), p.dies && p.dies.length ? h('ul', {}, p.dies.map((d) => h('li', {}, `${d.name}: `, d.mm2 != null ? [`${d.mm2} mm² `, srcBadge(d.s)] : h('b', { text: '未取得' }), d.nodeId ? ` (${(ctx.nodes.find((n) => n.id === d.nodeId) || { name: d.nodeId }).name})` : ''))) : h('p', {}, h('b', { text: '未取得' })));
       const pv = (label, v) => h('li', {}, `${label}: `, v ? [`${v.w} W `, srcBadge(v.s), v.note ? ` ${v.note}` : ''] : h('b', { text: '未取得' }));
-      rows.push(h('h4', { text: '消費電力(公表値)' }), h('ul', {}, pv('基準', pw.base), pv('ピーク', pw.peak), pw.range ? h('li', { text: `範囲: ${pw.range.minW}〜${pw.range.maxW} W` }) : null));
+      rows.push(h('h4', { text: '消費電力(公表値)' }), h('ul', {}, pv('基準', pw.base), pv('ピーク', pw.peak), pw.range ? h('li', { text: pw.range.minW == null ? `範囲: 最大 ${pw.range.maxW} W(下限は未取得)` : `範囲: ${pw.range.minW}〜${pw.range.maxW} W` }) : null));
       rows.push(h('h4', { text: 'Geekbench 7' }), gb ? h('p', {}, `ST ${gb.single} / MT ${gb.multi != null ? gb.multi : '未取得'} `, h('span', { class: 'badge', title: PL.lowReason(gb), text: PL.gb7Basis(gb).label + (PL.gb7Basis(gb).low ? ' ⚠ 信頼度低' : '') })) : h('p', {}, h('b', { text: '未取得' })));
       if (p.notes) rows.push(h('p', { class: 'small', text: `備考: ${p.notes}` }));
       c.missing.length && rows.push(h('p', { class: 'note warn-note', text: `未取得の項目: ${c.missing.join('・')}` }));

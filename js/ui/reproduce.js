@@ -66,7 +66,7 @@
       note: a.totalMm2 == null ? a.reason : '設計の面積はプリセットの値をそのまま使っているため比較にならない' + (a.unknownCount ? `(${a.unknownCount} 個のダイは未取得)` : ''),
     });
     const pw = ev.power.published;
-    const pubTxt = [pw.base && `基準 ${pw.base.w} W`, pw.peak && `ピーク ${pw.peak.w} W`, pw.range && `${pw.range.minW}〜${pw.range.maxW} W`].filter(Boolean).join(' / ');
+    const pubTxt = [pw.base && `基準 ${pw.base.w} W`, pw.peak && `ピーク ${pw.peak.w} W`, pw.range && (pw.range.minW == null ? `最大 ${pw.range.maxW} W` : `${pw.range.minW}〜${pw.range.maxW} W`)].filter(Boolean).join(' / ');
     rows.push({ label: '消費電力', published: pubTxt || null, publishedKind: null, sim: null, diffPct: null, verdict: 'na', note: pubTxt ? '公表値の一覧(モデル推定との比較は次の行)' : (ev.power.reason || '公表値が未取得') });
     rows.push(powerRow(ev));
     return rows;

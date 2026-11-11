@@ -254,7 +254,7 @@
     const pBody = [h('h4', { text: '公表値' })];
     const prow = (label, v) => v && pBody.push(h('div', { class: 'row' }, `${label}: `, h('b', { text: v.minW != null ? `${v.minW}〜${v.maxW} W` : `${v.w} W` }), ' ', v.s !== undefined ? srcBadge(v.s) : '', v.note ? h('span', { class: 'small', text: ` (${v.note})` }) : ''));
     prow('基準(TDP/PBP)', pw.base); prow('ピーク', pw.peak);
-    if (pw.range) pBody.push(h('div', { class: 'row' }, '設定範囲: ', h('b', { text: `${pw.range.minW}〜${pw.range.maxW} W` })));
+    if (pw.range) pBody.push(h('div', { class: 'row' }, '設定範囲: ', h('b', { text: pw.range.minW == null ? `最大 ${pw.range.maxW} W(下限は未取得)` : `${pw.range.minW}〜${pw.range.maxW} W` })));
     if (ev.power.reason) pBody.push(h('div', { class: 'row' }, '公表値: ', h('b', { text: '未取得' }), ` (${ev.power.reason})`));
     if (edited) pBody.push(note('公表電力は編集では再計算していません(元のチップの公表値)。', 'warn-note'));
     pBody.push(powerModelBlock(ev.powerModel, edited, isA));
