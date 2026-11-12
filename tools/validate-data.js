@@ -33,6 +33,12 @@ const ids = new Set();
   });
 });
 (D.cooling || []).forEach((c) => ok(c.s === 'tmp' && c.rK_W > 0, `cooling ${c.id}: 形式不正`));
+// ノート PC の冷却クラス(2026-11-12。sustainedW = MT 持続電力 [W]): 値は正の数で、幅(sustainedRangeW)に含まれ、区分は meas([実測])・件数・取得日・出典が付いていること。sustainedW を持たない冷却は MT を制限しない
+(D.cooling || []).filter((c) => c.sustainedW !== undefined).forEach((c) => {
+  ok(typeof c.sustainedW === 'number' && c.sustainedW > 0, `cooling ${c.id}: sustainedW が正の数でない`);
+  ok(Array.isArray(c.sustainedRangeW) && c.sustainedRangeW.length === 2 && c.sustainedRangeW[0] <= c.sustainedW && c.sustainedW <= c.sustainedRangeW[1], `cooling ${c.id}: sustainedRangeW が [下限, 上限] で sustainedW を含まない`);
+  ok(c.sustainedS === 'meas' && Number.isInteger(c.sustainedN) && c.sustainedN > 0 && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(c.sustainedDate || '') && typeof c.sustainedSrc === 'string' && c.sustainedSrc, `cooling ${c.id}: sustained の区分(meas)・件数・取得日・出典が無い`);
+});
 (D.gb7Scores || []).forEach((r) => {
   ok(Number.isFinite(r.single) && Number.isFinite(r.multi) && r.single > 0 && r.multi >= r.single / 2, `gb7 ${r.name}: 値が不自然 (${r.single}/${r.multi})`);
 });

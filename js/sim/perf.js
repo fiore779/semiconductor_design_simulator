@@ -192,15 +192,23 @@
   const MT_CLOCK_POWER = { c: 0.443, exp: 0.15, max: 1.0 };
   const mtClockByPower = (w) => Math.min(MT_CLOCK_POWER.max, MT_CLOCK_POWER.c * Math.pow(w, MT_CLOCK_POWER.exp));
   // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
+  // 【2026-11-12 冷却による制限(ユーザー指示「冷却のプリセットを作って、それでマルチ性能が変わるようにする」)】選んだ冷却が MT 持続電力 sustainedW を持つ(ノート PC の冷却クラス。data/cooling.js)とき、
+  // evaluate が preset.power.coolingW(と coolingId)として渡す。MT 用の W = min(公表電力から決めた W, coolingW)。coolingW が無い(既定。冷却の制限なし=メーカー想定)か、W 以上なら従来どおり。
+  // 使うのは mobile-pc の連続式だけ(pc・mobile は mtClockInfo が W を使わない)。W が決まらない(公表電力なし)プリセットはフォールバック(0.81)のまま。ST は変えない。
   function mtPublishedW(preset) {
     const pw = (preset && preset.power) || {};
+    const lim = (p) => {
+      const cw = pw.coolingW;
+      if (p && typeof cw === 'number' && cw > 0 && cw < p.w) return { w: cw, source: 'cooling', fromW: p.w, fromSource: p.source, coolingId: pw.coolingId || null };
+      return p;
+    };
     // ユーザーが設定範囲内で選んだ TDP(package.tdpW を evaluate が power.tdpW として渡す)があればそれを優先
     const sel = pw.tdpW; const rg = pw.range;
-    if (rg && typeof sel === 'number' && sel >= rg.minW && sel <= rg.maxW) return { w: sel, source: 'selected' };
+    if (rg && typeof sel === 'number' && sel >= rg.minW && sel <= rg.maxW) return lim({ w: sel, source: 'selected' });
     const mx = pw.range && pw.range.maxW;
-    if (typeof mx === 'number' && mx > 0) return { w: mx, source: 'range.maxW' };
+    if (typeof mx === 'number' && mx > 0) return lim({ w: mx, source: 'range.maxW' });
     const b = pw.base && pw.base.w;
-    if (typeof b === 'number' && b > 0) return { w: b, source: 'base' };
+    if (typeof b === 'number' && b > 0) return lim({ w: b, source: 'base' });
     return null;
   }
   // MT の係数と、その決め方。{ factor, band(帯の label。帯を使わないとき null), powerW, source, fallback(mobile-pc で電力が無く 0.81 を使った) }
@@ -212,7 +220,7 @@
     const p = mtPublishedW(preset);
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
     // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.429、指数 0.15。min(1, c·W^0.15))
-    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false };
+    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false, ...(p.source === 'cooling' ? { coolingLimit: { coolingId: p.coolingId, sustainedW: p.w, fromW: p.fromW, fromSource: p.fromSource } } : {}) };
   }
   const mtClockFactor = (preset) => mtClockInfo(preset).factor;
 

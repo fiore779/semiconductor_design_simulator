@@ -28,6 +28,7 @@
     if (!cur) cSel.appendChild(h('option', { value: pkg.coolingId, selected: true }, `${pkg.coolingId}(一覧に無い)`));
     el.appendChild(h('div', { class: 'pfield' }, h('label', { for: 'pk-cooling', text: '冷却' }), cSel,
       cur ? h('p', { class: 'small', text: `周囲 ${cur.tAmbC} ℃ / Tj 上限 ${cur.tjMaxC} ℃` }) : null,
+      cur && typeof cur.sustainedW === 'number' ? h('p', { class: 'small', text: `MT の持続電力 ${cur.sustainedW} W(幅 ${cur.sustainedRangeW[0]}〜${cur.sustainedRangeW[1]} W。[実測] Notebookcheck ${cur.sustainedN} 機種の中央値、取得 ${cur.sustainedDate})。ノート PC(mobile-pc)のマルチ性能だけを、公表電力がこれより大きいときこの電力で制限します。シングル性能は変わりません` }) : null,
       msgEl('pk-cooling-msg', m.cooling)));
 
     // 基板

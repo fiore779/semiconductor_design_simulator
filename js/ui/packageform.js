@@ -57,7 +57,7 @@
   }
 
   // 冷却のドロップダウン用の1行(熱抵抗は仮置きの注記つき)
-  function coolingOptionText(c) { return `${c.name}(R=${c.rK_W} K/W${c.s === 'tmp' ? '・仮置き' : ''})`; }
+  function coolingOptionText(c) { return `${c.name}(R=${c.rK_W} K/W${c.s === 'tmp' ? '・仮置き' : ''}${typeof c.sustainedW === 'number' ? `、MT 持続電力 ${c.sustainedW} W` : ''})`; }
 
   // 持続クロックの行。cores は design.cfg.cores(boostGHz/maxGHz/baseGHz)。sustainedGHz は { 種別: GHz }
   function sustainedRows(thermal, cores) {
