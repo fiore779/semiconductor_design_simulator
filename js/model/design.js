@@ -81,7 +81,7 @@
   // プリセット → 設計。面積が未取得のダイは areaKnown:false の仮寸法(10×10mm)で置く。
   function fromPreset(preset, opts) {
     const o = opts || {};
-    const dies = []; let cursorX = 0;
+    const dies = []; let cursorX = 0; let computeW = 0;
     const srcDies = (preset.dies && preset.dies.length) ? preset.dies : [{ name: preset.name, mm2: null, s: null, nodeId: null }];
     const roles = srcDies.map((d) => dieRole(d.name));
     let computeIdx = roles.indexOf('compute');
@@ -99,7 +99,10 @@
       const isIod = !!(iodPlaced && i !== computeIdx && roles[i] === 'uncore' && /IOD/i.test(sd.name));
       const lay = layout && i === computeIdx ? FP.aspectOf(layout) : socLay && i === socIdx ? FP.aspectOf(socLay) : isIod ? FP.IOD_PLACE.aspect : null;
       // 面積が未取得のダイは仮寸法(10×10 mm。実寸ではない)。実物風テンプレートのダイは枠の縦横比で仮の 100 mm² 相当にする(面積は null のまま)
-      const size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
+      let size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
+      // Meteor Lake・Arrow Lake-H: GPU・SoC・IOE タイルは写真の縦横比(Compute の幅を基準)。Compute が先に作られている前提
+      if (i === computeIdx) computeW = size.widthMm;
+      else if (FP && FP.tileRowSize) { const t = FP.tileRowSize(preset.id, sd.name, known ? sd.mm2 : null, computeW); if (t) size = t; }
       const die = {
         id: `die${i}`, name: sd.name, nodeId: sd.nodeId || null, areaMm2: known ? sd.mm2 : null, areaSource: known ? sd.s : null,
         areaKnown: known, areaNote: sd.note || null, x: cursorX, y: 0, widthMm: size.widthMm, heightMm: size.heightMm, blocks: [],
@@ -126,6 +129,7 @@
     }
     if (layout && layout.template === 'x86-tile' && FP.tileDecor) decorDies = FP.tileDecor(layout, dies[computeIdx], preset.id); // Panther Lake: GPU・Platform タイルの飾り(Kurnal 全体図の相対位置。推定)
     if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || [], iodPlaced ? { gap: FP.IOD_PLACE.gap, dxFrac: layout.units === 1 ? FP.IOD_PLACE.dx1 : 0 } : null);
+    if (FP && FP.tileRowPlace) FP.tileRowPlace(preset.id, dies, GAP_MM); // Meteor Lake・Arrow Lake-H: Compute | SoC | GPU の横一列、IOE は Compute の下、Base は全体の下
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
     return Object.assign({

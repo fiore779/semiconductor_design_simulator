@@ -612,6 +612,7 @@
   const PTL_REUSE = '388H と同じ 4P+8E+4LP-E の Compute タイルの流用(プリセット側の注記に従う。258V・256V と同じ基準)。';
   const TILE_MAP = {
     'intel-mtl-185h': tm('mtl-compute', 'photo'),
+    'intel-arl-285h': tm('mtl-compute', 'reuse', 'Arrow Lake-H の Compute タイル(6P+8E+2LP-E。Lion Cove / Skymont)の写真は無いため、Meteor Lake の配置(P 6・E 4×2 クラスタ・LP-E 2)を流用。ダイ面積は未取得で、寸法は表示用の仮の値(面積ではない)'),
     'intel-arl-285k': tm('arl-compute', 'photo'),
     'intel-arl-265k': tm('arl-compute', 'reuse', '285K の配置を流用(E クラスタ 1 つ無効の SKU。空いた枠は最後のクラスタ)'),
     'intel-arl-275hx': tm('arl-compute', 'reuse', '285K の配置を流用(HX が同じ Compute タイルなのは検索要約で原ページ未確認)'),
@@ -627,6 +628,41 @@
     'intel-ptl-u5-325': tm('ptl-compute-4p4lpe', 'reuse'),
     'intel-wcl-c5-320': tm('wcl-compute', 'photo'),
   };
+  // Meteor Lake(185H)・Arrow Lake-H(285H)のタイルの並べ方。MTL_annotated.jpg(表示 2576 幅の目測)の配置:
+  // 左に Compute、その下に IOE(Compute と同じ幅で接する)、中央に SoC、右に GPU(3 タイルが横一列)。Base タイル(Foveros)は土台として全体の下に置く。
+  // 寸法は表示 2000 幅に換算した写真の目測(px。Compute の枠は mtl-compute の 352 幅)。SoC 361×423、GPU 163×400、IOE 352×105。
+  // 面積が分かっているタイルは面積を変えず写真の縦横比だけ採る(IOE は幅を Compute に合わせる)。面積が未取得のタイル(285H)は、写真の寸法を Compute の幅で換算した表示用の仮寸法(面積ではない。推測値を入れない)
+  const TILE_ROW = { 'intel-mtl-185h': true, 'intel-arl-285h': true };
+  const TILE_ROW_PX = { gpu: [163, 400], soc: [361, 423], ioe: [352, 105] };
+  const tileRowRole = (name) => /GPU/i.test(name) ? 'gpu' : /SoC/i.test(name) ? 'soc' : /IO/i.test(name) ? 'ioe' : /Base/i.test(name) ? 'base' : /Compute/i.test(name) ? 'compute' : null;
+  // Compute 以外のタイル(GPU・SoC・IOE)の幅・高さ(mm)。対象外のチップ・ダイは null(従来の寸法)
+  function tileRowSize(presetId, name, mm2, computeW) {
+    const role = TILE_ROW[presetId] ? tileRowRole(name) : null; const px = role && TILE_ROW_PX[role];
+    if (!px || !(computeW > 0)) return null;
+    if (typeof mm2 === 'number' && mm2 > 0) {
+      const w = role === 'ioe' ? computeW : Math.sqrt(mm2 * px[0] / px[1]);
+      return { widthMm: w, heightMm: mm2 / w };
+    }
+    const s = computeW / 352;
+    return { widthMm: px[0] * s, heightMm: px[1] * s };
+  }
+  // dies(design のダイ配列。x・y を書き換える)を並べる。対象外のチップなら false
+  function tileRowPlace(presetId, dies, gap) {
+    if (!TILE_ROW[presetId]) return false;
+    const by = {}; dies.forEach((d) => { const r = tileRowRole(d.name); if (r && !by[r]) by[r] = d; });
+    if (!by.compute) return false;
+    const c = by.compute; c.x = 0; c.y = 0;
+    let x = c.widthMm + gap;
+    if (by.soc) { by.soc.x = x; by.soc.y = 0; x += by.soc.widthMm + gap; }
+    if (by.gpu) { by.gpu.x = x; by.gpu.y = 0; }
+    if (by.ioe) { by.ioe.x = 0; by.ioe.y = c.heightMm + gap; }
+    const placed = [c, by.soc, by.gpu, by.ioe].filter(Boolean);
+    const right = Math.max.apply(null, placed.map((d) => d.x + d.widthMm)); const bottom = Math.max.apply(null, placed.map((d) => d.y + d.heightMm));
+    if (by.base) { by.base.x = right / 2 - by.base.widthMm / 2; by.base.y = bottom + gap; }
+    const all = dies.filter((d) => d.x != null); const minX = Math.min.apply(null, all.map((d) => d.x));
+    all.forEach((d) => { d.x -= minX; });
+    return true;
+  }
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。
   const CCD_RECIPES = {
     'Zen 3': { aspect: 1.516, top: 0.154, core: 0.247, basis: 'photo', note: 'Zen 3 CCD の注釈つきダイ写真(WCCFTech、ユーザー提示)の目測(上部の帯 約15%、コア+L2 約25%、L3 約50%)。面積比は AMD 公表(CCX 68 / CCD 81 mm²)と Locuza(二次)と整合' },
@@ -1000,7 +1036,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

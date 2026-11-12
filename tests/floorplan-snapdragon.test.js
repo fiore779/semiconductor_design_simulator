@@ -189,11 +189,13 @@ test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と�
   const SLC_L3 = ['apple-m5max', 'qc-8plus-gen1'];
   // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX)は変更前のデータに無いので除く。ほかの 67 件のハッシュは不変
   const HX_NEW = ['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'];
+  // 2026-11-12: Meteor Lake 185H はタイルの並べ方を写真(MTL_annotated.jpg)に合わせて変えた(GPU・SoC・IO タイルの縦横比と、ブロックの寸法が変わる)ので除く(配置は floorplan-mtl-row.test.js で検証)。ほかの 66 件のハッシュは変更前のデータ・コードで同じ 66 件を計算しても同じ値
+  const MTL_ROW = ['intel-mtl-185h'];
   SLC_L3.forEach((id) => assert.ok(mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'l3')), id));
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id));
-  assert.strictEqual(rest.length, 67);
+  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id) && !MTL_ROW.includes(p.id));
+  assert.strictEqual(rest.length, 66);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });
   // 2026-11-04: 386H(intel-ptl-x9-386h)だけ、4Xe の GPU タイルの飾りと scaleNote を足したのでハッシュを更新(Panther Lake_dies.jpg)。388H・378H・358H・Platform タイルは一致を確認済み
-  assert.strictEqual(h.digest('hex'), 'aeb0ca091ad7a610dab3c8dda6b39d91097a8b87eb2ab9efa8e4ac65cc93275b'); // 2026-11-07: M5 Max と 8+ Gen 1 を除いた 67 件のハッシュ(旧: 69 件 76fecf00…。上の SLC_L3 の注記)。(以下は前の記録) 2026-11-05:Orin を除いた 69 件のハッシュ。変更前(HEAD)のデータ・コードで同じ 69 件を計算しても同じ値(今回のデータ追加で 69 件の layout・寸法・ブロック・飾りダイは不変)。旧(70 件、Orin を含む): 2a9232c9…
+  assert.strictEqual(h.digest('hex'), 'b69a794d36cb79e8bbcb93d63db57af77e43470c715e51918f6fd6dbf6641524'); // 2026-11-12: 185H を除いた 66 件のハッシュ(旧: 67 件 aeb0ca09…。変更前の HEAD で同じ 66 件を計算しても同じ値を確認。上の MTL_ROW の注記)。(以下は前の記録) 2026-11-07: M5 Max と 8+ Gen 1 を除いた 67 件のハッシュ(旧: 69 件 76fecf00…。上の SLC_L3 の注記)。(以下は前の記録) 2026-11-05:Orin を除いた 69 件のハッシュ。変更前(HEAD)のデータ・コードで同じ 69 件を計算しても同じ値(今回のデータ追加で 69 件の layout・寸法・ブロック・飾りダイは不変)。旧(70 件、Orin を含む): 2a9232c9…
 });
