@@ -102,7 +102,11 @@
     if (!design || !design.cfg || design.presetId == null) return null;
     const M = memApi();
     const opts = M.optionsOf(design.presetId);
-    if (!opts) return { kind: 'fixed', text: 'メモリは SoC に固定(選択不可)' };
+    if (!opts) {
+      const f = M.fixedOf(design.presetId);
+      if (f) return { kind: 'fixed', text: `${f.onPackage ? 'オンパッケージ ' : ''}${f.type}-${f.mts} / ${f.gb}GB(型番で固定。Intel ARK)`, fixedMemory: f };
+      return { kind: 'fixed', text: 'メモリは SoC に固定(選択不可)' };
+    }
     const mode = modeInfo(design);
     const m = M.evaluate({ id: design.presetId, cfg: { mem: design.cfg.mem } });
     const o = opts.options.find((x) => x.type === m.selection.type);

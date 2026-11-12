@@ -34,6 +34,11 @@
     const e = entry(presetId);
     return e ? { ref: Object.assign({}, e.ref), bits: e.bits, options: e.options.map((x) => Object.assign({}, x, { speeds: x.speeds.slice(), ocSpeeds: ocSpeeds(x) })) } : null;
   }
+  // メモリ固定(オンパッケージ。SDS_DATA.memoryFixed)。{ type, mts, gb, onPackage, fixed, s, src } か null。固定でないチップは null
+  function fixedOf(presetId) {
+    const t = (root.SDS_DATA && root.SDS_DATA.memoryFixed) || {};
+    return typeof presetId === 'string' && Object.prototype.hasOwnProperty.call(t, presetId) ? Object.assign({}, t[presetId]) : null;
+  }
   const refOf = (presetId) => { const e = entry(presetId); return e ? { type: e.ref.type, mts: e.ref.mts } : null; };
 
   // 選択の検証。問題があれば日本語の理由、なければ null。oc は true か未指定のみ(false は不可 = 表現を 1 通りにする)
@@ -100,7 +105,7 @@
   const OC_WARNING = 'メモリ OC は安定動作を保証しません。この速度での動作は推定(確度:低)です';
   const OC_EXTRAPOLATION = 'この OC 速度は GB7 の実測(DDR5-8000 まで・9950X の MT のみ)の範囲外で、外挿です(確度:低)';
 
-  const api = { B_MT, B_MT_RANGE, B_ST, LATENCY_NS, OC_LADDER, GB7_MEASURED_MAX, WARNING, OC_WARNING, OC_EXTRAPOLATION, label, bandwidthGBs, optionsOf, refOf, check, evaluate, describe, describeParts };
+  const api = { B_MT, B_MT_RANGE, B_ST, LATENCY_NS, OC_LADDER, GB7_MEASURED_MAX, WARNING, OC_WARNING, OC_EXTRAPOLATION, label, bandwidthGBs, optionsOf, fixedOf, refOf, check, evaluate, describe, describeParts };
   root.SDS = root.SDS || {}; root.SDS.sim = root.SDS.sim || {}; root.SDS.sim.memory = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

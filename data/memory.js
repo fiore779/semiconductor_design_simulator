@@ -56,6 +56,18 @@
   add(['amd-strix-hx370', 'amd-kraken-350'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 8000, 'pub', AMD)]);
   add(['amd-epyc-7401'], { type: 'DDR4', mts: 2666 }, [o('DDR4', 2666, 'pub', AMD)], 512);
 
+  // ---- メモリ固定(オンパッケージ。2026-11-12 追加) ----
+  // Lunar Lake は LPDDR5X がプロセッサーと同じパッケージに載り、種別・速度・容量が型番で決まる(ユーザーは選べない)。選択肢(上の表)には載せず、ここに固定値を持つ。
+  // 値は Intel ARK の原ページ(2026-11-12 に Chrome で確認 [公表])。ARK の表記は 268V が「最大メモリ 32GB」「LPDDR5X 8533 MT/s まで」「最大 2 チャネル」、258V は 32GB、256V は 16GB(どちらも 8533・2 チャネル)。
+  // 評価(メモリ係数・ST/MT・電力)には使わない(表に無い id は従来どおり係数 1)。表示と保存データの移行だけに使う。
+  const FIXED_SRC = 'Intel ARK(2026-11-12 確認)';
+  const fx = (gb, sku) => ({ type: 'LPDDR5X', mts: 8533, gb, onPackage: true, fixed: true, s: 'pub', src: FIXED_SRC + ' https://www.intel.com/content/www/us/en/products/sku/' + sku + '/specifications.html' });
+  const FIXED = {
+    'intel-lnl-268v': fx(32, 240958),
+    'intel-lnl-258v': fx(32, 240957),
+    'intel-lnl-256v': fx(16, 240954),
+  };
+
   // max 以下の LADDER の値 + max 自身(例: 7467 は LADDER に無いが、Intel 185H の対応最大なので足す)
   function speedsOf(type, max) {
     const l = (LADDER[type] || []).filter((v) => v <= max);
@@ -72,4 +84,5 @@
   root.SDS_DATA = root.SDS_DATA || {};
   root.SDS_DATA.memory = table;
   root.SDS_DATA.memoryLadder = LADDER;
+  root.SDS_DATA.memoryFixed = FIXED;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -54,7 +54,7 @@ test('基準構成を明示的に選んでも(cfg.mem = ref)完全一致し、�
 });
 
 test('メモリ固定・混合・D はメモリ係数 1 で、選択肢が出ない', () => {
-  ['intel-lnl-268v', 'amd-strixhalo-395', 'apple-m4', 'qc-8elite', 'mt-9400', 'nv-thor'].forEach((id) => {
+  ['amd-strixhalo-395', 'apple-m4', 'qc-8elite', 'mt-9400', 'nv-thor'].forEach((id) => {
     assert.strictEqual(M.optionsOf(id), null, id);
     const d = impr(id);
     assert.strictEqual(d.cfg.mem, undefined, id);
@@ -385,4 +385,39 @@ test('メモリ OC の UI ロジック(params.js の select / トグルの出し
   assert.deepStrictEqual(PF.memoryView(withMem('amd-strix-hx370', 'LPDDR5X', 8000), true).ocSpeeds, []);
   // 再現モードは select を出さない(selectable:false)
   assert.strictEqual(PF.memoryView(DS.fromPreset(preset('intel-rpl-14900k'), { mode: 'reproduce' }), true).selectable, false);
+});
+
+// ---- Lunar Lake のオンパッケージ固定メモリ(2026-11-12。Intel ARK の原ページ) ----
+const LNL_FIXED = { 'intel-lnl-268v': 32, 'intel-lnl-258v': 32, 'intel-lnl-256v': 16 };
+
+test('Lunar Lake 3 SKU: 固定メモリ(LPDDR5X-8533・容量は 256V=16GB / 268V・258V=32GB・オンパッケージ・固定)で、選択肢は無い', () => {
+  assert.deepStrictEqual(Object.keys(D.memoryFixed).sort(), Object.keys(LNL_FIXED).sort());
+  Object.keys(LNL_FIXED).forEach((id) => {
+    const f = M.fixedOf(id);
+    assert.strictEqual(f.type, 'LPDDR5X'); assert.strictEqual(f.mts, 8533); assert.strictEqual(f.gb, LNL_FIXED[id]);
+    assert.strictEqual(f.onPackage, true); assert.strictEqual(f.fixed, true); assert.strictEqual(f.s, 'pub'); assert.ok(/Intel ARK/.test(f.src));
+    assert.strictEqual(M.optionsOf(id), null); assert.strictEqual(D.memory[id], undefined);
+    const d = impr(id);
+    assert.strictEqual(d.cfg.mem, undefined);
+    const v = PF.memoryView(d);
+    assert.strictEqual(v.kind, 'fixed');
+    assert.strictEqual(v.text, `オンパッケージ LPDDR5X-8533 / ${LNL_FIXED[id]}GB(型番で固定。Intel ARK)`);
+    assert.ok(!DS.setMemory(d, 'LPDDR5X', 8533).ok);
+    assert.strictEqual(ev(d).memory, null);
+  });
+  // 他の SKU は固定メモリの属性を持たない(従来どおり)
+  assert.strictEqual(M.fixedOf('intel-ptl-x9-388h'), null); assert.strictEqual(M.fixedOf('apple-m4'), null); assert.strictEqual(M.fixedOf('x'), null);
+  assert.ok(M.optionsOf('intel-ptl-x9-388h'));
+});
+
+test('Lunar Lake: 旧保存データに mem があっても無視して固定値に移行(読み込めて、mem は残らない)。ほかのチップの mem は保たれる', () => {
+  const d = impr('intel-lnl-268v');
+  const old = JSON.parse(DS.serialize(d)); old.cfg.mem = { type: 'DDR5', mts: 5600 }; old.baseCfg.mem = { type: 'LPDDR5X', mts: 8533 };
+  const r = DS.parse(JSON.stringify(old));
+  assert.ok(r.ok, r.reason);
+  assert.strictEqual(r.design.cfg.mem, undefined); assert.strictEqual(r.design.baseCfg.mem, undefined);
+  assert.strictEqual(PF.memoryView(r.design).kind, 'fixed');
+  // 他チップ: 従来どおり mem を保つ
+  const x = DS.setMemory(impr('intel-ptl-x9-388h'), 'LPDDR5X', 8000).design;
+  assert.deepStrictEqual(DS.parse(DS.serialize(x)).design.cfg.mem, { type: 'LPDDR5X', mts: 8000 });
 });

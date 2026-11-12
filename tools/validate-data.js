@@ -133,6 +133,18 @@ Object.keys(D.memory || {}).forEach((id) => {
   ok(!!ro && ro.speeds.includes(e.ref.mts), `memory ${id}: 基準構成が選択肢に含まれない`);
 });
 
+// 固定メモリ(data/memory.js の memoryFixed。Lunar Lake): id が実在し、選択肢の表と重複せず、種別・速度・容量・オンパッケージ・固定・区分・出典が揃っていること
+Object.keys(D.memoryFixed || {}).forEach((id) => {
+  const f = D.memoryFixed[id];
+  ok(pids.has(id), `memoryFixed ${id}: プリセットに無い id`);
+  ok(!(D.memory && D.memory[id]), `memoryFixed ${id}: 選択肢の表(memory)にも載っている`);
+  ok(typeof f.type === 'string' && f.type && Object.prototype.hasOwnProperty.call(D.memoryLadder || {}, f.type), `memoryFixed ${id}: type が不正`);
+  ok(Number.isInteger(f.mts) && f.mts > 0, `memoryFixed ${id}: mts が不正`);
+  ok(Number.isInteger(f.gb) && f.gb > 0, `memoryFixed ${id}: gb が不正`);
+  ok(f.onPackage === true && f.fixed === true, `memoryFixed ${id}: onPackage / fixed が true でない`);
+  ok(['pub', 'sec'].includes(f.s) && typeof f.src === 'string' && f.src, `memoryFixed ${id}: 区分(pub/sec)・出典が無い`);
+});
+
 console.log(`プリセット ${(D.presets || []).length} 件 / ファイル ${files.length} / nodes ${(D.nodes || []).length} / substrates ${(D.substrates || []).length} / cooling ${(D.cooling || []).length} / gb7 ${(D.gb7Scores || []).length}`);
 if (errs.length) { console.error('エラー:\n' + errs.join('\n')); process.exit(1); }
 console.log('OK');

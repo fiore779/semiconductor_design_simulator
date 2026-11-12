@@ -631,6 +631,11 @@
   function parse(text) {
     let d; try { d = JSON.parse(text); } catch (e) { return { ok: false, reason: 'JSON として読めません' }; }
     if (!d || d.schema !== SCHEMA || !Array.isArray(d.dies)) return { ok: false, reason: '形式が違います(schema または dies がありません)' };
+    // メモリ固定のチップ(Lunar Lake)は選択を持たない。旧保存データの mem は無視して取り除く(固定値に移行)
+    if (d.presetId != null && memoryApi() && memoryApi().fixedOf(d.presetId)) {
+      if (d.cfg && typeof d.cfg === 'object') delete d.cfg.mem;
+      if (d.baseCfg && typeof d.baseCfg === 'object') delete d.baseCfg.mem;
+    }
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };
     // baseCfg.mem は「元のチップの基準構成」でなければならない。違うものは基準に直し、cfg.mem との差を「編集」として扱う

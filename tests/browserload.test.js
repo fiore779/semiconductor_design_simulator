@@ -657,3 +657,23 @@ test('設定範囲の表示: range.minW が null なら「最大 N W」。null�
     assert.ok(body.textContent.includes('範囲: 最大 157 W') && !/null〜/.test(body.textContent));
   } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
 });
+
+test('メモリ欄: Lunar Lake はメモリ固定の読み取り専用表示(選択欄なし)、他の SKU は選択欄が出る(DOM スタブ)', () => {
+  const ctx = loadAll({ Node: FakeNode, document: { createElement: (t) => new FakeNode(t), createTextNode: (s) => new FakeText(s) } });
+  const DS = ctx.SDS.model.design;
+  const flat = (n) => [n].concat(...n.children.map(flat));
+  const render = (id) => {
+    const p = ctx.SDS_DATA.presets.find((x) => x.id === id);
+    const el = new FakeNode('div');
+    ctx.SDS.ui.params.renderParams(el, DS.fromPreset(p, { mode: 'improve' }), {}, {});
+    return flat(el);
+  };
+  [['intel-lnl-268v', '32GB'], ['intel-lnl-258v', '32GB'], ['intel-lnl-256v', '16GB']].forEach(([id, gb]) => {
+    const nodes = render(id);
+    assert.ok(nodes.some((n) => n.attrs && n.attrs.id === 'pf-memory'), `${id}: メモリ欄が無い`);
+    assert.ok(!nodes.some((n) => n.tag === 'select' && /^pf-mem-/.test((n.attrs && n.attrs.id) || '')), `${id}: 選択欄が出ている`);
+    const text = nodes.map((n) => n._t).join('');
+    assert.ok(text.includes(`オンパッケージ LPDDR5X-8533 / ${gb}(型番で固定。Intel ARK)`), `${id}: ${text}`);
+  });
+  assert.ok(render('intel-ptl-x9-388h').some((n) => n.tag === 'select' && n.attrs && n.attrs.id === 'pf-mem-speed'));
+});
