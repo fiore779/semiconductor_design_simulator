@@ -355,7 +355,8 @@
     if (preset && tdpSel != null) preset = Object.assign({}, preset, { power: Object.assign({}, preset.power, { tdpW: tdpSel }) });
     // 【2026-11-12】選んだ冷却がノート PC のクラス(sustainedW を持つ)なら、mobile-pc の MT の W を min(公表電力の W, sustainedW) にする(perf.mtPublishedW)。既存の仮置きの冷却は sustainedW を持たず、MT を制限しない(既定)。
     // 実際に W が下がる(制限が掛かる)ときだけ、公開値(メーカー想定の設定での測定)とは条件が違うので編集済み扱い(TDP を変えたときと同じ流儀)。ST は変えない
-    const coolSel = preset && preset.kind === 'mobile-pc' && design.package && typeof design.package.coolingId === 'string' ? ((root.SDS_DATA && root.SDS_DATA.cooling) || (ctx && ctx.cooling) || []).find((c) => c.id === design.package.coolingId) : null;
+    const coolList = (root.SDS_DATA && root.SDS_DATA.cooling) || (ctx && ctx.cooling) || [];
+    const coolSel = hasCfg && preset && preset.kind === 'mobile-pc' && design.package && typeof design.package.coolingId === 'string' ? coolList.find((c) => c.id === design.package.coolingId) : null;
     if (coolSel && typeof coolSel.sustainedW === 'number' && coolSel.sustainedW > 0) preset = Object.assign({}, preset, { power: Object.assign({}, preset.power, { coolingW: coolSel.sustainedW, coolingId: coolSel.id }) });
     const coolLimited = hasCfg && !!preset && sims().perf.mtClockInfo(preset).source === 'cooling';
     const edited = hasCfg && (isEdited(design) || memNonRef || tdpNonDefault || coolLimited);
@@ -399,7 +400,7 @@
       }
     }
     if (coolLimited && mt.ok && mt.clockInfo && mt.clockInfo.coolingLimit) {
-      const cl = mt.clockInfo.coolingLimit; const cn = ((root.SDS_DATA && root.SDS_DATA.cooling) || []).find((c) => c.id === cl.coolingId);
+      const cl = mt.clockInfo.coolingLimit; const cn = coolList.find((c) => c.id === cl.coolingId);
       result.warnings.push({ level: 'info', text: `マルチ性能は冷却「${cn ? cn.name : cl.coolingId}」の持続電力 ${cl.sustainedW} W で制限(公表電力から決めた ${cl.fromW} W → ${cl.sustainedW} W。電力→MT の係数は SKU 間の経験式で、同じチップの機体差より緩やか。実機の低下より小さく出る可能性)。シングル性能は変わりません` });
     }
     // メモリ構成(§5.2.4): 基準構成のときは何も足さない(係数 1)。基準と違うときは係数の出所と確度を示す

@@ -12,14 +12,14 @@ const ctx = E.makeContext();
 const P = (id) => D.presets.find((p) => p.id === id);
 const withCooling = (id, c) => { const r = design.setCooling(design.fromPreset(P(id), { mode: 'reproduce' }), c); assert.ok(r.ok, r.reason); return r.design; };
 const evalC = (id, c) => E.evaluate(withCooling(id, c), ctx);
-const CLASSES = [['laptop-thin-light', 28], ['laptop-standard', 45], ['laptop-workstation', 66], ['laptop-thin-dgpu', 65], ['laptop-gaming', 125], ['laptop-gaming-large', 145]];
+const CLASSES = [['laptop-thin-light', 28], ['laptop-standard', 46.5], ['laptop-workstation', 66], ['laptop-thin-dgpu', 65], ['laptop-gaming', 125], ['laptop-gaming-large', 145]];
 const OLD = ['passive-phone', 'thin-laptop', 'small-fan', 'air-tower', 'aio-360'];
 
 test('冷却データ: ノート PC の 6 クラスは sustainedW([実測]・幅・件数・取得日・出典つき)を持ち、既存の仮置き 5 件は持たない', () => {
   const by = Object.fromEntries(D.cooling.map((c) => [c.id, c]));
   assert.strictEqual(D.cooling.length, 11);
   OLD.forEach((id) => { assert.ok(by[id], id); assert.strictEqual(by[id].sustainedW, undefined, id); assert.strictEqual(by[id].s, 'tmp'); });
-  const want = { 'laptop-thin-light': [28, [15, 35], 9], 'laptop-standard': [45, [35, 60], 6], 'laptop-thin-dgpu': [65, [50, 90], 9], 'laptop-gaming': [125, [95, 160], 7], 'laptop-gaming-large': [145, [130, 175], 6], 'laptop-workstation': [66, [60, 90], 3] };
+  const want = { 'laptop-thin-light': [28, [15, 35], 9], 'laptop-standard': [46.5, [35, 60], 6], 'laptop-thin-dgpu': [65, [50, 90], 9], 'laptop-gaming': [125, [95, 160], 7], 'laptop-gaming-large': [145, [130, 175], 6], 'laptop-workstation': [66, [60, 90], 3] };
   Object.keys(want).forEach((id) => {
     const c = by[id]; assert.ok(c, id);
     assert.strictEqual(c.sustainedW, want[id][0], id); assert.deepStrictEqual(c.sustainedRangeW, want[id][1], id); assert.strictEqual(c.sustainedN, want[id][2], id);
@@ -84,12 +84,14 @@ test('MT の W: min(公表電力から決めた W, 冷却の持続電力)。選�
 });
 
 test('冷却を変えても ST は不変・pc は不変の上で、冷却の影響は設計書の想定どおり緩やか(指数 0.15)', () => {
-  // 14700HX: 公表電力 157W → ゲーミング標準 125W → 標準 45W。MT の比は係数の比(0.443·W^0.15)とほぼ一致する(性能は周波数にほぼ比例だが完全な比例ではないので ±1%)
+  // 14700HX: 公表電力 157W → ゲーミング標準 125W → 標準 46.5W。MT の比は係数の比(0.443·W^0.15)とほぼ一致する(性能は周波数にほぼ比例だが完全な比例ではないので ±1%)
   const base = E.evaluate(design.fromPreset(P('intel-rpl-14700hx'), { mode: 'reproduce' }), ctx).mt.score;
   const g = evalC('intel-rpl-14700hx', 'laptop-gaming').mt.score; const s = evalC('intel-rpl-14700hx', 'laptop-standard').mt.score;
   assert.ok(Math.abs(g / base - Math.pow(125 / 157, 0.15)) < 0.01, String(g / base));
-  assert.ok(Math.abs(s / base - Math.pow(45 / 157, 0.15)) < 0.04, String(s / base)); // 45W は式から外れるほど離れるので許容を広げた(性能は周波数に完全には比例しない: L3・メモリ項)
-  assert.ok(s / base > 0.8, '45W にしても MT は 2 割も下がらない(実機の機体差〔GB6 で最大÷最小 1.2〜1.3〕より小さい。設計書 §5.3.0 に明記)');
+    // 係数は厳密に 0.443·W^0.15(W = 46.5)。MT の比は係数の比に近いが、L3・メモリ項があるので比そのものは検証せず、係数で見る
+  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-standard').mt.clockFactor, 0.443 * Math.pow(46.5, 0.15));
+  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-gaming').mt.clockFactor, 0.443 * Math.pow(125, 0.15));
+  assert.ok(s / base > 0.8, '46.5W にしても MT は 2 割も下がらない(実機の機体差〔GB6 で最大÷最小 1.2〜1.3〕より小さい。設計書 §5.3.0 に明記)');
 });
 
 test('保存互換: 冷却 ID の保存・読み込みで新クラスが残り、評価も同じ。旧データ(thin-laptop)は従来どおり。未知の ID は MT を制限しない', () => {
@@ -112,4 +114,23 @@ test('熱モデルは新クラスでも動く(熱抵抗は仮置き)。持続電
   const id = 'intel-rpl-14700hx';
   const s = (c) => { const th = evalC(id, c).thermal; assert.ok(th.ok, c + ': ' + th.reason); return Object.values(th.sustainedGHz)[0]; };
   assert.ok(s('laptop-thin-light') <= s('laptop-standard') + 1e-9 && s('laptop-standard') <= s('laptop-gaming') + 1e-9 && s('laptop-gaming') <= s('laptop-gaming-large') + 1e-9);
+});
+
+test('evaluate: 選んだ TDP と冷却の組み合わせで edited・errPct が決まる(TDP 既定+制限なしは編集済みでない)', () => {
+  const id = 'intel-rpl-14700hx'; const rg = P(id).power.range;
+  const base = design.fromPreset(P(id), { mode: 'reproduce' });
+  const e0 = E.evaluate(base, ctx); assert.strictEqual(e0.edited, false); assert.notStrictEqual(e0.mt.errPct, null);
+  const tdp = (d, w) => { const r = design.setTdp(d, w, rg); assert.ok(r.ok, r.reason); return r.design; };
+  // TDP を既定(範囲の上限)のまま選び、冷却の制限なし(既存の仮置き冷却): 編集済みでない
+  assert.strictEqual(E.evaluate(tdp(base, rg.maxW), ctx).edited, false);
+  // 選んだ TDP 150W、冷却 125W: 冷却で制限(制限前の出所は選んだ TDP)。編集済みで公開値との比較なし
+  const a = E.evaluate(design.setCooling(tdp(base, 150), 'laptop-gaming').design, ctx);
+  assert.strictEqual(a.edited, true); assert.strictEqual(a.mt.errPct, null);
+  assert.deepStrictEqual([a.mt.clockInfo.source, a.mt.clockInfo.coolingLimit.fromSource, a.mt.clockInfo.coolingLimit.fromW, a.mt.clockInfo.powerW], ['cooling', 'selected', 150, 125]);
+  // 選んだ TDP 100W、冷却 125W: 制限は TDP のまま(冷却は効かない)。TDP が既定でないので編集済み
+  const b = E.evaluate(design.setCooling(tdp(base, 100), 'laptop-gaming').design, ctx);
+  assert.strictEqual(b.edited, true); assert.strictEqual(b.mt.errPct, null); assert.strictEqual(b.mt.clockInfo.source, 'selected'); assert.strictEqual(b.mt.clockInfo.powerW, 100);
+  // 設定(cfg)を持たない設計では、冷却の制限を入れず errPct も出さない
+  const noCfg = JSON.parse(JSON.stringify(withCooling(id, 'laptop-standard'))); delete noCfg.cfg;
+  const n = E.evaluate(noCfg, ctx); assert.ok(!(n.mt && n.mt.clockInfo && n.mt.clockInfo.source === 'cooling'));
 });
