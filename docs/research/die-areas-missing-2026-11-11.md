@@ -10,7 +10,7 @@
 
 | 対象 | 結論 |
 |---|---|
-| Arrow Lake-H(285H)の各タイル | **全部未取得**。公式・ダイ写真の計測・注釈のどれにも H 用の数値がない。分かったのは製造プロセス(CPU N3B、GPU N5P、SoC・IO N6、ベース Intel 22nm)だけ |
+| Arrow Lake-H(285H)の各タイル | **全部未取得**。公式・ダイ写真の計測・注釈のどれにも H 用の数値がない。分かったのは製造プロセス(CPU N3B、GPU N5P、SoC・IO N6、ベース Intel 22nm)だけ。**【2026-11-12 追記】ユーザー提示: Base タイル約 178mm²(出典未確認。出典が分かれば区分を格上げ)。プリセットには Base タイルだけ入れた(区分は sec で note に「ユーザー提示・出典未確認」)。参考(ユーザー提示の表。出典なし、他の AI 生成の可能性。値としては入れない): Compute TSMC N3B 約 65〜75mm² 前後(推定、6P+8E・24MB L3)、SoC TSMC N6 約 95mm² 前後(Meteor Lake-H と同じシリコン流用、LPE 2 基・NPU 13 TOPS。デスクトップ版 86.65。「Meteor Lake と同じ」は PC Watch の記述と整合するが、S の SoC 86.6 との差の説明がなく未確認)、GPU TSMC N5P 約 40〜45mm² 前後(推定、Xe 8 基)、I/O TSMC N6 約 10〜24.5mm²(Meteor Lake-H 約 10 か Arrow Lake-S 24.48 と同系統)。Compute/SoC/GPU/IO は未取得のまま** |
 | Arrow Lake-HX(275HX) | **285K(Arrow Lake-S)と同じダイ(ユーザー確認 2026-11-11)**。補強: PC Watch 2024-10-11 が「S と HX は実質同じダイ構成」と記述、ARK の 275HX パッケージ 37.5×30.2mm。Notebookcheck の原ページは「デスクトップの Arrow Lake-S をもとにしたチップ」と書くだけで同じダイとは明言していない(弱い根拠)。HX 自体を測った値はない(面積 117.4mm² は 285K の実測値の流用) |
 | Arrow Lake-S(285K) | 既存の値(HighYield 117.241 / 23 / 86.648 / 24.475 / 302.944)を確認。Kurnal Insights の実測値(117.4 / 23.1 / 86.6 / 24.7)ともおおむね合う |
 | Meteor Lake の Base タイル | **計測値はない**。265.65 mm²(23.1 × 11.5 mm)は、発売前にウェハ写真から出した見積もり([推定])。Kurnal Insights は Base タイルの写真を載せているが寸法は書いていない |
