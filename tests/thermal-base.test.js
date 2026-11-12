@@ -16,6 +16,12 @@ test('isPassiveDie / heatDies: 名前が Base で始まるダイだけが対象'
   assert.strictEqual(T.isPassiveDie({ name: 'Compute タイル' }), false);
   assert.strictEqual(T.isPassiveDie({ name: 'Database' }), false);
   assert.strictEqual(T.isPassiveDie(null), false);
+  // 名前判定の拡張(Foveros Base・ベースタイル・Interposer・括弧が空白なしで続く Base)
+  ['Foveros Base', 'ベースタイル', 'Interposer', 'インターポーザ', 'Base(22nm)'].forEach((n) => assert.strictEqual(T.isPassiveDie({ name: n }), true, n));
+  ['Database', 'Compute タイル', 'SoC タイル', 'IO タイル'].forEach((n) => assert.strictEqual(T.isPassiveDie({ name: n }), false, n));
+  // passive フラグ: 名前に関係なく除外。passive:false は名前判定に任せる
+  assert.strictEqual(T.isPassiveDie({ name: 'X タイル', passive: true }), true);
+  assert.strictEqual(T.isPassiveDie({ name: 'X タイル', passive: false }), false);
   assert.deepStrictEqual(T.heatDies([{ name: 'Base タイル' }, { name: 'SoC タイル' }]).map((d) => d.name), ['SoC タイル']);
 });
 
@@ -37,11 +43,29 @@ test('Base を含む設計の発熱面積は Base を除いた値(Lunar Lake 268
   const o = { cal, coolingId: 'thin-laptop', substrateId: 'organic', powerLimitW: 37 };
   const a = T.solveThrottle(Object.assign({ preset: p }, o));
   const withoutBase = T.solveThrottle(Object.assign({ preset: Object.assign({}, p, { dies: T.heatDies(p.dies) }) }, o));
-  assert.strictEqual(a.rTotal, withoutBase.rTotal);
-  assert.strictEqual(a.tjC, withoutBase.tjC);
-  const all = T.rTotal({ coolingId: 'thin-laptop', substrateId: 'organic', dieAreaMm2: 139.6 + 45.7 + base.mm2 });
-  assert.ok(a.rTotal > all.r); // Base を含めた面積で出した値より熱抵抗が大きい
+  // 基板経路(rSub)だけ Base を含む全面積、上面経路(rDie)は Base 除外
+  const heatA = 139.6 + 45.7; const allA = heatA + base.mm2;
+  const exp = T.rTotal({ coolingId: 'thin-laptop', substrateId: 'organic', dieAreaMm2: heatA, subAreaMm2: allA });
+  assert.strictEqual(a.rTotal, exp.r);
+  const heatOnly = T.rTotal({ coolingId: 'thin-laptop', substrateId: 'organic', dieAreaMm2: heatA });
+  const all = T.rTotal({ coolingId: 'thin-laptop', substrateId: 'organic', dieAreaMm2: allA });
+  assert.strictEqual(exp.rDie, heatOnly.rDie); // 上面経路は Base 除外のまま
+  assert.ok(exp.rSub < heatOnly.rSub && Math.abs(exp.rSub - all.rSub) < 1e-12); // 基板経路は全面積
+  assert.ok(a.rTotal < withoutBase.rTotal && a.rTotal > all.r);
+  assert.ok(Math.abs(a.tjC - 94.45) < 0.01); // 調査の試算(約 94.45℃)
+  assert.strictEqual(T.rTotal({ coolingId: 'thin-laptop', substrateId: 'organic', dieAreaMm2: heatA }).rSub, heatOnly.rSub); // subAreaMm2 省略時は従来どおり
   assert.strictEqual(ev('intel-lnl-268v').area.totalMm2, 139.6 + 45.7 + base.mm2); // 面積の合計表示は Base を含む
+});
+
+test('Lunar Lake の Base: nodeId は intel-14 の仮指定(実際は 22FFL)と注記、区分は sec、passive:true。185H・285H の Base も passive:true', () => {
+  ['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].forEach((id) => {
+    const b = pre(id).dies.find((d) => /^Base/.test(d.name));
+    assert.strictEqual(b.nodeId, 'intel-14', id); assert.strictEqual(b.s, 'sec', id); assert.strictEqual(b.passive, true, id);
+    assert.ok(/22FFL/.test(b.note) && /仮指定/.test(b.note) && /Kurnal/.test(b.note) && /Tomshardware/.test(b.note), id);
+  });
+  ['intel-mtl-185h', 'intel-arl-285h'].forEach((id) => assert.strictEqual(pre(id).dies.find((d) => /^Base/.test(d.name)).passive, true, id));
+  // 他の SKU の dies に passive は付かない
+  D.presets.filter((p) => !['intel-mtl-185h', 'intel-arl-285h', 'intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].includes(p.id)).forEach((p) => (p.dies || []).forEach((d) => assert.ok(!d.passive, p.id)));
 });
 
 test('Base の nodeId(285H は intel-14 の仮指定)は電力・熱の計算に使われない: 変えても温度・電力は同じ', () => {

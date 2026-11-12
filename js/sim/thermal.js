@@ -15,9 +15,11 @@
   const DEFAULT_THERMAL = { tDieMm: 0.3, kSi: 150, tSubMm: 1.0, rUnderSubKW: 20 };
   const MAX_ITER = 20; const TOL_K = 0.1; const RUNAWAY_TJ_C = 400; // 400℃超かつ変化量が増え続けるなら発散とみなす(400℃超でも収束していれば発散ではない)
 
-  // 発熱しないタイル(Foveros の土台・インターポーザ。名前が「Base」で始まるダイ)。熱の面積・電力密度から除く。
+  // 発熱しないタイル(Foveros の土台・インターポーザ)。dies の passive:true、または名前(Base / Foveros Base / ベース / Interposer / インターポーザで始まる)で判定。
+  // 熱の上面経路の面積・電力密度から除く。基板経路(rSub)だけは Base を通って基板に熱が流れるので、Base を含む全面積を使う(rTotal の subAreaMm2)。
   // 面積の合計表示(evalArea)・フロアプラン・歩留まり・コストには影響しない。
-  const isPassiveDie = (d) => !!(d && typeof d.name === 'string' && /^Base(\s|タイル|$)/.test(d.name));
+  const PASSIVE_NAME = /^(Foveros\s+)?(Base(?=$|[\s(（]|タイル)|ベース|Interposer|インターポーザ)/i;
+  const isPassiveDie = (d) => !!(d && (d.passive === true || (typeof d.name === 'string' && PASSIVE_NAME.test(d.name))));
   const heatDies = (dies) => (dies || []).filter((d) => !isPassiveDie(d));
 
   // 合成熱抵抗 [K/W]。基板の熱伝導率が未取得なら ok:false(他の基板の値で代用しない)。
@@ -33,7 +35,8 @@
     const aM2 = o.dieAreaMm2 * 1e-6;
     const rDie = (t.tDieMm * 1e-3) / (t.kSi * aM2);
     const rTop = rDie + cool.rK_W;
-    const rSub = (t.tSubMm * 1e-3) / (sub.conductivityWmK.v * aM2) + t.rUnderSubKW;
+    const subM2 = (o.subAreaMm2 > 0 ? o.subAreaMm2 : o.dieAreaMm2) * 1e-6; // 基板経路の面積(省略=ダイ面積)
+    const rSub = (t.tSubMm * 1e-3) / (sub.conductivityWmK.v * subM2) + t.rUnderSubKW;
     return {
       ok: true, r: 1 / (1 / rTop + 1 / rSub), rTop, rSub, rDie, tAmbC: cool.tAmbC, tjMaxC: cool.tjMaxC,
       tentative: sub.conductivityWmK.s === 'tmp' || cool.s === 'tmp',
@@ -66,7 +69,8 @@
       const hasBase = (preset.dies || []).some(isPassiveDie);
       return { ok: false, reason: hasBase ? '発熱するタイルの面積が全て未取得(Base タイルは発熱しないので熱の面積から除く)' : 'ダイ面積が全て未取得' };
     }
-    const rt = rTotal({ coolingId: o.coolingId, substrateId: o.substrateId, dieAreaMm2: dies.mm2 });
+    const all = area.dieAreaMm2(preset.dies || []); // Base を含む全ダイ(取得済みの合計)。基板経路だけに使う
+    const rt = rTotal({ coolingId: o.coolingId, substrateId: o.substrateId, dieAreaMm2: dies.mm2, subAreaMm2: all.mm2 });
     if (!rt.ok) return { ok: false, reason: rt.reason };
     const pl = o.powerLimitW != null ? o.powerLimitW : Infinity;
     const fMin = o.fMinRatio != null ? o.fMinRatio : 0.3;
