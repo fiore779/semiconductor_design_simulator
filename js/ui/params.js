@@ -48,6 +48,15 @@
     if (!v) return;
     const box = h('fieldset', { class: 'pgroup', id: 'pf-memory' }, h('legend', { text: 'メモリ' }));
     const memNotes = [];
+    if (v.kind === 'fixed' && v.gbSelectable) {
+      box.appendChild(h('p', { class: 'note', text: `${v.fixedMemory.onPackage ? 'オンパッケージ ' : ''}${v.fixedMemory.type}-${v.fixedMemory.mts}(固定。読み取り専用)` }));
+      if (v.selectable) box.appendChild(select('pf-mem-gb', '容量 (GB)', v.gbChoices.map((g) => ({ value: String(g), text: String(g) })), v.gb, false, (val) => cb.onMemoryGb(Number(val))));
+      else box.appendChild(h('p', { text: `容量: ${v.gb} GB(選択可: ${v.gbChoices.join(' / ')} GB)` }));
+      if (!v.selectable) box.appendChild(h('p', { class: 'small', text: v.locked ? '再現モードでは読み取り専用です。ロックを解除して改良モードにすると、容量を選べます。' : '読み取り専用です。' }));
+      box.appendChild(more('補足', { key: 'params:mem' }, [h('p', { class: 'small', text: v.srcText }), h('p', { class: 'small', text: v.note })]));
+      if (msgs && msgs.memory) box.appendChild(h('p', { class: 'err pmsg', role: 'alert', text: `✗ ${msgs.memory}` }));
+      el.appendChild(box); return;
+    }
     if (v.kind === 'fixed') { box.appendChild(h('p', { class: 'note', text: v.text })); el.appendChild(box); return; }
     if (!v.selectable) {
       box.appendChild(h('p', { text: `メモリ構成: ${v.label}${v.isRef ? '(基準構成)' : ''}` }));

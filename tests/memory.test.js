@@ -54,7 +54,7 @@ test('基準構成を明示的に選んでも(cfg.mem = ref)完全一致し、�
 });
 
 test('メモリ固定・混合・D はメモリ係数 1 で、選択肢が出ない', () => {
-  ['amd-strixhalo-395', 'apple-m4', 'qc-8elite', 'mt-9400', 'nv-thor'].forEach((id) => {
+  ['amd-strixhalo-395', 'qc-8elite', 'mt-9400', 'nv-thor'].forEach((id) => {
     assert.strictEqual(M.optionsOf(id), null, id);
     const d = impr(id);
     assert.strictEqual(d.cfg.mem, undefined, id);
@@ -168,7 +168,7 @@ test('保存往復: serialize → parse で選択が残り、評価も同じ。�
   assert.ok(!bad((x) => { x.cfg.mem = null; }).ok);
   assert.ok(!bad((x) => { x.cfg.mem = [1, 2]; }).ok);
   assert.ok(!bad((x) => { x.baseCfg.mem = { type: 'LPDDR5X', mts: 12000 }; }).ok);
-  assert.ok(!bad((x) => { x.presetId = 'apple-m4'; }).ok); // メモリ固定のチップに選択は付けられない
+  assert.ok(!bad((x) => { x.presetId = 'qc-8elite'; }).ok); // メモリ固定(選択肢なし)のチップに選択は付けられない
   assert.ok(!bad((x) => { x.presetId = null; x.origin = { mode: 'mix', parts: [] }; x.mix = { nodeId: null }; }).ok);
   assert.ok(!bad((x) => { x.cfg.mem = JSON.parse('{"__proto__":{"type":"DDR5"},"type":"DDR5","mts":5600}'); }).ok);
   // mem が無い古い設計はそのまま読める(基準構成として評価)
@@ -248,7 +248,7 @@ test('比較・書き出し: メモリ構成の違いが分かる', () => {
   assert.ok(EX.pngInfo(da, a.ev, {}).values.some((v) => /メモリ: LPDDR5X-8000/.test(v.text)));
   assert.ok(JSON.parse(EX.toJson(da)).cfg.mem.mts === 8000);
   // 固定メモリのチップにはメモリ行が出ない
-  const dm = impr('apple-m4');
+  const dm = impr('qc-8elite');
   assert.ok(!EX.resultRows(dm, ev(dm)).some((r) => r.item === 'メモリ構成'));
 });
 
@@ -360,7 +360,7 @@ test('メモリ OC の評価: 9950X の DDR5-5600→8000 は GB7 実測の範囲
   assert.ok(!bad((y) => { y.cfg.mem.oc = false; }).ok);
   assert.ok(!bad((y) => { y.cfg.mem = { type: 'LPDDR5X', mts: 8000, oc: true }; }).ok);
   assert.ok(!bad((y) => { y.cfg.mem.mts = 9000; }).ok);
-  assert.ok(!bad((y) => { y.presetId = 'apple-m4'; }).ok);
+  assert.ok(!bad((y) => { y.presetId = 'qc-8elite'; }).ok);
   // 差分・書き出し・比較・元に戻す
   assert.deepStrictEqual(DF.paramDiff(d).map((i) => [i.before, i.after]), [['DDR5-5600', 'DDR5-8000 OC']]);
   const row = EX.resultRows(d, a).find((r) => r.item === 'メモリ構成'); assert.ok(/メモリ OC/.test(row.note) && row.value === 'DDR5-8000 OC');
@@ -391,9 +391,10 @@ test('メモリ OC の UI ロジック(params.js の select / トグルの出し
 const LNL_FIXED = { 'intel-lnl-268v': 32, 'intel-lnl-258v': 32, 'intel-lnl-256v': 16 };
 
 test('Lunar Lake 3 SKU: 固定メモリ(LPDDR5X-8533・容量は 256V=16GB / 268V・258V=32GB・オンパッケージ・固定)で、選択肢は無い', () => {
-  assert.deepStrictEqual(Object.keys(D.memoryFixed).sort(), Object.keys(LNL_FIXED).sort());
   Object.keys(LNL_FIXED).forEach((id) => {
     const f = M.fixedOf(id);
+    assert.strictEqual(f.gbSelectable, false); assert.deepStrictEqual(f.gbChoices, [LNL_FIXED[id]]); assert.strictEqual(f.defaultGb, LNL_FIXED[id]);
+    assert.strictEqual(DS.fromPreset(preset(id), { mode: 'improve' }).memGb, undefined);
     assert.strictEqual(f.type, 'LPDDR5X'); assert.strictEqual(f.mts, 8533); assert.strictEqual(f.gb, LNL_FIXED[id]);
     assert.strictEqual(f.onPackage, true); assert.strictEqual(f.fixed, true); assert.strictEqual(f.s, 'pub'); assert.ok(/Intel ARK/.test(f.src));
     assert.strictEqual(M.optionsOf(id), null); assert.strictEqual(D.memory[id], undefined);
@@ -406,7 +407,7 @@ test('Lunar Lake 3 SKU: 固定メモリ(LPDDR5X-8533・容量は 256V=16GB / 268
     assert.strictEqual(ev(d).memory, null);
   });
   // 他の SKU は固定メモリの属性を持たない(従来どおり)
-  assert.strictEqual(M.fixedOf('intel-ptl-x9-388h'), null); assert.strictEqual(M.fixedOf('apple-m4'), null); assert.strictEqual(M.fixedOf('x'), null);
+  assert.strictEqual(M.fixedOf('intel-ptl-x9-388h'), null); assert.strictEqual(M.fixedOf('qc-8elite'), null); assert.strictEqual(M.fixedOf('x'), null);
   assert.ok(M.optionsOf('intel-ptl-x9-388h'));
 });
 
@@ -422,13 +423,85 @@ test('Lunar Lake: 旧保存データに mem があっても無視して固定値
   assert.deepStrictEqual(DS.parse(DS.serialize(x)).design.cfg.mem, { type: 'LPDDR5X', mts: 8000 });
 });
 
-// ---- 2026-11-13 の調査: Lunar Lake 以外のオンパッケージ候補は、公式で単一の容量・速度が確認できないため固定しない(設計書 §5.2.4 / §13.4) ----
-test('固定メモリは Lunar Lake の 3 SKU だけ。Apple M / Snapdragon / Dimensity / NVIDIA は固定にせず、評価もメモリ係数 1 のまま', () => {
-  assert.deepStrictEqual(Object.keys(D.memoryFixed).sort(), Object.keys(LNL_FIXED).sort());
-  const audited = ['apple-m1', 'apple-m4', 'apple-m5', 'apple-m5max', 'nv-orin-agx', 'nv-thor', 'nv-t239', 'nv-gb10', 'qc-7gen3'];
-  audited.forEach((id) => {
-    if (!D.presets || !D.presets.some((p) => p.id === id)) return;
-    assert.strictEqual(M.fixedOf(id), null, id);
-    assert.strictEqual(M.evaluate({ id }).mtFactor, 1, id);
+// ---- Apple M シリーズのオンパッケージ固定(2026-11-13。docs/research/onpackage-memory-2026-11-13.md)。種別・速度は固定、容量は公式構成から選ぶ ----
+const APPLE = {
+  'apple-m1': { type: 'LPDDR4X', mts: 4266, gb: [8, 16], s: 'pub' },
+  'apple-m1pro': { type: 'LPDDR5', mts: 6400, gb: [16, 32], s: 'sec' },
+  'apple-m1max': { type: 'LPDDR5', mts: 6400, gb: [32, 64], s: 'sec' },
+  'apple-m1ultra': { type: 'LPDDR5', mts: 6400, gb: [64, 128], s: 'sec' },
+  'apple-m2': { type: 'LPDDR5', mts: 6400, gb: [8, 16, 24], s: 'sec' },
+  'apple-m2pro': { type: 'LPDDR5', mts: 6400, gb: [16, 32], s: 'sec' },
+  'apple-m2max': { type: 'LPDDR5', mts: 6400, gb: [32, 64, 96], s: 'sec' },
+  'apple-m2ultra': { type: 'LPDDR5', mts: 6400, gb: [64, 128, 192], s: 'sec' },
+  'apple-m3': { type: 'LPDDR5', mts: 6400, gb: [8, 16, 24], s: 'pub' },
+  'apple-m3pro': { type: 'LPDDR5', mts: 6400, gb: [18, 36], s: 'pub' },
+  'apple-m3max': { type: 'LPDDR5', mts: 6400, gb: [48, 64, 128], s: 'pub' },
+  'apple-m4': { type: 'LPDDR5X', mts: 7500, gb: [16, 24, 32], s: 'sec' },
+  'apple-m4pro': { type: 'LPDDR5X', mts: 8533, gb: [24, 48, 64], s: 'sec' },
+  'apple-m5': { type: 'LPDDR5X', mts: 9600, gb: [16, 24, 32], s: 'sec' },
+  'apple-m5max': { type: 'LPDDR5X', mts: 9600, gb: [36, 48, 64, 128], s: 'sec' },
+};
+
+test('固定メモリは Lunar Lake 3 SKU + Apple M 15 SKU だけ。種別・速度はプリセットの cfg.memory と一致し、容量は配列で既定は最小', () => {
+  assert.deepStrictEqual(Object.keys(D.memoryFixed).sort(), Object.keys(LNL_FIXED).concat(Object.keys(APPLE)).sort());
+  Object.keys(APPLE).forEach((id) => {
+    const e = APPLE[id]; const f = M.fixedOf(id);
+    assert.strictEqual(f.type, e.type, id); assert.strictEqual(f.mts, e.mts, id);
+    assert.ok(preset(id).cfg.memory.includes(e.type + '-' + e.mts), id); // 評価・cfg.memory は不変(一致を確認)
+    assert.deepStrictEqual(f.gbChoices, e.gb, id); assert.strictEqual(f.gbSelectable, true, id); assert.strictEqual(f.defaultGb, e.gb[0], id);
+    assert.strictEqual(f.onPackage, true); assert.strictEqual(f.fixed, true);
+    assert.strictEqual(f.s, e.s, id); assert.strictEqual(f.typeS, 'sec', id); assert.strictEqual(f.gbS, 'pub', id);
+    assert.ok(/Apple Support/.test(f.src) && f.src.includes('https://support.apple.com/en-us/'), id);
+    assert.strictEqual(M.optionsOf(id), null, id); assert.strictEqual(M.evaluate({ id }).mtFactor, 1, id);
   });
+  // 公式でオンパッケージを確認した [公表] は M1・M3・M3 Pro・M3 Max だけ
+  assert.deepStrictEqual(Object.keys(APPLE).filter((id) => APPLE[id].s === 'pub').sort(), ['apple-m1', 'apple-m3', 'apple-m3max', 'apple-m3pro']);
+  // 調査で未確認のものは固定しない
+  ['nv-orin-agx', 'nv-thor', 'nv-t239', 'nv-gb10', 'qc-7gen3', 'qc-8elite', 'mt-9400', 'intel-mtl-185h', 'intel-ptl-x9-388h', 'amd-strixhalo-395', 'apple-a18pro'].forEach((id) => assert.strictEqual(M.fixedOf(id), null, id));
+});
+
+test('Apple M: 容量選択(既定・変更・選択肢外・再現モードのロック・評価不変・編集済みにならない)', () => {
+  Object.keys(APPLE).forEach((id) => {
+    const e = APPLE[id];
+    const d = impr(id);
+    assert.strictEqual(d.memGb, e.gb[0], id); assert.strictEqual(d.cfg.mem, undefined, id);
+    const v = PF.memoryView(d);
+    assert.strictEqual(v.kind, 'fixed'); assert.strictEqual(v.gbSelectable, true); assert.strictEqual(v.selectable, true); assert.deepStrictEqual(v.gbChoices, e.gb); assert.strictEqual(v.gb, e.gb[0]);
+    assert.ok(v.text.includes(e.type + '-' + e.mts + '(固定)'), id);
+    const last = e.gb[e.gb.length - 1];
+    const r = DS.setMemoryGb(d, last); assert.ok(r.ok, r.reason); assert.strictEqual(r.design.memGb, last);
+    assert.strictEqual(PF.memoryView(r.design).gb, last);
+    assert.ok(!DS.setMemoryGb(d, 12345).ok); assert.ok(!DS.setMemoryGb(d, '8').ok);
+    assert.ok(!DS.setMemory(d, e.type, e.mts).ok);
+    // 評価不変: 既定でも変更後でも、変更前の基準値と完全一致。編集済みにならない
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(snap(ev(r.design)))), baseline[id], id);
+    assert.strictEqual(E.isEdited(r.design), false, id); assert.strictEqual(DF.paramDiff(r.design).length, 0, id);
+    assert.strictEqual(ev(r.design).memory, null, id);
+    // 再現モード: ロックされ、選べない
+    const rep = DS.fromPreset(preset(id), { mode: 'reproduce' });
+    assert.strictEqual(PF.memoryView(rep).selectable, false); assert.ok(!DS.setMemoryGb(rep, last).ok);
+    // 保存往復で残る
+    assert.strictEqual(DS.parse(DS.serialize(r.design)).design.memGb, last, id);
+  });
+  assert.deepStrictEqual(PF.memoryView(impr('apple-m3max')).gbChoices, [48, 64, 128]); // 16 コア CPU 版(プリセットの 12P+4E)
+  // Lunar Lake(単一値)には容量選択を出さない
+  assert.ok(!DS.setMemoryGb(impr('intel-lnl-268v'), 32).ok);
+  assert.strictEqual(PF.memoryView(impr('intel-lnl-268v')).gbSelectable, undefined);
+  assert.strictEqual(PF.editLabel('memgb', null, 16, 32), 'メモリ容量 16→32 GB');
+});
+
+test('Apple M: 旧保存データの移行(mem は取り除き、容量は選択肢にあればそのまま・無ければ既定。memGb が無い旧データは既定)', () => {
+  const base = JSON.parse(DS.serialize(impr('apple-m3max')));
+  const mk = (f) => { const x = JSON.parse(JSON.stringify(base)); f(x); const r = DS.parse(JSON.stringify(x)); assert.ok(r.ok, r.reason); return r.design; };
+  assert.strictEqual(mk((x) => { delete x.memGb; }).memGb, 48);
+  assert.strictEqual(mk((x) => { x.memGb = 128; }).memGb, 128);
+  assert.strictEqual(mk((x) => { x.memGb = 96; }).memGb, 48); // 14 コア版の容量は M3 Max(16 コア)の選択肢に無い → 既定
+  assert.strictEqual(mk((x) => { x.memGb = 'x'; }).memGb, 48);
+  const o = mk((x) => { x.cfg.mem = { type: 'DDR5', mts: 5600 }; x.baseCfg.mem = { type: 'LPDDR5', mts: 6400 }; });
+  assert.strictEqual(o.cfg.mem, undefined); assert.strictEqual(o.baseCfg.mem, undefined);
+  // 容量を選べないチップに memGb があっても取り除く
+  const q = JSON.parse(DS.serialize(impr('intel-lnl-268v'))); q.memGb = 32;
+  assert.strictEqual(DS.parse(JSON.stringify(q)).design.memGb, undefined);
+  const w = JSON.parse(DS.serialize(impr('amd-strix-hx370'))); w.memGb = 16;
+  assert.strictEqual(DS.parse(JSON.stringify(w)).design.memGb, undefined);
 });

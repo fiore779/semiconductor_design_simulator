@@ -132,13 +132,16 @@
     if (FP && FP.tileRowPlace) FP.tileRowPlace(preset.id, dies, GAP_MM); // Meteor Lake・Arrow Lake-H: Compute | SoC | GPU の横一列、IOE は Compute の下、Base は全体の下
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
+    // メモリ固定で容量を選べるチップ(Apple M。2026-11-13): 容量(GB)の選択は cfg の外(design.memGb)に持つ。評価に使わないので、編集済み判定・差分には入れない
+    const MA = memoryApi(); const fx = MA ? MA.fixedOf(preset.id) : null;
+    const memGb = fx && fx.gbSelectable ? { memGb: fx.defaultGb } : null;
     return Object.assign({
       schema: SCHEMA, name: o.name || preset.name,
       origin: { mode, base: preset.id, parts: [] },
       locks: { params: mode === 'reproduce' },
       presetId: preset.id, dies,
       cfg, baseCfg: clone(cfg), package: defaultPackage(preset),
-    }, decorDies ? { decorDies } : {});
+    }, decorDies ? { decorDies } : {}, memGb || {});
   }
 
   // ---- パッケージ設定(冷却・基板・電力制限)。環境の設定でチップの設計ではないので、ロック(A 再現)の対象外 ----
@@ -310,6 +313,17 @@
     // baseCfg に mem が無い古い設計は、基準構成を補って「編集済み」の判定(cfg と baseCfg の比較)を合わせる
     if (d.baseCfg && !d.baseCfg.mem) d.baseCfg.mem = M.refOf(design.presetId);
     d.cfg.mem = sel;
+    return { ok: true, design: d, relaid: false };
+  }
+
+  // メモリ容量(GB)の選択。メモリ固定で容量が複数の公式構成から選べるチップ(Apple M)だけ。選択肢に無い値・ロック中(再現モード)は不可。
+  // 容量は評価に使わないので cfg ではなく design.memGb に持つ(編集済み判定・差分に入れない)
+  function setMemoryGb(design, gb) {
+    if (design.locks && design.locks.params) return fail(LOCKED);
+    const M = memoryApi(); const f = M ? M.fixedOf(design.presetId) : null;
+    if (!f || !f.gbSelectable) return fail('このチップはメモリ容量を選べません');
+    if (!f.gbChoices.includes(gb)) return fail(`メモリ容量 ${gb} GB は選択肢にありません(${f.gbChoices.join(' / ')} GB)`);
+    const d = clone(design); d.memGb = gb;
     return { ok: true, design: d, relaid: false };
   }
 
@@ -635,7 +649,10 @@
     if (d.presetId != null && memoryApi() && memoryApi().fixedOf(d.presetId)) {
       if (d.cfg && typeof d.cfg === 'object') delete d.cfg.mem;
       if (d.baseCfg && typeof d.baseCfg === 'object') delete d.baseCfg.mem;
-    }
+      // 容量: 選べるチップは、選択肢に含まれればそのまま・含まれなければ(未保存を含む)既定。選べないチップ(単一値)は持たない
+      const fx = memoryApi().fixedOf(d.presetId);
+      if (fx.gbSelectable) d.memGb = memoryApi().gbOrDefault(d.presetId, d.memGb); else delete d.memGb;
+    } else if (d.memGb !== undefined) delete d.memGb;
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };
     // baseCfg.mem は「元のチップの基準構成」でなければならない。違うものは基準に直し、cfg.mem との差を「編集」として扱う
@@ -835,7 +852,7 @@
 
   const api = {
     SCHEMA, dieRole, dieSize, fromPreset, clone, validate, serialize, parse, addCoreDef, fitDieToBlocks,
-    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setTdp, setCoreCount, setClock, setL3, setMemory, unlock, withCfg, clockOf, relayoutCompute,
+    cfgFromPreset, ensureCfg, defaultPackage, fromScratch, addPart, removeBlock, setBlockClock, setDieSize, deriveCfg, checkDieSize, isMix, ensurePackage, setCooling, setSubstrate, setPowerLimit, setTdp, setCoreCount, setClock, setL3, setMemory, setMemoryGb, unlock, withCfg, clockOf, relayoutCompute,
   };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.design = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

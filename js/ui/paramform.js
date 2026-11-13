@@ -104,6 +104,17 @@
     const opts = M.optionsOf(design.presetId);
     if (!opts) {
       const f = M.fixedOf(design.presetId);
+      if (f && f.gbSelectable) {
+        // 種別・速度は固定(読み取り専用)、容量だけ公式構成から選ぶ(Apple M。design.memGb。評価には使わない)
+        const mode = modeInfo(design);
+        const gb = M.gbOrDefault(design.presetId, design.memGb);
+        return {
+          kind: 'fixed', fixedMemory: f, gb, gbChoices: f.gbChoices.slice(), defaultGb: f.defaultGb, gbSelectable: true, selectable: !!(mode && mode.editable), locked: !!(mode && mode.locked),
+          text: `${f.onPackage ? 'オンパッケージ ' : ''}${f.type}-${f.mts}(固定)/ 容量 ${gb}GB(選択可: ${f.gbChoices.join(' / ')}GB)`,
+          srcText: `オンパッケージ [${SRC_TEXT[f.s] || f.s}] / 種別・速度 [${SRC_TEXT[f.typeS] || f.typeS}] / 容量の構成 [${SRC_TEXT[f.gbS] || f.gbS}]。${f.src}`,
+          note: '容量は性能(ST/MT)・電力・温度の計算には使いません(表示と保存だけ)。既定は公式構成のうち最小(プリセットは容量を持たないため)。',
+        };
+      }
       if (f) return { kind: 'fixed', text: `${f.onPackage ? 'オンパッケージ ' : ''}${f.type}-${f.mts} / ${f.gb}GB(型番で固定。Intel ARK)`, fixedMemory: f };
       return { kind: 'fixed', text: 'メモリは SoC に固定(選択不可)' };
     }
@@ -127,6 +138,7 @@
     if (field === 'count') return `${type} コア数 ${before}→${after}`;
     if (field === 'clock') return `${type} クロック ${before ? trimNum(before) : '未取得'}→${trimNum(after)} GHz`;
     if (field === 'memory') return `メモリ ${before}→${after}`;
+    if (field === 'memgb') return `メモリ容量 ${before}→${after} GB`;
     return `L3 ${trimNum(before)}→${trimNum(after)} MB`;
   }
 

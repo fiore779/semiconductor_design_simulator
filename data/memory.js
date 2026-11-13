@@ -68,6 +68,41 @@
     'intel-lnl-256v': fx(16, 240954),
   };
 
+  // Apple M シリーズ(2026-11-13 追加。ユーザー指示「SoC のパッケージ上に実装されているものだけを固定する」。docs/research/onpackage-memory-2026-11-13.md)。
+  // 種別・速度は固定(読み取り専用)。容量は 1 型番に複数の公式構成があるので gb は配列(選択肢)で、既定 defaultGb を持つ。
+  //   defaultGb: プリセットは容量を持たない(cfg.memory は種別・速度・バス幅・帯域だけ)ので、選択肢の最小(= 基本構成)を既定とする。容量は評価に使わない。
+  //   s: オンパッケージの根拠の区分(M1・M3/Pro/Max は Apple Newsroom の custom package で [公表]、それ以外は Wikipedia で [二次])。
+  //   typeS: 種別・速度の区分。Apple は LPDDR の種別と MT/s を公表しない(Support・Newsroom は容量と帯域のみ)ので、全件 [二次](Wikipedia)。
+  //   gbS: 容量の構成の区分。Apple Support の技術仕様ページの標準構成 + Configurable to で [公表]。
+  //   M3 Max は 16 コア CPU 版(プリセットの 12P+4E)の一覧(14 コア CPU 版は 36 / 96GB で含めない)。
+  //   M5 Max はプリセットが GPU 構成を持たず(40 コア版か 32 コア版か決められない)、両版の公式構成(40 コア: 48/64/128、32 コア: 36)を合わせた一覧にする。
+  const NEWS = 'Apple Newsroom';
+  const SUP = 'Apple Support';
+  const US = 'https://support.apple.com/en-us/';
+  const ap = (type, mts, gb, onS, ground, urls, extra) => ({
+    type, mts, gb, defaultGb: gb[0], onPackage: true, fixed: true, s: onS, typeS: 'sec', gbS: 'pub',
+    src: `オンパッケージ: ${ground}。種別・速度: Wikipedia [二次](Apple は非公表)。容量の構成: ${SUP}(2026-11-13) ${urls.map((u) => US + u).join(' 、')}` + (extra ? `。${extra}` : ''),
+  });
+  const GR_PUB = (u) => `${NEWS} の custom package の記述 [公表] ${u}`;
+  const GR_SEC = (w) => `Wikipedia の ${w} [二次](Apple 公式の文言は未取得)`;
+  Object.assign(FIXED, {
+    'apple-m1': ap('LPDDR4X', 4266, [8, 16], 'pub', GR_PUB('https://www.apple.com/newsroom/2020/11/apple-unleashes-m1/'), ['111883']),
+    'apple-m1pro': ap('LPDDR5', 6400, [16, 32], 'sec', GR_SEC('Apple M1(memory on package)'), ['111902', '111901']),
+    'apple-m1max': ap('LPDDR5', 6400, [32, 64], 'sec', GR_SEC('Apple M1(memory on package)'), ['111901', '111900']),
+    'apple-m1ultra': ap('LPDDR5', 6400, [64, 128], 'sec', GR_SEC('Apple M1(memory on package)。Newsroom の packaging architecture は 2 ダイの接続の話'), ['111900'], '速度 6400 はプリセットの既存の記録'),
+    'apple-m2': ap('LPDDR5', 6400, [8, 16, 24], 'sec', GR_SEC('Apple M2(system-in-a-package)'), ['111867', '111837']),
+    'apple-m2pro': ap('LPDDR5', 6400, [16, 32], 'sec', GR_SEC('Apple M2(system-in-a-package)'), ['111340', '111837']),
+    'apple-m2max': ap('LPDDR5', 6400, [32, 64, 96], 'sec', GR_SEC('Apple M2(system-in-a-package)'), ['111340', '111835'], '96GB は GPU 38 コア版のみ'),
+    'apple-m2ultra': ap('LPDDR5', 6400, [64, 128, 192], 'sec', GR_SEC('Apple M2(system-in-a-package)'), ['111835']),
+    'apple-m3': ap('LPDDR5', 6400, [8, 16, 24], 'pub', GR_PUB('https://www.apple.com/newsroom/2023/10/apple-unveils-m3-m3-pro-and-m3-max-the-most-advanced-chips-for-a-personal-computer/'), ['117735']),
+    'apple-m3pro': ap('LPDDR5', 6400, [18, 36], 'pub', GR_PUB('同上(M3 ファミリー)'), ['117736', '117737']),
+    'apple-m3max': ap('LPDDR5', 6400, [48, 64, 128], 'pub', GR_PUB('同上(M3 ファミリー)'), ['117736', '117737'], '16 コア CPU 版(プリセットの 12P+4E)の一覧。14 コア CPU 版は 36 / 96GB'),
+    'apple-m4': ap('LPDDR5X', 7500, [16, 24, 32], 'sec', GR_SEC('Apple M4(packaged with LPDDR5X unified memory。on-package の明記ではない)'), ['121552', '121555']),
+    'apple-m4pro': ap('LPDDR5X', 8533, [24, 48, 64], 'sec', GR_SEC('Apple M4(packaged with LPDDR5X unified memory。on-package の明記ではない)'), ['121555', '121553'], '64GB は Mac mini の構成'),
+    'apple-m5': ap('LPDDR5X', 9600, [16, 24, 32], 'sec', GR_SEC('Apple M5(unified memory in a single package)'), ['125405']),
+    'apple-m5max': ap('LPDDR5X', 9600, [36, 48, 64, 128], 'sec', GR_SEC('Apple M5(unified memory in a single package)。Newsroom の advanced packaging は 2 ダイの接続の話'), ['126318'], 'GPU 40 コア版は 48/64/128GB、GPU 32 コア版は 36GB(プリセットは GPU 構成を持たないので両版を合わせた一覧)'),
+  });
+
   // max 以下の LADDER の値 + max 自身(例: 7467 は LADDER に無いが、Intel 185H の対応最大なので足す)
   function speedsOf(type, max) {
     const l = (LADDER[type] || []).filter((v) => v <= max);

@@ -35,9 +35,26 @@
     return e ? { ref: Object.assign({}, e.ref), bits: e.bits, options: e.options.map((x) => Object.assign({}, x, { speeds: x.speeds.slice(), ocSpeeds: ocSpeeds(x) })) } : null;
   }
   // メモリ固定(オンパッケージ。SDS_DATA.memoryFixed)。{ type, mts, gb, onPackage, fixed, s, src } か null。固定でないチップは null
+  // gb は単一値(Lunar Lake。型番で 1 つ)か配列(Apple M。公式構成から選ぶ)。どちらでも、gbChoices(配列)・defaultGb・gbSelectable(配列のとき true)を付ける。
+  // typeS(種別・速度の区分)・gbS(容量の区分)が無ければ s と同じ
   function fixedOf(presetId) {
     const t = (root.SDS_DATA && root.SDS_DATA.memoryFixed) || {};
-    return typeof presetId === 'string' && Object.prototype.hasOwnProperty.call(t, presetId) ? Object.assign({}, t[presetId]) : null;
+    if (!(typeof presetId === 'string' && Object.prototype.hasOwnProperty.call(t, presetId))) return null;
+    const f = Object.assign({}, t[presetId]);
+    const sel = Array.isArray(f.gb);
+    f.gbChoices = sel ? f.gb.slice() : [f.gb];
+    if (sel) f.gb = f.gb.slice();
+    f.gbSelectable = sel && f.gb.length > 1;
+    if (f.defaultGb == null) f.defaultGb = sel ? f.gb[0] : f.gb;
+    if (f.typeS == null) f.typeS = f.s;
+    if (f.gbS == null) f.gbS = f.s;
+    return f;
+  }
+  // 容量(GB)の検証と既定への寄せ。選択肢に含まれればそのまま、含まれなければ(未指定を含む)既定
+  function gbOrDefault(presetId, gb) {
+    const f = fixedOf(presetId);
+    if (!f) return null;
+    return f.gbChoices.includes(gb) ? gb : f.defaultGb;
   }
   const refOf = (presetId) => { const e = entry(presetId); return e ? { type: e.ref.type, mts: e.ref.mts } : null; };
 
@@ -105,7 +122,7 @@
   const OC_WARNING = 'メモリ OC は安定動作を保証しません。この速度での動作は推定(確度:低)です';
   const OC_EXTRAPOLATION = 'この OC 速度は GB7 の実測(DDR5-8000 まで・9950X の MT のみ)の範囲外で、外挿です(確度:低)';
 
-  const api = { B_MT, B_MT_RANGE, B_ST, LATENCY_NS, OC_LADDER, GB7_MEASURED_MAX, WARNING, OC_WARNING, OC_EXTRAPOLATION, label, bandwidthGBs, optionsOf, fixedOf, refOf, check, evaluate, describe, describeParts };
+  const api = { B_MT, B_MT_RANGE, B_ST, LATENCY_NS, OC_LADDER, GB7_MEASURED_MAX, WARNING, OC_WARNING, OC_EXTRAPOLATION, label, bandwidthGBs, optionsOf, fixedOf, gbOrDefault, refOf, check, evaluate, describe, describeParts };
   root.SDS = root.SDS || {}; root.SDS.sim = root.SDS.sim || {}; root.SDS.sim.memory = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

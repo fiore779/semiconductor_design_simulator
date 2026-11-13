@@ -140,9 +140,21 @@ Object.keys(D.memoryFixed || {}).forEach((id) => {
   ok(!(D.memory && D.memory[id]), `memoryFixed ${id}: 選択肢の表(memory)にも載っている`);
   ok(typeof f.type === 'string' && f.type && Object.prototype.hasOwnProperty.call(D.memoryLadder || {}, f.type), `memoryFixed ${id}: type が不正`);
   ok(Number.isInteger(f.mts) && f.mts > 0, `memoryFixed ${id}: mts が不正`);
-  ok(Number.isInteger(f.gb) && f.gb > 0, `memoryFixed ${id}: gb が不正`);
+  // gb: 単一の正整数(型番で 1 つ)か、2 件以上の昇順の正整数配列(公式構成の選択肢。defaultGb が含まれること)
+  if (Array.isArray(f.gb)) {
+    ok(f.gb.length >= 2 && f.gb.every((v, i) => Number.isInteger(v) && v > 0 && (i === 0 || v > f.gb[i - 1])), `memoryFixed ${id}: gb 配列が不正(2 件以上の昇順の正整数)`);
+    ok(f.gb.includes(f.defaultGb), `memoryFixed ${id}: defaultGb が gb に含まれない`);
+  } else {
+    ok(Number.isInteger(f.gb) && f.gb > 0, `memoryFixed ${id}: gb が不正`);
+    ok(f.defaultGb === undefined, `memoryFixed ${id}: 単一の gb に defaultGb は不要`);
+  }
   ok(f.onPackage === true && f.fixed === true, `memoryFixed ${id}: onPackage / fixed が true でない`);
   ok(['pub', 'sec'].includes(f.s) && typeof f.src === 'string' && f.src, `memoryFixed ${id}: 区分(pub/sec)・出典が無い`);
+  ok(['typeS', 'gbS'].every((k) => f[k] === undefined || ['pub', 'sec'].includes(f[k])), `memoryFixed ${id}: typeS / gbS が pub/sec でない`);
+  // 種別・速度は、プリセットの cfg.memory 文字列(評価は触らない)に含まれていること
+  const pr = (D.presets || []).find((p) => p.id === id);
+  const ms = pr && pr.cfg && pr.cfg.memory;
+  if (typeof ms === 'string') ok(ms.includes(`${f.type}-${f.mts}`), `memoryFixed ${id}: 種別・速度 ${f.type}-${f.mts} がプリセットの cfg.memory「${ms}」に含まれない`);
 });
 
 console.log(`プリセット ${(D.presets || []).length} 件 / ファイル ${files.length} / nodes ${(D.nodes || []).length} / substrates ${(D.substrates || []).length} / cooling ${(D.cooling || []).length} / gb7 ${(D.gb7Scores || []).length}`);
