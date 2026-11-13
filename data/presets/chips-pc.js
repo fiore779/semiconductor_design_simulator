@@ -546,4 +546,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   };
   Object.keys(GB7_BIAS).forEach((id) => { ERR_ADD[id] = Object.assign({}, ERR_ADD[id] || {}); ['st', 'mt'].forEach((k) => { ERR_ADD[id][k] = (ERR_ADD[id][k] ? ERR_ADD[id][k] + ' ' : '') + GB7_BIAS[id]; }); });
   P.forEach((p) => { if (ERR_ADD[p.id]) { const e = p.errCause = Object.assign({}, p.errCause || {}); ['st', 'mt'].forEach((k) => { if (ERR_ADD[p.id][k]) e[k] = (e[k] ? e[k] + ' ' : '') + ERR_ADD[p.id][k]; }); } });
+  // 2026-11-13: 公開値を Windows のみの中央値(区分 実測)に差し替えた SKU は、errCause の先頭に注記を付ける(本文の数値は変えない。旧公開値に対する分析のまま。設計書 §13.4 に見直しを登録)
+  const GB7_NOTE = '【2026-11-13】公開値を Windows のみの中央値(実測)に差し替え済み。以下は差し替え前の公開値に対する分析(数値は当時のもの。見直しは設計書 §13.4)。';
+  const gbKind = {}; ((window.SDS_DATA && window.SDS_DATA.gb7Scores) || []).forEach((r) => { gbKind[r.name] = r.kind; });
+  P.forEach((p) => { if (p.errCause && gbKind[p.gb7] === '実測') { Object.keys(p.errCause).forEach((k) => { if (typeof p.errCause[k] === 'string' && p.errCause[k]) p.errCause[k] = GB7_NOTE + p.errCause[k]; }); } });
 })();

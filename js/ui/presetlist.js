@@ -80,7 +80,7 @@
     if (k === '個別投稿の中央値') return { label: '個別投稿の中央値', n: null, low: true };
     if (k.indexOf('個別投稿') === 0) return { label: k, n: null, low: true };
     if (k === 'チャート') return { label: 'チャート', n: null, low: false };
-    if (k === '実測') return { label: '実測(Windows)', n: null, low: null }; // 2026-11-13: PC 系 CPU の Windows のみの中央値。low は判断しない(null)。評価は不変
+    if (k === '実測') return { label: n == null ? '実測(Windows)' : `実測(Windows) n=${n}`, n, low: null }; // 2026-11-13: PC 系 CPU の Windows のみの中央値。low は判断しない(null)。評価は不変
     return { label: k || '区分不明', n: null, low: null };
   }
 
