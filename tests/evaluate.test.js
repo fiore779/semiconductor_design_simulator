@@ -311,3 +311,55 @@ test('改良 B(編集後): MT の係数は元のチップの公表電力で決�
     assert.strictEqual(c.fallback, false);
   });
 });
+
+// ---- 2026-11-13(レビュー対応): Arrow Lake のリング接続 E(uarch 記録「Skymont (Arrow Lake リング E)」。u = Lion Cove の u × 0.90)----
+const ARL_RING_IDS = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'];
+const ARL_RING_E = 'Skymont (Arrow Lake リング E)';
+test('旧保存データの移行: 旧名「Skymont」で保存した Arrow Lake 4 件のリング接続 E は、parse で cfg・baseCfg・blocks の 3 か所とも新名になり、評価は新規作成と同じ値。LP-E とほかのチップの Skymont は変えない', () => {
+  ARL_RING_IDS.forEach((id) => {
+    const fresh = design.fromPreset(D.presets.find((p) => p.id === id), { mode: 'improve' });
+    const old = JSON.parse(design.serialize(fresh)); let n = 0;
+    const back = (c) => { if (c.uarch === ARL_RING_E) { c.uarch = 'Skymont'; n++; } };
+    old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
+    assert.ok(n >= 3, id); assert.ok(!JSON.stringify(old).includes(ARL_RING_E), id);
+    const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
+    assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)), id); // 3 か所とも新名に戻る(LP-E は Skymont のまま)
+    const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
+    assert.strictEqual(a.st.score, b.st.score, id); assert.strictEqual(a.mt.score, b.mt.score, id); assert.strictEqual(a.mt.errPct, b.mt.errPct, id);
+    assert.deepStrictEqual(a.mt.corrSources, b.mt.corrSources, id); assert.ok(a.mt.corrSources.includes('ratio'), id);
+    assert.strictEqual(a.edited, false, id); // 名前の移行は「編集」にならない
+  });
+  // 285H の LP-E(リングの外)は Skymont のまま
+  const h = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285h')))).design;
+  assert.strictEqual(h.cfg.cores.find((c) => c.type === 'LP-E').uarch, 'Skymont');
+  assert.ok(h.dies.some((die) => die.blocks.some((b) => b.coreType === 'LP-E' && b.uarch === 'Skymont')));
+  // 対象外のチップ(Lunar Lake の Skymont)は置き換えない
+  const l = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-lnl-258v')))).design;
+  assert.ok(l.cfg.cores.some((c) => c.uarch === 'Skymont')); assert.ok(!JSON.stringify(l).includes(ARL_RING_E));
+});
+
+test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cove の u × 0.90 [推定・校正値]」が出る(Arrow Lake 4 件だけ)。inRatioSet は 285K・265K の MT だけ true(比を決めた SKU。275HX・285H は検証側)', () => {
+  assert.ok(E.RATIO_INFO.startsWith('E の u は Lion Cove の u × 0.90 [推定・校正値](285K・265K の MT に合わせた値'));
+  const withInfo = D.presets.filter((p) => ev(p.id).warnings.some((w) => w.level === 'info' && w.text === 'MT: ' + E.RATIO_INFO)).map((p) => p.id).sort();
+  assert.deepStrictEqual(withInfo, ARL_RING_IDS.slice().sort());
+  const inSet = D.presets.filter((p) => ev(p.id).mt.inRatioSet).map((p) => p.id).sort();
+  assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
+  D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
+  // 評価の数値は不変(2026-11-13 の b2a8a08 の値): 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%
+  const want = { 'intel-arl-285k': 0.14, 'intel-arl-265k': -4.15, 'intel-arl-275hx': 4.77, 'intel-arl-285h': 8.46 };
+  ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
+  // 編集後は公開値が無いので印を外す
+  const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
+  const r = design.setCoreCount(u, 'E', 8); assert.ok(r.ok, r.reason);
+  const e2 = E.evaluate(r.design, ctx); assert.strictEqual(e2.edited, true); assert.strictEqual(e2.mt.inRatioSet, false);
+  // 再現の表・比較の表にも出る。265K は「σ の合わせには使っていない」と併記(どちらも真)
+  const RP = require('../js/ui/reproduce.js'); const CF = require('../js/ui/compareform.js');
+  const mtRow = (id) => RP.reproductionRows(ev(id)).find((x) => /マルチ性能/.test(x.label));
+  assert.match(mtRow('intel-arl-285k').note, /学習内の誤差\(検証ではない\)/);
+  assert.match(mtRow('intel-arl-265k').note, /学習内の誤差\(検証ではない\)/); assert.match(mtRow('intel-arl-265k').note, /σ の合わせには使っていない/);
+  assert.doesNotMatch(mtRow('intel-arl-275hx').note, /学習内/);
+  const cell = (id) => { const pp = D.presets.find((x) => x.id === id); return CF.cellOf('mt', design.fromPreset(pp), ev(id)); };
+  assert.ok(cell('intel-arl-285k').sub.includes(E.RATIO_INFO)); assert.ok(cell('intel-arl-285k').sub.some((t) => /学習内の誤差\(検証ではない\)/.test(t)));
+  assert.ok(cell('intel-arl-275hx').sub.includes(E.RATIO_INFO)); assert.ok(!cell('intel-arl-275hx').sub.some((t) => /学習内/.test(t)));
+  assert.ok(!cell('intel-adl-12900k').sub.includes(E.RATIO_INFO));
+});

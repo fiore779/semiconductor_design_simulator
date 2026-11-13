@@ -6,6 +6,9 @@
 (function (root) {
   'use strict';
 
+  // uarch 記録の uRatio(Lion Cove の u × 比)を決めるのに使った SKU(MT)。設計書 §5.3.0【2026-11-13 Arrow Lake のリング接続 E】
+  const RATIO_TRAIN_IDS = ['intel-arl-285k', 'intel-arl-265k'];
+  const RATIO_INFO = 'E の u は Lion Cove の u × 0.90 [推定・校正値](285K・265K の MT に合わせた値。1 クロックあたりの比では約 0.76 で、測定の 0.86〜0.88 より低い)';
   const TOLERANCE = 0.10; // 性能の許容誤差 ±10%(設計書 §5.3)
 
   function sims() { return (root.SDS && root.SDS.sim) || {}; }
@@ -45,6 +48,8 @@
     base.calibNotUsedForMt = kind === 'mt' && !!preset.calib && !base.isCalibSample;
     // 校正済み定数 uCal(複数 SKU の中央値。§5.3.0 M6 第 4 段)で ST を出す uarch の SKU は、その中央値の学習に使われている(代表ではないが、誤差は検証にならない)
     base.inUCalSet = false;
+    // 285K・265K の MT は「Skymont (Arrow Lake リング E)」の比 0.90 を決めるのに使った SKU(学習内の誤差。検証ではない)。275HX・285H は検証側(2026-11-13)
+    base.inRatioSet = false;
     if (kind === 'st' && ctx.cal && ctx.cal.uFixed) { const tc = S.perf.topCore(preset.cfg.cores || []); const uf = tc && ctx.cal.uFixed[tc.uarch]; base.inUCalSet = !!(uf && !preset.calib && gb7 && typeof gb7.single === 'number' && !(uf.excluded || []).includes(preset.id)); } // 標本から除外した SKU(14700HX)は学習内ではない
     const pubVal = gb7 ? (kind === 'st' ? gb7.single : gb7.multi) : null;
     if (typeof pubVal === 'number') { base.published = pubVal; base.publishedKind = gb7.kind || null; }
@@ -66,6 +71,7 @@
       base.corrSources = r.detail.map((d) => d.corrSource);
       base.corrFroms = r.detail.map((d) => d.corrFrom || d.corrSource);
     }
+    if (kind === 'mt') base.inRatioSet = RATIO_TRAIN_IDS.includes(preset.id) && (base.corrSources || []).includes('ratio');
     base.refs.forEach((x) => { x.diffPct = pct(r.score, x.value); });
     if (pubVal == null) base.reason = '公開値が未取得のため比較できません';
     return base;
@@ -120,6 +126,7 @@
       w.push({ level: 'warn', text: 'MT: 確度は低です(並列効率 σ は AMD の代表 3 件だけで合わせ、SMT の効果 γ は未校正、メモリ帯域の頭打ちは未実装)' });
       if (mt.fallback) w.push({ level: 'warn', text: 'MT: in-order コアの仮の IPC を含むため信頼できません' });
       if (mt.mixedClock) w.push({ level: 'warn', text: 'MT: 一部のコアのブーストクロックが未取得で基本クロックを使っており、コア種別間でクロックの出所が混在しています(数値が歪みます)' });
+      if ((mt.corrSources || []).includes('ratio')) w.push({ level: 'info', text: 'MT: ' + RATIO_INFO });
       if ((mt.corrFroms || mt.corrSources) && (mt.corrFroms || mt.corrSources).includes('isa')) w.push({ level: 'warn', text: 'MT: 一部のコアは専用の補正がなく、命令セット平均で代用しています' });
     } else w.push({ level: 'info', text: `MT を計算できません: ${mt.reason}` });
     return w;
@@ -299,7 +306,7 @@
       if (mt.ok && mt.detail) mt.detail.forEach((dt) => { const g = preset.cfg.cores.find((x) => x.type === dt.type); dt.label = (g && (g.label || g.type)) || dt.type; });
     }
     [st, mt].forEach((r) => {
-      r.isMix = true; r.edited = false; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false;
+      r.isMix = true; r.edited = false; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; r.inRatioSet = false;
       if (r.ok) { r.confidence = 'low'; r.reason = '混合設計の予測値のため公開値はありません'; }
     });
     // 面積: 使用率と、ブロックごとの面積の区分(出所 class = table/estimated/unknown と、移植の換算の有無 portConverted の 2 軸)
@@ -380,7 +387,7 @@
     if (edited) {
       result.edited = true;
       // 編集後の設計に公開値は無い: 公開値との差は出さず、元のチップの値は basePublished に残す
-      [st, mt].forEach((r) => { r.refs = []; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
+      [st, mt].forEach((r) => { r.refs = []; r.published = null; r.publishedKind = null; r.errPct = null; r.isCalibSample = false; r.calibNotUsedForMt = false; r.inUCalSet = false; r.inRatioSet = false; if (r.ok) r.reason = '編集後の予測値のため公開値はありません'; });
       area.recomputedReason = 'コア別面積は未取得のため編集では再計算しない';
       result.power.recomputed = false;
       result.warnings.push({ level: 'warn', text: '編集後の数値は予測です。公開値ではありません' });
@@ -417,7 +424,7 @@
     return result;
   }
 
-  const api = { TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
+  const api = { RATIO_INFO, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

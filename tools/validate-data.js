@@ -78,6 +78,19 @@ Object.keys(D.uarch || {}).forEach((name) => {
   ok(Array.isArray(c.excluded), `uarch ${name}.uCal.excluded が配列でない`);
   (Array.isArray(c.excluded) ? c.excluded : []).forEach((id) => ok((D.presets || []).some((p) => p.id === id), `uarch ${name}.uCal.excluded の id「${id}」が presets に無い`));
 });
+// uRatioOf: 借り先の uarch が存在し、cal.u に直接 u を持つこと(代表の u か uCal)。uRatio は 0 より大きい有限数(2026-11-13)
+(function () {
+  const P = require(path.join(root, 'js', 'sim', 'perf.js'));
+  const gb7 = {}; (D.gb7Scores || []).forEach((r) => { gb7[r.name] = r; });
+  const cal = P.calibrate(D.presets || [], gb7, D.uarch || {}, 'rep', null);
+  Object.keys(D.uarch || {}).forEach((name) => {
+    const u = D.uarch[name];
+    if (u.uRatioOf == null && u.uRatio == null) return;
+    ok(typeof u.uRatioOf === 'string' && !!D.uarch[u.uRatioOf], `uarch ${name}.uRatioOf「${u.uRatioOf}」が uarch に無い`);
+    ok(typeof u.uRatio === 'number' && Number.isFinite(u.uRatio) && u.uRatio > 0, `uarch ${name}.uRatio が 0 より大きい有限数でない`);
+    ok(cal.u && typeof cal.u[u.uRatioOf] === 'number', `uarch ${name}.uRatioOf「${u.uRatioOf}」が cal.u に直接 u を持たない(代表の u か uCal が必要)`);
+  });
+})();
 const sig = (p) => (((p.cfg && p.cfg.cores) || []).map((c) => `${c.uarch}x${c.count}`).sort().join('+')) + '|' + (p.dies || []).map((d) => `${d.name}:${d.mm2}`).join(',');
 const sigCount = new Map();
 // 2026-11-04: Core Ultra 5 325・Core 5 320 もダイ面積が未取得(Kraken Point と同じ扱い。ユーザーは 2 件の追加を指示しただけで、例外の登録は実装上の判断)

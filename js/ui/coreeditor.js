@@ -88,7 +88,7 @@
         out.push(h('div', { class: 'big' }, h('span', { class: 'val', text: Math.round(st.score).toLocaleString('ja-JP') }), h('span', { class: 'unit', text: ' pt(ST 寄与・GB7 換算の予測)' })));
         if (st.deltaPct != null) out.push(h('p', { class: 'small', text: `基準 ${Math.round(st.baseScore).toLocaleString('ja-JP')} pt に対して ${st.deltaPct >= 0 ? '+' : ''}${Math.round(st.deltaPct * 10) / 10}%${ev.edited ? '' : '(未編集のため基準と同じ)'}` }));
         out.push(h('p', { class: 'small', text: `IPC ${Math.round(st.ipc * 100) / 100}(${CF.cpiText(st.parts)}。CPI の内訳)/ ${Math.round(st.fGHz * 100) / 100} GHz` }));
-        out.push(h('p', { class: 'small', text: st.corrFrom === 'isa' ? '補正: 基準のマイクロアーキに専用の補正が無く、命令セット平均で代用(確度:低)' : `補正: 基準のマイクロアーキ(${b.uarch})の値を借用(確度:低)` }));
+        out.push(h('p', { class: 'small', text: st.corrFrom === 'isa' ? '補正: 基準のマイクロアーキに専用の補正が無く、命令セット平均で代用(確度:低)' : st.corrFrom === 'ratio' ? `補正: 基準のマイクロアーキ(${b.uarch})は Lion Cove の u × 比 で補正(借用ではない。確度:低)` : `補正: 基準のマイクロアーキ(${b.uarch})の値を借用(確度:低)` }));
       } else out.push(h('p', { class: 'err', text: `✗ 性能を計算できません: ${st.reason}` }));
       // 面積
       const a = ev.area;

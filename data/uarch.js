@@ -11,6 +11,7 @@
 //                calib フラグ(校正の代表)とは別で、代表の u がある uarch はそちらを優先。GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも tests/perf.test.js の再計算テストが落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す。
 //   uFrom      = 別の uarch の ST 補正 u を借りる名前(同じコア設計の派生。例: Zen 5c → Zen 5)。その uarch に代表の u がなく、借り先に u があるときだけ使う。ISA 平均に落ちる前に試す(2026-11-02。設計書 §5.3.3 K)。
 //   uRatioOf / uRatio = 別の uarch の ST 補正 u に比 uRatio を掛けた値を u とする(u = uRatio × u(uRatioOf)。2026-11-13。借り先の u が動けば連動)。代表(calib:true)・uCal・uFrom が無く借り先に u があるときだけ使う。**σ の代表の判定(calibrateMt)では uarch 専用として扱わない**(corrSource は 'ratio')。使うのは 'Skymont (Arrow Lake リング E)' だけ。設計書 §5.3.0。
+//                uRatioOf の借り先は cal.u に直接 u を持つ uarch(代表の u か uCal がある uarch)に限る(uFrom・uRatio を連鎖させない。tools/validate-data.js が検査)。
 //   smt        = 1 or 2。vecBits = ベクトル幅(bit)。
 window.SDS_DATA = window.SDS_DATA || {};
 window.SDS_DATA.uarch = (function () {

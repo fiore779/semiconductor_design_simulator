@@ -641,6 +641,8 @@
     return warns;
   }
 
+  const ARL_RING_E = 'Skymont (Arrow Lake リング E)';
+  const ARL_RING_E_PRESETS = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'];
   function serialize(design) { return JSON.stringify(design); }
   function parse(text) {
     let d; try { d = JSON.parse(text); } catch (e) { return { ok: false, reason: 'JSON として読めません' }; }
@@ -653,6 +655,13 @@
       const fx = memoryApi().fixedOf(d.presetId);
       if (fx.gbSelectable) d.memGb = memoryApi().gbOrDefault(d.presetId, d.memGb); else delete d.memGb;
     } else if (d.memGb !== undefined) delete d.memGb;
+    // 旧保存データの uarch 名(2026-11-13): Arrow Lake のリング接続 E(285K・265K・275HX・285H の種別 E)は uarch 記録を「Skymont」から「Skymont (Arrow Lake リング E)」に分けた。
+    // 旧名で保存した設計は、cfg・baseCfg・blocks の 3 か所とも新名に置き換える(LP-E は対象外。評価は新規作成と同じ値になる)
+    if (ARL_RING_E_PRESETS.includes(d.presetId)) {
+      const fix = (c) => { if (c && c.type === 'E' && c.uarch === 'Skymont') c.uarch = ARL_RING_E; };
+      [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fix); });
+      (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core' && b.coreType === 'E' && b.uarch === 'Skymont') b.uarch = ARL_RING_E; }); });
+    }
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };
     // baseCfg.mem は「元のチップの基準構成」でなければならない。違うものは基準に直し、cfg.mem との差を「編集」として扱う

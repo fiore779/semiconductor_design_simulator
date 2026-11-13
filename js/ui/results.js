@@ -42,6 +42,7 @@
     if (r.ok && r.isCalibSample) body.push(note('校正に使った代表 SKU です。公開値と近いのは当然で、検証ではありません。', 'warn-note always'));
     else if (r.ok && r.inUCalSet) folded.push(note('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数です。公開値との差は学習内の誤差で、検証ではありません。', 'warn-note'));
     else if (r.ok && r.calibNotUsedForMt) folded.push(note('ST の補正には使ったが、MT の σ の合わせには使っていない SKU です。', 'warn-note'));
+    if (r.ok && r.inRatioSet) folded.push(note('285K・265K の MT は、E の u(Lion Cove の u × 0.90)をこの 2 件の MT に合わせて決めたため、学習内の誤差です(検証ではない)。', 'warn-note')); // 265K は calibNotUsedForMt と両方が真なので else if にしない
     (extra || []).forEach((e) => (isBanner(e) ? body.push(e) : folded.push(e)));
     body.push(notesFold(folded, key || 'res:st'));
     return h('section', { class: `card conf-card-${r.ok ? r.confidence : 'none'}`, 'aria-label': title },
@@ -184,6 +185,7 @@
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note always'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note always'));
       (ev.mt.detail || []).filter((d) => d.corrSource === 'isa').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${NO_OWN_CORR}`, 'warn-note')));
+      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.RATIO_INFO}`, 'warn-note')));
     }
     l3Notes(ev.mt).forEach((n) => mtExtra.push(n));
     el.appendChild(mixPerfCard('マルチ性能 (GB7 MT) 混合設計(予測)', ev.mt, mtExtra, 'res:mt'));
@@ -230,6 +232,7 @@
       }
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note always'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note always'));
+      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.RATIO_INFO}`, 'warn-note')));
     }
     if (memDesc && ev.mt.ok) ocNotes.forEach((t) => mtExtra.push(note(t, 'warn-note')));
     if (memDesc && ev.mt.ok) mtExtra.push(note(`${memDesc.config}。${memDesc.mt}。メモリ構成による係数は推定(確度:低。GB7 の ST 実測は 0 件、帯域と遅延は分離できていない)`, 'warn-note'));

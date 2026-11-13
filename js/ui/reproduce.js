@@ -29,6 +29,7 @@
     if (r.isCalibSample) add('校正に使った代表 SKU のため、一致して当然(検証ではない)');
     else if (r.inUCalSet) add('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
     else if (r.calibNotUsedForMt) add('ST の補正には使ったが、MT の σ の合わせには使っていない');
+    if (r.inRatioSet) add('E の u(Lion Cove の u × 0.90)を決めるのに使った SKU の MT のため、学習内の誤差(検証ではない)'); // 265K は calibNotUsedForMt と両方が真なので else if にしない
     if (isMt && r.mixedClock) add(MIXED_TEXT);
     if (!ok) add(r.causeNote ? `原因(調査済み): ${r.causeNote}` : '原因: モデルの限界か入力データ不足(未調査)');
     if (r.confidence === 'low') add('確度「低」');
