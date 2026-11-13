@@ -110,7 +110,6 @@
         const gb = M.gbOrDefault(design.presetId, design.memGb);
         return {
           kind: 'fixed', fixedMemory: f, gb, gbChoices: f.gbChoices.slice(), defaultGb: f.defaultGb, gbSelectable: true, selectable: !!(mode && mode.editable), locked: !!(mode && mode.locked),
-          text: `${f.onPackage ? 'オンパッケージ ' : ''}${f.type}-${f.mts}(固定)/ 容量 ${gb}GB(選択可: ${f.gbChoices.join(' / ')}GB)`,
           srcText: `オンパッケージ [${SRC_TEXT[f.s] || f.s}] / 種別・速度 [${SRC_TEXT[f.typeS] || f.typeS}] / 容量の構成 [${SRC_TEXT[f.gbS] || f.gbS}]。${f.src}`,
           note: '容量は性能(ST/MT)・電力・温度の計算には使いません(表示と保存だけ)。既定は公式構成のうち最小(プリセットは容量を持たないため)。',
         };

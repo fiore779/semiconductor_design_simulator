@@ -100,7 +100,7 @@
     'apple-m4': ap('LPDDR5X', 7500, [16, 24, 32], 'sec', GR_SEC('Apple M4(packaged with LPDDR5X unified memory。on-package の明記ではない)'), ['121552', '121555']),
     'apple-m4pro': ap('LPDDR5X', 8533, [24, 48, 64], 'sec', GR_SEC('Apple M4(packaged with LPDDR5X unified memory。on-package の明記ではない)'), ['121555', '121553'], '64GB は Mac mini の構成'),
     'apple-m5': ap('LPDDR5X', 9600, [16, 24, 32], 'sec', GR_SEC('Apple M5(unified memory in a single package)'), ['125405']),
-    'apple-m5max': ap('LPDDR5X', 9600, [36, 48, 64, 128], 'sec', GR_SEC('Apple M5(unified memory in a single package)。Newsroom の advanced packaging は 2 ダイの接続の話'), ['126318'], 'GPU 40 コア版は 48/64/128GB、GPU 32 コア版は 36GB(プリセットは GPU 構成を持たないので両版を合わせた一覧)'),
+    'apple-m5max': ap('LPDDR5X', 9600, [36, 48, 64, 128], 'sec', GR_SEC('Apple M5(unified memory in a single package)。Newsroom の advanced packaging は 2 ダイの接続の話'), ['126318'], 'GPU 40 コア版は 48/64/128GB、GPU 32 コア版は 36GB(既定 36GB は GPU 32 コア版の構成。プリセットは GPU 構成を持たないので両版を合わせた一覧)'),
   });
 
   // max 以下の LADDER の値 + max 自身(例: 7467 は LADDER に無いが、Intel 185H の対応最大なので足す)

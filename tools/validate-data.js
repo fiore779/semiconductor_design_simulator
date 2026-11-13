@@ -154,6 +154,7 @@ Object.keys(D.memoryFixed || {}).forEach((id) => {
   // 種別・速度は、プリセットの cfg.memory 文字列(評価は触らない)に含まれていること
   const pr = (D.presets || []).find((p) => p.id === id);
   const ms = pr && pr.cfg && pr.cfg.memory;
+  ok(typeof ms === 'string', `memoryFixed ${id}: プリセットの cfg.memory が文字列でない(プリセットが無い、または cfg.memory が未設定)`);
   if (typeof ms === 'string') ok(ms.includes(`${f.type}-${f.mts}`), `memoryFixed ${id}: 種別・速度 ${f.type}-${f.mts} がプリセットの cfg.memory「${ms}」に含まれない`);
 });
 

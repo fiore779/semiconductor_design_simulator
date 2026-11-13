@@ -467,7 +467,7 @@ test('Apple M: 容量選択(既定・変更・選択肢外・再現モードの�
     assert.strictEqual(d.memGb, e.gb[0], id); assert.strictEqual(d.cfg.mem, undefined, id);
     const v = PF.memoryView(d);
     assert.strictEqual(v.kind, 'fixed'); assert.strictEqual(v.gbSelectable, true); assert.strictEqual(v.selectable, true); assert.deepStrictEqual(v.gbChoices, e.gb); assert.strictEqual(v.gb, e.gb[0]);
-    assert.ok(v.text.includes(e.type + '-' + e.mts + '(固定)'), id);
+    assert.ok(v.srcText && v.note && v.fixedMemory.type === e.type && v.fixedMemory.mts === e.mts, id);
     const last = e.gb[e.gb.length - 1];
     const r = DS.setMemoryGb(d, last); assert.ok(r.ok, r.reason); assert.strictEqual(r.design.memGb, last);
     assert.strictEqual(PF.memoryView(r.design).gb, last);
@@ -488,6 +488,17 @@ test('Apple M: 容量選択(既定・変更・選択肢外・再現モードの�
   assert.ok(!DS.setMemoryGb(impr('intel-lnl-268v'), 32).ok);
   assert.strictEqual(PF.memoryView(impr('intel-lnl-268v')).gbSelectable, undefined);
   assert.strictEqual(PF.editLabel('memgb', null, 16, 32), 'メモリ容量 16→32 GB');
+});
+
+test('Apple M: memGb は履歴で戻る/やり直せる。すべて戻す(revertAll)では残る(仕様の固定)。混合(presetId null)の parse で削除', () => {
+  const d0 = impr('apple-m3max'); const r = DS.setMemoryGb(d0, 128); assert.ok(r.ok, r.reason);
+  const h = createHistory({});
+  h.push(d0, r.design, PF.editLabel('memgb', null, 48, 128), { coalesce: false });
+  assert.strictEqual(h.undo().memGb, 48);
+  assert.strictEqual(h.redo().memGb, 128);
+  assert.strictEqual(DF.revertAll(r.design).design.memGb, 128); // 容量は cfg の外。すべて戻しても既定に戻らない
+  const q = JSON.parse(DS.serialize(r.design)); q.presetId = null; q.memGb = 64;
+  const p = DS.parse(JSON.stringify(q)); if (p.ok) assert.strictEqual(p.design.memGb, undefined);
 });
 
 test('Apple M: 旧保存データの移行(mem は取り除き、容量は選択肢にあればそのまま・無ければ既定。memGb が無い旧データは既定)', () => {
