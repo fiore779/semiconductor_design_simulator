@@ -1,118 +1,118 @@
 // 自動生成(tools/extract-gb7.js)。設計書 §2.4 から抽出。手で編集しない。
-// 区分: チャート=Geekbench 公式チャートの SKU 平均 / 中央値=同じ SoC の機種スコアの中央値(n=機種数) / 個別投稿・直近25件の中央値=検索結果から
+// 区分: チャート=Geekbench 公式チャートの SKU 平均 / 中央値=同じ SoC の機種スコアの中央値(n=機種数) / 個別投稿・直近25件の中央値=検索結果から / 実測=検索結果の Windows 投稿のみの中央値(PC 系 CPU。2026-11-13。n=件数)
 window.SDS_DATA = window.SDS_DATA || {};
 window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Alder Lake: Core i9-12900K(3.2GHz, 16c)",
-  "single": 2270,
-  "multi": 16820,
-  "kind": "チャート",
-  "n": null
+  "single": 2358,
+  "multi": 16906,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Alder Lake: Core i7-12700K(3.6GHz, 12c)",
-  "single": 2288,
-  "multi": 15455,
-  "kind": "チャート",
-  "n": null
+  "single": 2286,
+  "multi": 15505,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Alder Lake: Core i5-12600K(3.7GHz, 10c)",
-  "single": 2240,
-  "multi": 12759,
-  "kind": "チャート",
-  "n": null
+  "single": 2259,
+  "multi": 13056,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Alder Lake: Core i3-12100(3.3GHz, 4c)",
-  "single": 1904,
-  "multi": 6838,
-  "kind": "チャート",
-  "n": null
+  "single": 1940,
+  "multi": 7020,
+  "kind": "実測",
+  "n": 70
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake: Core i9-13900K(3.0GHz, 24c)",
-  "single": 2615,
-  "multi": 22826,
-  "kind": "チャート",
-  "n": null
+  "single": 2662,
+  "multi": 22812,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake: Core i7-13700K(3.4GHz, 16c)",
-  "single": 2480,
-  "multi": 19163,
-  "kind": "チャート",
-  "n": null
+  "single": 2520,
+  "multi": 20245,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake: Core i5-13600K(3.5GHz, 14c)",
-  "single": 2316,
-  "multi": 15576,
-  "kind": "チャート",
-  "n": null
+  "single": 2478,
+  "multi": 17306,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake Refresh: Core i9-14900K(3.2GHz, 24c)",
-  "single": 2649,
-  "multi": 21921,
-  "kind": "チャート",
-  "n": null
+  "single": 2708,
+  "multi": 22319,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake Refresh: Core i7-14700K(3.4GHz, 20c)",
-  "single": 2566,
-  "multi": 20857,
-  "kind": "チャート",
-  "n": null
+  "single": 2663,
+  "multi": 20064,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake Refresh: Core i5-14600K(3.5GHz, 14c)",
-  "single": 2513,
-  "multi": 17172,
-  "kind": "チャート",
-  "n": null
+  "single": 2523,
+  "multi": 18081,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake(モバイル): Core i7-14700HX(2.1GHz, 20c)",
-  "single": 2259,
-  "multi": 14816,
-  "kind": "直近25件の中央値",
+  "single": 2362,
+  "multi": 15395,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake(モバイル): Core i9-13980HX(2.4GHz, 24c)",
-  "single": 2504,
-  "multi": 18283,
-  "kind": "直近25件の中央値",
+  "single": 2501,
+  "multi": 18287,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Raptor Lake Refresh(モバイル): Core i9-14900HX(2.2GHz, 24c)",
-  "single": 2422,
-  "multi": 17016,
-  "kind": "直近25件の中央値",
+  "single": 2558,
+  "multi": 18683,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Meteor Lake: Core Ultra 9 185H(2.3GHz, 16c)",
-  "single": 2174,
-  "multi": 13731,
-  "kind": "直近25件の中央値",
-  "n": 14
+  "single": 2035,
+  "multi": 12682,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
@@ -125,33 +125,33 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-S: Core Ultra 9 285K(3.7GHz, 24c)",
-  "single": 2804,
-  "multi": 25589,
-  "kind": "チャート",
-  "n": null
+  "single": 2844,
+  "multi": 25652,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-S: Core Ultra 7 265K(3.9GHz, 20c)",
-  "single": 2737,
-  "multi": 23523,
-  "kind": "チャート",
-  "n": null
+  "single": 2843,
+  "multi": 24490,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-HX: Core Ultra 9 275HX(2.7GHz, 24c)",
-  "single": 2607,
-  "multi": 21569,
-  "kind": "直近25件の中央値",
+  "single": 2637,
+  "multi": 22044,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Arrow Lake-H: Core Ultra 9 285H(2.9GHz, 16c)",
-  "single": 2446,
-  "multi": 15928,
-  "kind": "直近25件の中央値",
+  "single": 2420,
+  "multi": 15677,
+  "kind": "実測",
   "n": 200
  },
  {
@@ -165,26 +165,26 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 268V(2.2GHz, 8c)",
-  "single": 2360,
-  "multi": 10128,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2306,
+  "multi": 9948,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 258V(2.2GHz, 8c)",
-  "single": 2268,
-  "multi": 10109,
-  "kind": "直近25件の中央値",
+  "single": 2271,
+  "multi": 10032,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "Intel(Alder Lake 以降)",
   "name": "Lunar Lake: Core Ultra 7 256V(2.2GHz, 8c)",
-  "single": 2259,
-  "multi": 9384,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2257,
+  "multi": 9806,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
@@ -229,130 +229,130 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "AMD",
   "name": "Raven Ridge: Ryzen 5 2400G(3.6GHz, 4c)",
-  "single": 1027,
-  "multi": 3607,
-  "kind": "チャート",
-  "n": null
+  "single": 1046,
+  "multi": 3750,
+  "kind": "実測",
+  "n": 37
  },
  {
   "group": "AMD",
   "name": "Raven Ridge: Ryzen 3 2200G(3.5GHz, 4c)",
-  "single": 1029,
-  "multi": 3042,
-  "kind": "チャート",
-  "n": null
+  "single": 1067,
+  "multi": 3221,
+  "kind": "実測",
+  "n": 74
  },
  {
   "group": "AMD",
   "name": "Zen+: Ryzen 7 2700X(3.7GHz, 8c)",
-  "single": 1279,
-  "multi": 7432,
-  "kind": "チャート",
-  "n": null
+  "single": 1297,
+  "multi": 7635,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen+: Ryzen 5 2600X(3.6GHz, 6c)",
-  "single": 1237,
-  "multi": 6040,
-  "kind": "チャート",
-  "n": null
+  "single": 1251,
+  "multi": 6232,
+  "kind": "実測",
+  "n": 81
  },
  {
   "group": "AMD",
   "name": "Zen 3: Ryzen 7 5800X(3.8GHz, 8c)",
-  "single": 2053,
-  "multi": 11232,
-  "kind": "チャート",
-  "n": null
+  "single": 2122,
+  "multi": 11301,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 4: Ryzen 7 7700(3.8GHz, 8c)",
-  "single": 2503,
-  "multi": 15197,
-  "kind": "チャート",
-  "n": null
+  "single": 2599,
+  "multi": 15988,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 4: Ryzen 9 7950X(4.5GHz, 16c)",
-  "single": 2598,
-  "multi": 22461,
-  "kind": "チャート",
-  "n": null
+  "single": 2626,
+  "multi": 22124,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 4 モバイル(Dragon Range): Ryzen 9 7945HX(2.5GHz, 16c)",
-  "single": 2451,
-  "multi": 18741,
-  "kind": "直近25件の中央値",
+  "single": 2528,
+  "multi": 19193,
+  "kind": "実測",
   "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 4 モバイル(Phoenix): Ryzen 7 7840HS(3.8GHz, 8c)",
-  "single": 2071,
-  "multi": 12142,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2220,
+  "multi": 12446,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 4 モバイル(Rembrandt-R): Ryzen 7 7735HS(3.2GHz, 8c)",
-  "single": 1916,
-  "multi": 10175,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 1832,
+  "multi": 8341,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 5: Ryzen 7 9700X(3.8GHz, 8c)",
-  "single": 3010,
-  "multi": 17703,
-  "kind": "チャート",
-  "n": null
+  "single": 3012,
+  "multi": 17704,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Zen 5: Ryzen 9 9950X(4.3GHz, 16c)",
-  "single": 3068,
-  "multi": 26161,
-  "kind": "チャート",
-  "n": null
+  "single": 3101,
+  "multi": 26380,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)",
-  "single": 2565,
-  "multi": 14713,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2572,
+  "multi": 15897,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)",
-  "single": 2650,
-  "multi": 23661,
-  "kind": "直近25件の中央値",
-  "n": 171
+  "single": 2602,
+  "multi": 21699,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Kraken Point: Ryzen AI 7 350(2.0GHz, 8c)",
-  "single": 2590,
-  "multi": 13501,
-  "kind": "直近25件の中央値",
-  "n": 23
+  "single": 2355,
+  "multi": 11540,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "AMD",
   "name": "Cezanne: Ryzen 7 5800U(1.9GHz, 8c)",
-  "single": 1701,
-  "multi": 6963,
-  "kind": "直近25件の中央値",
-  "n": 20
+  "single": 1614,
+  "multi": 6472,
+  "kind": "実測",
+  "n": 76
  },
  {
   "group": "Apple(A シリーズ=iPhone/iPad の機種中央値、M シリーズ=Mac/iPad の機種中央値)",
@@ -880,26 +880,26 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra 9 386H(2.1GHz, 16c)",
-  "single": 2560,
-  "multi": 17540,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 2543,
+  "multi": 16652,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra X7 358H(1.9GHz, 16c)",
-  "single": 2520,
-  "multi": 16120,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 2465,
+  "multi": 16289,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra X9 388H(2.1GHz, 16c)",
-  "single": 2667,
-  "multi": 18249,
-  "kind": "直近25件の中央値",
-  "n": 24
+  "single": 2620,
+  "multi": 17382,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -912,18 +912,18 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra 5 325(2.1GHz, 8c)",
-  "single": 2337,
-  "multi": 11018,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2266,
+  "multi": 10194,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Wildcat Lake: Core 5 320(1.5GHz, 6c)",
-  "single": 2242,
-  "multi": 7212,
-  "kind": "直近25件の中央値",
-  "n": 25
+  "single": 2217,
+  "multi": 7027,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -1096,18 +1096,18 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(M6 第5段。2026-10-31: Zen 3 デスクトップ)",
   "name": "Zen 3: Ryzen 5 5600X(3.7GHz, 6c)",
-  "single": 2046,
-  "multi": 9505,
-  "kind": "直近25件の中央値",
-  "n": 24
+  "single": 2020,
+  "multi": 9331,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "追加取得分(M6 第5段。2026-10-31: Zen 3 デスクトップ)",
   "name": "Zen 3: Ryzen 9 5950X(3.4GHz, 16c)",
-  "single": 2040,
-  "multi": 14956,
-  "kind": "直近25件の中央値",
-  "n": 23
+  "single": 2114,
+  "multi": 15765,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel 第2〜第11世代",

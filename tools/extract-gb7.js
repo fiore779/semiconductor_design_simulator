@@ -41,7 +41,7 @@ for (let i = start; i < end; i++) {
   const single = num(s);
   const multi = num(m);
   const rest = cells.slice(3);
-  const kindCell = rest.find((c) => /\[(チャート|中央値|個別投稿|直近25件の中央値)/.test(c)) || '';
+  const kindCell = rest.find((c) => /\[(チャート|中央値|個別投稿|直近25件の中央値|実測)/.test(c)) || '';
   if (single === null || multi === null) {
     skipped.push(`${heading} | ${line.trim().slice(0, 140)}`);
     continue;
@@ -88,7 +88,7 @@ const keep = rows.filter((r) => !(r.group.startsWith('Intel 第2〜第11世代')
 
 const all = keep.concat(gen);
 const header = '// 自動生成(tools/extract-gb7.js)。設計書 §2.4 から抽出。手で編集しない。\n' +
-  '// 区分: チャート=Geekbench 公式チャートの SKU 平均 / 中央値=同じ SoC の機種スコアの中央値(n=機種数) / 個別投稿・直近25件の中央値=検索結果から\n';
+  '// 区分: チャート=Geekbench 公式チャートの SKU 平均 / 中央値=同じ SoC の機種スコアの中央値(n=機種数) / 個別投稿・直近25件の中央値=検索結果から / 実測=検索結果の Windows 投稿のみの中央値(PC 系 CPU。2026-11-13。n=件数)\n';
 fs.writeFileSync(
   path.join(root, 'data', 'benchmarks', 'gb7-scores.js'),
   header + 'window.SDS_DATA = window.SDS_DATA || {};\nwindow.SDS_DATA.gb7Scores = ' + JSON.stringify(all, null, 1) + ';\n',

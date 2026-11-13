@@ -200,6 +200,7 @@ test('gb7Basis: n が null のものは件数を出さない(0 や推測で埋�
   assert.strictEqual(PL.lowReason({ kind: '個別投稿の中央値', n: null }), '個別投稿の中央値');
   assert.strictEqual(PL.lowReason({ kind: '中央値', n: 9 }), null);
   assert.strictEqual(PL.gb7Basis({ kind: 'チャート', n: null }).label, 'チャート');
+  assert.deepStrictEqual(PL.gb7Basis({ kind: '実測', n: 200 }), { label: '実測(Windows)', n: null, low: null }); // 2026-11-13: PC 系 CPU の Windows のみの中央値の専用表示
   assert.ok(!PL.gb7Basis({ kind: '直近25件の中央値', n: null }).label.includes('n='));
   Object.values(gb7ByName).forEach((r) => { const b = PL.gb7Basis(r); assert.ok(b.label); if (r.n == null) assert.strictEqual(b.n, null); });
 });
