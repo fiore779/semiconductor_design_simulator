@@ -421,3 +421,14 @@ test('Lunar Lake: 旧保存データに mem があっても無視して固定値
   const x = DS.setMemory(impr('intel-ptl-x9-388h'), 'LPDDR5X', 8000).design;
   assert.deepStrictEqual(DS.parse(DS.serialize(x)).design.cfg.mem, { type: 'LPDDR5X', mts: 8000 });
 });
+
+// ---- 2026-11-13 の調査: Lunar Lake 以外のオンパッケージ候補は、公式で単一の容量・速度が確認できないため固定しない(設計書 §5.2.4 / §13.4) ----
+test('固定メモリは Lunar Lake の 3 SKU だけ。Apple M / Snapdragon / Dimensity / NVIDIA は固定にせず、評価もメモリ係数 1 のまま', () => {
+  assert.deepStrictEqual(Object.keys(D.memoryFixed).sort(), Object.keys(LNL_FIXED).sort());
+  const audited = ['apple-m1', 'apple-m4', 'apple-m5', 'apple-m5max', 'nv-orin-agx', 'nv-thor', 'nv-t239', 'nv-gb10', 'qc-7gen3'];
+  audited.forEach((id) => {
+    if (!D.presets || !D.presets.some((p) => p.id === id)) return;
+    assert.strictEqual(M.fixedOf(id), null, id);
+    assert.strictEqual(M.evaluate({ id }).mtFactor, 1, id);
+  });
+});
