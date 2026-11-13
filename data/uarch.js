@@ -10,12 +10,13 @@
 //   uCal       = 校正済みの ST 補正 u(定数)。{ u, n, date, basis, excluded? }(excluded = 標本から除外した preset id の配列。inUCalSet を false にする)。代表(calib:true)1 件ではなく、複数 SKU の中央値で決めた値(設計書 §5.3.0 M6 第 4 段)。
 //                calib フラグ(校正の代表)とは別で、代表の u がある uarch はそちらを優先。GB7 付き Golden/Raptor プリセットの追加や GB7 更新でも tests/perf.test.js の再計算テストが落ちる。その場合は uCal の u・n・date・basis を見直し、設計書 §5.3.0 の学習内・LOO の表を作り直す。
 //   uFrom      = 別の uarch の ST 補正 u を借りる名前(同じコア設計の派生。例: Zen 5c → Zen 5)。その uarch に代表の u がなく、借り先に u があるときだけ使う。ISA 平均に落ちる前に試す(2026-11-02。設計書 §5.3.3 K)。
+//   uRatioOf / uRatio = 別の uarch の ST 補正 u に比 uRatio を掛けた値を u とする(u = uRatio × u(uRatioOf)。2026-11-13。借り先の u が動けば連動)。代表(calib:true)・uCal・uFrom が無く借り先に u があるときだけ使う。**σ の代表の判定(calibrateMt)では uarch 専用として扱わない**(corrSource は 'ratio')。使うのは 'Skymont (Arrow Lake リング E)' だけ。設計書 §5.3.0。
 //   smt        = 1 or 2。vecBits = ベクトル幅(bit)。
 window.SDS_DATA = window.SDS_DATA || {};
 window.SDS_DATA.uarch = (function () {
   const u = (o) => Object.assign({
     decodeWidth: null, width: null, rob: null, brPenalty: null, l1dKB: null, l1dLat: null, l2KB: null, l2Lat: null,
-    l3Lat: null, mshr: null, smt: 1, vecBits: null, inOrder: false, uCal: null, uFrom: null, s: 'sec', note: '',
+    l3Lat: null, mshr: null, smt: 1, vecBits: null, inOrder: false, uCal: null, uFrom: null, uRatioOf: null, uRatio: null, s: 'sec', note: '',
   }, o);
   return {
     // ---- AMD ----
@@ -33,6 +34,7 @@ window.SDS_DATA.uarch = (function () {
     'Redwood Cove': u({ decodeWidth: 6, l2KB: 2048, l2Lat: 16, smt: 2, vecBits: 256, note: 'rename 幅は未取得(デコード6のみ)' }),
     'Lion Cove': u({ width: 8, decodeWidth: 8, rob: 576, l1dKB: 192, l1dLat: 9, l2KB: 3072, l2Lat: 17, l3Lat: 84, mshr: 80, smt: 1, vecBits: 256, note: 'L0D 48KB は4サイクル、L1.5 192KB は9サイクル。L3 遅延は Arrow Lake の約84サイクル(2026-11-07 に 75→84。Chips and Cheese の Arrow Lake のメモリ階層の実測 [二次]: https://old.chipsandcheese.com/?p=34012 。単位はサイクル(クロック換算なし)。取得日 2026-11-07(調査担当が確認)。DRAM 遅延 99ns(285K・DDR5-8000 で 565 サイクル超を 5.7GHz 換算)は https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed の記述で、機種別の dramNs は未実装。旧: 約75 は代表 265K に合わせた値。Lunar Lake は約51)。L2 ミスキュー80' }),
     'Skymont': u({ width: 8, decodeWidth: 9, rob: 416, l1dLat: 4, l2KB: 1024, l2Lat: 19, l3Lat: 69, vecBits: 128, note: 'L2 は 4MB/4コアクラスタ共有 → コアあたり 1024KB に換算。op cache なし。L3 遅延は Arrow Lake の約69サイクル(2026-11-07 追加。Chips and Cheese の実測 [二次]: https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed 。単位はサイクル(クロック換算なし)。取得日 2026-11-07(調査担当が確認)。旧: 未設定で既定の 40)' }),
+    'Skymont (Arrow Lake リング E)': u({ uRatioOf: 'Lion Cove', uRatio: 0.90, width: 8, decodeWidth: 9, rob: 416, l1dLat: 4, l2KB: 1024, l2Lat: 19, l3Lat: 69, vecBits: 128, note: '【Arrow Lake のリング接続 E(285K・265K・275HX・285H の種別 E)専用。LP-E(Lunar Lake・285H の LP-E)は「Skymont」のまま】u は Lion Cove の u × 0.90 [推定・校正値](ユーザー決定 b、2026-11-13。285K・265K の MT に合わせた値。1 クロックあたりの IPC 比に直すと約 0.76 で、測定の 0.86〜0.88〔ComputerBase 0.876 [推定]・David Huang GB5 0.875・Intel 発表の組合せ 0.936 [推定]〕より低い。「IPC 比 90%」ではない。残りの差の内訳は未分離。docs/research/skymont-ipc-ratio-2026-11-13.md)。ipc_model の値は「Skymont」と同じ。L2 は 4MB/4コアクラスタ共有 → コアあたり 1024KB に換算。op cache なし。L3 遅延は Arrow Lake の約69サイクル(2026-11-07 追加。Chips and Cheese の実測 [二次]: https://chipsandcheese.com/p/skymont-in-desktop-form-atom-unleashed 。単位はサイクル(クロック換算なし)。取得日 2026-11-07(調査担当が確認)。旧: 未設定で既定の 40)' }),
     'Cougar Cove': u({ width: 8, decodeWidth: 8, l1dKB: 192, l2KB: 3072, note: 'ROB・遅延は未取得(Lion Cove から据え置きとの説明)。L2 は 3MB(wccftech)/2.5MB(Wikipedia)で食い違い' }),
     'Darkmont': u({ decodeWidth: 9, rob: 416, l2KB: 1024, vecBits: 128, note: 'L2 は 4MB/クラスタ共有 → コアあたり 1024KB に換算(クラスタのコア数は4と仮定)' }),
     'Sandy Bridge': u({ width: 4, decodeWidth: 4, rob: 168, brPenalty: 14, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 28, mshr: 10, smt: 2, vecBits: 256 }),

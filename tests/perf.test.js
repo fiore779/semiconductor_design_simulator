@@ -543,5 +543,30 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   D.presets.forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
   // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)
   const a = F.mtScore(preset('intel-arl-285k'), c, D.uarch, null); assert.strictEqual(a.detail[0].fGHz, 5.4); assert.strictEqual(a.detail[0].clockSource, 'allcore'); assert.strictEqual(a.detail[1].clockSource, 'boost');
-  assert.ok(Math.abs(a.score / gb7ByName[preset('intel-arl-285k').gb7].multi - 1 - 0.1078) < 0.002); // 2026-11-13: Windows のみの GB7 差し替えで +8.5% → +10.8%(ng。ユーザー決定で受け入れ)。以前: 2026-11-10: γ=0.30 で +14.2% → +8.5%(ng→ok)
+  assert.ok(Math.abs(a.score / gb7ByName[preset('intel-arl-285k').gb7].multi - 1 - 0.0014) < 0.002); // 2026-11-13(ユーザー決定 b): Arrow Lake のリング接続 E(285K・265K・275HX・285H の種別 E)の u を Lion Cove の u × 0.90 に(uarch 記録「Skymont (Arrow Lake リング E)」を分けた)。MT +10.8% → +0.1%(ok)。旧: 2026-11-13: Windows のみの GB7 差し替えで +8.5% → +10.8%(ng。ユーザー決定で受け入れ)。以前: 2026-11-10: γ=0.30 で +14.2% → +8.5%(ng→ok)
+});
+
+// 2026-11-13(ユーザー決定 b): Arrow Lake のリング接続 E は uarch 記録「Skymont (Arrow Lake リング E)」で、u = Lion Cove の u × 0.90(uRatio。corrSource 'ratio')。LP-E(LNL・285H の LP-E)は「Skymont」のまま ISA 平均。σ の代表には入らない
+test('uRatio: ARL のリング接続 E は Lion Cove の u × 0.90(連動)。σ は動かず、LP-E・LNL は不変', () => {
+  const RING = 'Skymont (Arrow Lake リング E)';
+  assert.strictEqual(D.uarch[RING].uRatioOf, 'Lion Cove'); assert.strictEqual(D.uarch[RING].uRatio, 0.90);
+  assert.strictEqual(D.uarch['Skymont'].uRatio, null); // LP-E 用は比を持たない
+  ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'].forEach((id) => assert.ok(preset(id).cfg.cores.some((g) => g.type === 'E' && g.uarch === RING), id));
+  assert.ok(D.presets.every((p) => p.cfg.cores.every((g) => g.uarch !== 'Skymont' || g.type === 'LP-E')), '種別 E で「Skymont」を使うプリセットは無い');
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  const lc = c.u['Lion Cove'];
+  const p = preset('intel-arl-285k'); const core = p.cfg.cores.find((g) => g.type === 'E');
+  const st = F.stScore(p, c, D.uarch, { core });
+  assert.strictEqual(st.corrSource, 'ratio'); assert.ok(Math.abs(st.corr - 0.9 * lc) < 1e-9); assert.strictEqual(st.confidence, 'low');
+  // Lion Cove の u が動けば連動する
+  const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Lion Cove': lc * 1.1 }) });
+  assert.ok(Math.abs(F.stScore(p, c2, D.uarch, { core }).corr - 0.99 * lc) < 1e-9);
+  // 借り先の u が無ければ ISA 平均に落ちる
+  const c3 = Object.assign({}, c, { u: Object.assign({}, c.u) }); delete c3.u['Lion Cove'];
+  assert.strictEqual(F.stScore(p, c3, D.uarch, { core }).corrSource, 'isa');
+  // σ の代表に 265K は入らない(σ は 0.03306 のまま)
+  assert.ok(!c.mt.usedPresets.includes('intel-arl-265k')); assert.ok(Math.abs(c.mt.sigma - 0.03306) < 0.00001, String(c.mt.sigma));
+  // LNL の LP-E は ISA 平均のまま
+  const l = F.stScore(preset('intel-lnl-268v'), c, D.uarch, { core: preset('intel-lnl-268v').cfg.cores.find((g) => g.type === 'LP-E') });
+  assert.strictEqual(l.corrSource, 'isa');
 });
