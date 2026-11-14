@@ -227,6 +227,7 @@
         const srcLabel = (x) => (x === 'selected' ? '選んだ TDP' : x === 'range.maxW' ? '設定範囲の上限' : '基準電力');
         const coolTxt = ci.coolingLimit ? `冷却「${((root.SDS_DATA && root.SDS_DATA.cooling) || []).map((c) => (c.id === ci.coolingLimit.coolingId ? c.name : null)).find(Boolean) || ci.coolingLimit.coolingId}」の持続電力 ${ci.coolingLimit.sustainedW}W で制限(制限前は ${srcLabel(ci.coolingLimit.fromSource)}の ${ci.coolingLimit.fromW}W。冷却の持続電力のほうが低いため)` : null;
         let how = ci.band ? (coolTxt ? `${coolTxt}→ ${ci.band}で決まる係数(冷却の持続電力が低いほど係数が下がる。上限 1.0)。冷却を替えると変わります` : `公表電力 ${ci.powerW}W(${srcLabel(ci.source)})→ ${ci.band}で決まる係数(TDP が上がるほど係数が上がる。上限 1.0)。編集後も元のチップの公表電力で決まります`)
+          : ci.armFlat ? '公表電力が未取得の Arm ノート用チップは、x86 由来の 0.81 ではなくスマホ SoC と同じ係数を使用'
           : ci.fallback ? '公表電力が未取得のため、従来の一律 0.81 を使用' : 'モバイル(スマホ SoC)は一律の係数';
         if (ci.applied === 'partial') how += '。boost が未取得のコアには掛けていません(基本クロックのまま)';
         mtExtra.push(note(`MT の全コア負荷時クロックは ${base} × ${ev.mt.clockFactor}(${how}。[推定・校正値]で、実際の熱・電力制限を表すものではありません。係数はチャート値からの逆算で、チャートの偏りを含みます〔推測・未検証〕)。`, 'warn-note'));

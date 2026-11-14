@@ -469,10 +469,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Apple(A シリーズ=iPhone/iPad の機種中央値、M シリーズ=Mac/iPad の機種中央値)",
   "name": "A14",
-  "single": 1894,
-  "multi": 4501,
-  "kind": "中央値",
-  "n": 6
+  "single": 1976,
+  "multi": 4775,
+  "kind": "実測",
+  "n": 177
  },
  {
   "group": "Apple(A シリーズ=iPhone/iPad の機種中央値、M シリーズ=Mac/iPad の機種中央値)",
@@ -750,90 +750,90 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "855",
-  "single": 836,
-  "multi": 2678,
-  "kind": "中央値",
-  "n": 19
+  "single": 904,
+  "multi": 2830,
+  "kind": "実測",
+  "n": 166
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "865",
-  "single": 1008,
-  "multi": 3179,
-  "kind": "中央値",
-  "n": 14
+  "single": 1063,
+  "multi": 3281,
+  "kind": "実測",
+  "n": 156
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "888",
-  "single": 1049,
-  "multi": 3234,
-  "kind": "中央値",
-  "n": 15
+  "single": 1316,
+  "multi": 3659,
+  "kind": "実測",
+  "n": 101
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8 Gen 1",
-  "single": 1069,
-  "multi": 3237,
-  "kind": "中央値",
-  "n": 7
+  "single": 1449,
+  "multi": 3729,
+  "kind": "実測",
+  "n": 117
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8+ Gen 1",
-  "single": 1178,
-  "multi": 3894,
-  "kind": "中央値",
-  "n": 7
+  "single": 1508,
+  "multi": 4340,
+  "kind": "実測",
+  "n": 127
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8 Gen 2",
-  "single": 1426,
-  "multi": 4529,
-  "kind": "中央値",
-  "n": 21
+  "single": 1678,
+  "multi": 4838,
+  "kind": "実測",
+  "n": 140
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8 Gen 3",
-  "single": 1364,
-  "multi": 5974,
-  "kind": "中央値",
-  "n": 13
+  "single": 1861,
+  "multi": 6230,
+  "kind": "実測",
+  "n": 130
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8s Gen 3",
-  "single": 1163,
-  "multi": 3993,
-  "kind": "中央値",
-  "n": 2
+  "single": 1589,
+  "multi": 4694,
+  "kind": "実測",
+  "n": 59
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8 Elite",
-  "single": 1866,
-  "multi": 7761,
-  "kind": "中央値",
-  "n": 17
+  "single": 2581,
+  "multi": 8981,
+  "kind": "実測",
+  "n": 148
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8 Elite Gen 5",
-  "single": 2001,
-  "multi": 7702,
-  "kind": "中央値",
-  "n": 3
+  "single": 2989,
+  "multi": 9910,
+  "kind": "実測",
+  "n": 135
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "8s Gen 4",
-  "single": 1219,
-  "multi": 4660,
-  "kind": "中央値",
-  "n": 1
+  "single": 1712,
+  "multi": 6197,
+  "kind": "実測",
+  "n": 56
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
@@ -846,10 +846,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "7+ Gen 3",
-  "single": 955,
-  "multi": 3517,
-  "kind": "中央値",
-  "n": 1
+  "single": 1578,
+  "multi": 4518,
+  "kind": "実測",
+  "n": 142
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
@@ -862,10 +862,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
   "name": "780G",
-  "single": 841,
-  "multi": 2623,
-  "kind": "中央値",
-  "n": 1
+  "single": 898,
+  "multi": 2854,
+  "kind": "実測",
+  "n": 59
  },
  {
   "group": "Qualcomm Snapdragon(Android 機種中央値)",
@@ -894,34 +894,34 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "MediaTek Dimensity(Android 機種中央値)",
   "name": "9000",
-  "single": 1189,
-  "multi": 3834,
-  "kind": "中央値",
-  "n": 4
+  "single": 1521,
+  "multi": 4605,
+  "kind": "実測",
+  "n": 74
  },
  {
   "group": "MediaTek Dimensity(Android 機種中央値)",
   "name": "9200",
-  "single": 1322,
-  "multi": 4052,
-  "kind": "中央値",
-  "n": 2
+  "single": 1516,
+  "multi": 4420,
+  "kind": "実測",
+  "n": 45
  },
  {
   "group": "MediaTek Dimensity(Android 機種中央値)",
   "name": "9300",
-  "single": 1517,
-  "multi": 6034,
-  "kind": "中央値",
-  "n": 3
+  "single": 1852,
+  "multi": 6742,
+  "kind": "実測",
+  "n": 112
  },
  {
   "group": "MediaTek Dimensity(Android 機種中央値)",
   "name": "9400",
-  "single": 1741,
-  "multi": 6641,
-  "kind": "中央値",
-  "n": 4
+  "single": 2271,
+  "multi": 7643,
+  "kind": "実測",
+  "n": 53
  },
  {
   "group": "MediaTek Dimensity(Android 機種中央値)",
@@ -1048,10 +1048,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 8 Elite Extreme Gen 6(SM8975、モバイル)",
-  "single": 2973,
-  "multi": 9810,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 3125,
+  "multi": 10387,
+  "kind": "実測",
+  "n": 305
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -1065,73 +1065,73 @@ window.SDS_DATA.gb7Scores = [
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 7 Gen 3(SM7550)",
   "single": 990,
-  "multi": 3096,
-  "kind": "直近25件の中央値",
-  "n": null
+  "multi": 3100,
+  "kind": "実測",
+  "n": 173
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 7 Gen 4(SM7750)",
-  "single": 938,
-  "multi": 3480,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 1074,
+  "multi": 3648,
+  "kind": "実測",
+  "n": 151
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 7 Gen 1(SM7450)",
-  "single": 883,
-  "multi": 2780,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 856,
+  "multi": 2772,
+  "kind": "実測",
+  "n": 158
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 6 Gen 1(SM6450)",
-  "single": 814,
-  "multi": 2841,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 808,
+  "multi": 2731,
+  "kind": "実測",
+  "n": 199
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 4 Gen 2(SM4450)",
-  "single": 771,
-  "multi": 1855,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 777,
+  "multi": 1999,
+  "kind": "実測",
+  "n": 173
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 720G(SM7125)",
-  "single": 681,
-  "multi": 1839,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 680,
+  "multi": 1850,
+  "kind": "実測",
+  "n": 182
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Dimensity 9600 Pro(MT6995)",
-  "single": 2648,
-  "multi": 9453,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 3037,
+  "multi": 10340,
+  "kind": "実測",
+  "n": 85
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Dimensity 9500(MT6993)",
-  "single": 1203,
-  "multi": 6574,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 2568,
+  "multi": 8484,
+  "kind": "実測",
+  "n": 83
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Dimensity 8200(MT6896)",
-  "single": 951,
-  "multi": 3280,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 1038,
+  "multi": 3617,
+  "kind": "実測",
+  "n": 164
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",

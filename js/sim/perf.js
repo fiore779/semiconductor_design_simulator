@@ -175,7 +175,8 @@
   // 同じ 18 件で逆算し直した中央値が 0.912(範囲 0.748〜1.036)。小数 2 桁で 0.91。直前の 0.92 は u の直し前の値。推測・未検証(チャート値からの逆算で偏りを含む)。docs/research/mobile-mt-factor-2026-11-07.md
   // 【2026-11-10 γ=0.30(ユーザー判断 A)に合わせて再校正 mobile 0.91 → 0.94】同じ 18 件で逆算し直した中央値 0.936(範囲 0.767〜1.065)。σ・γ が変わると MT の絶対値が変わるため。推測・未検証(チャート値からの逆算で偏りを含む)
   // 【2026-11-13 PC 系 CPU の GB7 の Windows のみ化 第 2 回(1800X の MT 公開値 6671 → 7203 で σ 0.03306 → 0.03183)に合わせて再校正 mobile 0.94 → 0.93】同じ 18 件で逆算し直した中央値 0.931(範囲 0.763〜1.058)。σ が変わると MT の絶対値が変わるため。推測・未検証(チャート値からの逆算で偏りを含む)
-  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.93, 'mobile-pc': 0.81 };
+  // 【2026-11-14 Android の GB7 公開値を通常の群の中央値に取り直し(設計書 §2.4)、Oryon Performance の記録・Cortex-A78 の uCal 122.5 を直したあとで再校正 mobile 0.93 → 0.91】同じ 18 件で逆算し直した中央値 0.911(範囲 0.713〜1.076)。8 Elite 系の必要係数は 0.94〜1.01 で、ほかの SoC と同じ範囲に入った。推測・未検証(公開値からの逆算)。docs/research/qualcomm-ng-cause-2026-11-14.md §3.2
+  const MT_CLOCK_FACTOR = { pc: 1.0, mobile: 0.91, 'mobile-pc': 0.81 };
   // 【2026-11-09 以降は下の連続式 MT_CLOCK_POWER。以下は 2 段の帯の経緯(履歴)】mobile-pc の TDP 帯別の係数([推定・校正値]。熱モデルではない。§5.3.3 G の1)。帯は公表電力 W(mtPublishedW)の上限 maxW 以下で決まる(境界は含む)。
   // 値は、MT を計算できる x86 mobile-pc 11 件(Kraken Point を除く)で「予測がチャート値と一致する係数」の帯内の中央値を小数 2 桁に丸めたもの(チャートの偏りを含む逆算。推測・未検証)。
   // 2026-11-05: 7840HS は range 35〜54W を取得して帯 0 に入ったが、帯の係数は再校正していない(標本 11 件に含めていない。含めると帯 0 の中央値は 0.72。設計書 §2.5.1)。
@@ -228,6 +229,8 @@
     if (!flat) return { factor: 1.0, band: null, powerW: null, source: null, fallback: false };
     if (kind !== 'mobile-pc') return { factor: flat, band: null, powerW: null, source: null, fallback: false };
     const p = mtPublishedW(preset);
+    // 電力が未取得の Arm ノート用チップ(8cx Gen 3)は x86 由来の 0.81 ではなくスマホと同じ係数(mobile)を使う(2026-11-14。[推定・校正値]。0.81 と連続式の c は x86 11 件だけで決めた値で、同じ X1 / A78 世代のスマホの必要係数は 0.89〜1.11。設計書 §5.3.0【2026-11-14 Android】)
+    if (!p && preset.isa === 'arm') return { factor: MT_CLOCK_FACTOR.mobile, band: null, powerW: null, source: null, fallback: true, armFlat: true };
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
     // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.429、指数 0.15。min(1, c·W^0.15))
     return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false, ...(p.source === 'cooling' ? { coolingLimit: { coolingId: p.coolingId, sustainedW: p.w, fromW: p.fromW, fromSource: p.fromSource } } : {}) };
