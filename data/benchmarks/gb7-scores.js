@@ -435,6 +435,22 @@ window.SDS_DATA.gb7Scores = [
   "n": 76
  },
  {
+  "group": "AMD",
+  "name": "Cezanne: Ryzen 5 5600G(3.9GHz, 6c)",
+  "single": 1857,
+  "multi": 8562,
+  "kind": "実測",
+  "n": 210
+ },
+ {
+  "group": "AMD",
+  "name": "Cezanne: Ryzen 7 5700G(3.8GHz, 8c)",
+  "single": 1910,
+  "multi": 9925,
+  "kind": "実測",
+  "n": 200
+ },
+ {
   "group": "Apple(A シリーズ=iPhone/iPad の機種中央値、M シリーズ=Mac/iPad の機種中央値)",
   "name": "A12",
   "single": 1207,

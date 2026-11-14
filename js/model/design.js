@@ -643,6 +643,8 @@
 
   const ARL_RING_E = 'Skymont (Arrow Lake リング E)';
   const ARL_RING_E_PRESETS = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'];
+  const CEZANNE = 'Zen 3 (Cezanne)';
+  const CEZANNE_PRESETS = ['amd-zen3-5800u'];
   function serialize(design) { return JSON.stringify(design); }
   function parse(text) {
     let d; try { d = JSON.parse(text); } catch (e) { return { ok: false, reason: 'JSON として読めません' }; }
@@ -661,6 +663,13 @@
       const fix = (c) => { if (c && c.type === 'E' && c.uarch === 'Skymont') c.uarch = ARL_RING_E; };
       [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fix); });
       (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core' && b.coreType === 'E' && b.uarch === 'Skymont') b.uarch = ARL_RING_E; }); });
+    }
+    // 旧保存データの uarch 名(2026-11-14): Cezanne(5800U)は uarch 記録を「Zen 3」から「Zen 3 (Cezanne)」に分けた(u = Zen 3 の u × 0.95)。
+    // 旧名で保存した設計は、cfg・baseCfg・blocks の 3 か所とも新名に置き換える(評価は新規作成と同じ値になる)
+    if (CEZANNE_PRESETS.includes(d.presetId)) {
+      const fixC = (c) => { if (c && c.uarch === 'Zen 3') c.uarch = CEZANNE; };
+      [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixC); });
+      (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixC(b); }); });
     }
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };

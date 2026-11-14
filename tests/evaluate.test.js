@@ -368,3 +368,30 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.ok(cell('intel-arl-275hx').sub.includes(E.RATIO_INFO)); assert.ok(!cell('intel-arl-275hx').sub.some((t) => /学習内/.test(t)));
   assert.ok(!cell('intel-adl-12900k').sub.includes(E.RATIO_INFO));
 });
+// 2026-11-14(5800U の ST 修正 案 A): Cezanne(5800U)の uarch 名を「Zen 3」→「Zen 3 (Cezanne)」に分けた。旧保存データの移行と、ratio の注記(ST・MT とも info)
+test('旧保存データの移行: 旧名「Zen 3」で保存した 5800U は、parse で cfg・baseCfg・blocks の 3 か所とも「Zen 3 (Cezanne)」になり、評価は新規作成と同じ値。Vermeer(5800X)の Zen 3 は変えない', () => {
+  const CZ = 'Zen 3 (Cezanne)';
+  const fresh = design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800u'), { mode: 'improve' });
+  const old = JSON.parse(design.serialize(fresh)); let n = 0;
+  const back = (c) => { if (c.uarch === CZ) { c.uarch = 'Zen 3'; n++; } };
+  old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
+  assert.ok(n >= 3); assert.ok(!JSON.stringify(old).includes(CZ));
+  const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
+  assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)));
+  const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
+  assert.strictEqual(a.st.score, b.st.score); assert.strictEqual(a.mt.score, b.mt.score); assert.strictEqual(a.st.corrSource, 'ratio'); assert.strictEqual(a.edited, false);
+  const v = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800x')))).design;
+  assert.ok(v.cfg.cores.every((c) => c.uarch === 'Zen 3')); assert.ok(!JSON.stringify(v).includes(CZ));
+});
+
+test('ratio の注記: 5800U は ST・MT とも info「Cezanne の u は Zen 3 の u × 0.95 [推定・校正値]」(Arrow Lake の注記とは別)。Vermeer・7735HS には出ない。inRatioSet は 5800U では false(比は別 SKU の参考データで決めた)', () => {
+  assert.ok(E.RATIO_INFO_CEZANNE.startsWith('Cezanne の u は Zen 3 の u × 0.95 [推定・校正値]'));
+  assert.strictEqual(E.ratioInfo('Zen 3'), E.RATIO_INFO_CEZANNE); assert.strictEqual(E.ratioInfo('Lion Cove'), E.RATIO_INFO);
+  const w = ev('amd-zen3-5800u').warnings;
+  assert.ok(w.some((x) => x.level === 'info' && x.text === 'MT: ' + E.RATIO_INFO_CEZANNE)); assert.ok(w.some((x) => x.level === 'info' && x.text === 'ST: ' + E.RATIO_INFO_CEZANNE));
+  assert.ok(!w.some((x) => x.text === 'MT: ' + E.RATIO_INFO));
+  ['amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x', 'amd-zen3p-7735hs'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE)), id));
+  const r = ev('amd-zen3-5800u'); assert.strictEqual(r.mt.inRatioSet, false); assert.strictEqual(r.st.inRatioSet, false); assert.strictEqual(r.st.corrUFrom, 'Zen 3');
+  assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']);
+  assert.ok(Math.abs(r.st.errPct - 14.26) < 0.05 && Math.abs(r.mt.errPct - 15.68) < 0.05); // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
+});
