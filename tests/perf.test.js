@@ -54,6 +54,7 @@ const VALIDATION_PAIRS = [
   ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'],
   // 2026-11-14(Android の公開値を通常の群の中央値に取り直し): 7+ Gen 3(+12.6 → -7.1%)と 9300(-10.2 → +0.4%)が ±10% に入った(旧: 低い群の機種が混ざった公開値と、それで決めた X4 の u が主因)
   ['nv-orin-agx', 'Cortex-A78AE(uFrom: Cortex-A78 の uCal 122.5)。公開値は開発者キット 4 件の中央値(2026-11-14)'],
+  ['intel-lnl-268v', 'Lion Cove(代表 265K。P boost 5.5GHz = ARK の Max Turbo。2026-11-15)。ST +9.8%'],
   ['qc-7plus-gen3', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'], ['mt-9300', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'],
   // 2026-11-07(公開値を直近 25 件の全体中央値に取り直し。ユーザー指示「全体の中央値を取得してください」): 旧チャート値では ST が +13〜18% 高く外れ値だった 3 件が ±10% に入った(HX 370 +8.4%、268V +5.1%、395 +1.4%)
   ['amd-strix-hx370', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に直近25件の全体中央値から差し替え)'], ['amd-strixhalo-395', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に全体中央値 n=171 から差し替え)'],
@@ -75,7 +76,8 @@ VALIDATION_PAIRS.forEach(([id, why]) => {
 // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値(実測)に差し替えた(ユーザー決定)。268V の公開値は 2360 → 2306 に下がり、代表 265K の公開値が上がって Lion Cove の u が +3.9% 動いたため、ST は +5.1% → +11.8% で ±10% の外になった。検証ペアから外し、外れ値側に移した
 // 2026-11-14(Android の公開値を通常の群の中央値に取り直し): 7+ Gen 3・9300 は ±10% に入ったので外した(検証ペアへ)。逆に 7 Gen 1(+17.5%)・7 Gen 3(+15.9%)・Orin(+10.0%)は、専用の u が無く借りる Arm の ISA 平均 u が 106.4 → 122.9 に上がって外れた(ユーザーの回答待ち。推奨は受け入れる。設計書 §13.4)
 // 2026-11-14(x86・NVIDIA の ng 対応): Orin は Cortex-A78AE に uFrom 'Cortex-A78'(u 122.5)・公開値を開発者キット 4 件に差し替えて ST +10.0 → +7.4% で ±10% に入った(検証ペアへ)
-const KNOWN_MISSES = ['qc-7gen1', 'qc-7gen3', 'intel-lnl-268v'];
+// 2026-11-15(265K の P の boost 5.5GHz): 268V は ST +11.8 → +9.8% で ±10% に入ったので外した(検証ペアへ)
+const KNOWN_MISSES = ['qc-7gen1', 'qc-7gen3'];
 test('既知の外れ値は ±10% を超える(記録。直ったらリストから外す)', () => {
   const c = cal();
   KNOWN_MISSES.forEach((id) => assert.ok(F.stScore(preset(id), c, D.uarch).ok, `${id} が計算不能(外れ値ではなく対象外)`));
@@ -244,8 +246,8 @@ test('MT 持続クロック係数: mobile は boost × 0.91 を使い(2026-11-10
   { const ci = F.mtClockInfo(preset('qc-8cx-gen3')); assert.strictEqual(ci.armFlat, true); assert.strictEqual(ci.fallback, true); assert.strictEqual(ci.factor, F.MT_CLOCK_FACTOR.mobile); assert.strictEqual(ci.powerW, null); }
   { const x = clone(preset('amd-zen4-7840hs')); delete x.power; const ci = F.mtClockInfo(x); assert.strictEqual(ci.factor, 0.81); assert.strictEqual(ci.fallback, true); assert.ok(!ci.armFlat); }
   // 2026-11-09: mobile-pc は電力 W の連続式(指数 0.15。旧: c=0.191・指数 1/3)。2026-11-10: γ=0.30 に合わせて c=0.443(旧 0.429)。7840HS・HX 370(54W)→ 0.443·54^0.15 ≈ 0.806。2026-11-13: Windows のみの GB7 に差し替えて c=0.411(0.411·54^0.15 ≈ 0.748)
-  assert.ok(Math.abs(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor - 0.411 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c=0.406(0.406·54^0.15 ≈ 0.739) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
-  assert.ok(Math.abs(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor - 0.411 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.ok(Math.abs(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor - 0.412 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c=0.406(0.406·54^0.15 ≈ 0.739) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.ok(Math.abs(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor - 0.412 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
   const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
   assert.strictEqual(r1.clockFactor, 1); assert.strictEqual(r2.clockFactor, 1); assert.strictEqual(r1.score, r2.score);
@@ -283,7 +285,7 @@ test('uCal: rep 校正で Golden/Raptor に u が入り、calib・n・usedPreset
   assert.strictEqual(c.u['Cortex-A78'], 122.5); // 2026-11-14: 117.4 → 122.5(Android の公開値を通常の群の中央値に取り直した 4 件の SKU 別 u の中央値 122.45)
   assert.strictEqual(c.n['Golden Cove'], undefined); assert.strictEqual(c.usedPresets['Golden Cove'], undefined);
   // 2026-11-07: Zen 3 の代表(5800X)を加えて x86 平均 107.832 → 106.818(Zen 3 の u 102.29 が入るため)
-  assert.ok(Math.abs(c.uIsa.x86 - 109.77480267146683) < 1e-9); /* 2026-11-13(Windows のみ化 第 2 回): 代表 1800X の ST 公開値 1126 → 1157 で Zen 1 の u が 96.108 → 98.754、x86 平均 109.180 → 109.775(uCal の追加は ISA 平均に影響しない) */ /* 2026-11-13: Windows のみの GB7 で代表の u が動き x86 平均 106.818 → 109.180 */ // ISA 平均は代表だけで決まる(2026-11-05: 265K の P boost 5.5→5.4 で Lion Cove の u が 96.084→97.780 に再校正され、x86 平均も 107.361→107.832)
+  assert.ok(Math.abs(c.uIsa.x86 - 109.3912409874446) < 1e-9); /* 2026-11-15(265K の P の boost 5.5GHz): Lion Cove の u 102.13 → 100.36 で x86 平均 109.77 → 109.39(Gracemont・Skymont の LP-E などが使う) */ /* 2026-11-13(Windows のみ化 第 2 回): 代表 1800X の ST 公開値 1126 → 1157 で Zen 1 の u が 96.108 → 98.754、x86 平均 109.180 → 109.775(uCal の追加は ISA 平均に影響しない) */ /* 2026-11-13: Windows のみの GB7 で代表の u が動き x86 平均 106.818 → 109.180 */ // ISA 平均は代表だけで決まる(2026-11-05: 265K の P boost 5.5→5.4 で Lion Cove の u が 96.084→97.780 に再校正され、x86 平均も 107.361→107.832)
   assert.ok(!D.presets.some((p) => p.calib && /^(Golden|Raptor) Cove$/.test((F.topCore(p.cfg.cores) || {}).uarch)));
   const r = F.stScore(preset('intel-adl-12900k'), c, D.uarch);
   assert.strictEqual(r.corrSource, 'uarch'); assert.strictEqual(r.corr, 116.5);
@@ -301,10 +303,10 @@ test('uCal: 代表の u がある uarch には定数より代表を優先する'
 test('mtClockInfo: 連続式 min(1, c·W^0.15)・単調増加・上限 1.0・電力の取り方・フォールバック・kind 別', () => {
   const mk = (kind, power) => ({ kind, power });
   const rng = (maxW) => ({ base: null, peak: null, range: { minW: 10, maxW } });
-  assert.deepStrictEqual(F.MT_CLOCK_POWER, { c: 0.411, exp: 0.15, max: 1.0 }); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正。p の走査では LOO 最小が下限 p=0.10 に移ったが、指数の変更はユーザー判断待ちで 0.15 を据え置き)。以前: // 2026-11-13: c 0.443 → 0.411(Windows のみの GB7 に差し替え後の再校正。p=0.15 は LOO 最小のまま)。以前: 2026-11-10: c 0.429 → 0.443(γ=0.30 に合わせた再校正。p は走査し直しても 0.15 が LOO 最小) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.deepStrictEqual(F.MT_CLOCK_POWER, { c: 0.412, exp: 0.15, max: 1.0 }); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正。p の走査では LOO 最小が下限 p=0.10 に移ったが、指数の変更はユーザー判断待ちで 0.15 を据え置き)。以前: // 2026-11-13: c 0.443 → 0.411(Windows のみの GB7 に差し替え後の再校正。p=0.15 は LOO 最小のまま)。以前: 2026-11-10: c 0.429 → 0.443(γ=0.30 に合わせた再校正。p は走査し直しても 0.15 が LOO 最小) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.strictEqual(F.MT_CLOCK_BANDS, undefined); // 2 段の帯は廃止
   // 式どおり: 15W / 25W / 54W / 80W / 115W
-  [15, 25, 54, 80, 115].forEach((w) => assert.ok(Math.abs(F.mtClockInfo(mk('mobile-pc', rng(w))).factor - 0.411 * Math.pow(w, 0.15)) < 1e-12, String(w))); // 2026-11-13(Windows のみ化 第 2 回): c=0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  [15, 25, 54, 80, 115].forEach((w) => assert.ok(Math.abs(F.mtClockInfo(mk('mobile-pc', rng(w))).factor - 0.412 * Math.pow(w, 0.15)) < 1e-12, String(w))); // 2026-11-13(Windows のみ化 第 2 回): c=0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   // 単調増加(TDP が上がるほど係数が上がる。傾きは緩やか: 15W 0.64 → 115W 0.88)。上限は 1.0(boost を超えない)。頭打ちは W ≈ 375W(2026-11-13 の c=0.411。2026-11-10 の c=0.443 では約 228W。実在の SKU では効かない)
   const fs = [10, 15, 25, 35, 45, 54, 65, 80, 100, 115].map((w) => F.mtClockInfo(mk('mobile-pc', rng(w))).factor);
   for (let i = 1; i < fs.length; i++) assert.ok(fs[i] > fs[i - 1], `単調増加: ${fs[i - 1]} → ${fs[i]}`);
@@ -312,7 +314,7 @@ test('mtClockInfo: 連続式 min(1, c·W^0.15)・単調増加・上限 1.0・電
   assert.ok(F.mtClockInfo(mk('mobile-pc', rng(157))).factor < 1);
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(450))).factor, 1); assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(600))).factor, 1); /* 2026-11-13(Windows のみ化 第 2 回): c=0.406 で頭打ちは約 407W(c=0.411 では約 375W)なので 400 を 450 に変えた */ /* 2026-11-13: c=0.411 で頭打ちは約 375W(旧 c=0.443 では約 228W)なので 300/500 を 400/600 に変えた */
   // band は表示用のラベル(連続式の説明)
-  const bl = F.mtClockInfo(mk('mobile-pc', rng(15))).band; assert.ok(/連続式/.test(bl) && /c=0\.411/.test(bl) && /指数 0\.15/.test(bl), bl); // 2026-11-13(Windows のみ化 第 2 回): c=0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  const bl = F.mtClockInfo(mk('mobile-pc', rng(15))).band; assert.ok(/連続式/.test(bl) && /c=0\.412/.test(bl) && /指数 0\.15/.test(bl), bl); // 2026-11-13(Windows のみ化 第 2 回): c=0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.strictEqual(F.mtClockInfo(mk('mobile-pc', rng(15))).band, F.mtClockInfo(mk('mobile-pc', rng(120))).band);
   // 電力の取り方: range.maxW が優先、なければ base.w。peak(短時間ピーク)だけでは帯を決めない
   const both = { base: { w: 25, s: 'sec' }, peak: { w: 80, s: 'sec' }, range: { minW: 15, maxW: 80 } };
@@ -329,9 +331,9 @@ test('mtClockInfo: 連続式 min(1, c·W^0.15)・単調増加・上限 1.0・電
   assert.strictEqual(F.mtClockInfo(null).factor, 1);
   // 実データ(連続式 c=0.429・指数 0.15): 5800U(25W)→0.695、7840HS(54W)→0.781、PTL 386H(80W)→0.828、185H(115W)→0.875、8cx Gen 3(未取得)→0.81・fallback
   [['amd-zen3-5800u', 25], ['amd-zen4-7840hs', 54], ['intel-ptl-x9-386h', 80], ['intel-mtl-185h', 115]].forEach(([id, w]) => {
-    const ci = F.mtClockInfo(preset(id)); assert.strictEqual(ci.powerW, w, id); assert.ok(Math.abs(ci.factor - 0.411 * Math.pow(w, 0.15)) < 1e-12, id); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+    const ci = F.mtClockInfo(preset(id)); assert.strictEqual(ci.powerW, w, id); assert.ok(Math.abs(ci.factor - 0.412 * Math.pow(w, 0.15)) < 1e-12, id); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   });
-  assert.ok(Math.abs(F.mtClockInfo(preset('amd-zen3-5800u')).factor - 0.666) < 0.001); // 2026-11-13(Windows のみ化 第 2 回): c=0.406 で 25W → 0.658。以前: // 2026-11-13: c=0.411 で 25W → 0.666。以前: 2026-11-10: c=0.443 で 25W → 0.718(旧 c=0.429 で 0.695) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.ok(Math.abs(F.mtClockInfo(preset('amd-zen3-5800u')).factor - 0.667) < 0.001); /* 2026-11-15: c 0.411 → 0.412 で 0.666 → 0.667 */ // 2026-11-13(Windows のみ化 第 2 回): c=0.406 で 25W → 0.658。以前: // 2026-11-13: c=0.411 で 25W → 0.666。以前: 2026-11-10: c=0.443 で 25W → 0.718(旧 c=0.429 で 0.695) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.strictEqual(F.mtClockInfo(preset('qc-8cx-gen3')).fallback, true);
 });
 
@@ -339,7 +341,7 @@ test('mtScore: 帯の係数は mtScore の結果(clockFactor・clockInfo)に出�
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
   const p = preset('amd-zen3-5800u');
   const r = F.mtScore(p, c, D.uarch, null);
-  assert.ok(Math.abs(r.clockFactor - 0.411 * Math.pow(25, 0.15)) < 1e-12); /* 2026-11-13(Windows のみ化 第 2 回): c=0.406 */ assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW'); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.ok(Math.abs(r.clockFactor - 0.412 * Math.pow(25, 0.15)) < 1e-12); /* 2026-11-13(Windows のみ化 第 2 回): c=0.406 */ assert.strictEqual(r.clockInfo.powerW, 25); assert.strictEqual(r.clockInfo.source, 'range.maxW'); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   // コア数を変えた設計(power は元のまま)でも同じ係数
   const q = clone(p); q.cfg.cores[0].count = 6;
   assert.strictEqual(F.mtScore(q, c, D.uarch, null).clockFactor, r.clockFactor);
@@ -389,7 +391,8 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-13: Windows のみの GB7 に差し替え、uCal 116.5 のあとの中央値は 0.4115(丸め 0.411 = c)
     // 2026-11-13(Windows のみ化 第 2 回): 1800X・1500X・1200・378H・8cx Gen 3 の差し替え(σ 0.03183)と Cougar Cove の uCal 98.3 のあとの中央値は 0.4063(丸め 0.406 = c。uCal なしでは 0.4021)
     // 2026-11-14: Redwood Cove の uCal 99.5 を追加したあとの中央値は 0.4114(丸め 0.411 = c)。標本の 185H の P コアの u が ISA 平均 109.77 → 99.5 に下がり、185H の必要係数が上がった
-    assert.ok(Math.abs(med(ks) - 0.4114) < 0.0005, '中央値(固定値 0.4114): ' + med(ks));
+    // 2026-11-15: 265K の P の boost 5.5GHz(Lion Cove の u 102.13 → 100.36)のあとの中央値は 0.4121(丸め 0.412 = c)
+    assert.ok(Math.abs(med(ks) - 0.4121) < 0.0005, '中央値(固定値 0.4121): ' + med(ks));
     assert.strictEqual(Math.round(med(ks) * 1000) / 1000, F.MT_CLOCK_POWER.c);
     assert.ok(b && i === 0);
   }
@@ -631,7 +634,7 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   D.presets.forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
   // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)
   const a = F.mtScore(preset('intel-arl-285k'), c, D.uarch, null); assert.strictEqual(a.detail[0].fGHz, 5.4); assert.strictEqual(a.detail[0].clockSource, 'allcore'); assert.strictEqual(a.detail[1].clockSource, 'boost');
-  assert.ok(Math.abs(a.score / gb7ByName[preset('intel-arl-285k').gb7].multi - 1 - 0.0177) < 0.002); // 2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183 と x86 ISA 平均 u の変化で MT +0.1% → +1.8%(ok のまま)。以前: // 2026-11-13(ユーザー決定 b): Arrow Lake のリング接続 E(285K・265K・275HX・285H の種別 E)の u を Lion Cove の u × 0.90 に(uarch 記録「Skymont (Arrow Lake リング E)」を分けた)。MT +10.8% → +0.1%(ok)。旧: 2026-11-13: Windows のみの GB7 差し替えで +8.5% → +10.8%(ng。ユーザー決定で受け入れ)。以前: 2026-11-10: γ=0.30 で +14.2% → +8.5%(ng→ok)
+  assert.ok(Math.abs(a.score / gb7ByName[preset('intel-arl-285k').gb7].multi - 1 - 0.0000) < 0.002); /* 2026-11-15(265K の P の boost 5.5GHz): MT +1.8% → 0.0% */ // 2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183 と x86 ISA 平均 u の変化で MT +0.1% → +1.8%(ok のまま)。以前: // 2026-11-13(ユーザー決定 b): Arrow Lake のリング接続 E(285K・265K・275HX・285H の種別 E)の u を Lion Cove の u × 0.90 に(uarch 記録「Skymont (Arrow Lake リング E)」を分けた)。MT +10.8% → +0.1%(ok)。旧: 2026-11-13: Windows のみの GB7 差し替えで +8.5% → +10.8%(ng。ユーザー決定で受け入れ)。以前: 2026-11-10: γ=0.30 で +14.2% → +8.5%(ng→ok)
 });
 
 // 2026-11-13(ユーザー決定 b): Arrow Lake のリング接続 E は uarch 記録「Skymont (Arrow Lake リング E)」で、u = Lion Cove の u × 0.90(uRatio。corrSource 'ratio')。LP-E(LNL・285H の LP-E)は「Skymont」のまま ISA 平均。σ の代表には入らない
@@ -685,7 +688,7 @@ test('uRatio: Cezanne は Zen 3 の u × 0.95。比は 5600G・5700G(uRatioRefs)
   const st = F.stScore(p, c, D.uarch);
   assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Zen 3'); assert.ok(Math.abs(st.corr - 0.95 * zu) < 1e-9); assert.strictEqual(st.confidence, 'low');
   assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - 0.1426) < 0.0005, String(st.score)); // +14.3%(旧 +20.3%。ng のまま。残りは母集団の差)
-  assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - 0.1568) < 0.0005); // +15.7%(旧 +21.8%)
+  assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - 0.1590) < 0.0005); // +15.9%(旧 +21.8%。2026-11-15: c 0.411 → 0.412 で +15.7 → +15.9%)
   // Zen 3 の u が動けば連動する。借り先が無ければ ISA 平均に落ちる
   const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Zen 3': zu * 1.1 }) });
   assert.ok(Math.abs(F.stScore(p, c2, D.uarch).corr - 0.95 * 1.1 * zu) < 1e-9);
@@ -726,7 +729,7 @@ test('Orin: A78AE は uFrom Cortex-A78(uCal)で ST の u を借りる。公開�
 // 2026-11-15(Zen 5c の MT クロック A1。[推定]。ユーザー決定「HX 370 と Kraken 350 の MT の項を入れて進めて」): x86 の mobile-pc で、最速コアと同じ設計の高密度コア(uFrom が最速コアの uarch を指す Zen 5c)の MT クロック = min(自分の最大, 係数 × P の最大)。P は従来どおり
 test('Zen 5c の MT クロック: min(自分の最大, 係数 × P の最大)。HX 370 -18.5 → -5.1%・350 -5.6 → +5.7%。ほかの SKU(スマホ・Oryon・Intel の E・5800U など)と ST は動かず、c は不変', () => {
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
-  [['amd-strix-hx370', -0.0515], ['amd-kraken-350', 0.0566]].forEach(([id, want]) => {
+  [['amd-strix-hx370', -0.0515], ['amd-kraken-350', 0.0576]].forEach(([id, want]) => {
     const p = preset(id); const r = F.mtScore(p, c, D.uarch, null); const P = r.detail.find((d) => d.type === 'P'); const Z = r.detail.find((d) => d.type !== 'P');
     const kf = F.mtClockInfo(p).factor; const zmax = p.cfg.cores.find((g) => g.type === Z.type).boostGHz;
     assert.ok(Math.abs(P.fGHz - p.cfg.cores.find((g) => g.type === 'P').boostGHz * kf) < 1e-9, id + ' P は従来どおり');
@@ -736,7 +739,7 @@ test('Zen 5c の MT クロック: min(自分の最大, 係数 × P の最大)。
     // 係数の上限を超えない側(P の最大 × 係数 が自分の最大より低い場合)は上限が効く
     const q = clone(p); q.cfg.cores.find((g) => g.type === 'P').boostGHz = 3.0; const rq = F.mtScore(q, c, D.uarch, null); assert.ok(Math.abs(rq.detail.find((d) => d.type === Z.type).fGHz - 3.0 * kf) < 1e-9);
   });
-  assert.ok(Math.abs(c.mt.sigma - 0.031833822965568775) < 1e-12); assert.strictEqual(F.MT_CLOCK_POWER.c, 0.411); // σ・c は不変(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4114 のまま。HX 370 は標本の 1 件だが中央値は動かない)
+  assert.ok(Math.abs(c.mt.sigma - 0.031833822965568775) < 1e-12); assert.strictEqual(F.MT_CLOCK_POWER.c, 0.412); // σ・c は不変(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4114 のまま。HX 370 は標本の 1 件だが中央値は動かない)
   // 当てない: x86 の mobile-pc 以外(uFrom を持つ Oryon Performance のスマホ・Zen+ のデスクトップ)
   const e = F.mtScore(preset('qc-8elite'), c, D.uarch, null); assert.ok(e.detail.every((d) => !d.clockCap));
   assert.ok(F.mtScore(preset('amd-zenplus-2700x'), c, D.uarch, null).detail.every((d) => !d.clockCap));

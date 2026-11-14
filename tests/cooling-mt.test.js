@@ -75,7 +75,7 @@ test('MT の W: min(公表電力から決めた W, 冷却の持続電力)。選�
   q.power.coolingW = 125; q.power.coolingId = 'laptop-gaming';
   const r = F.mtPublishedW(q); assert.deepStrictEqual([r.w, r.source, r.fromW, r.fromSource], [125, 'cooling', 157, 'range.maxW']);
 // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
-  assert.ok(Math.abs(F.mtClockInfo(q).factor - 0.411 * Math.pow(125, 0.15)) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正。標本 11 件の中央値 0.4063) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.ok(Math.abs(F.mtClockInfo(q).factor - 0.412 * Math.pow(125, 0.15)) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正。標本 11 件の中央値 0.4063) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   q.power.coolingW = 200; assert.strictEqual(F.mtPublishedW(q).source, 'range.maxW'); // 冷却の方が大きければ従来どおり
   q.power.coolingW = 125; q.power.tdpW = 100; const s = F.mtPublishedW(q);
   assert.strictEqual(s.w, 100); assert.strictEqual(s.source, 'selected'); // 選んだ TDP 100W < 冷却 125W なら TDP のまま
@@ -90,8 +90,8 @@ test('冷却を変えても ST は不変・pc は不変の上で、冷却の影�
   const g = evalC('intel-rpl-14700hx', 'laptop-gaming').mt.score; const s = evalC('intel-rpl-14700hx', 'laptop-standard').mt.score;
   assert.ok(Math.abs(g / base - Math.pow(125 / 157, 0.15)) < 0.01, String(g / base));
     // 係数は厳密に 0.443·W^0.15(W = 46.5)。MT の比は係数の比に近いが、L3・メモリ項があるので比そのものは検証せず、係数で見る
-  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-standard').mt.clockFactor, 0.411 * Math.pow(46.5, 0.15)); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
-  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-gaming').mt.clockFactor, 0.411 * Math.pow(125, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-standard').mt.clockFactor, 0.412 * Math.pow(46.5, 0.15)); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-gaming').mt.clockFactor, 0.412 * Math.pow(125, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.ok(s / base > 0.8, '46.5W にしても MT は 2 割も下がらない(実機の機体差〔GB6 で最大÷最小 1.2〜1.3〕より小さい。設計書 §5.3.0 に明記)');
 });
 
