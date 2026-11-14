@@ -165,7 +165,8 @@ test('幅が未取得のコアは decodeWidth を IPC の上限に使う(ROB 由
 // (amd-strix-hx370 は TDP 帯別の係数 0.65 の導入で -8.8% → -24.4% に悪化したため、この一覧から外した。設計書 §5.3.3 G の1)
 // (nv-orin-agx は 2026-11-05 に L3 6MB を取得〔公表〕して MT が -1.1% → -13.9% に悪化したため、この一覧から外した。ST は -6.6% → -0.3% に改善。以前の ok は L3 未取得時の参照値がスレッド数で割られないことによる見かけ。閾値は動かしていない。設計書 §2.7.7)
 // (amd-zen4-7950x は 2026-11-13(Windows のみ化 第 2 回) に MT が +9.3% → +11.4% になったため、この一覧から外した。1800X の MT 公開値 6671 → 7203〔Windows のみ。n=16 の低信頼〕で σ が 0.03306 → 0.03183 に下がり、16 コアの MT が +1.9% 上がったため。閾値は動かしていない。全コア実測クロック〔allCoreGHz〕は未取得で、根拠のある修正ができない。設計書 §5.3.0)
-['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x'].forEach((id) => {
+// (2026-11-14: amd-zen4-7950x を一覧に戻した。全コア負荷時の実測クロック allCoreGHz 5.0GHz〔KitGuru。[二次]〕を入れて MT が +11.4% → +0.3% になったため。閾値は動かしていない。設計書 §5.3.0【2026-11-14 7950X】)
+['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x'].forEach((id) => {
   test(`検証 MT(±10%): ${id}`, () => {
     const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
     const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
@@ -596,7 +597,16 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   assert.ok(Math.abs(r0.score / gb7ByName[p.gb7].multi - 1 - 0.1962) < 0.001); // 2026-11-13(Windows のみ化 第 2 回): σ 0.03183 で +17.4% → +19.6%(allCoreGHz なし)。以前: // 2026-11-13: Windows のみの GB7 差し替えで +20.4% → +17.4%(allCoreGHz なし)。旧: +23.0%(γ=0.25)。γ=0.30 では +20.4%
   // 他のデスクトップ SKU は allCoreGHz を持たず、結果は不変(5800X〔σ の代表〕にも付けていない。付けると σ が 0.0289 → 0.0283 に動き、ほかのデスクトップ・SoC 33 件の誤差が悪化したため)
   // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
-  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 } };
+  // 2026-11-14: 7950X の P 5.0GHz(KitGuru の Cinebench R23 全コア平均「5GHz 強」。[二次]。5950X と同じ出典・同じ測り方)を追加
+  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 } };
+  { // 7950X: MT のクロックが全コアの実測 5.0GHz になる(係数は掛けない)。MT +11.4%(ng)→ +0.3%(ok)。allCoreGHz なしでは +11.4% のまま(ST は不変)
+    const p7 = preset('amd-zen4-7950x'); const r7 = F.mtScore(p7, c, D.uarch, null);
+    assert.strictEqual(r7.detail[0].clockSource, 'allcore'); assert.strictEqual(r7.detail[0].fGHz, 5.0); assert.strictEqual(r7.detail[0].clockFactor, 1);
+    assert.ok(Math.abs(r7.score / gb7ByName[p7.gb7].multi - 1 - 0.0025) < 0.001, String(r7.score / gb7ByName[p7.gb7].multi - 1));
+    const q7 = clone(p7); delete q7.cfg.cores[0].allCoreGHz; const r70 = F.mtScore(q7, c, D.uarch, null);
+    assert.strictEqual(r70.detail[0].clockSource, 'boost'); assert.ok(Math.abs(r70.score / gb7ByName[p7.gb7].multi - 1 - 0.1140) < 0.001);
+    assert.strictEqual(F.stScore(p7, c, D.uarch).score, F.stScore(q7, c, D.uarch).score);
+  }
   D.presets.forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
   // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)
   const a = F.mtScore(preset('intel-arl-285k'), c, D.uarch, null); assert.strictEqual(a.detail[0].fGHz, 5.4); assert.strictEqual(a.detail[0].clockSource, 'allcore'); assert.strictEqual(a.detail[1].clockSource, 'boost');
