@@ -550,4 +550,10 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   const GB7_NOTE = '【2026-11-13】公開値を Windows のみの中央値(実測)に差し替え済み。以下は差し替え前の公開値に対する分析(数値は当時のもの。見直しは設計書 §13.4)。';
   const gbKind = {}; ((window.SDS_DATA && window.SDS_DATA.gb7Scores) || []).forEach((r) => { gbKind[r.name] = r.kind; });
   P.forEach((p) => { if (p.errCause && gbKind[p.gb7] === '実測') { Object.keys(p.errCause).forEach((k) => { if (typeof p.errCause[k] === 'string' && p.errCause[k]) p.errCause[k] = GB7_NOTE + p.errCause[k]; }); } });
+  // 2026-11-13(Windows のみ化 第 2 回): 再校正で ok → ng になり、根拠のある修正ができなかった 2 件の説明(上の GB7_NOTE のあとに足す。現在の公開値に対する記述。設計書 §5.3.0【2026-11-13 第 2 回】)
+  const ERR_W2 = {
+    'amd-zen4-7950x': { mt: '【2026-11-13 第 2 回の再校正後】MT +11.4%(ng。直前は +9.3% の ok)。σ の代表 1800X の公開値を Windows のみの中央値(n=16 の低信頼。MT 6671 → 7203)に差し替えて σ が 0.03306 → 0.03183 に下がり、16 コアの MT が +1.9% 上がったため。5950X と同じ全コア負荷時のクロック低下が効いている疑いがあるが、7950X の全コア実測クロック(allCoreGHz)は未取得で入れていない(推測。データ待ち)' },
+    'intel-mtl-185h': { st: '【2026-11-13 第 2 回の再校正後】ST +10.3%(ng。直前は +9.7% の ok)。Redwood Cove に専用の補正が無く x86 の ISA 平均 u を借りており、その平均が Zen 1 の代表 1800X の公開値の差し替え(ST 1126 → 1157)で 109.18 → 109.77(+0.54%)に上がったため。Redwood Cove の GB7 付きプリセットは 185H の 1 件だけで、uCal(複数 SKU の中央値)を作る標本が無い(データ待ち)' },
+  };
+  P.forEach((p) => { if (ERR_W2[p.id]) { const e = p.errCause = Object.assign({}, p.errCause || {}); Object.keys(ERR_W2[p.id]).forEach((k) => { e[k] = (e[k] ? e[k] + ' ' : '') + ERR_W2[p.id][k]; }); } });
 })();

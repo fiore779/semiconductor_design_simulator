@@ -189,26 +189,26 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "AMD",
   "name": "Zen 1: Ryzen 7 1800X(3.6GHz, 8c)",
-  "single": 1126,
-  "multi": 6671,
-  "kind": "チャート",
-  "n": null
+  "single": 1157,
+  "multi": 7203,
+  "kind": "実測",
+  "n": 16
  },
  {
   "group": "AMD",
   "name": "Zen 1: Ryzen 5 1500X(3.5GHz, 4c)",
-  "single": 1107,
-  "multi": 4256,
-  "kind": "チャート",
-  "n": null
+  "single": 1140,
+  "multi": 4476,
+  "kind": "実測",
+  "n": 25
  },
  {
   "group": "AMD",
   "name": "Zen 1: Ryzen 3 1200(3.1GHz, 4c)",
-  "single": 979,
-  "multi": 2936,
-  "kind": "チャート",
-  "n": null
+  "single": 987,
+  "multi": 3016,
+  "kind": "実測",
+  "n": 17
  },
  {
   "group": "AMD",
@@ -904,10 +904,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Panther Lake: Core Ultra X9 378H(2.0GHz, 16c)",
-  "single": 2600,
-  "multi": 17300,
-  "kind": "直近25件の中央値",
-  "n": null
+  "single": 2443,
+  "multi": 16600,
+  "kind": "実測",
+  "n": 27
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
@@ -1056,10 +1056,10 @@ window.SDS_DATA.gb7Scores = [
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",
   "name": "Snapdragon 8cx Gen 3(SC8280XP、Windows ノート)",
-  "single": 1315,
-  "multi": 6722,
-  "kind": "直近25件の中央値",
-  "n": 17
+  "single": 1364,
+  "multi": 6610,
+  "kind": "実測",
+  "n": 39
  },
  {
   "group": "追加取得分(未取得だったチップ。2026-10-25 に再調査)",

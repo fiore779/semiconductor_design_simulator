@@ -246,7 +246,8 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   // 2026-11-07: Zen 3 の代表を加えて σ が 0.02737→0.02888 に動き、E コア(Gracemont)の MT が変わった(ST は不変)。旧 MT 0/1/4:15446.18 30:18419.92
   // 2026-11-10: γ(SMT の効果)0.25 → 0.30 で σ が 0.0289 → 0.0327 に動き MT が変わった(ST は不変)。旧 MT 0/1/4:15084.05 30:17981.96
   // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値(実測)に差し替え(ユーザー決定)。uCal 114.1→116.5・σ 0.03270→0.03306 で ST/MT が動いた。旧 0:[1802.55,14738.81] 1:[2000.40,14738.81] 4:[2209.99,14738.81] 30:[2367.46,17545.83]
-  const exp = { 0: [1840.47, 14982.52], 1: [2042.48, 14982.52], 4: [2256.48, 14982.52], 30: [2417.26, 17836.62] };
+  // 2026-11-13(Windows のみ化 第 2 回): 1800X の MT 公開値 6671 → 7203 で σ 0.03306 → 0.03183、x86 ISA 平均 u 109.18 → 109.77(E コア Gracemont が使う)で MT が動いた(ST は不変)。旧 MT 0/1/4:14982.52 30:17836.62
+  const exp = { 0: [1840.47, 15249.61], 1: [2042.48, 15249.61], 4: [2256.48, 15249.61], 30: [2417.26, 18158.09] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -261,7 +262,9 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
 test('inUCalSet: Golden/Raptor 10 件の ST だけ true(代表ではない学習内)。標本から除外した 14700HX・ISA 代用・代表・MT は false', () => {
   const ids = D.presets.filter((p) => ev(p.id).st.inUCalSet).map((p) => p.id).sort();
   // 2026-11-07: Cortex-A78 の uCal(780G・6 Gen 1・4 Gen 2・Dimensity 8200 の 4 件)が加わって 10 → 14 件(Golden/Raptor 10 件 + A78 4 件)
-  assert.strictEqual(ids.length, 14);
+  // 2026-11-13(Windows のみ化 第 2 回): Cougar Cove の uCal 98.3(388H・386H・378H・358H・325・320 の 6 件)が加わって 14 → 20 件
+  assert.strictEqual(ids.length, 20);
+  assert.ok(['intel-ptl-x9-388h', 'intel-ptl-x9-386h', 'intel-ptl-x9-378h', 'intel-ptl-x7-358h', 'intel-ptl-u5-325', 'intel-wcl-c5-320'].every((id) => ids.includes(id)));
   assert.ok(['qc-780g', 'qc-6gen1', 'qc-4gen2', 'mt-8200'].every((id) => ids.includes(id)));
   assert.ok(!ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
   assert.strictEqual(ev('intel-rpl-14700hx').st.inUCalSet, false); // 学習に使っていない(検証に使える)
@@ -291,7 +294,8 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.429·115^0.15) ≈ 0.875(旧: 帯 1 の 0.81 → 指数 1/3 の連続式 0.928)
   // 2026-11-10: γ=0.30 に合わせて c=0.443(185H で ≈ 0.903)
 // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
-  const f185 = Math.min(1, 0.411 * Math.pow(115, 0.15));
+  // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正)
+  const f185 = Math.min(1, 0.406 * Math.pow(115, 0.15));
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });
@@ -345,8 +349,8 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   const inSet = D.presets.filter((p) => ev(p.id).mt.inRatioSet).map((p) => p.id).sort();
   assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
   D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
-  // 評価の数値は不変(2026-11-13 の b2a8a08 の値): 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%
-  const want = { 'intel-arl-285k': 0.14, 'intel-arl-265k': -4.15, 'intel-arl-275hx': 4.77, 'intel-arl-285h': 8.46 };
+  // レビュー対応の時点(b2a8a08 の値)は 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%。2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183・x86 ISA 平均 u・c 0.411 → 0.406 の再校正で動いた(比 0.90 は不変。4 件とも ok のまま)
+  const want = { 'intel-arl-285k': 1.77, 'intel-arl-265k': -2.76, 'intel-arl-275hx': 5.38, 'intel-arl-285h': 8.72 };
   ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
   // 編集後は公開値が無いので印を外す
   const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
