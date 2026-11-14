@@ -46,6 +46,7 @@
       if (c.pub && r.inUCalSet) c.sub.push('この uarch の ST 補正は複数 SKU の中央値(この SKU を含む)で決めた定数のため、学習内の誤差(検証ではない)');
       if (c.pub && r.inRatioSet) c.sub.push('E の u を決めるのに使った SKU の MT のため、学習内の誤差(検証ではない)');
       if (r.corrSources && r.corrSources.includes('ratio')) { const EV = node ? require('../model/evaluate.js') : root.SDS.model.evaluate; EV.ratioFroms(r).forEach((f) => c.sub.push(EV.ratioInfo(f))); }
+      if (r.dramLat) c.sub.push((node ? require('../model/evaluate.js') : root.SDS.model.evaluate).dramLatInfo(r.dramLat));
       if (r.corrSource === 'ratio') c.sub.push((node ? require('../model/evaluate.js') : root.SDS.model.evaluate).ratioInfo(r.corrUFrom));
       if (c.pub && r.calibNotUsedForMt) c.sub.push('ST の補正には使ったが、MT の σ の合わせには使っていない');
       if (key === 'mt') c.sub.push('MT の確度は常に低');

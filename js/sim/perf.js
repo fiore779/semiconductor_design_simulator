@@ -101,6 +101,10 @@
     // MT の呼び出し(opts.noMemory)では掛けない(MT は和にまとめて ^bMT を掛けるため。二重計上しない)
     const mem = opts && opts.noMemory ? null : memoryApi().evaluate(preset);
     let params = cal && cal.params;
+    // 【2026-11-15 プラットフォームの DRAM 遅延(ST だけ。[二次]・[推定]。ユーザー指示「ST ×0.90 ではなく IPC で計算するようにして」)】preset.cfg.dramLat = { ns, s, src, cfg } があれば、dramNs(既定 85ns 固定)をその値にし、その上に mem.dramScale を掛ける。
+    // 遅延は DRAM の種別ではなくプラットフォーム(メモリコントローラ・ファブリック)で決まる(デスクトップの DDR5 は 70〜88ns、ノートは 103〜148ns)。dramLat が無い SKU・旧保存データ・混合設計は従来どおり 85ns。MT の内部呼び出し(opts.noMemory)にも入れない(MT は連続式の c の再校正が要るため別判断)。設計書 §5.2・§5.3.0【2026-11-15 DRAM 遅延】
+    const dl = !(opts && opts.noMemory) && preset.cfg && preset.cfg.dramLat && typeof preset.cfg.dramLat.ns === 'number' && preset.cfg.dramLat.ns > 0 ? preset.cfg.dramLat : null;
+    if (dl) params = Object.assign({}, params || {}, { dramNs: dl.ns });
     if (mem && mem.active && mem.dramScale !== 1) params = Object.assign({}, params || {}, { dramNs: Object.assign({}, DEFAULT_PARAMS, params || {}).dramNs * mem.dramScale });
     const r = coreCpi(u, { fGHz: f, l3KBPerThread: l3KB, noL3, params });
     if (!r.ok) return { ok: false, reason: r.reason };
@@ -118,7 +122,7 @@
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     const memActive = !!(mem && mem.active);
     return {
-      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
+      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(dl ? { dramLat: dl } : {}), ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
       confidence: isClone || corrSource === 'isa' || corrSource === 'ratio' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -201,7 +205,8 @@
   // 【2026-11-14 Redwood Cove の uCal 99.5 を追加したあとで c を再校正 0.406 → 0.411】(ユーザー指示「Meteor Lake のデータをほかにも取得して」)標本 11 件のうち 185H の P コアの u が ISA 平均 109.77 → 99.5 に下がり、185H の必要係数が上がった。指数は 0.15 のまま(ユーザー決定 2026-11-14)、c は k_i ÷ W_i^0.15 の中央値 0.4114(小数 3 桁で 0.411)。標本は 11 件のまま(id の除外ルール据え置き)。
   // p=0.15 の標本内 MAE 0.0784・LOO MAE 0.0842(一律 0.81 は 0.0900 で、連続式の LOO が一律 0.81 より小さい状態に戻った)。p の走査では LOO 最小は下限 p=0.10 のまま(LOO 0.0799)。設計書 §5.3.0【2026-11-14】
   // 【2026-11-15 265K の P の boost を 5.5GHz にした(Lion Cove の u 102.13 → 100.36)あとで c を再校正 0.411 → 0.412】(ユーザー決定「265K のクロックを 5.5GHz にして進めて」)標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4121(小数 3 桁で 0.412)。指数は 0.15 のまま(ユーザー決定)。標本は 11 件のまま(id の除外ルール据え置き)。設計書 §5.3.0【2026-11-15 265K】
-  const MT_CLOCK_POWER = { c: 0.412, exp: 0.15, max: 1.0 };
+  // 【2026-11-15 プラットフォームの DRAM 遅延 dramLat を ST に入れた(uCal・x86 の u・σ 0.03183 → 0.03151 が動いた)あとで c を再校正 0.412 → 0.405】標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4046(小数 3 桁で 0.405)。指数は 0.15 のまま(ユーザー決定)。標本は 11 件のまま(id の除外ルール据え置き)。MT 自体には遅延を入れていない(opts.noMemory は 85ns のまま)。設計書 §5.3.0【2026-11-15 DRAM 遅延】
+  const MT_CLOCK_POWER = { c: 0.405, exp: 0.15, max: 1.0 };
   const mtClockByPower = (w) => Math.min(MT_CLOCK_POWER.max, MT_CLOCK_POWER.c * Math.pow(w, MT_CLOCK_POWER.exp));
   // 帯を決める公表電力: range.maxW(cTDP 上限など設定範囲の上限)があればそれ、なければ power.base.w。peak(短時間ピーク・実測)は使わない。どちらも無ければ null
   // 【2026-11-12 冷却による制限(ユーザー指示「冷却のプリセットを作って、それでマルチ性能が変わるようにする」)】選んだ冷却が MT 持続電力 sustainedW を持つ(ノート PC の冷却クラス。data/cooling.js)とき、

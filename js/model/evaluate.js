@@ -12,6 +12,8 @@
   // uarch 記録の uRatio(Zen 3 の u × 0.95)の Cezanne(5800U)用。決めた SKU(5600G・5700G)はプリセットではないので、学習内の誤差の判定(inRatioSet)は無い。設計書 §5.3.0【2026-11-14 Cezanne】
   const RATIO_INFO_CEZANNE = 'Cezanne の u は Zen 3 の u × 0.95 [推定・校正値](デスクトップ APU の 5600G・5700G の Windows 中央値 2 件から。5800U の公開値に合わせた値ではない)';
   // 借り先の uarch(uRatioOf。detail・ST の corrUFrom)ごとの注記。未知の借り先は一般的な文
+  // ST の DRAM 遅延 dramLat(プリセットの cfg.dramLat。2026-11-15)の表示文。区分: 実測・二次(その SKU・プラットフォームで測られた値)・推定(別の SKU の値の代用)。設計書 §5.2・§5.3.0【2026-11-15 DRAM 遅延】
+  const dramLatInfo = (d) => (d && typeof d.ns === 'number' ? `DRAM 遅延 ${d.ns}ns [${d.s || '区分不明'}${d.s === '推定' ? '。別の SKU の値の代用' : ''}]で ST を計算(測定構成: ${d.cfg || '不明'}。${d.src || '出典なし'})` : null);
   const RATIO_INFOS = { 'Lion Cove': RATIO_INFO, 'Zen 3': RATIO_INFO_CEZANNE };
   const ratioInfo = (from) => RATIO_INFOS[from] || 'u は別の uarch の u に比を掛けた値 [推定・校正値]';
   const TOLERANCE = 0.10; // 性能の許容誤差 ±10%(設計書 §5.3)
@@ -67,7 +69,7 @@
     if (!r.ok) { base.reason = r.reason || '計算できません'; return base; }
     Object.assign(base, {
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
-      corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null, ...(kind === 'st' && r.corrSource === 'ratio' && r.corrUFrom ? { corrUFrom: r.corrUFrom } : {}), // ratio のときだけ(uFrom の SKU の評価 JSON は変えない)
+      corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null, ...(kind === 'st' && r.corrSource === 'ratio' && r.corrUFrom ? { corrUFrom: r.corrUFrom } : {}), ...(kind === 'st' && r.dramLat ? { dramLat: r.dramLat } : {}), // ratio のときだけ(uFrom の SKU の評価 JSON は変えない)
       errPct: pct(r.score, pubVal), memory: r.memory || null,
       noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null,
     });
@@ -129,6 +131,7 @@
     const w = [];
     if (st.ok && (st.corrSource === 'isa' || st.corrFrom === 'isa')) w.push({ level: 'warn', text: 'ST: このマイクロアーキに専用の補正がなく、同じ命令セットの平均で代用しています(確度は低)' });
     if (st.ok && st.corrSource === 'ratio') w.push({ level: 'info', text: 'ST: ' + ratioInfo(st.corrUFrom) });
+    if (st.ok && st.dramLat) w.push({ level: 'info', text: 'ST: ' + dramLatInfo(st.dramLat) });
     if (st.ok && st.fallback) w.push({ level: 'warn', text: 'ST: in-order コアの IPC は根拠のない仮の値です' });
     if (!st.ok) w.push({ level: 'info', text: `ST を計算できません: ${st.reason}` });
     if (mt.ok) {
@@ -433,7 +436,7 @@
     return result;
   }
 
-  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, ratioInfo, ratioFroms, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
+  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, ratioInfo, ratioFroms, dramLatInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

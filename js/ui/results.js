@@ -206,6 +206,7 @@
     const stExtra = [];
     if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
     if (ev.st.ok && ev.st.corrSource === 'ratio') stExtra.push(note(root.SDS.model.evaluate.ratioInfo(ev.st.corrUFrom), 'warn-note'));
+    if (ev.st.ok && ev.st.dramLat) stExtra.push(note(root.SDS.model.evaluate.dramLatInfo(ev.st.dramLat), ev.st.dramLat.s === '推定' ? 'warn-note' : undefined));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note always'));
     l3Notes(ev.st).forEach((n) => stExtra.push(n));
     // メモリ構成(設計書 §5.2.4): 基準と違う選択のときだけ、係数が推定であることを示す

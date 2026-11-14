@@ -78,6 +78,14 @@ Object.keys(D.uarch || {}).forEach((name) => {
   ok(Array.isArray(c.excluded), `uarch ${name}.uCal.excluded が配列でない`);
   (Array.isArray(c.excluded) ? c.excluded : []).forEach((id) => ok((D.presets || []).some((p) => p.id === id), `uarch ${name}.uCal.excluded の id「${id}」が presets に無い`));
 });
+// cfg.dramLat(プラットフォームの DRAM 遅延。2026-11-15): ns は 20〜300 の有限数、s は 実測・二次・推定、src と cfg は空でない文字列。s が 推定 のとき src は「代用:」で始まる(別の SKU の値の代用であることを明記)
+(D.presets || []).forEach((p) => {
+  const d = p.cfg && p.cfg.dramLat; if (d === undefined) return;
+  ok(d && typeof d.ns === 'number' && Number.isFinite(d.ns) && d.ns >= 20 && d.ns <= 300, `presets ${p.id}: cfg.dramLat.ns が 20〜300 の数でない`);
+  ok(d && ['実測', '二次', '推定'].includes(d.s), `presets ${p.id}: cfg.dramLat.s が 実測・二次・推定 のいずれでもない`);
+  ok(d && typeof d.src === 'string' && d.src.length > 10 && typeof d.cfg === 'string' && d.cfg.length > 0, `presets ${p.id}: cfg.dramLat の src・cfg が空`);
+  ok(!d || d.s !== '推定' || /^代用:/.test(d.src), `presets ${p.id}: cfg.dramLat.s が 推定 なのに src が「代用:」で始まらない`);
+});
 // uRatioOf: 借り先の uarch が存在し、cal.u に直接 u を持つこと(代表の u か uCal)。uRatio は 0 より大きい有限数(2026-11-13)
 (function () {
   const P = require(path.join(root, 'js', 'sim', 'perf.js'));

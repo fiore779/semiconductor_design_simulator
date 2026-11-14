@@ -248,7 +248,8 @@ test('モード B 12900K: L3 0/1/4/30MB の ST/MT を固定(0 は noL3、小さ�
   // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値(実測)に差し替え(ユーザー決定)。uCal 114.1→116.5・σ 0.03270→0.03306 で ST/MT が動いた。旧 0:[1802.55,14738.81] 1:[2000.40,14738.81] 4:[2209.99,14738.81] 30:[2367.46,17545.83]
   // 2026-11-13(Windows のみ化 第 2 回): 1800X の MT 公開値 6671 → 7203 で σ 0.03306 → 0.03183、x86 ISA 平均 u 109.18 → 109.77(E コア Gracemont が使う)で MT が動いた(ST は不変)。旧 MT 0/1/4:14982.52 30:17836.62
   // 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): MT 0/1/4:15249.61 → 15234.94、30:18158.09 → 18138.36(ST は不変)
-  const exp = { 0: [1840.47, 15234.94], 1: [2042.48, 15234.94], 4: [2256.48, 15234.94], 30: [2417.26, 18138.36] };
+  // 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): ST 0/1/4/30:1840.47/2042.48/2256.48/2417.26 → 1897.96/2082.08/2279.55/2425.60(12900K の遅延 76.1ns)、MT 15234.94 → 15286.22、18138.36 → 18199.27
+  const exp = { 0: [1897.96, 15286.22], 1: [2082.08, 15286.22], 4: [2279.55, 15286.22], 30: [2425.60, 18199.27] };
   const rs = {};
   [0, 1, 4, 30].forEach((mb) => {
     const r = E.evaluate(design.setL3(impD('intel-adl-12900k'), mb).design, ctx); rs[mb] = r;
@@ -298,7 +299,7 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
   // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正)
   // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
-  const f185 = Math.min(1, 0.412 * Math.pow(115, 0.15));
+  const f185 = Math.min(1, 0.405 * Math.pow(115, 0.15));
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });
@@ -353,7 +354,7 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
   D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
   // レビュー対応の時点(b2a8a08 の値)は 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%。2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183・x86 ISA 平均 u・c 0.411 → 0.406 の再校正で動いた(比 0.90 は不変。4 件とも ok のまま)
-  const want = { 'intel-arl-285k': 0, 'intel-arl-265k': -4.44, 'intel-arl-275hx': 4.84, 'intel-arl-285h': 8.29 }; /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
+  const want = { 'intel-arl-285k': 1.21, 'intel-arl-265k': -3.34, 'intel-arl-275hx': 4.58, 'intel-arl-285h': 7.82 }; /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 285K 0.00 → +1.21、265K -4.44 → -3.34、275HX +4.84 → +4.58、285H +8.29 → +7.82(4 件とも ok のまま) */ /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
   ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
   // 編集後は公開値が無いので印を外す
   const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
@@ -395,5 +396,5 @@ test('ratio の注記: 5800U は ST・MT とも info「Cezanne の u は Zen 3 �
   ['amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x', 'amd-zen3p-7735hs'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE)), id));
   const r = ev('amd-zen3-5800u'); assert.strictEqual(r.mt.inRatioSet, false); assert.strictEqual(r.st.inRatioSet, false); assert.strictEqual(r.st.corrUFrom, 'Zen 3');
   assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']);
-  assert.ok(Math.abs(r.st.errPct - 14.26) < 0.05 && Math.abs(r.mt.errPct - 15.90) < 0.05) /* 2026-11-15: MT +15.68 → +15.90(c 0.411 → 0.412) */; // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
+  assert.ok(Math.abs(r.st.errPct - 14.44) < 0.05 && Math.abs(r.mt.errPct - 14.12) < 0.05) /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 5800U の ST +14.26 → +14.44%、MT +15.90 → +14.12% */ /* 2026-11-15: MT +15.68 → +15.90(c 0.411 → 0.412) */; // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
 });
