@@ -294,9 +294,10 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   assert.ok(r.ok); assert.strictEqual(r.clockInfo.applied, 'partial');
   // 2026-11-09: 185H(115W)の係数は連続式 min(1, 0.429·115^0.15) ≈ 0.875(旧: 帯 1 の 0.81 → 指数 1/3 の連続式 0.928)
   // 2026-11-10: γ=0.30 に合わせて c=0.443(185H で ≈ 0.903)
-// 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
+  // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
   // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正)
-  const f185 = Math.min(1, 0.411 * Math.pow(115, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  const f185 = Math.min(1, 0.411 * Math.pow(115, 0.15));
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });

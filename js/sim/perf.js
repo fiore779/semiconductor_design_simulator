@@ -167,7 +167,7 @@
 
   // MT の持続クロック係数(§5.3.0)。全コア負荷時のクロック = 係数 × boost。[推定・校正値]で、実際の熱・電力制限を表すものではない。
   // preset.kind で引く(pc=1.0 に丸める。kind なし・混合設計・embedded・server は 1.0)。fByType を明示指定したときは掛けない。
-  // 'mobile'(スマホ SoC)は一律 0.91。'mobile-pc' の 0.81 は電力が未取得のときのフォールバック(§5.3.3 G の1)で、mobile とは別の値(変えない)。
+  // 'mobile'(スマホ SoC)は一律 0.91。'mobile-pc' の 0.81 は x86 で電力が未取得のときのフォールバック(§5.3.3 G の1)で、mobile とは別の値(変えない)。Arm の mobile-pc で電力が未取得のときは 0.81 ではなく mobile と同じ値(armFlat。2026-11-14)。
   // 【2026-11-07 再校正 mobile 0.81 → 0.92】ユーザー指示「NG になっているものも修正して」。kind==='mobile' で MT が計算でき公開値がある 18 件(qc-855/865/888/8gen1/8plus-gen1/8gen2/8elite/8elite-gen5/8elite-x-gen6/780g/7gen1/7gen3/720g/6gen1/4gen2、
   // mt-9000/9200/8200)について、予測が公開値と一致する係数を二分法で逆算した中央値が 0.925(範囲 0.629〜1.292)。0.92 にすると MT の ±10% 外が 15 件 → 9 件。
   // 世代でばらつく(8 Elite 系 0.63〜0.76、古い 855/865/888/720G は 1.1〜1.3)ので 1 つの係数では表せない。チャート値からの逆算で偏りを含む。[推測・未検証]。docs/research/mobile-mt-factor-2026-11-07.md
@@ -232,7 +232,7 @@
     // 電力が未取得の Arm ノート用チップ(8cx Gen 3)は x86 由来の 0.81 ではなくスマホと同じ係数(mobile)を使う(2026-11-14。[推定・校正値]。0.81 と連続式の c は x86 11 件だけで決めた値で、同じ X1 / A78 世代のスマホの必要係数は 0.89〜1.11。設計書 §5.3.0【2026-11-14 Android】)
     if (!p && preset.isa === 'arm') return { factor: MT_CLOCK_FACTOR.mobile, band: null, powerW: null, source: null, fallback: true, armFlat: true };
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
-    // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(c=0.429、指数 0.15。min(1, c·W^0.15))
+    // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(現在 c=0.411、指数 0.15。min(1, c·W^0.15)。MT_CLOCK_POWER)
     return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false, ...(p.source === 'cooling' ? { coolingLimit: { coolingId: p.coolingId, sustainedW: p.w, fromW: p.fromW, fromSource: p.fromSource } } : {}) };
   }
   const mtClockFactor = (preset) => mtClockInfo(preset).factor;
