@@ -116,11 +116,91 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 7 165H(1.4GHz, 16c)",
+  "single": 1920,
+  "multi": 11405,
+  "kind": "実測",
+  "n": 163
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 7 155H(1.4GHz, 16c)",
+  "single": 1797,
+  "multi": 10356,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 5 135H(1.7GHz, 14c)",
+  "single": 1981,
+  "multi": 10094,
+  "kind": "実測",
+  "n": 136
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 5 125H(1.2GHz, 14c)",
+  "single": 1797,
+  "multi": 7744,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 7 165U(1.7GHz, 12c)",
+  "single": 1766,
+  "multi": 7764,
+  "kind": "実測",
+  "n": 118
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 7 155U(1.7GHz, 12c)",
+  "single": 1674,
+  "multi": 6929,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 7 164U(1.1GHz, 12c)",
+  "single": 1733,
+  "multi": 6935,
+  "kind": "実測",
+  "n": 30
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
   "name": "Meteor Lake: Core Ultra 5 135U(2.1GHz, 12c)",
-  "single": 1710,
-  "multi": 7817,
-  "kind": "チャート",
-  "n": null
+  "single": 1813,
+  "multi": 6865,
+  "kind": "実測",
+  "n": 161
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 5 134U(0.7GHz, 12c)",
+  "single": 1604,
+  "multi": 6091,
+  "kind": "実測",
+  "n": 11
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 5 125U(1.3GHz, 12c)",
+  "single": 1843,
+  "multi": 7448,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "Intel(Alder Lake 以降)",
+  "name": "Meteor Lake: Core Ultra 5 115U(1.5GHz, 8c)",
+  "single": 1820,
+  "multi": 6053,
+  "kind": "実測",
+  "n": 73
  },
  {
   "group": "Intel(Alder Lake 以降)",

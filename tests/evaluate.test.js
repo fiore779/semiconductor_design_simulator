@@ -263,7 +263,8 @@ test('inUCalSet: Golden/Raptor 10 件の ST だけ true(代表ではない学習
   const ids = D.presets.filter((p) => ev(p.id).st.inUCalSet).map((p) => p.id).sort();
   // 2026-11-07: Cortex-A78 の uCal(780G・6 Gen 1・4 Gen 2・Dimensity 8200 の 4 件)が加わって 10 → 14 件(Golden/Raptor 10 件 + A78 4 件)
   // 2026-11-13(Windows のみ化 第 2 回): Cougar Cove の uCal 98.3(388H・386H・378H・358H・325・320 の 6 件)が加わって 14 → 20 件
-  assert.strictEqual(ids.length, 20);
+  // 2026-11-14: Redwood Cove の uCal 99.5(標本はプリセットの 185H と、プリセットにしていない参考データ 10 件)が加わって 20 → 21 件(プリセットで増えるのは 185H の 1 件だけ)
+  assert.strictEqual(ids.length, 21); assert.ok(ids.includes('intel-mtl-185h'));
   assert.ok(['intel-ptl-x9-388h', 'intel-ptl-x9-386h', 'intel-ptl-x9-378h', 'intel-ptl-x7-358h', 'intel-ptl-u5-325', 'intel-wcl-c5-320'].every((id) => ids.includes(id)));
   assert.ok(['qc-780g', 'qc-6gen1', 'qc-4gen2', 'mt-8200'].every((id) => ids.includes(id)));
   assert.ok(!ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));
@@ -295,7 +296,7 @@ test('clockInfo.applied: 係数をすべてのコアに掛けたか(all / partia
   // 2026-11-10: γ=0.30 に合わせて c=0.443(185H で ≈ 0.903)
 // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値に差し替えたため、連続式の c を 0.443 → 0.411 に再校正した(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4115。p=0.15 は LOO 最小のまま)
   // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406(Cougar Cove の uCal 追加後の再校正)
-  const f185 = Math.min(1, 0.406 * Math.pow(115, 0.15));
+  const f185 = Math.min(1, 0.411 * Math.pow(115, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.ok(Math.abs(r.clockInfo.factor - f185) < 1e-12); // 電力に応じた係数(掛けなかったコアがあっても factor は式のまま)
   assert.ok(Math.abs(r.clockFactor - f185) < 1e-12 && r.detail.some((d) => d.clockFactor === 1 && d.clockSource === 'base'));
 });
@@ -350,7 +351,7 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
   D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
   // レビュー対応の時点(b2a8a08 の値)は 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%。2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183・x86 ISA 平均 u・c 0.411 → 0.406 の再校正で動いた(比 0.90 は不変。4 件とも ok のまま)
-  const want = { 'intel-arl-285k': 1.77, 'intel-arl-265k': -2.76, 'intel-arl-275hx': 5.38, 'intel-arl-285h': 8.72 };
+  const want = { 'intel-arl-285k': 1.77, 'intel-arl-265k': -2.76, 'intel-arl-275hx': 6.47, 'intel-arl-285h': 9.86 }; // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
   ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
   // 編集後は公開値が無いので印を外す
   const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
