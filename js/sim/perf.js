@@ -256,7 +256,18 @@
       const clockSource = given ? 'given' : allc ? 'allcore' : c.boostGHz ? 'boost' : c.maxGHz ? 'max' : 'base';
       // 係数は boost/max がある場合のみ掛ける(base へのフォールバックと fByType 指定には掛けない)
       const applied = clockSource === 'boost' || clockSource === 'max' ? kf : 1;
-      const f = f0 ? f0 * applied : f0;
+      let f = f0 ? f0 * applied : f0;
+      // 【2026-11-15 Zen 5c の MT クロック(A1。[推定]。ユーザー決定「HX 370 と Kraken 350 の MT の項を入れて進めて」)】x86 の mobile-pc で、最速コア(P)と同じ設計の高密度コア(uarch.js の uFrom が最速コアの uarch を指すもの。Zen 5c)は、
+      // MT クロック = min(自分の最大クロック, 係数 × P の最大クロック)。P は従来どおり(係数 × boost)。同じ電圧なら P が係数 × 最大で回るとき、最大クロックの低い高密度コアは自分の上限で回る、という考え方。
+      // Zen 5c の全コア負荷時の実測クロックは未取得で、公開値に合わせた値ではない(係数は P と同じ mtClockInfo の値。式の形の根拠は設計書 §5.3.0【2026-11-15 Zen 5c】)。Intel の E コアや Arm・スマホ(uFrom を持つ Oryon Performance など)には当てない(isa x86・kind mobile-pc のときだけ)
+      let clockCap = false;
+      if (f && applied !== 1 && preset.kind === 'mobile-pc' && preset.isa === 'x86') {
+        const top = topCore(cores); const ur = uarchDb[c.uarch];
+        if (top && top !== c && ur && ur.uFrom && ur.uFrom === top.uarch) {
+          const tf0 = top.boostGHz || top.maxGHz;
+          if (tf0) { const cap = tf0 * kf; if (f0 < cap) { f = f0; } else { f = cap; } clockCap = true; }
+        }
+      }
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
       const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads, noMemory: true });
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
@@ -265,7 +276,7 @@
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: applied, clockSource, corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: clockCap ? f / f0 : applied, ...(clockCap ? { clockCap: true } : {}), clockSource, corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // メモリ構成の MT 係数(§5.2.4)。基準構成では 1(厳密)。ST の内部呼び出しには掛けず、ここで 1 回だけ掛ける
@@ -275,7 +286,7 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta * memF, eta, ...(memActive ? { memory: mem } : {}), clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, memActive ? { memory: mem } : {}, { applied: detail.length && detail.every((d) => d.clockFactor !== 1) ? 'all' : detail.some((d) => d.clockFactor !== 1) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
+    return { ok: true, score: sum * eta * memF, eta, ...(memActive ? { memory: mem } : {}), clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, memActive ? { memory: mem } : {}, { applied: detail.length && detail.every((d) => d.clockFactor !== 1 || d.clockCap) ? 'all' : detail.some((d) => d.clockFactor !== 1 || d.clockCap) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。

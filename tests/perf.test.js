@@ -723,3 +723,21 @@ test('Orin: A78AE は uFrom Cortex-A78(uCal)で ST の u を借りる。公開�
   assert.ok(Math.abs(st.score / g.single - 1 - 0.0736) < 0.001); assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / g.multi - 1 + 0.0563) < 0.001);
   assert.strictEqual(F.stScore(preset('nv-t239'), c, D.uarch).corrSource, 'isa');
 });
+// 2026-11-15(Zen 5c の MT クロック A1。[推定]。ユーザー決定「HX 370 と Kraken 350 の MT の項を入れて進めて」): x86 の mobile-pc で、最速コアと同じ設計の高密度コア(uFrom が最速コアの uarch を指す Zen 5c)の MT クロック = min(自分の最大, 係数 × P の最大)。P は従来どおり
+test('Zen 5c の MT クロック: min(自分の最大, 係数 × P の最大)。HX 370 -18.5 → -5.1%・350 -5.6 → +5.7%。ほかの SKU(スマホ・Oryon・Intel の E・5800U など)と ST は動かず、c は不変', () => {
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  [['amd-strix-hx370', -0.0515], ['amd-kraken-350', 0.0566]].forEach(([id, want]) => {
+    const p = preset(id); const r = F.mtScore(p, c, D.uarch, null); const P = r.detail.find((d) => d.type === 'P'); const Z = r.detail.find((d) => d.type !== 'P');
+    const kf = F.mtClockInfo(p).factor; const zmax = p.cfg.cores.find((g) => g.type === Z.type).boostGHz;
+    assert.ok(Math.abs(P.fGHz - p.cfg.cores.find((g) => g.type === 'P').boostGHz * kf) < 1e-9, id + ' P は従来どおり');
+    assert.strictEqual(Z.fGHz, Math.min(zmax, p.cfg.cores.find((g) => g.type === 'P').boostGHz * kf)); assert.strictEqual(Z.fGHz, zmax); assert.strictEqual(Z.clockCap, true); // 54W の係数 0.748 × P ≥ Zen 5c の最大 → 自分の最大
+    assert.strictEqual(r.clockInfo.applied, 'all');
+    assert.ok(Math.abs(r.score / gb7ByName[p.gb7].multi - 1 - want) < 0.001, id + ' ' + (r.score / gb7ByName[p.gb7].multi - 1));
+    // 係数の上限を超えない側(P の最大 × 係数 が自分の最大より低い場合)は上限が効く
+    const q = clone(p); q.cfg.cores.find((g) => g.type === 'P').boostGHz = 3.0; const rq = F.mtScore(q, c, D.uarch, null); assert.ok(Math.abs(rq.detail.find((d) => d.type === Z.type).fGHz - 3.0 * kf) < 1e-9);
+  });
+  assert.ok(Math.abs(c.mt.sigma - 0.031833822965568775) < 1e-12); assert.strictEqual(F.MT_CLOCK_POWER.c, 0.411); // σ・c は不変(標本 11 件の k_i ÷ W_i^0.15 の中央値 0.4114 のまま。HX 370 は標本の 1 件だが中央値は動かない)
+  // 当てない: x86 の mobile-pc 以外(uFrom を持つ Oryon Performance のスマホ・Zen+ のデスクトップ)
+  const e = F.mtScore(preset('qc-8elite'), c, D.uarch, null); assert.ok(e.detail.every((d) => !d.clockCap));
+  assert.ok(F.mtScore(preset('amd-zenplus-2700x'), c, D.uarch, null).detail.every((d) => !d.clockCap));
+});
