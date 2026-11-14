@@ -628,7 +628,8 @@ test('設定範囲の表示: range.minW が null なら「最大 N W」。null�
   const ctx = loadAll(stubDoc());
   const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
   const c = makeContext();
-  ['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h'].forEach((id) => {
+  // 2026-11-14: 285H は ARK の最小保証パワー 35W [公表] を反映して range.minW が 35 になった(「35〜115 W」と出る。下の確認)。13980HX・14900HX は未取得のまま
+  ['intel-rpl-13980hx', 'intel-rpl-14900hx'].forEach((id) => {
     const p = c.presets.find((x) => x.id === id);
     assert.strictEqual(p.power.range.minW, null, id);
     const ev = evaluate(DS.fromPreset(p, { mode: 'reproduce' }), c);
@@ -642,6 +643,7 @@ test('設定範囲の表示: range.minW が null なら「最大 N W」。null�
   const p2 = c.presets.find((x) => x.id === 'intel-rpl-14700hx');
   const ev2 = evaluate(DS.fromPreset(p2, { mode: 'reproduce' }), c); const out2 = new FakeNode('div'); ui.results.renderResults(out2, ev2, DS.fromPreset(p2, { mode: 'reproduce' }));
   assert.ok(out2.textContent.includes('45〜157 W'));
+  { const p3 = c.presets.find((x) => x.id === 'intel-arl-285h'); assert.strictEqual(p3.power.range.minW, 35); const ev3 = evaluate(DS.fromPreset(p3, { mode: 'reproduce' }), c); const out3 = new FakeNode('div'); ui.results.renderResults(out3, ev3, DS.fromPreset(p3, { mode: 'reproduce' })); assert.ok(out3.textContent.includes('35〜115 W') && !/null〜|undefined/.test(out3.textContent)); }
   // 詳細ダイアログ
   const body = new FakeNode('body');
   ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;

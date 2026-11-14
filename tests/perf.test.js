@@ -53,6 +53,7 @@ const VALIDATION_PAIRS = [
   ['apple-m1pro', 'Firestorm(代表 M1)'], ['apple-m1max', 'Firestorm(代表 M1)'], ['apple-a15', 'Avalanche(代表 M2)'],
   ['qc-8elite-gen5', 'Oryon(代表 8 Elite)'], ['qc-8plus-gen1', 'Cortex-X2(代表 8 Gen 1)'], ['mt-9200', 'Cortex-X3(代表 8 Gen 2)'],
   // 2026-11-14(Android の公開値を通常の群の中央値に取り直し): 7+ Gen 3(+12.6 → -7.1%)と 9300(-10.2 → +0.4%)が ±10% に入った(旧: 低い群の機種が混ざった公開値と、それで決めた X4 の u が主因)
+  ['nv-orin-agx', 'Cortex-A78AE(uFrom: Cortex-A78 の uCal 122.5)。公開値は開発者キット 4 件の中央値(2026-11-14)'],
   ['qc-7plus-gen3', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'], ['mt-9300', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'],
   // 2026-11-07(公開値を直近 25 件の全体中央値に取り直し。ユーザー指示「全体の中央値を取得してください」): 旧チャート値では ST が +13〜18% 高く外れ値だった 3 件が ±10% に入った(HX 370 +8.4%、268V +5.1%、395 +1.4%)
   ['amd-strix-hx370', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に直近25件の全体中央値から差し替え)'], ['amd-strixhalo-395', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に全体中央値 n=171 から差し替え)'],
@@ -73,7 +74,8 @@ VALIDATION_PAIRS.forEach(([id, why]) => {
 // 2026-11-07: HX 370・268V・395 は公開値を全体の中央値に取り直して ST が ±10% に入ったため外し、検証ペアへ移した(公開値側の偏りが主因だった。設計書 §5.3.3)。
 // 2026-11-13: PC 系 CPU の GB7 を Windows のみの中央値(実測)に差し替えた(ユーザー決定)。268V の公開値は 2360 → 2306 に下がり、代表 265K の公開値が上がって Lion Cove の u が +3.9% 動いたため、ST は +5.1% → +11.8% で ±10% の外になった。検証ペアから外し、外れ値側に移した
 // 2026-11-14(Android の公開値を通常の群の中央値に取り直し): 7+ Gen 3・9300 は ±10% に入ったので外した(検証ペアへ)。逆に 7 Gen 1(+17.5%)・7 Gen 3(+15.9%)・Orin(+10.0%)は、専用の u が無く借りる Arm の ISA 平均 u が 106.4 → 122.9 に上がって外れた(ユーザーの回答待ち。推奨は受け入れる。設計書 §13.4)
-const KNOWN_MISSES = ['qc-7gen1', 'qc-7gen3', 'nv-orin-agx', 'intel-lnl-268v'];
+// 2026-11-14(x86・NVIDIA の ng 対応): Orin は Cortex-A78AE に uFrom 'Cortex-A78'(u 122.5)・公開値を開発者キット 4 件に差し替えて ST +10.0 → +7.4% で ±10% に入った(検証ペアへ)
+const KNOWN_MISSES = ['qc-7gen1', 'qc-7gen3', 'intel-lnl-268v'];
 test('既知の外れ値は ±10% を超える(記録。直ったらリストから外す)', () => {
   const c = cal();
   KNOWN_MISSES.forEach((id) => assert.ok(F.stScore(preset(id), c, D.uarch).ok, `${id} が計算不能(外れ値ではなく対象外)`));
@@ -608,7 +610,16 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   // 他のデスクトップ SKU は allCoreGHz を持たず、結果は不変(5800X〔σ の代表〕にも付けていない。付けると σ が 0.0289 → 0.0283 に動き、ほかのデスクトップ・SoC 33 件の誤差が悪化したため)
   // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
   // 2026-11-14: 7950X の P 5.0GHz(KitGuru の Cinebench R23 全コア平均「5GHz 強」。[二次]。5950X と同じ出典・同じ測り方)を追加
-  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 } };
+  // 2026-11-14: 12100 の P 4.1GHz(HWCooling の 12100F レビューの仕様表「Max. boost (all-core) 4.1 GHz (P)」。[二次]。12100F は 12100 と同じ CPU コアで iGPU の有無だけの違い)を追加
+  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 } };
+  { // 12100: MT のクロックが全コアの 4.1GHz になる(係数は掛けない)。MT +10.9%(ng)→ +6.4%(ok)。allCoreGHz なしでは +10.9% のまま(ST は不変。uCal の標本は ST なので不変)
+    const p1 = preset('intel-adl-12100'); const r1 = F.mtScore(p1, c, D.uarch, null);
+    assert.strictEqual(r1.detail[0].clockSource, 'allcore'); assert.strictEqual(r1.detail[0].fGHz, 4.1); assert.strictEqual(r1.detail[0].clockFactor, 1);
+    assert.ok(Math.abs(r1.score / gb7ByName[p1.gb7].multi - 1 - 0.0640) < 0.001, String(r1.score / gb7ByName[p1.gb7].multi - 1));
+    const q1 = clone(p1); delete q1.cfg.cores[0].allCoreGHz; const r10 = F.mtScore(q1, c, D.uarch, null);
+    assert.strictEqual(r10.detail[0].clockSource, 'boost'); assert.ok(Math.abs(r10.score / gb7ByName[p1.gb7].multi - 1 - 0.1090) < 0.001);
+    assert.strictEqual(F.stScore(p1, c, D.uarch).score, F.stScore(q1, c, D.uarch).score);
+  }
   { // 7950X: MT のクロックが全コアの実測 5.0GHz になる(係数は掛けない)。MT +11.4%(ng)→ +0.3%(ok)。allCoreGHz なしでは +11.4% のまま(ST は不変)
     const p7 = preset('amd-zen4-7950x'); const r7 = F.mtScore(p7, c, D.uarch, null);
     assert.strictEqual(r7.detail[0].clockSource, 'allcore'); assert.strictEqual(r7.detail[0].fGHz, 5.0); assert.strictEqual(r7.detail[0].clockFactor, 1);
@@ -702,4 +713,13 @@ test('Oryon Performance: 幅 4・L1D 64KB・L2 遅延 21・ROB なし(2026-11-14
   const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
   const r = F.mtScore(preset('qc-8elite'), c, D.uarch, null); assert.ok(r.ok);
   assert.ok(Math.abs(r.score / gb7ByName[preset('qc-8elite').gb7].multi - 1) < 0.05); // 公開値の取り直しとセットで MT がほぼ一致(-2.6%)。単独だと悪化する
+});
+// 2026-11-14(x86・NVIDIA の ng 対応): Orin の Cortex-A78AE は uFrom で Cortex-A78 の uCal を借りる(Zen 5c・Zen+ と同じ扱い)。公開値は開発者キット 12 コア 4 件の中央値。T239 の A78C は対象外のまま
+test('Orin: A78AE は uFrom Cortex-A78(uCal)で ST の u を借りる。公開値は開発者キット 4 件(807 / 6922)。ST +7.4%・MT -5.6%。T239(A78C)は ISA 平均のまま', () => {
+  assert.strictEqual(D.uarch['Cortex-A78AE'].uFrom, 'Cortex-A78'); assert.strictEqual(D.uarch['Cortex-A78C'].uFrom, null);
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal()); const p = preset('nv-orin-agx');
+  const st = F.stScore(p, c, D.uarch); assert.strictEqual(st.corrSource, 'uarch'); assert.strictEqual(st.corrUFrom, 'Cortex-A78'); assert.strictEqual(st.corr, c.u['Cortex-A78']);
+  const g = gb7ByName[p.gb7]; assert.deepStrictEqual([g.single, g.multi, g.kind, g.n], [807, 6922, '実測', 4]);
+  assert.ok(Math.abs(st.score / g.single - 1 - 0.0736) < 0.001); assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / g.multi - 1 + 0.0563) < 0.001);
+  assert.strictEqual(F.stScore(preset('nv-t239'), c, D.uarch).corrSource, 'isa');
 });
