@@ -233,6 +233,7 @@
         if (ci.applied === 'partial') how += '。boost が未取得のコアには掛けていません(基本クロックのまま)';
         mtExtra.push(note(`MT の全コア負荷時クロックは ${base} × ${ev.mt.clockFactor}(${how}。[推定・校正値]で、実際の熱・電力制限を表すものではありません。係数はチャート値からの逆算で、チャートの偏りを含みます〔推測・未検証〕)。`, 'warn-note'));
       }
+      if (root.SDS.model.evaluate.allCoreInfo(ev.mt)) mtExtra.push(note(root.SDS.model.evaluate.allCoreInfo(ev.mt), 'warn-note'));
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note always'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note always'));
       (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.ratioInfo(d.corrUFrom, d.corrUarch)}`, 'warn-note')));

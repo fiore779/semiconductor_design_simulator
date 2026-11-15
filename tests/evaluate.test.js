@@ -470,3 +470,20 @@ test('ratio の注記: 285H の P は ST・MT とも info「Arrow Lake-H の P �
   near('intel-arl-285h', 2.57, 3.52); near('intel-rpl-14700hx', 4.47, 12.83); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
   assert.ok(Math.abs(ev('intel-rpl-14700hx').st.errPct) <= 10); assert.ok(Math.abs(ev('intel-rpl-14700hx').mt.errPct) > 10); // MT は ng のまま(IPC では直らない)
 });
+
+// 2026-11-15(7840HS の allCoreGHz 4.40。mobile-pc で初めて): MT は電力の連続式を通らないので、冷却クラス・TDP を選んでも MT の数値は同じ。冷却は「制限」にも「編集済み」にもならず、注記が出る。5800U(allCoreGHz なし)は従来どおり冷却で下がる
+test('7840HS: allCoreGHz があるので冷却クラスは MT に効かず(編集済みにならず)、MT に allCoreInfo の注記が出る。386H は従来どおり', () => {
+  const p = D.presets.find((x) => x.id === 'amd-zen4-7840hs');
+  const base = E.evaluate(design.fromPreset(p), ctx);
+  assert.ok(Math.abs(base.mt.errPct - 1.39) < 0.05, String(base.mt.errPct));
+  assert.ok(base.warnings.some((w) => /^MT: MT の全コア負荷時クロックは allCoreGHz\(P 4.4GHz/.test(w.text) && /TDP・冷却クラスは MT に効きません/.test(w.text)));
+  assert.strictEqual(E.allCoreInfo(base.mt).includes('P 4.4GHz'), true);
+  const d = design.setCooling(design.fromPreset(p), 'laptop-thin-light').design;
+  const r = E.evaluate(d, ctx);
+  assert.strictEqual(r.mt.score, base.mt.score); assert.strictEqual(r.edited, false); assert.ok(!r.warnings.some((w) => /持続電力/.test(w.text)));
+  const q = D.presets.find((x) => x.id === 'intel-ptl-x9-386h'); // 5800U(25W)は冷却 28W で制限されないので、80W の 386H で比べる
+  const bq = E.evaluate(design.fromPreset(q), ctx); const rq = E.evaluate(design.setCooling(design.fromPreset(q), 'laptop-thin-light').design, ctx);
+  assert.ok(rq.mt.score < bq.mt.score); assert.strictEqual(rq.edited, true); assert.strictEqual(E.allCoreInfo(bq.mt), null);
+  // デスクトップ(5950X)の allCoreGHz には出さない
+  assert.strictEqual(E.allCoreInfo(E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-zen3-5950x')), ctx).mt), null);
+});

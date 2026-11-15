@@ -235,11 +235,14 @@
     if (!flat) return { factor: 1.0, band: null, powerW: null, source: null, fallback: false };
     if (kind !== 'mobile-pc') return { factor: flat, band: null, powerW: null, source: null, fallback: false };
     const p = mtPublishedW(preset);
+    // 【2026-11-15 7840HS の allCoreGHz】全コアが allCoreGHz(実測由来)を持つと、mtScore はクロックに電力の連続式を掛けない(下の factor は使われない)ので、選んだ TDP・冷却クラスは MT に効かない。powerIgnored: true で呼び出し側(evaluate・results)に知らせる(冷却の制限・編集扱いの判定に使う)
+    const cores0 = (preset.cfg && preset.cfg.cores) || [];
+    const powerIgnored = cores0.length > 0 && cores0.every((c) => typeof c.allCoreGHz === 'number' && c.allCoreGHz > 0);
     // 電力が未取得の Arm ノート用チップ(8cx Gen 3)は x86 由来の 0.81 ではなくスマホと同じ係数(mobile)を使う(2026-11-14。[推定・校正値]。0.81 と連続式の c は x86 11 件だけで決めた値で、同じ X1 / A78 世代のスマホの必要係数は 0.89〜1.11。設計書 §5.3.0【2026-11-14 Android】)
     if (!p && preset.isa === 'arm') return { factor: MT_CLOCK_FACTOR.mobile, band: null, powerW: null, source: null, fallback: true, armFlat: true };
     if (!p) return { factor: flat, band: null, powerW: null, source: null, fallback: true };
     // band は表示用のラベル(2 段の帯をやめたので「帯」ではなく連続式の説明)。factor は電力 W に応じた連続式(現在 c=0.411、指数 0.15。min(1, c·W^0.15)。MT_CLOCK_POWER)
-    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false, ...(p.source === 'cooling' ? { coolingLimit: { coolingId: p.coolingId, sustainedW: p.w, fromW: p.fromW, fromSource: p.fromSource } } : {}) };
+    return { factor: mtClockByPower(p.w), band: `電力 W に応じた連続式(c=${MT_CLOCK_POWER.c}、指数 ${MT_CLOCK_POWER.exp}。min(1, c·W^指数))`, powerW: p.w, source: p.source, fallback: false, ...(powerIgnored ? { powerIgnored: true } : {}), ...(p.source === 'cooling' && !powerIgnored ? { coolingLimit: { coolingId: p.coolingId, sustainedW: p.w, fromW: p.fromW, fromSource: p.fromSource } } : {}) };
   }
   const mtClockFactor = (preset) => mtClockInfo(preset).factor;
 

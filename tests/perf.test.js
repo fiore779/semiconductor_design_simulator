@@ -249,7 +249,9 @@ test('MT 持続クロック係数: mobile は boost × 0.91 を使い(2026-11-10
   { const ci = F.mtClockInfo(preset('qc-8cx-gen3')); assert.strictEqual(ci.armFlat, true); assert.strictEqual(ci.fallback, true); assert.strictEqual(ci.factor, F.MT_CLOCK_FACTOR.mobile); assert.strictEqual(ci.powerW, null); }
   { const x = clone(preset('amd-zen4-7840hs')); delete x.power; const ci = F.mtClockInfo(x); assert.strictEqual(ci.factor, 0.81); assert.strictEqual(ci.fallback, true); assert.ok(!ci.armFlat); }
   // 2026-11-09: mobile-pc は電力 W の連続式(指数 0.15。旧: c=0.191・指数 1/3)。2026-11-10: γ=0.30 に合わせて c=0.443(旧 0.429)。7840HS・HX 370(54W)→ 0.443·54^0.15 ≈ 0.806。2026-11-13: Windows のみの GB7 に差し替えて c=0.411(0.411·54^0.15 ≈ 0.748)
-  assert.ok(Math.abs(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor - 0.405 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c=0.406(0.406·54^0.15 ≈ 0.739) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  // 2026-11-15: 7840HS は P に allCoreGHz 4.40 を持つので mtScore の clockFactor は 1(連続式を通らない)。mtClockInfo の factor・powerW は従来のまま(powerIgnored で知らせる)
+  { const r = F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null); assert.strictEqual(r.clockFactor, 1); assert.strictEqual(r.clockInfo.applied, 'none'); assert.strictEqual(r.clockInfo.powerIgnored, true); assert.ok(Math.abs(F.mtClockInfo(preset('amd-zen4-7840hs')).factor - 0.405 * Math.pow(54, 0.15)) < 1e-12); }
+  assert.ok(Math.abs(F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null).clockFactor - 1) < 1e-12); // 2026-11-13(Windows のみ化 第 2 回): c=0.406(0.406·54^0.15 ≈ 0.739) // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.ok(Math.abs(F.mtScore(preset('amd-strix-hx370'), c, D.uarch, null).clockFactor - 0.405 * Math.pow(54, 0.15)) < 1e-12); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   const pc = preset('amd-zen5-9700x'); assert.strictEqual(pc.kind, 'pc');
   const r1 = F.mtScore(pc, c, D.uarch, null); const r2 = F.mtScore(Object.assign({}, pc, { kind: undefined }), c, D.uarch, null);
@@ -619,7 +621,7 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
   // 2026-11-14: 7950X の P 5.0GHz(KitGuru の Cinebench R23 全コア平均「5GHz 強」。[二次]。5950X と同じ出典・同じ測り方)を追加
   // 2026-11-14: 12100 の P 4.1GHz(HWCooling の 12100F レビューの仕様表「Max. boost (all-core) 4.1 GHz (P)」。[二次]。12100F は 12100 と同じ CPU コアで iGPU の有無だけの違い)を追加
-  const WITH = { 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 } };
+  const WITH = { 'amd-zen4-7840hs': { P: 4.40 }, 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 } };
   { // 12100: MT のクロックが全コアの 4.1GHz になる(係数は掛けない)。MT +10.9%(ng)→ +6.4%(ok)。allCoreGHz なしでは +10.9% のまま(ST は不変。uCal の標本は ST なので不変)
     const p1 = preset('intel-adl-12100'); const r1 = F.mtScore(p1, c, D.uarch, null);
     assert.strictEqual(r1.detail[0].clockSource, 'allcore'); assert.strictEqual(r1.detail[0].fGHz, 4.1); assert.strictEqual(r1.detail[0].clockFactor, 1);
@@ -635,6 +637,19 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
     const q7 = clone(p7); delete q7.cfg.cores[0].allCoreGHz; const r70 = F.mtScore(q7, c, D.uarch, null);
     assert.strictEqual(r70.detail[0].clockSource, 'boost'); assert.ok(Math.abs(r70.score / gb7ByName[p7.gb7].multi - 1 - 0.1217) < 0.001) /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): allCoreGHz なしの 7950X MT +11.4 → +12.2% */;
     assert.strictEqual(F.stScore(p7, c, D.uarch).score, F.stScore(q7, c, D.uarch).score);
+  }
+  { // 2026-11-15: 7840HS(mobile-pc で初めての allCoreGHz。[推定] 4.40GHz)。MT +1.4%(ok。旧 -10.5% の ng)。allCoreGHz なしでは連続式(54W で 0.737 → 3.76GHz)で -10.5%。TDP・冷却は MT に効かない。ST は不変
+    const p8 = preset('amd-zen4-7840hs'); const r8 = F.mtScore(p8, c, D.uarch, null);
+    assert.strictEqual(r8.detail[0].clockSource, 'allcore'); assert.strictEqual(r8.detail[0].fGHz, 4.4); assert.strictEqual(r8.detail[0].clockFactor, 1);
+    assert.ok(Math.abs(r8.score / gb7ByName[p8.gb7].multi - 1 - 0.0139) < 0.001, String(r8.score / gb7ByName[p8.gb7].multi - 1));
+    const q8 = clone(p8); delete q8.cfg.cores[0].allCoreGHz; const r80 = F.mtScore(q8, c, D.uarch, null);
+    assert.strictEqual(r80.detail[0].clockSource, 'boost'); assert.ok(Math.abs(r80.score / gb7ByName[p8.gb7].multi - 1 + 0.1054) < 0.001, String(r80.score / gb7ByName[p8.gb7].multi - 1));
+    assert.strictEqual(F.stScore(p8, c, D.uarch).score, F.stScore(q8, c, D.uarch).score);
+    // TDP(35W)・冷却(laptop-thin-light 28W)を選んでも MT は同じ(連続式を通らない)。allCoreGHz なしなら下がる
+    const lowW = (x, w) => Object.assign({}, x, { power: Object.assign({}, x.power, { tdpW: w }) });
+    assert.strictEqual(F.mtScore(lowW(p8, 35), c, D.uarch, null).score, r8.score);
+    assert.strictEqual(F.mtScore(Object.assign({}, p8, { power: Object.assign({}, p8.power, { coolingW: 28, coolingId: 'laptop-thin-light' }) }), c, D.uarch, null).score, r8.score);
+    assert.ok(F.mtScore(lowW(q8, 35), c, D.uarch, null).score < r80.score);
   }
   D.presets.forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
   // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)

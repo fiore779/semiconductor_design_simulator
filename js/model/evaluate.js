@@ -21,6 +21,8 @@
   const dramLatInfo = (d) => (d && typeof d.ns === 'number' ? `DRAM 遅延 ${d.ns}ns [${d.s || '区分不明'}${d.s === '推定' ? '。別の SKU の値の代用' : ''}]で ST を計算(測定構成: ${d.cfg || '不明'}。${d.src || '出典なし'})` : null);
   const RATIO_INFOS = { 'Lion Cove': RATIO_INFO, 'Zen 3': RATIO_INFO_CEZANNE };
   const RATIO_INFOS_UARCH = { 'Zen 3+ (Rembrandt-R)': RATIO_INFO_ZEN3P, 'Lion Cove (Arrow Lake-H)': RATIO_INFO_ARLH, 'Raptor Cove (HX)': RATIO_INFO_HX };
+  // MT のクロックが allCoreGHz(実測由来)で、電力の連続式を通らない mobile-pc(2026-11-15 の 7840HS が最初)の注記。デスクトップ(clockInfo.powerW が null)には出さない。設計書 §5.3.0【2026-11-15 7840HS・14700HX の MT】
+  const allCoreInfo = (mt) => (mt && mt.ok && mt.clockInfo && mt.clockInfo.powerIgnored && (mt.detail || []).some((d) => d.clockSource === 'allcore') ? `MT の全コア負荷時クロックは allCoreGHz(${(mt.detail || []).filter((d) => d.clockSource === 'allcore').map((d) => `${d.type} ${d.fGHz}GHz`).join('・')}。区分と出典はプリセットの notes)で、電力の連続式を通りません。そのため選んだ TDP・冷却クラスは MT に効きません(ST も元から効きません)` : null);
   const ratioInfo = (from, uarch) => RATIO_INFOS_UARCH[uarch] || RATIO_INFOS[from] || 'u は別の uarch の u に比を掛けた値 [推定・校正値]';
   const TOLERANCE = 0.10; // 性能の許容誤差 ±10%(設計書 §5.3)
 
@@ -147,6 +149,7 @@
       if (mt.fallback) w.push({ level: 'warn', text: 'MT: in-order コアの仮の IPC を含むため信頼できません' });
       if (mt.mixedClock) w.push({ level: 'warn', text: 'MT: 一部のコアのブーストクロックが未取得で基本クロックを使っており、コア種別間でクロックの出所が混在しています(数値が歪みます)' });
       ratioInfosOf(mt).forEach((s) => w.push({ level: 'info', text: 'MT: ' + s }));
+      if (allCoreInfo(mt)) w.push({ level: 'info', text: 'MT: ' + allCoreInfo(mt) });
       if ((mt.corrFroms || mt.corrSources) && (mt.corrFroms || mt.corrSources).includes('isa')) w.push({ level: 'warn', text: 'MT: 一部のコアは専用の補正がなく、命令セット平均で代用しています' });
     } else w.push({ level: 'info', text: `MT を計算できません: ${mt.reason}` });
     return w;
@@ -385,7 +388,7 @@
     const coolList = (root.SDS_DATA && root.SDS_DATA.cooling) || (ctx && ctx.cooling) || [];
     const coolSel = hasCfg && preset && preset.kind === 'mobile-pc' && design.package && typeof design.package.coolingId === 'string' ? coolList.find((c) => c.id === design.package.coolingId) : null;
     if (coolSel && typeof coolSel.sustainedW === 'number' && coolSel.sustainedW > 0) preset = Object.assign({}, preset, { power: Object.assign({}, preset.power, { coolingW: coolSel.sustainedW, coolingId: coolSel.id }) });
-    const coolLimited = hasCfg && !!preset && sims().perf.mtClockInfo(preset).source === 'cooling';
+    const coolLimited = hasCfg && !!preset && (() => { const ci = sims().perf.mtClockInfo(preset); return ci.source === 'cooling' && !ci.powerIgnored; })(); // 2026-11-15: 全コアが allCoreGHz を持つ SKU(7840HS)は MT が電力に依存しないので、冷却で MT は制限されない(powerIgnored)
     const edited = hasCfg && (isEdited(design) || memNonRef || tdpNonDefault || coolLimited);
     const V = (root.SDS && root.SDS.model && root.SDS.model.design) || null;
     const area = evalArea(design, ctx);
@@ -444,7 +447,7 @@
     return result;
   }
 
-  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_ZEN3P, RATIO_INFO_ARLH, RATIO_INFO_HX, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
+  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_ZEN3P, RATIO_INFO_ARLH, RATIO_INFO_HX, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, allCoreInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
