@@ -492,3 +492,16 @@ test('7840HS: allCoreGHz があるので冷却クラスは MT に効かず(編�
   // デスクトップ(5950X)の allCoreGHz には出さない
   assert.strictEqual(E.allCoreInfo(E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-zen3-5950x')), ctx).mt), null);
 });
+
+test('l3Types: Lunar Lake 3 件の MT に l3NoTypes(LP-E)が出る。保存・復元(parse)しても同じ(l3Types は保存データに載せず preset から付く)。ほかの SKU には出ない', () => {
+  ['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].forEach((id) => {
+    const r = ev(id); assert.deepStrictEqual(r.mt.l3NoTypes, ['LP-E'], id); assert.strictEqual(r.st.l3NoTypes, undefined, id);
+    const back = E.evaluate(design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === id)))).design, ctx);
+    assert.strictEqual(back.mt.score, r.mt.score, id); assert.deepStrictEqual(back.mt.l3NoTypes, ['LP-E'], id);
+    const d = design.fromPreset(D.presets.find((p) => p.id === id)); assert.strictEqual(JSON.stringify(d.cfg).includes('l3Types'), false);
+  });
+  assert.strictEqual(ev('intel-arl-285h').mt.l3NoTypes, undefined); assert.strictEqual(ev('amd-zen4-7840hs').mt.l3NoTypes, undefined);
+  // 旧保存データ(cfg に l3Types なし)でも preset から付く(dramLat と同じ方式)
+  const old = JSON.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-lnl-258v')))); delete old.cfg.l3Types; delete old.baseCfg.l3Types;
+  assert.deepStrictEqual(E.evaluate(design.parse(JSON.stringify(old)).design, ctx).mt.l3NoTypes, ['LP-E']);
+});

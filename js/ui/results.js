@@ -157,6 +157,7 @@
     if (!r || !r.ok) return out;
     if (r.noL3) out.push(note('L3 なしとして計算しています。', 'warn-note'));
     else if (r.l3Floor) out.push(note('スレッドあたりの L3 が小さく、L3 なしと同じ値になっています(モデルの下限)。', 'warn-note'));
+    if (r.l3NoTypes && r.l3NoTypes.length) out.push(note(`${r.l3NoTypes.join('・')} は L3 につながらない(プリセットの l3Types)ため、L3 なしとして計算しています。L3 は、つながるコアのスレッド数だけで割っています。`, 'warn-note'));
     if (r.l3Ccds > 1) out.push(note(`L3 は 1 CCD 分(合計 ÷ ${r.l3Ccds})で計算しています(別の CCD の L3 はこのコアの容量として使えないため)。`));
     return out;
   }

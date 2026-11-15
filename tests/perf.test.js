@@ -945,3 +945,33 @@ test('Cortex-A715 / 混在表記: rob 192(下限・[二次])。Cortex-A710: rob 
   assert.ok(Math.abs(e('qc-8gen2')[1] - (-0.087)) < 0.003);
   const g1 = e('qc-7gen1'); assert.ok(g1[0] > 0.10 && g1[1] > 0.10, g1.join(',')); // 7 Gen 1 は ng のまま(ユーザー判断待ち)
 });
+
+test('l3Types(2026-11-15。Lunar Lake の ["P"]): L3 に無い種別は noL3 で、MT の L3 は L3 につながるコアのスレッド数で割る。ST は不変。l3Types が無い SKU は完全に不変', () => {
+  const c = cal(); const lnl = preset('intel-lnl-258v');
+  assert.deepStrictEqual(lnl.cfg.l3Types, ['P']);
+  const no = clone(lnl); delete no.cfg.l3Types;
+  // ST は不変(最速コアの P は l3Types に入っていて、1 スレッドが L3 全量を使う)
+  assert.strictEqual(F.stScore(lnl, c, D.uarch).score, F.stScore(no, c, D.uarch).score);
+  const m = F.mtScore(lnl, c, D.uarch, null); const m0 = F.mtScore(no, c, D.uarch, null);
+  assert.deepStrictEqual(m.l3NoTypes, ['LP-E']); assert.strictEqual(m0.l3NoTypes, undefined);
+  assert.strictEqual(m.detail.find((d) => d.type === 'LP-E').noL3, true); assert.strictEqual(m.detail.find((d) => d.type === 'P').noL3, undefined);
+  assert.ok(m0.detail.every((d) => d.noL3 === undefined));
+  // 1 コアの値は式どおり: LP-E は L3 なし(l3MB 0 の複製で同じクロック・同じ総スレッド数)、P は 12MB ÷ P の 4 スレッド(l3Types なしで threads=4 を直接渡したのと同じ)
+  const zero = clone(no); zero.cfg.l3MB = 0;
+  const lpe = lnl.cfg.cores.find((g) => g.type === 'LP-E'); const pc = lnl.cfg.cores.find((g) => g.type === 'P');
+  const dl = (t) => m.detail.find((d) => d.type === t);
+  assert.strictEqual(dl('LP-E').perCore, F.stScore(zero, c, D.uarch, { core: lpe, fGHz: dl('LP-E').fGHz, threads: 8, noMemory: true }).score);
+  assert.strictEqual(dl('P').perCore, F.stScore(no, c, D.uarch, { core: pc, fGHz: dl('P').fGHz, threads: 4, noMemory: true }).score);
+  // 旧: P は 12MB ÷ 8 だった。P が増え(L3 が増え)、LP-E が減る(L3 を失う)。MT 全体は下がる(-0.5〜-0.8 ポイント)
+  assert.ok(dl('P').perCore > m0.detail.find((d) => d.type === 'P').perCore); assert.ok(dl('LP-E').perCore < m0.detail.find((d) => d.type === 'LP-E').perCore);
+  assert.ok(m.score < m0.score && m.score / m0.score > 0.99);
+  // l3Types に無い種別だけで構成(P だけ ['LP-E'])でも落ちない: P が noL3、LP-E が 12MB ÷ 4
+  const odd = clone(lnl); odd.cfg.l3Types = ['LP-E']; const mo = F.mtScore(odd, c, D.uarch, null);
+  assert.ok(mo.ok); assert.deepStrictEqual(mo.l3NoTypes, ['P']);
+  // 存在しない種別だけ: 全コアが L3 なし(総スレッド数で割る処理は使わない)
+  const none = clone(lnl); none.cfg.l3Types = ['X']; const mn = F.mtScore(none, c, D.uarch, null);
+  assert.ok(mn.ok); assert.deepStrictEqual(mn.l3NoTypes.sort(), ['LP-E', 'P']);
+  // l3Types を持つのは Lunar Lake の 3 件だけ。ほかの SKU の MT の結果に l3NoTypes・noL3(detail)は出ない
+  assert.deepStrictEqual(D.presets.filter((p) => p.cfg && p.cfg.l3Types).map((p) => p.id).sort(), ['intel-lnl-256v', 'intel-lnl-258v', 'intel-lnl-268v']);
+  const k = F.mtScore(preset('intel-arl-285h'), c, D.uarch, null); assert.strictEqual(k.l3NoTypes, undefined); assert.ok(k.detail.every((d) => d.noL3 === undefined));
+});

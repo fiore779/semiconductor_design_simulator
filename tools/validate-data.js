@@ -72,6 +72,16 @@ gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数の�
   if (p.cfg && p.cfg.l3Ccds !== undefined) ok(Number.isInteger(p.cfg.l3Ccds) && p.cfg.l3Ccds >= 2 && typeof p.cfg.l3MB === 'number' && p.cfg.l3MB > 0, `presets ${p.id}: cfg.l3Ccds は 2 以上の整数で、l3MB が正の数であること`);
 });
 
+// cfg.l3Types(L3 につながるコア種別。2026-11-15。Lunar Lake の ['P']): 重複のない空でない文字列の配列で、各値が cfg.cores の type に存在し、l3MB が正の数であること。
+// 保存データ(design.js)には載せない(preset.cfg から effectivePreset が渡す。dramLat・memory と同じ方式)ので、design.js の checkCfg には検証がない
+(D.presets || []).forEach((p) => {
+  const t = p.cfg && p.cfg.l3Types; if (t === undefined) return;
+  const types = ((p.cfg && p.cfg.cores) || []).map((c) => c.type);
+  ok(Array.isArray(t) && t.length > 0 && t.every((x) => typeof x === 'string') && new Set(t).size === t.length, `presets ${p.id}: cfg.l3Types は重複のない空でない文字列の配列であること`);
+  ok(Array.isArray(t) && t.every((x) => types.includes(x)), `presets ${p.id}: cfg.l3Types の値が cfg.cores の type に存在しない`);
+  ok(typeof p.cfg.l3MB === 'number' && p.cfg.l3MB > 0, `presets ${p.id}: cfg.l3Types があるのに l3MB が正の数でない`);
+});
+
 // M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
 // uCal.excluded(校正の標本から除外した preset id)は実在すること(typo で inUCalSet が狂わないように)
 Object.keys(D.uarch || {}).forEach((name) => {

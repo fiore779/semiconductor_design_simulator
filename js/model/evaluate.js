@@ -81,7 +81,7 @@
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
       corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null, ...(kind === 'st' && r.corrSource === 'ratio' && r.corrUFrom ? { corrUFrom: r.corrUFrom, corrUarch: r.corrUarch } : {}), ...(kind === 'st' && r.dramLat ? { dramLat: r.dramLat } : {}), // ratio のときだけ(uFrom の SKU の評価 JSON は変えない)
       errPct: pct(r.score, pubVal), memory: r.memory || null,
-      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null,
+      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null, ...(r.l3NoTypes ? { l3NoTypes: r.l3NoTypes } : {}), // l3NoTypes: cfg.l3Types に無く L3 につながらないコア種別(MT のみ。2026-11-15)
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
       base.clockFactor = r.clockFactor == null ? 1 : r.clockFactor; base.clockInfo = r.clockInfo || null; base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
