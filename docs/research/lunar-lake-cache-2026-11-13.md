@@ -179,3 +179,24 @@ LP-E の u は 285H の LP-E 2 個にも同じ値を当てた(285H の MT 列)�
 - 結果(6.1 のキャッシュの上): MT は 268V -7.31 → **-5.63%**、258V -10.15 → **-6.42%(ng → ok)**、256V -8.08 → **-4.26%**(試算 §3.2 の fixL3only・meas の -4.1 / -6.8 / -4.7 と同じ範囲。差は、試算後の c・dramLat の更新と、試算が 268V の P を boost の比で当てたこと〔今回は同じ 3.0GHz〕による [推定])。ST は不変。延べ ng は 5 → 4。LNL 3 件以外は不変、σ・c(0.405)は不変。
 - 副作用: LNL の MT は選んだ TDP・冷却クラスに効かなくなった(値は PL1 28W 前後相当)。
 - 1・2 を合わせた前後(実施前 → 後): MT 268V -6.82 → -5.63%、258V -9.43 → -6.42%、256V -7.34 → -4.26%。延べ ng 4 → 4。
+
+## 7. 185H・285H への展開(2026-11-15。ユーザー指示「285H の LP-E は 185H の LP-E と同じ仕様のはず」)
+
+### 7.1 確認できた出典(取得は 2026-11-15。原ページを curl で取得して本文を確認。区分はすべて [二次]。Chips and Cheese は独立した計測・記事)
+
+- **185H の LP-E は SoC タイルにあり、L3 につながらない**: Chips and Cheese「Meteor Lake's E-Cores: Crestmont Makes Incremental Progress」(2024-05-13、https://chipsandcheese.com/p/meteor-lakes-e-cores-crestmont-makes-incremental-progress): 「Two LPE-Cores sit in a separate cluster on Meteor Lake's SoC tile. Because the LPE-Core cluster doesn't sit on the ring bus, it doesn't share the CPU's L3 cache.」「Low power Crestmont doesn't have a L3, so its 2 MB L2 serves as a last level cache.」「…doesn't share the 24 MB L3 cache used by the main E-Cores and P-Cores.」
+- 同「Comparing Crestmonts: No L3 Hurts」(2024-05-21、https://chipsandcheese.com/p/comparing-crestmonts-no-l3-hurts): 「Meteor Lake's standard E-Cores share a 24 MB L3 cache with the P-Cores」(LP-E との比較で、L3 なしの LP-E の方が DRAM の遅延に弱い)。
+- 同「Previewing Meteor Lake at CES」(2024-01-11、https://chipsandcheese.com/p/previewing-meteor-lake-at-ces): 「they're not clients of the L3 so L2 misses go directly to memory」。
+- **285H(Arrow Lake-H)の LP-E は 185H と同じ SoC タイル**: Chips and Cheese「Intel's CES 2025 Keynote」(2025-01-09、https://chipsandcheese.com/p/intels-ces-2025-keynote): 「Moving to Arrow Lake H … With 6 Lion Cove cores and 8 Skymont cores, it uses the same cores as the desktop Arrow Lake on the CPU tile with the SOC tile being carried over from Meteor Lake meaning the LP E-Cores are the same Crestmont cores as from the prior generation.」(Arrow Lake H の P・E は CPU タイルで、リング・L3 の側にある)。同「Examining Intel's Arrow Lake at the Bleeding Edge」(2024-12-04、https://chipsandcheese.com/p/examining-intels-arrow-lake-at-the): 「Compared to Meteor Lake's SoC tile, Arrow Lake ditches the two Crestmont low power E-Cores.」(デスクトップの記事。H には触れていない)。
+- **見つからなかったもの([未確認])**: ① Intel 自身の資料(Hot Chips 2023・Architecture Day 2022/2023 の Meteor Lake の資料、ARK のデータシート)で、LP-E が L3 につながらないという記述。ARK は L3 24MB の総量だけ。今回は取得していない。② Arrow Lake-H の LP-E 自身が L3 につながらないことを測った記事(上の CES 2025 の記事は SoC タイルが Meteor Lake と同じとだけ書く)。285H の L3 なしは「185H と同じ SoC タイル」からの推定。
+
+### 7.2 発見(要確認): 285H の LP-E のコア
+
+上の Chips and Cheese(CES 2025)は、285H の LP-E を **Crestmont**(185H と同じ)と書く。このプリセットは 285H の LP-E の uarch を **Skymont**(Lunar Lake の LP-E と同じ記録)にしており、ユーザーの指示文もそう書いていた。どちらが正しいかは今回確認していない(Intel ARK の記載・Intel の Arrow Lake-H の資料の確認が必要)。今回は uarch を変えていない。L3 につながらない点は、どちらの uarch でも変わらない。Crestmont なら、285H の LP-E 2 コアの u が Skymont(ISA 平均 u)から Crestmont のものに変わり、MT がわずかに動く(未試算)。
+
+### 7.3 実装結果(コミット 1)
+
+- 185H・285H の `cfg` に `l3Types: ['P', 'E']` を入れた(コードは Lunar Lake のときのまま。`perf.js`・`results.js`・`validate-data.js` は不変)。MT の L3 は、185H は P・E の総スレッド数 20(P 6×SMT2 + E 8)、285H は 14(P 6 + E 8)で割る。
+- 結果: ST は 185H -0.02%・285H +2.57% のまま不変。MT は **185H +0.73 → +0.60%(-0.13 ポイント)、285H +3.52 → +4.14%(+0.62 ポイント)**(ok のまま)。106 件の前後比較で、ほかの 104 件は ST・MT・誤差とも完全一致。延べ ng 4 → 4。全 158 値の平均絶対誤差 3.917 → 3.920%。連続式の c は 0.405 のまま(185H の k_i ÷ W_i^0.15 0.4015 → 0.4021、標本 11 件の中央値 0.4046 は不変。標本内 MAE 0.04345 → 0.04333、LOO 0.04934 → 0.04922)。
+- 285H の MT が上がる向きなのは、LP-E が L3 を使わなくなると、P・E の 1 スレッドあたりの L3(24MB ÷ スレッド数)が増え、P・E の予測が上がるため(LP-E 2 コアは L3 なしで下がるが、P・E の 14 コアの分が上回る。[推定])。185H は P が SMT でスレッドが多く(20)、LP-E の L3 なしの分が上回って下がる([推定]。内訳の分解は未実施)。
+- 設計書: §2.4・§5.3.0【2026-11-15 185H・285H の LP-E】・§13.4。

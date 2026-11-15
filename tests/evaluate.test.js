@@ -354,7 +354,7 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
   D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
   // レビュー対応の時点(b2a8a08 の値)は 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%。2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183・x86 ISA 平均 u・c 0.411 → 0.406 の再校正で動いた(比 0.90 は不変。4 件とも ok のまま)
-  const want = { 'intel-arl-285k': 1.21, 'intel-arl-265k': -3.34, 'intel-arl-275hx': 4.58, 'intel-arl-285h': 3.52 }; /* 2026-11-15(285H の P の u × 0.92。Lion Cove (Arrow Lake-H)): 285H +7.82 → +3.52(ok のまま。ST +11.49 → +2.57)。285K・265K・275HX は不変 */ /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 285K 0.00 → +1.21、265K -4.44 → -3.34、275HX +4.84 → +4.58、285H +8.29 → +7.82(4 件とも ok のまま) */ /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
+  const want = { 'intel-arl-285k': 1.21, 'intel-arl-265k': -3.34, 'intel-arl-275hx': 4.58, 'intel-arl-285h': 4.14 }; /* 2026-11-15(185H・285H に l3Types ['P', 'E']。LP-E は SoC タイルで L3 につながらない): 285H の MT +3.52 → +4.14(ok のまま)。ほかは不変 */ /* 2026-11-15(285H の P の u × 0.92。Lion Cove (Arrow Lake-H)): 285H +7.82 → +3.52(ok のまま。ST +11.49 → +2.57)。285K・265K・275HX は不変 */ /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 285K 0.00 → +1.21、265K -4.44 → -3.34、275HX +4.84 → +4.58、285H +8.29 → +7.82(4 件とも ok のまま) */ /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
   ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
   // 編集後は公開値が無いので印を外す
   const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
@@ -472,7 +472,7 @@ test('ratio の注記: 285H の P は ST・MT とも info「Arrow Lake-H の P �
   assert.deepStrictEqual(E.ratioInfosOf(r.mt).slice().sort(), [E.RATIO_INFO, E.RATIO_INFO_ARLH].sort());
   // 期待値: 285H ST +11.49 → +2.57%・MT +7.82 → +3.52%。14700HX ST +11.14 → +4.47%(ok)・MT +17.14 → +12.83%(ng のまま)。14900HX ST +1.69%・MT +2.52%、13980HX ST +0.56%・MT +2.19%。公開値には合わせていない(比は兄弟 SKU から)
   const near = (id, st, mt) => { const x = ev(id); assert.ok(Math.abs(x.st.errPct - st) < 0.05 && Math.abs(x.mt.errPct - mt) < 0.05, id + ' ' + x.st.errPct + ' ' + x.mt.errPct); };
-  near('intel-arl-285h', 2.57, 3.52); near('intel-rpl-14700hx', 4.47, 1.80 /* 2026-11-15(typicalW 69W): MT +12.83 → +1.80 */); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
+  near('intel-arl-285h', 2.57, 4.14 /* 2026-11-15(185H・285H に l3Types ['P', 'E']。LP-E は SoC タイルで L3 につながらない): MT +3.52 → +4.14 */); near('intel-rpl-14700hx', 4.47, 1.80 /* 2026-11-15(typicalW 69W): MT +12.83 → +1.80 */); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
   assert.ok(Math.abs(ev('intel-rpl-14700hx').st.errPct) <= 10); assert.ok(Math.abs(ev('intel-rpl-14700hx').mt.errPct) <= 10); // 2026-11-15(typicalW 69W): MT は ok になった。以前: MT は ng のまま(IPC では直らない)
 });
 
@@ -493,14 +493,15 @@ test('7840HS: allCoreGHz があるので冷却クラスは MT に効かず(編�
   assert.strictEqual(E.allCoreInfo(E.evaluate(design.fromPreset(D.presets.find((x) => x.id === 'amd-zen3-5950x')), ctx).mt), null);
 });
 
-test('l3Types: Lunar Lake 3 件の MT に l3NoTypes(LP-E)が出る。保存・復元(parse)しても同じ(l3Types は保存データに載せず preset から付く)。ほかの SKU には出ない', () => {
+test('l3Types: Lunar Lake 3 件の MT に l3NoTypes(LP-E)が出る(2026-11-15 に 185H・285H も。下の末尾)。保存・復元(parse)しても同じ(l3Types は保存データに載せず preset から付く)。ほかの SKU には出ない', () => {
   ['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].forEach((id) => {
     const r = ev(id); assert.deepStrictEqual(r.mt.l3NoTypes, ['LP-E'], id); assert.strictEqual(r.st.l3NoTypes, undefined, id);
     const back = E.evaluate(design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === id)))).design, ctx);
     assert.strictEqual(back.mt.score, r.mt.score, id); assert.deepStrictEqual(back.mt.l3NoTypes, ['LP-E'], id);
     const d = design.fromPreset(D.presets.find((p) => p.id === id)); assert.strictEqual(JSON.stringify(d.cfg).includes('l3Types'), false);
   });
-  assert.strictEqual(ev('intel-arl-285h').mt.l3NoTypes, undefined); assert.strictEqual(ev('amd-zen4-7840hs').mt.l3NoTypes, undefined);
+  assert.strictEqual(ev('amd-zen4-7840hs').mt.l3NoTypes, undefined); // 185H・285H は l3Types ['P','E'](LP-E だけ L3 なし。2026-11-15)
+  ['intel-mtl-185h', 'intel-arl-285h'].forEach((id) => { const r = ev(id); assert.deepStrictEqual(r.mt.l3NoTypes, ['LP-E'], id); assert.strictEqual(r.st.l3NoTypes, undefined, id); assert.strictEqual(r.mt.detail.find((d) => d.type === 'LP-E').noL3, true, id); assert.strictEqual(r.mt.detail.find((d) => d.type === 'P').noL3, undefined, id); });
   // 旧保存データ(cfg に l3Types なし)でも preset から付く(dramLat と同じ方式)
   const old = JSON.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-lnl-258v')))); delete old.cfg.l3Types; delete old.baseCfg.l3Types;
   assert.deepStrictEqual(E.evaluate(design.parse(JSON.stringify(old)).design, ctx).mt.l3NoTypes, ['LP-E']);

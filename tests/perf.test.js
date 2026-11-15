@@ -398,6 +398,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-14: Redwood Cove の uCal 99.5 を追加したあとの中央値は 0.4114(丸め 0.411 = c)。標本の 185H の P コアの u が ISA 平均 109.77 → 99.5 に下がり、185H の必要係数が上がった
     // 2026-11-15: 265K の P の boost 5.5GHz(Lion Cove の u 102.13 → 100.36)のあとの中央値は 0.4121(丸め 0.412 = c)
     // 2026-11-15(DRAM 遅延 dramLat を ST に入れた。uCal・x86 の u・σ が動いた): 中央値は 0.4046(丸め 0.405 = c)
+    // 2026-11-15(185H の l3Types ['P', 'E']): 標本の 185H の k_i ÷ W_i^0.15 は 0.4015 → 0.4021 に動いたが、中央値は 0.4046(丸め 0.405 = c)のまま不変。標本内 MAE 0.04345 → 0.04333(固定値 0.0435 の ±0.001 内)、LOO MAE 0.04934 → 0.04922
     assert.ok(Math.abs(med(ks) - 0.4046) < 0.0005, '中央値(固定値 0.4046): ' + med(ks));
     assert.strictEqual(Math.round(med(ks) * 1000) / 1000, F.MT_CLOCK_POWER.c);
     assert.ok(b && i === 0);
@@ -884,7 +885,7 @@ test('uRatio: 285H の P は Lion Cove の u × 0.92。比は 255H(兄弟)÷ 285
   const st = F.stScore(preset('intel-arl-285h'), c, D.uarch);
   assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Lion Cove'); assert.strictEqual(st.corrUarch, Z); assert.ok(Math.abs(st.corr - 0.92 * lu) < 1e-9); assert.strictEqual(st.confidence, 'low');
   assert.ok(Math.abs(st.score / gb7ByName[preset('intel-arl-285h').gb7].single - 1 - 0.0257) < 0.0005, String(st.score)); // +2.57%(旧 +11.49%。ok に入った)
-  assert.ok(Math.abs(F.mtScore(preset('intel-arl-285h'), c, D.uarch, null).score / gb7ByName[preset('intel-arl-285h').gb7].multi - 1 - 0.0352) < 0.0005); // +3.52%(旧 +7.82%)
+  assert.ok(Math.abs(F.mtScore(preset('intel-arl-285h'), c, D.uarch, null).score / gb7ByName[preset('intel-arl-285h').gb7].multi - 1 - 0.0414) < 0.0005); // +3.52%(旧 +7.82%)。2026-11-15(185H・285H の l3Types ['P','E']): +4.14%
   // 285K・265K・275HX・LNL の P は「Lion Cove」のまま(代表・uarch の u。不変)。285H の E(リング)は Lion Cove の u × 0.90 のまま
   ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-lnl-268v'].forEach((id) => { const r = F.stScore(preset(id), c, D.uarch); assert.strictEqual(r.corrSource, 'uarch', id); assert.strictEqual(r.corrUarch, undefined, id); });
   const p285 = clone(preset('intel-arl-285h')); p285.cfg.cores = [p285.cfg.cores[1]];
@@ -971,9 +972,23 @@ test('l3Types(2026-11-15。Lunar Lake の ["P"]): L3 に無い種別は noL3 で
   // 存在しない種別だけ: 全コアが L3 なし(総スレッド数で割る処理は使わない)
   const none = clone(lnl); none.cfg.l3Types = ['X']; const mn = F.mtScore(none, c, D.uarch, null);
   assert.ok(mn.ok); assert.deepStrictEqual(mn.l3NoTypes.sort(), ['LP-E', 'P']);
-  // l3Types を持つのは Lunar Lake の 3 件だけ。ほかの SKU の MT の結果に l3NoTypes・noL3(detail)は出ない
-  assert.deepStrictEqual(D.presets.filter((p) => p.cfg && p.cfg.l3Types).map((p) => p.id).sort(), ['intel-lnl-256v', 'intel-lnl-258v', 'intel-lnl-268v']);
-  const k = F.mtScore(preset('intel-arl-285h'), c, D.uarch, null); assert.strictEqual(k.l3NoTypes, undefined); assert.ok(k.detail.every((d) => d.noL3 === undefined));
+  // l3Types を持つのは Lunar Lake の 3 件(['P'])と、2026-11-15 に加えた 185H・285H(['P', 'E']。LP-E だけ SoC タイルで L3 なし)だけ。ほかの SKU の MT の結果に l3NoTypes・noL3(detail)は出ない
+  assert.deepStrictEqual(D.presets.filter((p) => p.cfg && p.cfg.l3Types).map((p) => p.id).sort(), ['intel-arl-285h', 'intel-lnl-256v', 'intel-lnl-258v', 'intel-lnl-268v', 'intel-mtl-185h']);
+  ['intel-mtl-185h', 'intel-arl-285h'].forEach((id) => assert.deepStrictEqual(preset(id).cfg.l3Types, ['P', 'E'], id));
+  // 185H・285H: ST は不変(最速コアは P で l3Types に入る)。LP-E だけ noL3、P・E は L3 24MB ÷ P・E の総スレッド数(185H は P 6×2+E 8=20、285H は P 6+E 8=14)
+  ['intel-mtl-185h', 'intel-arl-285h'].forEach((id) => {
+    const q = preset(id); const nq = clone(q); delete nq.cfg.l3Types;
+    assert.strictEqual(F.stScore(q, c, D.uarch).score, F.stScore(nq, c, D.uarch).score, id);
+    const mq = F.mtScore(q, c, D.uarch, null); const m0 = F.mtScore(nq, c, D.uarch, null);
+    assert.deepStrictEqual(mq.l3NoTypes, ['LP-E'], id); assert.strictEqual(m0.l3NoTypes, undefined, id);
+    const dq = (t) => mq.detail.find((d) => d.type === t);
+    const lp = q.cfg.cores.find((g) => g.type === 'LP-E'); const zq = clone(nq); zq.cfg.l3MB = 0; const th = q.cfg.cores.reduce((t, g) => t + g.count * (g.smt || 1), 0); const l3th = q.cfg.cores.filter((g) => g.type !== 'LP-E').reduce((t, g) => t + g.count * (g.smt || 1), 0);
+    assert.strictEqual(dq('LP-E').noL3, true, id); assert.strictEqual(dq('LP-E').perCore, F.stScore(zq, c, D.uarch, { core: lp, fGHz: dq('LP-E').fGHz, threads: th, noMemory: true }).score, id);
+    assert.strictEqual(l3th, id === 'intel-mtl-185h' ? 20 : 14, id); const pc = q.cfg.cores.find((g) => g.type === 'P');
+    assert.strictEqual(dq('P').perCore, F.stScore(nq, c, D.uarch, { core: pc, fGHz: dq('P').fGHz, threads: l3th, noMemory: true }).score, id);
+    assert.ok(dq('P').perCore > m0.detail.find((d) => d.type === 'P').perCore && dq('LP-E').perCore < m0.detail.find((d) => d.type === 'LP-E').perCore, id); // P・E の L3 は増え、LP-E は失う
+  });
+  const k = F.mtScore(preset('amd-zen4-7840hs'), c, D.uarch, null); assert.strictEqual(k.l3NoTypes, undefined); assert.ok(k.detail.every((d) => d.noL3 === undefined));
 });
 
 test('Lunar Lake の allCoreGHz(2026-11-15): P 3.0・LP-E 3.5GHz(258V は [二次]、268V・256V は流用 [推定])。MT はこのクロックで、TDP・冷却に効かない(powerIgnored)。ST は不変', () => {
