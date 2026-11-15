@@ -479,6 +479,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
       { st: 1892, mt: null, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-7735HS-Processor-Benchmarks-and-Specs.681410.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。k は 5800X の値。MT の推定は GB6 が転載のため載せない' },
     ],
     'amd-zen3-5800u': [
+      { st: 1823, mt: 7527, device: '(Windows 投稿のうち Maximum Frequency 4400MHz 以上の 21 件・10 機種の中央値)', kind: '個別投稿', source: 'https://browser.geekbench.com/v7/cpu/search?q=Ryzen+7+5800U', note: 'Geekbench Browser v7 の検索「Ryzen 7 5800U」の Windows 投稿 76 件(公開値の母集団)のうち、結果ページの Maximum Frequency が 4400MHz 以上の 21 件(10 機種)の中央値 [実測。2026-11-15 に再取得し 2026-11-14 の値と一致]。残りの 55 件(72%)は 4.4GHz に届いていない(全 76 件の中央値は 1614 / 6471.5)。最良条件の参考値で、判定には使わない。docs/research/5800u-st-cause-2026-11-14.md §1.1' },
       { st: 1690, mt: 8880, device: '(機種ではなく推定)', kind: '推定', source: 'https://www.notebookcheck.net/AMD-Ryzen-7-5800U-Processor-Benchmarks-and-Specs.510374.0.html', note: '方法 B の推定(Notebookcheck の GB6 ラボ値 × 同じ uarch のデスクトップの GB7÷GB6 比。docs/research/nbc-gb7-mobile.md §3)。**根拠が弱い**: 5800U の GB6 は Geekbench Browser の転載 1 件(HP ProBook 455 G8)だけ。NBC に GB7 の行は無い' },
     ],
     'intel-mtl-185h': [
