@@ -11,6 +11,8 @@
   const RATIO_INFO = 'E の u は Lion Cove の u × 0.90 [推定・校正値](285K・265K の MT に合わせた値。1 クロックあたりの比では約 0.76 で、測定の 0.86〜0.88 より低い)';
   // uarch 記録の uRatio(Zen 3 の u × 0.95)の Cezanne(5800U)用。決めた SKU(5600G・5700G)はプリセットではないので、学習内の誤差の判定(inRatioSet)は無い。設計書 §5.3.0【2026-11-14 Cezanne】
   const RATIO_INFO_CEZANNE = 'Cezanne の u は Zen 3 の u × 0.95 [推定・校正値](デスクトップ APU の 5600G・5700G の Windows 中央値 2 件から。5800U の公開値に合わせた値ではない)';
+  // uarch 記録の uRatio(Zen 3 の u × 0.89)の Cezanne のモバイル(5800U)用。0.89 = 0.95 × 0.932(積 0.886 を丸めた)。0.932 は 5800U 自身の Geekbench Browser の Windows 投稿 76 件の実効 IPC(score ÷ Maximum Frequency の中央値)から出した [推定・校正値]で、5800U の公開値の母集団から出したので独立ではない(循環)。ST のクロックは公称 4.4GHz のまま。設計書 §5.3.0【2026-11-15 5800U の実効 IPC】
+  const RATIO_INFO_CEZANNE_U = '5800U の u は Zen 3 の u × 0.95(デスクトップの別 SKU の 5600G・5700G から)× 約 0.93(5800U 自身の Geekbench Browser の Windows 投稿の実効 IPC。循環・[推定・校正値])。ST のクロックは公称 4.4GHz のまま。限界: 76 件には省電力設定などで最大クロックまで上がらない投稿が含まれ、点/GHz は「コア本来の IPC より低い実効 IPC」になる。Maximum Frequency は最大値で持続クロックではない。1 機種が 76 件中 20 件。4.4GHz に届いた群(ST 1823・MT 7527)と比べるとモデルは過小';
   // uarch 記録の uRatio(Zen 3 の u × 0.95)の Zen 3+(7735HS)用。比は 7735HS・6800H・5800X の動作クロック基準の実測 [実測] から。プリセットではない。設計書 §5.3.0【2026-11-15 Zen 3+】
   const RATIO_INFO_ZEN3P = 'Zen 3+ の u は Zen 3 の u × 0.95 [推定・校正値](Geekbench Browser の Windows 投稿の動作クロック基準の実測から。7735HS の公開値に合わせた値ではない。DRAM 遅延の代用 [推定] と分離できていない)';
   // uarch 記録の uRatio の Lion Cove (Arrow Lake-H)(285H の P)用と Raptor Cove (HX)(HX の 3 件の P)用。比は兄弟 SKU(255H・14900HX・13980HX)の Geekbench Browser の Windows 投稿の集計 [実測] と基準(285K・265K・14700K・14900K)から。対象自身の公開値に合わせた値ではない。設計書 §5.3.0【2026-11-15 285H・HX】
@@ -20,7 +22,7 @@
   // ST の DRAM 遅延 dramLat(プリセットの cfg.dramLat。2026-11-15)の表示文。区分: 実測・二次(その SKU・プラットフォームで測られた値)・推定(別の SKU の値の代用)。設計書 §5.2・§5.3.0【2026-11-15 DRAM 遅延】
   const dramLatInfo = (d) => (d && typeof d.ns === 'number' ? `DRAM 遅延 ${d.ns}ns [${d.s || '区分不明'}${d.s === '推定' ? '。別の SKU の値の代用' : ''}]で ST を計算(測定構成: ${d.cfg || '不明'}。${d.src || '出典なし'})` : null);
   const RATIO_INFOS = { 'Lion Cove': RATIO_INFO, 'Zen 3': RATIO_INFO_CEZANNE };
-  const RATIO_INFOS_UARCH = { 'Zen 3+ (Rembrandt-R)': RATIO_INFO_ZEN3P, 'Lion Cove (Arrow Lake-H)': RATIO_INFO_ARLH, 'Raptor Cove (HX)': RATIO_INFO_HX };
+  const RATIO_INFOS_UARCH = { 'Zen 3 (Cezanne U)': RATIO_INFO_CEZANNE_U, 'Zen 3+ (Rembrandt-R)': RATIO_INFO_ZEN3P, 'Lion Cove (Arrow Lake-H)': RATIO_INFO_ARLH, 'Raptor Cove (HX)': RATIO_INFO_HX };
   // MT のクロックが allCoreGHz(実測由来)で、電力の連続式を通らない mobile-pc(2026-11-15 の 7840HS が最初)の注記。デスクトップ(clockInfo.powerW が null)には出さない。設計書 §5.3.0【2026-11-15 7840HS・14700HX の MT】
   const allCoreInfo = (mt) => (mt && mt.ok && mt.clockInfo && mt.clockInfo.powerIgnored && (mt.detail || []).some((d) => d.clockSource === 'allcore') ? `MT の全コア負荷時クロックは allCoreGHz(${(mt.detail || []).filter((d) => d.clockSource === 'allcore').map((d) => `${d.type} ${d.fGHz}GHz`).join('・')}。区分と出典はプリセットの notes)で、電力の連続式を通りません。そのため選んだ TDP・冷却クラスは MT に効きません(ST も元から効きません)` : null);
   const ratioInfo = (from, uarch) => RATIO_INFOS_UARCH[uarch] || RATIO_INFOS[from] || 'u は別の uarch の u に比を掛けた値 [推定・校正値]';
@@ -449,7 +451,7 @@
     return result;
   }
 
-  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_ZEN3P, RATIO_INFO_ARLH, RATIO_INFO_HX, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, allCoreInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
+  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_CEZANNE_U, RATIO_INFO_ZEN3P, RATIO_INFO_ARLH, RATIO_INFO_HX, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, allCoreInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

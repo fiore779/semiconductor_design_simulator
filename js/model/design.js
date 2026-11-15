@@ -645,6 +645,7 @@
   const ARL_RING_E_PRESETS = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'];
   const CEZANNE = 'Zen 3 (Cezanne)';
   const CEZANNE_PRESETS = ['amd-zen3-5800u'];
+  const CEZANNE_U = 'Zen 3 (Cezanne U)';
   const ZEN3P = 'Zen 3+ (Rembrandt-R)';
   const ZEN3P_PRESETS = ['amd-zen3p-7735hs'];
   const ARLH_P = 'Lion Cove (Arrow Lake-H)';
@@ -673,7 +674,8 @@
     // 旧保存データの uarch 名(2026-11-14): Cezanne(5800U)は uarch 記録を「Zen 3」から「Zen 3 (Cezanne)」に分けた(u = Zen 3 の u × 0.95)。
     // 旧名で保存した設計は、cfg・baseCfg・blocks の 3 か所とも新名に置き換える(評価は新規作成と同じ値になる)
     if (CEZANNE_PRESETS.includes(d.presetId)) {
-      const fixC = (c) => { if (c && c.uarch === 'Zen 3') c.uarch = CEZANNE; };
+      // 2026-11-15: 5800U は「Zen 3 (Cezanne)」から更に「Zen 3 (Cezanne U)」(u = Zen 3 の u × 0.89。5800U 自身の投稿の実効 IPC)に分けた。「Zen 3」「Zen 3 (Cezanne)」のどちらで保存した設計も新名にする
+      const fixC = (c) => { if (c && (c.uarch === 'Zen 3' || c.uarch === CEZANNE)) c.uarch = CEZANNE_U; };
       [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixC); });
       (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixC(b); }); });
     }

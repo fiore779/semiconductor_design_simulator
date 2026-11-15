@@ -411,9 +411,9 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-13(Windows のみ化 第 2 回): 標本内 MAE 0.0673 → 0.0821(実測 0.08208)。Cougar Cove の uCal で Panther Lake 系 5 件の必要係数が上がり、標本のばらつきが増えた(uCal なしでは 0.0689)
     // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 標本内 MAE 0.0821 → 0.0784
     // 2026-11-14(Cezanne の u × 0.95): 5800U の MT が下がり、標本内 MAE 0.0784 → 0.0729(実測 0.07291)。c の中央値 0.4114 は不変
-    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0500) < 0.001, /* 2026-11-15(14700HX の typicalW 69W): 標本の 14700HX の W が 157W → 69W(mtPublishedW)になり、14700HX の MT 誤差 +12.8% → +1.8% で標本内 MAE 0.0600 → 0.0500(実測 0.05000)。c の中央値 0.4046 は不変(14700HX の k_i ÷ W_i^0.15 は 0.3505 → 0.3965 で中央値の下のまま) */ /* 2026-11-15(285H・HX の u の比): 14700HX の MT が下がり、標本内 MAE 0.0639 → 0.0600(実測 0.06003)。c の中央値 0.4046 は不変(14700HX の k_i は中央値の下のまま) */ /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
+    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0435) < 0.001, /* 2026-11-15(5800U の u × 0.89): 5800U の MT が +14.1% → +6.9% に下がり、標本内 MAE 0.0500 → 0.0435(実測 0.04345)。c の中央値は不変(5800U の k_i ÷ W_i^0.15 は 0.3434 → 0.3723 に上がるが中央値 0.4046 の下のままで、中央値を決める 395 は動かない。標本 11 件に 5800U は入っている) */ /* 2026-11-15(14700HX の typicalW 69W): 標本の 14700HX の W が 157W → 69W(mtPublishedW)になり、14700HX の MT 誤差 +12.8% → +1.8% で標本内 MAE 0.0600 → 0.0500(実測 0.05000)。c の中央値 0.4046 は不変(14700HX の k_i ÷ W_i^0.15 は 0.3505 → 0.3965 で中央値の下のまま) */ /* 2026-11-15(285H・HX の u の比): 14700HX の MT が下がり、標本内 MAE 0.0639 → 0.0600(実測 0.06003)。c の中央値 0.4046 は不変(14700HX の k_i は中央値の下のまま) */ /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
     assert.ok(inMae((W) => F.mtClockByPower(W)) < inMae(() => 0.81));
-    assert.ok(Math.abs(inMae(() => 0.81) - 0.0768) < 0.001, /* 2026-11-15(285H・HX の u の比): 0.0805 → 0.0768(実測 0.07678) */ /* 2026-11-15(Zen 3+ の u × 0.95): 0.0858 → 0.0805 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 0.0835 → 0.0858 */ 'X81 ' + inMae(() => 0.81)); /* 2026-11-14(Cezanne の u × 0.95): 0.0900 → 0.0835 */ /* 2026-11-14(Redwood Cove の uCal 99.5): 0.0899 → 0.0900 */ // 2026-11-13(Windows のみ化 第 2 回): 0.0910 → 0.0899(実測 0.08990)。連続式 0.0821 が小さいまま。以前: // 2026-11-10 γ=0.30 で 0.0890 → 0.0911、HX 取り直し後 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910(実測 0.09098)。連続式 0.0673 が最小のまま // assert.ok(Math.abs(inMae((W) => (W <= 60 ? 0.84 : 0.81)) - 0.0897) < 0.001, 'X2 ' + inMae((W) => (W <= 60 ? 0.84 : 0.81)));
+    assert.ok(Math.abs(inMae(() => 0.81) - 0.0691) < 0.001, /* 2026-11-15(5800U の u × 0.89): 0.0768 → 0.0691(実測 0.06908) */ /* 2026-11-15(285H・HX の u の比): 0.0805 → 0.0768(実測 0.07678) */ /* 2026-11-15(Zen 3+ の u × 0.95): 0.0858 → 0.0805 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 0.0835 → 0.0858 */ 'X81 ' + inMae(() => 0.81)); /* 2026-11-14(Cezanne の u × 0.95): 0.0900 → 0.0835 */ /* 2026-11-14(Redwood Cove の uCal 99.5): 0.0899 → 0.0900 */ // 2026-11-13(Windows のみ化 第 2 回): 0.0910 → 0.0899(実測 0.08990)。連続式 0.0821 が小さいまま。以前: // 2026-11-10 γ=0.30 で 0.0890 → 0.0911、HX 取り直し後 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910(実測 0.09098)。連続式 0.0673 が最小のまま // assert.ok(Math.abs(inMae((W) => (W <= 60 ? 0.84 : 0.81)) - 0.0897) < 0.001, 'X2 ' + inMae((W) => (W <= 60 ? 0.84 : 0.81)));
   }
   // LOO: 自分を除いて k_i ÷ W_i^0.15 の中央値(小数 3 桁)を取り直し、自分を予測する
   const mae = (a) => a.reduce((x, y) => x + Math.abs(y), 0) / a.length;
@@ -435,13 +435,13 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
   // 2026-11-13(Windows のみ化 第 2 回): LOO MAE 0.0694 → 0.0905(実測 0.09047)。閾値 < 0.115 は満たす
   // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): LOO MAE 0.0905 → 0.0842。閾値 < 0.115 は満たす
   // 2026-11-14(Cezanne の u × 0.95): LOO MAE 0.0842 → 0.0786(実測 0.07861)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0559) < 0.001, /* 2026-11-15(14700HX の typicalW 69W): LOO MAE 0.0660 → 0.0559(実測 0.05594)。一律 0.81 は 0.0768 のまま */ /* 2026-11-15(285H・HX の u の比): LOO MAE 0.0700 → 0.0660(実測 0.06603) */ /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0493) < 0.001, /* 2026-11-15(5800U の u × 0.89): LOO MAE 0.0559 → 0.0493(実測 0.04934)。一律 0.81 は 0.0768 → 0.0691 */ /* 2026-11-15(14700HX の typicalW 69W): LOO MAE 0.0660 → 0.0559(実測 0.05594)。一律 0.81 は 0.0768 のまま */ /* 2026-11-15(285H・HX の u の比): LOO MAE 0.0700 → 0.0660(実測 0.06603) */ /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
   // 2026-11-07: Zen 3 の代表(5800X)を加えた結果、一律 0.81 の MAE は 0.1268 → 0.0993 に下がり、旧閾値 > 0.12 を満たさなくなった(帯別 LOO は 0.0986)。帯モデルが一律 0.81 より明確に良い、という主張は弱まった(差は 0.0007)。
   // 閾値を下げて通すのではなく、他の帯テストと同じ「既知の値として固定」する方式に直した(Zen 3 代表化の直後は実測 0.0993。公開値の取り直し後は下の 0.1063 に固定し直した)。ユーザー回答「閾値を実測に合わせて緩める」(2026-11-07)の対象は LOO MAE の閾値(0.11 → 0.115)だけで、
   // この一律 0.81 の値の固定はその回答の対象ではない。帯別が一律 0.81 より良いかは設計書 §13.4 の判断待ち。相対比較(LOO < 一律 0.81)は残る
   // 2026-11-07(全体中央値): 一律 0.81 の MAE は 0.1063 に固定し直した(旧 0.0993)。帯別 LOO(0.1288)は一律 0.81 より悪くなった(以前は帯別が良いという相対比較だった)
   // 2026-11-09(395・258V を広げて取り直し): 一律 0.81 の MAE は 0.0890、帯別 LOO は 0.1119。帯別(中央値の LOO)が一律 0.81 より**悪い**事実は変わらない(閾値は緩めない。成立しない主張は事実として固定して報告)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.0768) < 0.001, '一律 0.81 の MAE(固定値 0.0768。2026-11-15(285H・HX の u の比)に 0.0805 → 0.0768。その前の固定値 0.0805。2026-11-15(Zen 3+ の u × 0.95)に 0.0858 → 0.0805。その前の固定値 0.0858。2026-11-15(DRAM 遅延・c 0.405)に 0.0835 → 0.0858。その前の固定値 0.0835。2026-11-14 に Cezanne の u × 0.95 で 0.0900 → 0.0835。その前の固定値は 0.0900。2026-11-14 に Redwood Cove の uCal 99.5 で 0.0899 → 0.0900。その前の固定値は 0.0899。2026-11-13 第 2 回で 0.0910 → 0.0899。履歴: 2026-11-10 γ=0.30 で 0.0890 → 0.0911、同日 HX 取り直しで 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910): ' + mae(loo.map((l) => l.e81)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.0691) < 0.001, '一律 0.81 の MAE(固定値 0.0691。2026-11-15(5800U の u × 0.89)に 0.0768 → 0.0691。その前の固定値 0.0768。2026-11-15(285H・HX の u の比)に 0.0805 → 0.0768。その前の固定値 0.0805。2026-11-15(Zen 3+ の u × 0.95)に 0.0858 → 0.0805。その前の固定値 0.0858。2026-11-15(DRAM 遅延・c 0.405)に 0.0835 → 0.0858。その前の固定値 0.0835。2026-11-14 に Cezanne の u × 0.95 で 0.0900 → 0.0835。その前の固定値は 0.0900。2026-11-14 に Redwood Cove の uCal 99.5 で 0.0899 → 0.0900。その前の固定値は 0.0899。2026-11-13 第 2 回で 0.0910 → 0.0899。履歴: 2026-11-10 γ=0.30 で 0.0890 → 0.0911、同日 HX 取り直しで 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910): ' + mae(loo.map((l) => l.e81)));
   // 2026-11-09 続き(指数 0.15): 連続式の LOO(0.0801)は一律 0.81(0.0890)より小さくなった(「式が一律より良い」という相対比較が成り立つ。指数 1/3 では 0.1329 で悪かった)
   // 2026-11-13(Windows のみ化 第 2 回): **連続式(p=0.15)の LOO(0.0905)は一律 0.81(0.0899)よりわずかに悪くなった**(差 0.0006。以前は連続式が小さかった)。閾値を動かして通すのではなく、成り立たなくなった事実を固定する(差が 0.002 未満)。
   // p の走査では LOO 最小が下限の p=0.10(LOO 0.0815。一律 0.81 より小さい)に移った。指数を変えるかはユーザー判断待ち(設計書 §13.4)。指数か標本を変えたら「連続式の LOO < 一律 0.81」の確認に戻すこと
@@ -450,7 +450,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
   // 2026-11-05(265K の P boost 5.5→5.4 で Lion Cove の u を再校正): 帯 0 の中央値 0.6882→0.6856、帯 1 は 0.7595→0.7558(丸めた係数 0.69/0.76 は不変)。LOO MAE 0.1045→0.1050、一律 0.81 は 0.1217→0.1247。LOO 誤差が 10% を超えるのは 7735HS(9.66%→10.14%)が加わって 3→4 件(閾値は動かしていない)
   // 2026-11-07: 14700HX(+14.7%)が加わって 4 → 5 件(事実の固定。閾値を当て込みで動かしたものではない)。Zen 3 の代表を加えた後も LOO 誤差が 10% 超は 5 件のまま(一律 0.81 の MAE は上の固定値 0.0993)
   // 2026-11-09 続き(指数 0.15): LOO 誤差が 10% 超は 5 → 3 件に減った(事実の固定)
-  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 2); /* 2026-11-15(14700HX の typicalW 69W): 3 → 2 件(事実の固定。閾値は動かしていない) */ /* 2026-11-15(DRAM 遅延・c 0.405): 4 → 3 件(事実の固定。閾値は動かしていない) */ /* 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 3 → 4 件(事実の固定。閾値は動かしていない) */ // 2026-11-13(Windows のみの GB7 差し替え・c=0.411): 2 → 3 件(事実の固定。閾値は動かしていない)。以前: 2026-11-10(γ=0.30): 3 → 2 件
+  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 1); /* 2026-11-15(5800U の u × 0.89): 2 → 1 件(5800U の LOO 誤差が 10% 以内に入った。事実の固定。閾値は動かしていない) */ /* 2026-11-15(14700HX の typicalW 69W): 3 → 2 件(事実の固定。閾値は動かしていない) */ /* 2026-11-15(DRAM 遅延・c 0.405): 4 → 3 件(事実の固定。閾値は動かしていない) */ /* 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 3 → 4 件(事実の固定。閾値は動かしていない) */ // 2026-11-13(Windows のみの GB7 差し替え・c=0.411): 2 → 3 件(事実の固定。閾値は動かしていない)。以前: 2026-11-10(γ=0.30): 3 → 2 件
 });
 
 test('TDP 帯別係数: σ の校正(x86 の代表 4 件。スマホ SoC は除く)(代表は pc で係数 1.0)', () => {
@@ -702,25 +702,52 @@ test('uRatio: Cezanne は Zen 3 の u × 0.95。比は 5600G・5700G(uRatioRefs)
   assert.deepStrictEqual(rec.uRatioRefs.map((s) => /5600G|5700G/.exec(s.gb7)[0]), ['5600G', '5700G']);
   ratios.forEach((x) => assert.ok(x > 0.94 && x < 0.96, String(x))); // 0.956・0.945(docs/research/5800u-st-cause-2026-11-14.md §3.2)
   const med = (ratios[0] + ratios[1]) / 2; assert.strictEqual(Math.round(med * 100) / 100, 0.95, '2 件の中央値 ' + med);
-  // 5800U: ratio の経路。5800U の公開値は比に使っていない(比の再計算に 5800U は出てこない)
+  // 2026-11-15: 5800U は別記録「Zen 3 (Cezanne U)」に移した(下のテスト)。「Zen 3 (Cezanne)」を使うプリセットは 0 件で、uRatioRefs の再計算(上)の対象としてだけ残る。
+  // 5600G・5700G の比 0.95 は 5800U の公開値を使わない(比の再計算に 5800U は出てこない)。5800U が「Zen 3 (Cezanne)」を使った場合の計算は下のテストで確かめる
+  assert.ok(D.presets.filter((q) => q.cfg.cores.some((g) => g.uarch === CZ)).length === 0, 'Cezanne(デスクトップ APU の参考データ)の uarch を使うプリセットは 0 件(5800U は Cezanne U)');
   const p = preset('amd-zen3-5800u');
-  assert.ok(p.cfg.cores.every((g) => g.uarch === CZ));
-  assert.ok(D.presets.filter((q) => q.cfg.cores.some((g) => g.uarch === CZ)).length === 1, 'Cezanne の uarch を使うプリセットは 5800U だけ');
-  const st = F.stScore(p, c, D.uarch);
-  assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Zen 3'); assert.ok(Math.abs(st.corr - 0.95 * zu) < 1e-9); assert.strictEqual(st.confidence, 'low');
-  assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - 0.1444) < 0.0005, String(st.score)); /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 5800U の ST +14.3 → +14.4% */ // +14.3%(旧 +20.3%。ng のまま。残りは母集団の差)
-  assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - 0.1412) < 0.0005); /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 5800U の MT +15.9 → +14.1% */ // +15.9%(旧 +21.8%。2026-11-15: c 0.411 → 0.412 で +15.7 → +15.9%)
+  const pOld = JSON.parse(JSON.stringify(p)); pOld.cfg.cores.forEach((g) => { g.uarch = CZ; });
+  const st = F.stScore(pOld, c, D.uarch);
+  assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Zen 3'); assert.strictEqual(st.corrUarch, CZ); assert.ok(Math.abs(st.corr - 0.95 * zu) < 1e-9); assert.strictEqual(st.confidence, 'low');
+  assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - 0.1444) < 0.0005, String(st.score)); /* 2026-11-15: 5800U は Cezanne U に移したので、これは「5800U が Cezanne(0.95)を使った場合」の値(比 0.95 の確認。pOld) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 5800U の ST +14.3 → +14.4% */ // +14.3%(旧 +20.3%。ng のまま。残りは母集団の差)
+  assert.ok(Math.abs(F.mtScore(pOld, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - 0.1412) < 0.0005); /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 5800U の MT +15.9 → +14.1% */ // +15.9%(旧 +21.8%。2026-11-15: c 0.411 → 0.412 で +15.7 → +15.9%)
   // Zen 3 の u が動けば連動する。借り先が無ければ ISA 平均に落ちる
   const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Zen 3': zu * 1.1 }) });
-  assert.ok(Math.abs(F.stScore(p, c2, D.uarch).corr - 0.95 * 1.1 * zu) < 1e-9);
+  assert.ok(Math.abs(F.stScore(pOld, c2, D.uarch).corr - 0.95 * 1.1 * zu) < 1e-9);
   const c3 = Object.assign({}, c, { u: Object.assign({}, c.u) }); delete c3.u['Zen 3'];
-  assert.strictEqual(F.stScore(p, c3, D.uarch).corrSource, 'isa');
+  assert.strictEqual(F.stScore(pOld, c3, D.uarch).corrSource, 'isa');
   // σ の代表に 5800U は入らない(σ は代表 4 件だけ)
   assert.ok(!c.mt.usedPresets.includes('amd-zen3-5800u')); assert.ok(Math.abs(c.mt.sigma - 0.03151202046273477) < 1e-12) /* 2026-11-15: σ 0.03183 → 0.03151(DRAM 遅延) */;
   // Vermeer の 3 件は「Zen 3」のまま・値は不変(0.1 の差まで)。7735HS(Zen 3+)は 2026-11-15 に別記録「Zen 3+ (Rembrandt-R)」(u = Zen 3 の u × 0.95)にした(下のテスト)
   [['amd-zen3-5800x', 2122.0], ['amd-zen3-5600x', 2079.82], ['amd-zen3-5950x', 2206.00]] /* 7735HS は 2026-11-15 に Zen 3+ の別記録にしたので外した(旧値 2025.86 は下の Zen 3+ のテストに移した) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 5600X 2080.04 → 2079.82、5950X 2205.54 → 2206.00(Zen 3 の u と遅延 78.8ns)、7735HS 2080.31 → 2025.86(遅延 103.3ns。7840HS の代用 [推定]) */.forEach(([id, want]) => {
     const r = F.stScore(preset(id), c, D.uarch); assert.strictEqual(r.corrSource, 'uarch', id); assert.ok(Math.abs(r.score - want) < 0.1, id + ' ' + r.score);
   });
+});
+// 2026-11-15(ユーザー指示「5800U は IPC から取得する方式で直す。ST のクロックは 4.4GHz のまま」): 5800U は uarch 記録「Zen 3 (Cezanne U)」で、u = Zen 3 の u × 0.89(uRatio。corrSource 'ratio')。
+// 0.89 = 0.95(Cezanne の比)× 約 0.93(0.932。依頼時の概算は 0.934。5800U 自身の Geekbench Browser の Windows 投稿 76 件の「score ÷ 各結果ページの Maximum Frequency」の中央値 391.4 点/GHz [実測] ÷ モデルの点/GHz)。0.934 は 5800U 自身の公開値の母集団から出した [推定・校正値] で独立ではない(循環)。
+// ST のクロックは公称ブースト 4.4GHz のまま(クロックを下げる案は採らない)。5600G・5700G の参考データは「Zen 3 (Cezanne)」に残り、uRatioRefs の再計算は上のテストが行う。他の SKU は不変
+test('uRatio: 5800U は Cezanne U(Zen 3 の u × 0.89)。比は 5800U 自身の投稿の実効 IPC(391.4 点/GHz。循環)から再計算でき、ST のクロックは 4.4GHz のまま。ST +7.2%・MT +6.9%。他の SKU は不変', () => {
+  const CU = 'Zen 3 (Cezanne U)'; const CZ = 'Zen 3 (Cezanne)'; const rec = D.uarch[CU];
+  assert.strictEqual(rec.uRatioOf, 'Zen 3'); assert.strictEqual(rec.uRatio, 0.89); assert.strictEqual(rec.uRatioRefs, undefined, 'uRatioRefs は Cezanne(5600G・5700G の参考データ)の記録だけが持つ');
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
+  const zu = c.u['Zen 3'];
+  const p = preset('amd-zen3-5800u');
+  assert.ok(p.cfg.cores.every((g) => g.uarch === CU)); assert.strictEqual(p.cfg.cores[0].boostGHz, 4.4, 'ST のクロックは公称ブースト 4.4GHz のまま');
+  assert.deepStrictEqual(D.presets.filter((q) => q.cfg.cores.some((g) => g.uarch === CU)).map((q) => q.id), ['amd-zen3-5800u']);
+  // 比の再計算: 現在のモデル(Cezanne 0.95)の点/GHz に対する、5800U 自身の投稿の中央値 391.4 点/GHz(76 件。クロック中央値 4064MHz)の比 × 0.95 を丸めた値が 0.89
+  const pCz = JSON.parse(JSON.stringify(p)); pCz.cfg.cores.forEach((g) => { g.uarch = CZ; });
+  const ptsPerGHz = F.stScore(pCz, c, D.uarch).score / 4.4;
+  const eff = 391.4 / ptsPerGHz; // 実効 IPC の補正(約 0.93。0.9324)
+  assert.ok(eff > 0.92 && eff < 0.94, String(eff)); assert.strictEqual(Math.round(0.95 * eff * 100) / 100, 0.89, '0.95 × ' + eff);
+  const st = F.stScore(p, c, D.uarch);
+  assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Zen 3'); assert.strictEqual(st.corrUarch, CU); assert.ok(Math.abs(st.corr - 0.89 * zu) < 1e-9); assert.strictEqual(st.confidence, 'low'); assert.strictEqual(st.fGHz, 4.4);
+  assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - 0.0721) < 0.0005, String(st.score)); // +7.21%(旧 +14.44%。ok に入った)
+  assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - 0.0692) < 0.0005); // +6.92%(旧 +14.12%)
+  // Zen 3 の u が動けば連動する。7735HS(Zen 3+)・Vermeer は別記録で不変
+  const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Zen 3': zu * 1.1 }) });
+  assert.ok(Math.abs(F.stScore(p, c2, D.uarch).corr - 0.89 * 1.1 * zu) < 1e-9);
+  assert.strictEqual(F.stScore(preset('amd-zen3p-7735hs'), c, D.uarch).corrUarch, 'Zen 3+ (Rembrandt-R)');
+  assert.strictEqual(F.stScore(preset('amd-zen3-5800x'), c, D.uarch).corrUarch, undefined);
 });
 // 2026-11-15(ユーザー指示「スコアと動作クロックから IPC を取得して直して」): Zen 3+(Rembrandt-R。7735HS)は uarch 記録「Zen 3+ (Rembrandt-R)」で、u = Zen 3 の u × 0.95(uRatio。corrSource 'ratio')。
 // 比は 7735HS の公開値に合わせた値ではなく、Geekbench Browser v7 の Windows 投稿(結果ページの Maximum Frequency を動作クロックとし、4000MHz 以上の投稿の ST ÷ クロックの中央値。2026-11-15 取得 [実測])の
@@ -751,7 +778,7 @@ test('uRatio: Zen 3+ は Zen 3 の u × 0.95。比は動作クロック基準の
   assert.ok(Math.abs(st.score / gb7ByName[p7.gb7].single - 1 - 0.0505) < 0.0005, String(st.score)); // +5.05%(旧 +10.58%。ok に入った)
   assert.ok(Math.abs(F.mtScore(p7, c, D.uarch, null).score / gb7ByName[p7.gb7].multi - 1 - 0.0268) < 0.0005); // +2.68%(旧 +8.08%)
   // 5800U(Cezanne)・Vermeer は別記録のまま不変。Zen 3 の u が動けば連動する
-  assert.strictEqual(F.stScore(preset('amd-zen3-5800u'), c, D.uarch).corrUarch, 'Zen 3 (Cezanne)');
+  assert.strictEqual(F.stScore(preset('amd-zen3-5800u'), c, D.uarch).corrUarch, 'Zen 3 (Cezanne U)'); // 2026-11-15: 5800U は Cezanne U(旧: 'Zen 3 (Cezanne)')
   assert.strictEqual(F.stScore(preset('amd-zen3-5800x'), c, D.uarch).corrUarch, undefined);
   const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Zen 3': zu * 1.1 }) });
   assert.ok(Math.abs(F.stScore(p7, c2, D.uarch).corr - 0.95 * 1.1 * zu) < 1e-9);

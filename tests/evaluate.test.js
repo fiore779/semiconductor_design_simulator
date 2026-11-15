@@ -372,31 +372,36 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.ok(!cell('intel-adl-12900k').sub.includes(E.RATIO_INFO));
 });
 // 2026-11-14(5800U の ST 修正 案 A): Cezanne(5800U)の uarch 名を「Zen 3」→「Zen 3 (Cezanne)」に分けた。旧保存データの移行と、ratio の注記(ST・MT とも info)
-test('旧保存データの移行: 旧名「Zen 3」で保存した 5800U は、parse で cfg・baseCfg・blocks の 3 か所とも「Zen 3 (Cezanne)」になり、評価は新規作成と同じ値。Vermeer(5800X)の Zen 3 は変えない', () => {
-  const CZ = 'Zen 3 (Cezanne)';
+// 2026-11-15(ユーザー指示「5800U は IPC から取得する方式で直す」): 5800U は更に「Zen 3 (Cezanne U)」(u = Zen 3 の u × 0.89)に分けた。旧名「Zen 3」(2026-11-14 より前)と「Zen 3 (Cezanne)」(2026-11-14〜15 に保存)のどちらも新名に移行する
+test('旧保存データの移行: 旧名「Zen 3」「Zen 3 (Cezanne)」で保存した 5800U は、parse で cfg・baseCfg・blocks の 3 か所とも「Zen 3 (Cezanne U)」になり、評価は新規作成と同じ値。Vermeer(5800X)の Zen 3 は変えない', () => {
+  const CZ = 'Zen 3 (Cezanne U)';
   const fresh = design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800u'), { mode: 'improve' });
-  const old = JSON.parse(design.serialize(fresh)); let n = 0;
-  const back = (c) => { if (c.uarch === CZ) { c.uarch = 'Zen 3'; n++; } };
-  old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
-  assert.ok(n >= 3); assert.ok(!JSON.stringify(old).includes(CZ));
-  const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
-  assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)));
-  const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
-  assert.strictEqual(a.st.score, b.st.score); assert.strictEqual(a.mt.score, b.mt.score); assert.strictEqual(a.st.corrSource, 'ratio'); assert.strictEqual(a.edited, false);
+  ['Zen 3', 'Zen 3 (Cezanne)'].forEach((oldName) => {
+    const old = JSON.parse(design.serialize(fresh)); let n = 0;
+    const back = (c) => { if (c.uarch === CZ) { c.uarch = oldName; n++; } };
+    old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
+    assert.ok(n >= 3); assert.ok(!JSON.stringify(old).includes(CZ));
+    const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
+    assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)), oldName);
+    const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
+    assert.strictEqual(a.st.score, b.st.score); assert.strictEqual(a.mt.score, b.mt.score); assert.strictEqual(a.st.corrSource, 'ratio'); assert.strictEqual(a.edited, false);
+  });
   const v = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800x')))).design;
   assert.ok(v.cfg.cores.every((c) => c.uarch === 'Zen 3')); assert.ok(!JSON.stringify(v).includes(CZ));
 });
 
-test('ratio の注記: 5800U は ST・MT とも info「Cezanne の u は Zen 3 の u × 0.95 [推定・校正値]」(Arrow Lake の注記とは別)。Vermeer・7735HS には出ない。inRatioSet は 5800U では false(比は別 SKU の参考データで決めた)', () => {
-  assert.ok(E.RATIO_INFO_CEZANNE.startsWith('Cezanne の u は Zen 3 の u × 0.95 [推定・校正値]'));
-  assert.strictEqual(E.ratioInfo('Zen 3'), E.RATIO_INFO_CEZANNE); assert.strictEqual(E.ratioInfo('Lion Cove'), E.RATIO_INFO);
+test('ratio の注記: 5800U は ST・MT とも info「5800U の u は Zen 3 の u × 0.95(デスクトップの別 SKU)× 約 0.93(5800U 自身の投稿の実効 IPC。循環・[推定・校正値])」(ST のクロックは 4.4GHz のまま・限界つき)。Vermeer・7735HS には出ない。inRatioSet は 5800U では false', () => {
+  assert.ok(E.RATIO_INFO_CEZANNE_U.startsWith('5800U の u は Zen 3 の u × 0.95(デスクトップの別 SKU の 5600G・5700G から)× 約 0.93(5800U 自身の Geekbench Browser の Windows 投稿の実効 IPC。循環・[推定・校正値])'));
+  ['ST のクロックは公称 4.4GHz のまま', '省電力設定などで最大クロックまで上がらない', 'Maximum Frequency は最大値で持続クロックではない', '1 機種が 76 件中 20 件', '4.4GHz に届いた群(ST 1823・MT 7527)'].forEach((t) => assert.ok(E.RATIO_INFO_CEZANNE_U.includes(t), t));
+  assert.ok(E.RATIO_INFO_CEZANNE.startsWith('Cezanne の u は Zen 3 の u × 0.95 [推定・校正値]')); // デスクトップ APU(5600G・5700G。参考データ)の記録の注記。5800U は使わない
+  assert.strictEqual(E.ratioInfo('Zen 3', 'Zen 3 (Cezanne U)'), E.RATIO_INFO_CEZANNE_U); assert.strictEqual(E.ratioInfo('Zen 3'), E.RATIO_INFO_CEZANNE); assert.strictEqual(E.ratioInfo('Lion Cove'), E.RATIO_INFO);
   const w = ev('amd-zen3-5800u').warnings;
-  assert.ok(w.some((x) => x.level === 'info' && x.text === 'MT: ' + E.RATIO_INFO_CEZANNE)); assert.ok(w.some((x) => x.level === 'info' && x.text === 'ST: ' + E.RATIO_INFO_CEZANNE));
-  assert.ok(!w.some((x) => x.text === 'MT: ' + E.RATIO_INFO));
-  ['amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x', 'amd-zen3p-7735hs'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE)), id));
+  assert.ok(w.some((x) => x.level === 'info' && x.text === 'MT: ' + E.RATIO_INFO_CEZANNE_U)); assert.ok(w.some((x) => x.level === 'info' && x.text === 'ST: ' + E.RATIO_INFO_CEZANNE_U));
+  assert.ok(!w.some((x) => x.text === 'MT: ' + E.RATIO_INFO) && !w.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE)));
+  ['amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x', 'amd-zen3p-7735hs'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE_U)), id));
   const r = ev('amd-zen3-5800u'); assert.strictEqual(r.mt.inRatioSet, false); assert.strictEqual(r.st.inRatioSet, false); assert.strictEqual(r.st.corrUFrom, 'Zen 3');
   assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']);
-  assert.ok(Math.abs(r.st.errPct - 14.44) < 0.05 && Math.abs(r.mt.errPct - 14.12) < 0.05) /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 5800U の ST +14.26 → +14.44%、MT +15.90 → +14.12% */ /* 2026-11-15: MT +15.68 → +15.90(c 0.411 → 0.412) */; // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
+  assert.ok(Math.abs(r.st.errPct - 7.21) < 0.05 && Math.abs(r.mt.errPct - 6.92) < 0.05) /* 2026-11-15(5800U の実効 IPC。u = Zen 3 の u × 0.89): 5800U の ST +14.44 → +7.21%(ng → ok)、MT +14.12 → +6.92%(ok) */ /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 5800U の ST +14.26 → +14.44%、MT +15.90 → +14.12% */ /* 2026-11-15: MT +15.68 → +15.90(c 0.411 → 0.412) */; // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
 });
 
 // 2026-11-15(ユーザー指示「スコアと動作クロックから IPC を取得して直して」): Zen 3+(7735HS)の uarch 名を「Zen 3」→「Zen 3+ (Rembrandt-R)」に分けた。旧保存データの移行(Cezanne と同じ方式)と ratio の注記
@@ -414,7 +419,7 @@ test('旧保存データの移行: 旧名「Zen 3」で保存した 7735HS は�
   const v = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800x')))).design;
   assert.ok(v.cfg.cores.every((c) => c.uarch === 'Zen 3')); assert.ok(!JSON.stringify(v).includes(ZP));
   const u = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800u')))).design;
-  assert.ok(u.cfg.cores.every((c) => c.uarch === 'Zen 3 (Cezanne)')); assert.ok(!JSON.stringify(u).includes(ZP));
+  assert.ok(u.cfg.cores.every((c) => c.uarch === 'Zen 3 (Cezanne U)')); assert.ok(!JSON.stringify(u).includes(ZP));
 });
 
 test('ratio の注記: 7735HS は ST・MT とも info「Zen 3+ の u は Zen 3 の u × 0.95 [推定・校正値]」(Cezanne の注記とは別。借り先は同じ Zen 3 でも corrUarch で分ける)。5800U・Vermeer には出ない', () => {
