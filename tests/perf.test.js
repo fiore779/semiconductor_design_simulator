@@ -621,7 +621,7 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
   // 2026-11-14: 7950X の P 5.0GHz(KitGuru の Cinebench R23 全コア平均「5GHz 強」。[二次]。5950X と同じ出典・同じ測り方)を追加
   // 2026-11-14: 12100 の P 4.1GHz(HWCooling の 12100F レビューの仕様表「Max. boost (all-core) 4.1 GHz (P)」。[二次]。12100F は 12100 と同じ CPU コアで iGPU の有無だけの違い)を追加
-  const WITH = { 'amd-zen4-7840hs': { P: 4.40 }, 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 } };
+  const WITH = { 'amd-zen4-7840hs': { P: 4.40 }, 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 }, 'intel-lnl-268v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-258v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-256v': { P: 3.0, 'LP-E': 3.5 } /* 2026-11-15(Lunar Lake の MT クロック。258V は [二次]、268V・256V は流用 [推定]) */ };
   { // 12100: MT のクロックが全コアの 4.1GHz になる(係数は掛けない)。MT +10.9%(ng)→ +6.4%(ok)。allCoreGHz なしでは +10.9% のまま(ST は不変。uCal の標本は ST なので不変)
     const p1 = preset('intel-adl-12100'); const r1 = F.mtScore(p1, c, D.uarch, null);
     assert.strictEqual(r1.detail[0].clockSource, 'allcore'); assert.strictEqual(r1.detail[0].fGHz, 4.1); assert.strictEqual(r1.detail[0].clockFactor, 1);
@@ -947,7 +947,7 @@ test('Cortex-A715 / 混在表記: rob 192(下限・[二次])。Cortex-A710: rob 
 });
 
 test('l3Types(2026-11-15。Lunar Lake の ["P"]): L3 に無い種別は noL3 で、MT の L3 は L3 につながるコアのスレッド数で割る。ST は不変。l3Types が無い SKU は完全に不変', () => {
-  const c = cal(); const lnl = preset('intel-lnl-258v');
+  const c = cal(); const lnl = clone(preset('intel-lnl-258v')); lnl.cfg.cores.forEach((g) => { delete g.allCoreGHz; }); /* キャッシュの効果だけを見る(クロックは boost × 連続式。allCoreGHz は別テスト) */
   assert.deepStrictEqual(lnl.cfg.l3Types, ['P']);
   const no = clone(lnl); delete no.cfg.l3Types;
   // ST は不変(最速コアの P は l3Types に入っていて、1 スレッドが L3 全量を使う)
@@ -974,4 +974,25 @@ test('l3Types(2026-11-15。Lunar Lake の ["P"]): L3 に無い種別は noL3 で
   // l3Types を持つのは Lunar Lake の 3 件だけ。ほかの SKU の MT の結果に l3NoTypes・noL3(detail)は出ない
   assert.deepStrictEqual(D.presets.filter((p) => p.cfg && p.cfg.l3Types).map((p) => p.id).sort(), ['intel-lnl-256v', 'intel-lnl-258v', 'intel-lnl-268v']);
   const k = F.mtScore(preset('intel-arl-285h'), c, D.uarch, null); assert.strictEqual(k.l3NoTypes, undefined); assert.ok(k.detail.every((d) => d.noL3 === undefined));
+});
+
+test('Lunar Lake の allCoreGHz(2026-11-15): P 3.0・LP-E 3.5GHz(258V は [二次]、268V・256V は流用 [推定])。MT はこのクロックで、TDP・冷却に効かない(powerIgnored)。ST は不変', () => {
+  const c = cal();
+  ['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].forEach((id) => {
+    const p = preset(id); const m = F.mtScore(p, c, D.uarch, null);
+    assert.deepStrictEqual(m.detail.map((d) => [d.type, d.fGHz, d.clockSource, d.clockFactor]), [['P', 3.0, 'allcore', 1], ['LP-E', 3.5, 'allcore', 1]], id);
+    assert.strictEqual(F.mtClockInfo(p).powerIgnored, true, id); assert.strictEqual(m.clockInfo.applied, 'none', id);
+    // TDP の選択・冷却の制限を変えても MT は同じ(allCoreGHz は電力係数を通らない)
+    const lo = clone(p); lo.power.tdpW = p.power.range.minW; const cool = clone(p); cool.power.coolingW = 10; cool.power.coolingId = 'x';
+    assert.strictEqual(F.mtScore(lo, c, D.uarch, null).score, m.score, id); assert.strictEqual(F.mtScore(cool, c, D.uarch, null).score, m.score, id);
+    // allCoreGHz なしなら TDP で変わる(連続式)
+    const no = clone(p); no.cfg.cores.forEach((g) => { delete g.allCoreGHz; }); const nlo = clone(no); nlo.power.tdpW = p.power.range.minW;
+    assert.ok(F.mtScore(nlo, c, D.uarch, null).score < F.mtScore(no, c, D.uarch, null).score, id);
+    assert.strictEqual(F.stScore(p, c, D.uarch).score, F.stScore(no, c, D.uarch).score, id);
+  });
+  // 誤差(調査メモ §4.1 の 2 の試算 -4.1〜-6.8% の範囲)。258V は ok に戻る
+  const E = require('../js/model/evaluate.js'); const dsg = require('../js/model/design.js'); const ctx = E.makeContext();
+  const e = (id) => E.evaluate(dsg.fromPreset(preset(id)), ctx);
+  assert.ok(Math.abs(e('intel-lnl-268v').mt.errPct - (-5.63)) < 0.01 && Math.abs(e('intel-lnl-258v').mt.errPct - (-6.42)) < 0.01 && Math.abs(e('intel-lnl-256v').mt.errPct - (-4.26)) < 0.01);
+  const ci = E.allCoreInfo(e('intel-lnl-258v').mt); assert.ok(ci.includes('P 3GHz') && ci.includes('LP-E 3.5GHz'), ci);
 });
