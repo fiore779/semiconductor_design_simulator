@@ -271,7 +271,7 @@
         const top = topCore(cores); const ur = uarchDb[c.uarch];
         if (top && top !== c && ur && ur.uFrom && ur.uFrom === top.uarch) {
           const tf0 = top.boostGHz || top.maxGHz;
-          if (tf0) { const cap = tf0 * kf; if (f0 < cap) { f = f0; } else { f = cap; } clockCap = true; }
+          if (tf0) { const cap = tf0 * kf; f = Math.min(f0, cap); clockCap = true; }
         }
       }
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
