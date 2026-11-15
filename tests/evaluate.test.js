@@ -354,7 +354,7 @@ test('MT の表示: corrSource ratio があるとき info「E の u は Lion Cov
   assert.deepStrictEqual(inSet, ['intel-arl-265k', 'intel-arl-285k']);
   D.presets.forEach((p) => assert.strictEqual(ev(p.id).st.inRatioSet, false, p.id)); // ST には付けない
   // レビュー対応の時点(b2a8a08 の値)は 285K +0.14%・265K -4.15%・275HX +4.77%・285H +8.46%。2026-11-13(Windows のみ化 第 2 回): σ 0.03306 → 0.03183・x86 ISA 平均 u・c 0.411 → 0.406 の再校正で動いた(比 0.90 は不変。4 件とも ok のまま)
-  const want = { 'intel-arl-285k': 1.21, 'intel-arl-265k': -3.34, 'intel-arl-275hx': 4.58, 'intel-arl-285h': 7.82 }; /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 285K 0.00 → +1.21、265K -4.44 → -3.34、275HX +4.84 → +4.58、285H +8.29 → +7.82(4 件とも ok のまま) */ /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
+  const want = { 'intel-arl-285k': 1.21, 'intel-arl-265k': -3.34, 'intel-arl-275hx': 4.58, 'intel-arl-285h': 3.52 }; /* 2026-11-15(285H の P の u × 0.92。Lion Cove (Arrow Lake-H)): 285H +7.82 → +3.52(ok のまま。ST +11.49 → +2.57)。285K・265K・275HX は不変 */ /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 285K 0.00 → +1.21、265K -4.44 → -3.34、275HX +4.84 → +4.58、285H +8.29 → +7.82(4 件とも ok のまま) */ /* 2026-11-15(265K の P の boost を 5.5GHz に。Lion Cove の u 102.13 → 100.36、x86 ISA 平均 u 109.77 → 109.39、c 0.411 → 0.412): 285K +1.77 → 0.00、265K -2.76 → -4.44、275HX +6.47 → +4.84、285H +9.86 → +8.29(4 件とも ok のまま) */ // 2026-11-14(Redwood Cove の uCal 99.5 を追加、c 0.406 → 0.411 に再校正): mobile-pc の 275HX +5.38 → +6.47、285H +8.72 → +9.86(ok のまま。285H は許容の縁)。pc の 285K・265K は不変
   ARL_RING_IDS.forEach((id) => assert.strictEqual(Math.round(ev(id).mt.errPct * 100) / 100, want[id], id));
   // 編集後は公開値が無いので印を外す
   const p = D.presets.find((x) => x.id === 'intel-arl-285k'); const u = design.fromPreset(p, { mode: 'improve' });
@@ -428,4 +428,45 @@ test('ratio の注記: 7735HS は ST・MT とも info「Zen 3+ の u は Zen 3 �
   assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']); assert.deepStrictEqual(E.ratioInfosOf(r.mt), [E.RATIO_INFO_ZEN3P]);
   // ST +5.05%・MT +2.68%(旧 +10.58%・+8.08%。ng → ok)。公開値は 7735HS の Windows のみ n=200 の中央値(ST 1832 / MT 8341)
   assert.ok(Math.abs(r.st.errPct - 5.05) < 0.05 && Math.abs(r.mt.errPct - 2.68) < 0.05); assert.ok(Math.abs(r.st.errPct) <= 10 && Math.abs(r.mt.errPct) <= 10);
+});
+// 2026-11-15(ユーザー指示「スコアと動作クロックから IPC を取得して直して」): 285H の P を「Lion Cove」→「Lion Cove (Arrow Lake-H)」(u = Lion Cove の u × 0.92)、HX 3 件(14700HX・14900HX・13980HX)の P を「Raptor Cove」→「Raptor Cove (HX)」(u = Raptor Cove の u × 0.94)に分けた。旧保存データの移行(Zen 3+ と同じ方式。presetId で判定)と ratio の注記
+test('旧保存データの移行: 旧名で保存した 285H の P(Lion Cove)と HX 3 件の P(Raptor Cove)は、parse で cfg・baseCfg・blocks の 3 か所とも新名になり、評価は新規作成と同じ値。E・LP-E、285K・265K・275HX、Raptor Cove のデスクトップは変えない', () => {
+  const cases = [['intel-arl-285h', 'Lion Cove (Arrow Lake-H)', 'Lion Cove'], ['intel-rpl-14700hx', 'Raptor Cove (HX)', 'Raptor Cove'], ['intel-rpl-14900hx', 'Raptor Cove (HX)', 'Raptor Cove'], ['intel-rpl-13980hx', 'Raptor Cove (HX)', 'Raptor Cove']];
+  cases.forEach(([id, nu, ou]) => {
+    const fresh = design.fromPreset(D.presets.find((p) => p.id === id), { mode: 'improve' });
+    const old = JSON.parse(design.serialize(fresh)); let n = 0;
+    const back = (c) => { if (c.uarch === nu) { c.uarch = ou; n++; } };
+    old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
+    assert.ok(n >= 3, id); assert.ok(!JSON.stringify(old).includes(nu), id);
+    const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
+    assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)), id);
+    const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
+    assert.strictEqual(a.st.score, b.st.score, id); assert.strictEqual(a.mt.score, b.mt.score, id); assert.strictEqual(a.st.corrSource, 'ratio', id); assert.strictEqual(a.edited, false, id);
+  });
+  // E(リング接続)・LP-E は 285H でも変えない。ほかの SKU は新名を含まず、旧名のまま
+  const h = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285h')))).design;
+  assert.deepStrictEqual(h.cfg.cores.map((c) => c.uarch), ['Lion Cove (Arrow Lake-H)', 'Skymont (Arrow Lake リング E)', 'Skymont']);
+  ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-lnl-268v', 'intel-rpl-14700k', 'intel-rpl-13900k', 'intel-adl-12900k'].forEach((id) => {
+    const d = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === id)))).design;
+    assert.ok(!JSON.stringify(d).includes('Arrow Lake-H)') && !JSON.stringify(d).includes('Raptor Cove (HX)'), id);
+  });
+  const k = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-rpl-14700k')))).design;
+  assert.ok(k.cfg.cores.some((c) => c.uarch === 'Raptor Cove'));
+});
+test('ratio の注記: 285H の P は ST・MT とも info「Arrow Lake-H の P の u は Lion Cove の u × 0.92 [推定・校正値]」、HX 3 件の P は「Raptor Lake-HX の P の u は Raptor Cove の u × 0.94 [推定・校正値]」(corrUarch で分ける)。285K・275HX・デスクトップには出ない。285H の E は従来の注記のまま', () => {
+  assert.ok(E.RATIO_INFO_ARLH.startsWith('Arrow Lake-H の P の u は Lion Cove の u × 0.92 [推定・校正値]')); assert.ok(E.RATIO_INFO_HX.startsWith('Raptor Lake-HX の P の u は Raptor Cove の u × 0.94 [推定・校正値]'));
+  assert.ok(E.RATIO_INFO_ARLH.includes('285H の公開値に合わせた値ではない') && E.RATIO_INFO_HX.includes('14700HX の公開値に合わせた値ではない') && E.RATIO_INFO_HX.includes('0.93〜0.96'));
+  assert.strictEqual(E.ratioInfo('Lion Cove', 'Lion Cove (Arrow Lake-H)'), E.RATIO_INFO_ARLH); assert.strictEqual(E.ratioInfo('Lion Cove', 'Skymont (Arrow Lake リング E)'), E.RATIO_INFO);
+  assert.strictEqual(E.ratioInfo('Raptor Cove', 'Raptor Cove (HX)'), E.RATIO_INFO_HX);
+  const w = ev('intel-arl-285h').warnings;
+  assert.ok(w.some((x) => x.text === 'ST: ' + E.RATIO_INFO_ARLH)); assert.ok(w.some((x) => x.text === 'MT: ' + E.RATIO_INFO_ARLH)); assert.ok(w.some((x) => x.text === 'MT: ' + E.RATIO_INFO));
+  ['intel-rpl-14700hx', 'intel-rpl-14900hx', 'intel-rpl-13980hx'].forEach((id) => { const ww = ev(id).warnings; assert.ok(ww.some((x) => x.text === 'ST: ' + E.RATIO_INFO_HX), id); assert.ok(ww.some((x) => x.text === 'MT: ' + E.RATIO_INFO_HX), id); assert.ok(!ww.some((x) => x.text.includes(E.RATIO_INFO_ARLH)), id); });
+  ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-lnl-268v', 'intel-rpl-14700k', 'intel-rpl-13900k', 'intel-adl-12900k'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_ARLH) || x.text.includes(E.RATIO_INFO_HX)), id));
+  assert.ok(!ev('intel-arl-285k').warnings.some((x) => x.text === 'ST: ' + E.RATIO_INFO)); // ST に ratio が出るのは 285H の P・HX・Zen 3+・Cezanne だけ
+  const r = ev('intel-arl-285h'); assert.strictEqual(r.st.corrUFrom, 'Lion Cove'); assert.strictEqual(r.st.corrUarch, 'Lion Cove (Arrow Lake-H)'); assert.strictEqual(r.st.inRatioSet, false); assert.strictEqual(r.mt.inRatioSet, false);
+  assert.deepStrictEqual(E.ratioInfosOf(r.mt).slice().sort(), [E.RATIO_INFO, E.RATIO_INFO_ARLH].sort());
+  // 期待値: 285H ST +11.49 → +2.57%・MT +7.82 → +3.52%。14700HX ST +11.14 → +4.47%(ok)・MT +17.14 → +12.83%(ng のまま)。14900HX ST +1.69%・MT +2.52%、13980HX ST +0.56%・MT +2.19%。公開値には合わせていない(比は兄弟 SKU から)
+  const near = (id, st, mt) => { const x = ev(id); assert.ok(Math.abs(x.st.errPct - st) < 0.05 && Math.abs(x.mt.errPct - mt) < 0.05, id + ' ' + x.st.errPct + ' ' + x.mt.errPct); };
+  near('intel-arl-285h', 2.57, 3.52); near('intel-rpl-14700hx', 4.47, 12.83); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
+  assert.ok(Math.abs(ev('intel-rpl-14700hx').st.errPct) <= 10); assert.ok(Math.abs(ev('intel-rpl-14700hx').mt.errPct) > 10); // MT は ng のまま(IPC では直らない)
 });

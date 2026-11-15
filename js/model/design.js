@@ -647,6 +647,10 @@
   const CEZANNE_PRESETS = ['amd-zen3-5800u'];
   const ZEN3P = 'Zen 3+ (Rembrandt-R)';
   const ZEN3P_PRESETS = ['amd-zen3p-7735hs'];
+  const ARLH_P = 'Lion Cove (Arrow Lake-H)';
+  const ARLH_PRESETS = ['intel-arl-285h'];
+  const RPL_HX = 'Raptor Cove (HX)';
+  const RPL_HX_PRESETS = ['intel-rpl-14700hx', 'intel-rpl-14900hx', 'intel-rpl-13980hx'];
   function serialize(design) { return JSON.stringify(design); }
   function parse(text) {
     let d; try { d = JSON.parse(text); } catch (e) { return { ok: false, reason: 'JSON として読めません' }; }
@@ -679,6 +683,13 @@
       [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixZ); });
       (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixZ(b); }); });
     }
+    // 旧保存データの uarch 名(2026-11-15): 285H の P は「Lion Cove」→「Lion Cove (Arrow Lake-H)」(u = Lion Cove の u × 0.92)、HX 3 件の P は「Raptor Cove」→「Raptor Cove (HX)」(u = Raptor Cove の u × 0.94)に分けた。判定は Zen 3+ と同じ(presetId で 285H・HX 由来だけ。285K・265K・275HX・Lunar Lake・デスクトップ・Raptor Lake の他の SKU は変えない)
+    [[ARLH_PRESETS, 'Lion Cove', ARLH_P], [RPL_HX_PRESETS, 'Raptor Cove', RPL_HX]].forEach(([ids, from, to]) => {
+      if (!ids.includes(d.presetId)) return;
+      const fixH = (c) => { if (c && c.uarch === from) c.uarch = to; };
+      [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixH); });
+      (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixH(b); }); });
+    });
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };
     // baseCfg.mem は「元のチップの基準構成」でなければならない。違うものは基準に直し、cfg.mem との差を「編集」として扱う

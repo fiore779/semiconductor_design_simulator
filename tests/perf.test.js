@@ -406,9 +406,9 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-13(Windows のみ化 第 2 回): 標本内 MAE 0.0673 → 0.0821(実測 0.08208)。Cougar Cove の uCal で Panther Lake 系 5 件の必要係数が上がり、標本のばらつきが増えた(uCal なしでは 0.0689)
     // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 標本内 MAE 0.0821 → 0.0784
     // 2026-11-14(Cezanne の u × 0.95): 5800U の MT が下がり、標本内 MAE 0.0784 → 0.0729(実測 0.07291)。c の中央値 0.4114 は不変
-    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0639) < 0.001, /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
+    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0600) < 0.001, /* 2026-11-15(285H・HX の u の比): 14700HX の MT が下がり、標本内 MAE 0.0639 → 0.0600(実測 0.06003)。c の中央値 0.4046 は不変(14700HX の k_i は中央値の下のまま) */ /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
     assert.ok(inMae((W) => F.mtClockByPower(W)) < inMae(() => 0.81));
-    assert.ok(Math.abs(inMae(() => 0.81) - 0.0805) < 0.001, /* 2026-11-15(Zen 3+ の u × 0.95): 0.0858 → 0.0805 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 0.0835 → 0.0858 */ 'X81 ' + inMae(() => 0.81)); /* 2026-11-14(Cezanne の u × 0.95): 0.0900 → 0.0835 */ /* 2026-11-14(Redwood Cove の uCal 99.5): 0.0899 → 0.0900 */ // 2026-11-13(Windows のみ化 第 2 回): 0.0910 → 0.0899(実測 0.08990)。連続式 0.0821 が小さいまま。以前: // 2026-11-10 γ=0.30 で 0.0890 → 0.0911、HX 取り直し後 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910(実測 0.09098)。連続式 0.0673 が最小のまま // assert.ok(Math.abs(inMae((W) => (W <= 60 ? 0.84 : 0.81)) - 0.0897) < 0.001, 'X2 ' + inMae((W) => (W <= 60 ? 0.84 : 0.81)));
+    assert.ok(Math.abs(inMae(() => 0.81) - 0.0768) < 0.001, /* 2026-11-15(285H・HX の u の比): 0.0805 → 0.0768(実測 0.07678) */ /* 2026-11-15(Zen 3+ の u × 0.95): 0.0858 → 0.0805 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 0.0835 → 0.0858 */ 'X81 ' + inMae(() => 0.81)); /* 2026-11-14(Cezanne の u × 0.95): 0.0900 → 0.0835 */ /* 2026-11-14(Redwood Cove の uCal 99.5): 0.0899 → 0.0900 */ // 2026-11-13(Windows のみ化 第 2 回): 0.0910 → 0.0899(実測 0.08990)。連続式 0.0821 が小さいまま。以前: // 2026-11-10 γ=0.30 で 0.0890 → 0.0911、HX 取り直し後 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910(実測 0.09098)。連続式 0.0673 が最小のまま // assert.ok(Math.abs(inMae((W) => (W <= 60 ? 0.84 : 0.81)) - 0.0897) < 0.001, 'X2 ' + inMae((W) => (W <= 60 ? 0.84 : 0.81)));
   }
   // LOO: 自分を除いて k_i ÷ W_i^0.15 の中央値(小数 3 桁)を取り直し、自分を予測する
   const mae = (a) => a.reduce((x, y) => x + Math.abs(y), 0) / a.length;
@@ -430,13 +430,13 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
   // 2026-11-13(Windows のみ化 第 2 回): LOO MAE 0.0694 → 0.0905(実測 0.09047)。閾値 < 0.115 は満たす
   // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): LOO MAE 0.0905 → 0.0842。閾値 < 0.115 は満たす
   // 2026-11-14(Cezanne の u × 0.95): LOO MAE 0.0842 → 0.0786(実測 0.07861)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0700) < 0.001, /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0660) < 0.001, /* 2026-11-15(285H・HX の u の比): LOO MAE 0.0700 → 0.0660(実測 0.06603) */ /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
   // 2026-11-07: Zen 3 の代表(5800X)を加えた結果、一律 0.81 の MAE は 0.1268 → 0.0993 に下がり、旧閾値 > 0.12 を満たさなくなった(帯別 LOO は 0.0986)。帯モデルが一律 0.81 より明確に良い、という主張は弱まった(差は 0.0007)。
   // 閾値を下げて通すのではなく、他の帯テストと同じ「既知の値として固定」する方式に直した(Zen 3 代表化の直後は実測 0.0993。公開値の取り直し後は下の 0.1063 に固定し直した)。ユーザー回答「閾値を実測に合わせて緩める」(2026-11-07)の対象は LOO MAE の閾値(0.11 → 0.115)だけで、
   // この一律 0.81 の値の固定はその回答の対象ではない。帯別が一律 0.81 より良いかは設計書 §13.4 の判断待ち。相対比較(LOO < 一律 0.81)は残る
   // 2026-11-07(全体中央値): 一律 0.81 の MAE は 0.1063 に固定し直した(旧 0.0993)。帯別 LOO(0.1288)は一律 0.81 より悪くなった(以前は帯別が良いという相対比較だった)
   // 2026-11-09(395・258V を広げて取り直し): 一律 0.81 の MAE は 0.0890、帯別 LOO は 0.1119。帯別(中央値の LOO)が一律 0.81 より**悪い**事実は変わらない(閾値は緩めない。成立しない主張は事実として固定して報告)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.0805) < 0.001, '一律 0.81 の MAE(固定値 0.0805。2026-11-15(Zen 3+ の u × 0.95)に 0.0858 → 0.0805。その前の固定値 0.0858。2026-11-15(DRAM 遅延・c 0.405)に 0.0835 → 0.0858。その前の固定値 0.0835。2026-11-14 に Cezanne の u × 0.95 で 0.0900 → 0.0835。その前の固定値は 0.0900。2026-11-14 に Redwood Cove の uCal 99.5 で 0.0899 → 0.0900。その前の固定値は 0.0899。2026-11-13 第 2 回で 0.0910 → 0.0899。履歴: 2026-11-10 γ=0.30 で 0.0890 → 0.0911、同日 HX 取り直しで 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910): ' + mae(loo.map((l) => l.e81)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e81)) - 0.0768) < 0.001, '一律 0.81 の MAE(固定値 0.0768。2026-11-15(285H・HX の u の比)に 0.0805 → 0.0768。その前の固定値 0.0805。2026-11-15(Zen 3+ の u × 0.95)に 0.0858 → 0.0805。その前の固定値 0.0858。2026-11-15(DRAM 遅延・c 0.405)に 0.0835 → 0.0858。その前の固定値 0.0835。2026-11-14 に Cezanne の u × 0.95 で 0.0900 → 0.0835。その前の固定値は 0.0900。2026-11-14 に Redwood Cove の uCal 99.5 で 0.0899 → 0.0900。その前の固定値は 0.0899。2026-11-13 第 2 回で 0.0910 → 0.0899。履歴: 2026-11-10 γ=0.30 で 0.0890 → 0.0911、同日 HX 取り直しで 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910): ' + mae(loo.map((l) => l.e81)));
   // 2026-11-09 続き(指数 0.15): 連続式の LOO(0.0801)は一律 0.81(0.0890)より小さくなった(「式が一律より良い」という相対比較が成り立つ。指数 1/3 では 0.1329 で悪かった)
   // 2026-11-13(Windows のみ化 第 2 回): **連続式(p=0.15)の LOO(0.0905)は一律 0.81(0.0899)よりわずかに悪くなった**(差 0.0006。以前は連続式が小さかった)。閾値を動かして通すのではなく、成り立たなくなった事実を固定する(差が 0.002 未満)。
   // p の走査では LOO 最小が下限の p=0.10(LOO 0.0815。一律 0.81 より小さい)に移った。指数を変えるかはユーザー判断待ち(設計書 §13.4)。指数か標本を変えたら「連続式の LOO < 一律 0.81」の確認に戻すこと
@@ -814,4 +814,74 @@ test('dramLat: ST の dramNs = cfg.dramLat.ns(無ければ 85ns)。MT には入�
   assert.ok(e1.st.ok && e1.edited === true && e1.st.dramLat.ns === 128, '編集後も元のプリセットの遅延');
   // プリセットを持たない設計(混合・新規)は dramLat なし(85ns)
   assert.strictEqual(F.stScore({ isa: 'x86', cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 4, smt: 2, boostGHz: 5 }], l3MB: 16 } }, c, D.uarch).dramLat, undefined);
+});
+// 2026-11-15(ユーザー指示「スコアと動作クロックから IPC を取得して直して」。調査 docs/research/ipc-clock-ng-2026-11-15.md): 285H の P は uarch 記録「Lion Cove (Arrow Lake-H)」で u = Lion Cove の u × 0.92、
+// HX 3 件(14700HX・14900HX・13980HX)の P は「Raptor Cove (HX)」で u = Raptor Cove の u × 0.94(どちらも uRatio。corrSource 'ratio')。比は対象自身の公開値ではなく、兄弟 SKU の Geekbench Browser v7 の Windows 投稿の集計 [実測]
+// (結果ページの Maximum Frequency は動作クロックではなく数十機種でほぼ同じ申告値。255H・14700K・14900K は検索結果の集計でプリセットではない。uRatioRefs は付けない)と基準(285K・265K・14700K・14900K)から出した
+test('uRatio: 285H の P は Lion Cove の u × 0.92。比は 255H(兄弟)÷ 285K・265K の平均(0.9256・0.9185)から再計算でき、285H 自身(0.906〜0.913)は追認だけ。285K・265K・275HX・LNL は不変', () => {
+  const Z = 'Lion Cove (Arrow Lake-H)'; const rec = D.uarch[Z]; const lc = D.uarch['Lion Cove'];
+  assert.strictEqual(rec.uRatioOf, 'Lion Cove'); assert.strictEqual(rec.uRatio, 0.92); assert.ok(rec.uRatioRefs == null); assert.ok(rec.uCal == null); assert.ok(!rec.calib);
+  ['width', 'decodeWidth', 'rob', 'l1dKB', 'l1dLat', 'l2KB', 'l2Lat', 'l3Lat', 'mshr', 'smt', 'vecBits'].forEach((k) => assert.strictEqual(rec[k], lc[k], k)); // コア設計の値は Lion Cove と同じ
+  assert.ok(rec.note.includes('Maximum Frequency') && rec.note.includes('255H') && rec.note.includes('0.9256') && rec.note.includes('動作クロックではなく') && rec.note.includes('148ns'));
+  assert.deepStrictEqual(D.presets.filter((q) => q.cfg.cores.some((g) => g.uarch === Z)).map((q) => q.id), ['intel-arl-285h']); // 使うのは 285H だけ(P コア)
+  assert.deepStrictEqual(preset('intel-arl-285h').cfg.cores.map((g) => g.uarch), [Z, 'Skymont (Arrow Lake リング E)', 'Skymont']);
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal()); const lu = c.u['Lion Cove'];
+  // 「Lion Cove」の名前・実際のクロックでの点/GHz(u 込み)。255H は 285H の構成の P を 5.1GHz にした仮の計算(P のクロックだけ)
+  const pg = (id, f) => { const q = clone(preset(id)); q.cfg.cores.forEach((g) => { if (g.type === 'P') { g.uarch = 'Lion Cove'; if (f) g.boostGHz = f; } }); return F.stScore(q, c, D.uarch).score / (f || q.cfg.cores.find((g) => g.type === 'P').boostGHz); };
+  const m285k = pg('intel-arl-285k'); const m265k = pg('intel-arl-265k'); const m285h = pg('intel-arl-285h'); const m255 = pg('intel-arl-285h', 5.1);
+  // 実測(Windows・Maximum Frequency 基準の「ST ÷ クロック」の中央値。n 付き): 285K n=147 515.86、265K n=135 517.45、255H n=145 461.57、285H n=151 453.13
+  const b285k = 515.86 / m285k; const b265k = 517.45 / m265k;
+  const v255a = 461.57 / m255 / b285k; const v255b = 461.57 / m255 / b265k; const v285a = 453.13 / m285h / b285k; const v285b = 453.13 / m285h / b265k;
+  assert.ok(Math.abs(v255a - 0.9256) < 0.0005, '255H ÷ 285K ' + v255a); assert.ok(Math.abs(v255b - 0.9185) < 0.0005, '255H ÷ 265K ' + v255b);
+  assert.strictEqual(Math.round(((v255a + v255b) / 2) * 100) / 100, 0.92, '255H の 2 値の平均 ' + (v255a + v255b) / 2);
+  assert.ok(Math.abs(v285a - 0.913) < 0.001 && Math.abs(v285b - 0.906) < 0.001, '285H 自身(追認) ' + v285a + ' ' + v285b); // 285H の比は 255H の比より約 1 ポイント低い。公開値には合わせていない
+  // 285H の P: ratio の経路
+  const st = F.stScore(preset('intel-arl-285h'), c, D.uarch);
+  assert.strictEqual(st.corrSource, 'ratio'); assert.strictEqual(st.corrUFrom, 'Lion Cove'); assert.strictEqual(st.corrUarch, Z); assert.ok(Math.abs(st.corr - 0.92 * lu) < 1e-9); assert.strictEqual(st.confidence, 'low');
+  assert.ok(Math.abs(st.score / gb7ByName[preset('intel-arl-285h').gb7].single - 1 - 0.0257) < 0.0005, String(st.score)); // +2.57%(旧 +11.49%。ok に入った)
+  assert.ok(Math.abs(F.mtScore(preset('intel-arl-285h'), c, D.uarch, null).score / gb7ByName[preset('intel-arl-285h').gb7].multi - 1 - 0.0352) < 0.0005); // +3.52%(旧 +7.82%)
+  // 285K・265K・275HX・LNL の P は「Lion Cove」のまま(代表・uarch の u。不変)。285H の E(リング)は Lion Cove の u × 0.90 のまま
+  ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-lnl-268v'].forEach((id) => { const r = F.stScore(preset(id), c, D.uarch); assert.strictEqual(r.corrSource, 'uarch', id); assert.strictEqual(r.corrUarch, undefined, id); });
+  const p285 = clone(preset('intel-arl-285h')); p285.cfg.cores = [p285.cfg.cores[1]];
+  const e = F.stScore(p285, c, D.uarch);
+  assert.strictEqual(e.corrUarch, 'Skymont (Arrow Lake リング E)'); assert.ok(Math.abs(e.corr - 0.90 * lu) < 1e-9);
+  // Lion Cove の u が動けば連動する(借りる)。σ の代表には入らない
+  const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Lion Cove': lu * 1.1 }) });
+  assert.ok(Math.abs(F.stScore(preset('intel-arl-285h'), c2, D.uarch).corr - 0.92 * 1.1 * lu) < 1e-9);
+  assert.ok(!c.mt.usedPresets.includes('intel-arl-285h'));
+});
+test('uRatio: HX 3 件の P は Raptor Cove の u × 0.94。比は兄弟 14900HX・13980HX ÷ 14700K・14900K の平均(0.943)から再計算でき、14700HX 自身(0.929)は追認だけ。14700HX の MT の ng は残る。デスクトップ・Raptor Cove の uCal は不変', () => {
+  const R = 'Raptor Cove (HX)'; const rec = D.uarch[R]; const rc = D.uarch['Raptor Cove'];
+  assert.strictEqual(rec.uRatioOf, 'Raptor Cove'); assert.strictEqual(rec.uRatio, 0.94); assert.ok(rec.uRatioRefs == null); assert.ok(rec.uCal == null);
+  ['width', 'decodeWidth', 'rob', 'l2KB', 'smt', 'vecBits'].forEach((k) => assert.strictEqual(rec[k], rc[k], k)); // コア設計の値は Raptor Cove と同じ
+  assert.ok(rec.note.includes('Maximum Frequency') && rec.note.includes('14900HX') && rec.note.includes('0.93〜0.96') && rec.note.includes('動作クロックではなく') && rec.note.includes('82.1ns') && rec.note.includes('MT'));
+  const HX = ['intel-rpl-14700hx', 'intel-rpl-14900hx', 'intel-rpl-13980hx'];
+  assert.deepStrictEqual(D.presets.filter((q) => q.cfg.cores.some((g) => g.uarch === R)).map((q) => q.id).sort(), HX.slice().sort());
+  HX.forEach((id) => assert.deepStrictEqual(preset(id).cfg.cores.map((g) => g.uarch), [R, 'Gracemont'], id));
+  assert.strictEqual(rc.uCal.u, 116.4); assert.strictEqual(rc.uCal.n, 10); assert.deepStrictEqual(rc.uCal.excluded.slice().sort(), HX.slice().sort()); // Raptor Cove の uCal は据え置き(HX 3 件は元から標本外)
+  const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal()); const ru = c.u['Raptor Cove'];
+  assert.ok(Math.abs(ru - 116.4) < 0.05, String(ru));
+  const pg = (id) => { const q = clone(preset(id)); q.cfg.cores.forEach((g) => { if (g.type === 'P') g.uarch = 'Raptor Cove'; }); return F.stScore(q, c, D.uarch).score / q.cfg.cores.find((g) => g.type === 'P').boostGHz; };
+  const mK7 = pg('intel-rpl-14700k'); const mK9 = pg('intel-rpl-14900k');
+  // 実測(Windows・Maximum Frequency 基準の「ST ÷ クロック」の中央値。n 付き): 14700K n=146 485.34、14900K n=141 470.84、14900HX n=138 450.62、13980HX n=149 451.31、14700HX n=156 444.01
+  const bk7 = 485.34 / mK7; const bk9 = 470.84 / mK9; const bm = (bk7 + bk9) / 2;
+  const v9 = (450.62 / pg('intel-rpl-14900hx')) / bm; const v13 = (451.31 / pg('intel-rpl-13980hx')) / bm; const v7 = (444.01 / pg('intel-rpl-14700hx')) / bm;
+  assert.ok(Math.abs(v9 - 0.9434) < 0.0005, '14900HX ' + v9); assert.ok(Math.abs(v13 - 0.9435) < 0.0005, '13980HX ' + v13);
+  assert.strictEqual(Math.round(((v9 + v13) / 2) * 100) / 100, 0.94); assert.ok(Math.abs(v7 - 0.9292) < 0.0005, '14700HX 自身(追認) ' + v7);
+  // 基準の取り方で 0.93〜0.96 と動く(14700K 基準 0.929・14900K 基準 0.958)
+  assert.ok(Math.abs((450.62 / pg('intel-rpl-14900hx')) / bk7 - 0.9288) < 0.0005); assert.ok(Math.abs((450.62 / pg('intel-rpl-14900hx')) / bk9 - 0.9584) < 0.0005);
+  // 3 件の P: ratio の経路。誤差(旧 → 新): 14700HX ST +11.14 → +4.47・MT +17.14 → +12.83(ng のまま)、14900HX ST +8.18 → +1.69・MT +5.98 → +2.52、13980HX ST +6.98 → +0.56・MT +5.63 → +2.19
+  const want = { 'intel-rpl-14700hx': [0.0447, 0.1283], 'intel-rpl-14900hx': [0.0169, 0.0252], 'intel-rpl-13980hx': [0.0056, 0.0219] };
+  HX.forEach((id) => {
+    const p = preset(id); const st = F.stScore(p, c, D.uarch);
+    assert.strictEqual(st.corrSource, 'ratio', id); assert.strictEqual(st.corrUFrom, 'Raptor Cove', id); assert.strictEqual(st.corrUarch, R, id); assert.ok(Math.abs(st.corr - 0.94 * ru) < 1e-9, id); assert.strictEqual(st.confidence, 'low', id);
+    assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - want[id][0]) < 0.0005, id + ' ST ' + st.score);
+    assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - want[id][1]) < 0.0005, id + ' MT');
+  });
+  assert.ok(Math.abs(F.mtScore(preset('intel-rpl-14700hx'), c, D.uarch, null).score / gb7ByName[preset('intel-rpl-14700hx').gb7].multi - 1) > 0.10); // 14700HX の MT は ng のまま(IPC では直らない)
+  // デスクトップ・Raptor Lake の他 SKU・Golden Cove は不変('uarch' の u のまま)。uRatio を使うのは HX の P だけ
+  ['intel-rpl-14700k', 'intel-rpl-14900k', 'intel-rpl-13900k', 'intel-rpl-13700k', 'intel-adl-12900k', 'intel-adl-12100'].forEach((id) => { const r = F.stScore(preset(id), c, D.uarch); assert.strictEqual(r.corrSource, 'uarch', id); assert.strictEqual(r.corrUarch, undefined, id); });
+  const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Raptor Cove': ru * 1.1 }) });
+  assert.ok(Math.abs(F.stScore(preset('intel-rpl-14900hx'), c2, D.uarch).corr - 0.94 * 1.1 * ru) < 1e-9);
+  HX.forEach((id) => assert.ok(!c.mt.usedPresets.includes(id), id)); // σ の代表に入らない
 });

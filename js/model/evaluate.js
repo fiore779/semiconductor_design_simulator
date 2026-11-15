@@ -13,11 +13,14 @@
   const RATIO_INFO_CEZANNE = 'Cezanne の u は Zen 3 の u × 0.95 [推定・校正値](デスクトップ APU の 5600G・5700G の Windows 中央値 2 件から。5800U の公開値に合わせた値ではない)';
   // uarch 記録の uRatio(Zen 3 の u × 0.95)の Zen 3+(7735HS)用。比は 7735HS・6800H・5800X の動作クロック基準の実測 [実測] から。プリセットではない。設計書 §5.3.0【2026-11-15 Zen 3+】
   const RATIO_INFO_ZEN3P = 'Zen 3+ の u は Zen 3 の u × 0.95 [推定・校正値](Geekbench Browser の Windows 投稿の動作クロック基準の実測から。7735HS の公開値に合わせた値ではない。DRAM 遅延の代用 [推定] と分離できていない)';
+  // uarch 記録の uRatio の Lion Cove (Arrow Lake-H)(285H の P)用と Raptor Cove (HX)(HX の 3 件の P)用。比は兄弟 SKU(255H・14900HX・13980HX)の Geekbench Browser の Windows 投稿の集計 [実測] と基準(285K・265K・14700K・14900K)から。対象自身の公開値に合わせた値ではない。設計書 §5.3.0【2026-11-15 285H・HX】
+  const RATIO_INFO_ARLH = 'Arrow Lake-H の P の u は Lion Cove の u × 0.92 [推定・校正値](兄弟 SKU の 255H〔プリセットではない〕の Geekbench Browser の Windows 投稿の集計を 285K・265K と比べた値。285H の公開値に合わせた値ではない。Maximum Frequency は動作クロックではなくほぼ一定の申告値で、DRAM 遅延の代用 [推定] と分離できていない)';
+  const RATIO_INFO_HX = 'Raptor Lake-HX の P の u は Raptor Cove の u × 0.94 [推定・校正値](兄弟 SKU の 14900HX・13980HX の Geekbench Browser の Windows 投稿の集計を 14700K・14900K と比べた値。14700HX の公開値に合わせた値ではない。基準の取り方で 0.93〜0.96 と動く。Maximum Frequency は動作クロックではなくほぼ一定の申告値で、DRAM 遅延の代用 [推定] と分離できていない)';
   // 借り先の uarch(uRatioOf。detail・ST の corrUFrom)ごとの注記。同じ借り先の uarch は RATIO_INFOS_UARCH(コア自身の uarch 名 corrUarch)で分ける。未知の借り先は一般的な文
   // ST の DRAM 遅延 dramLat(プリセットの cfg.dramLat。2026-11-15)の表示文。区分: 実測・二次(その SKU・プラットフォームで測られた値)・推定(別の SKU の値の代用)。設計書 §5.2・§5.3.0【2026-11-15 DRAM 遅延】
   const dramLatInfo = (d) => (d && typeof d.ns === 'number' ? `DRAM 遅延 ${d.ns}ns [${d.s || '区分不明'}${d.s === '推定' ? '。別の SKU の値の代用' : ''}]で ST を計算(測定構成: ${d.cfg || '不明'}。${d.src || '出典なし'})` : null);
   const RATIO_INFOS = { 'Lion Cove': RATIO_INFO, 'Zen 3': RATIO_INFO_CEZANNE };
-  const RATIO_INFOS_UARCH = { 'Zen 3+ (Rembrandt-R)': RATIO_INFO_ZEN3P };
+  const RATIO_INFOS_UARCH = { 'Zen 3+ (Rembrandt-R)': RATIO_INFO_ZEN3P, 'Lion Cove (Arrow Lake-H)': RATIO_INFO_ARLH, 'Raptor Cove (HX)': RATIO_INFO_HX };
   const ratioInfo = (from, uarch) => RATIO_INFOS_UARCH[uarch] || RATIO_INFOS[from] || 'u は別の uarch の u に比を掛けた値 [推定・校正値]';
   const TOLERANCE = 0.10; // 性能の許容誤差 ±10%(設計書 §5.3)
 
@@ -441,7 +444,7 @@
     return result;
   }
 
-  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_ZEN3P, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
+  const api = { RATIO_INFO, RATIO_INFO_CEZANNE, RATIO_INFO_ZEN3P, RATIO_INFO_ARLH, RATIO_INFO_HX, ratioInfo, ratioFroms, ratioInfosOf, dramLatInfo, TOLERANCE, CLOCK_TOL, OPTIMISTIC_NOTE, makeContext, evaluate, outOfCalibration, optimisticInfo, maxClockOf, isEdited };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.evaluate = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
