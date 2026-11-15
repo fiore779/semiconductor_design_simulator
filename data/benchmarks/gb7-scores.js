@@ -372,6 +372,14 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "AMD",
+  "name": "Zen 4: Ryzen 9 7950X3D(4.2GHz, 16c)",
+  "single": 2550,
+  "multi": 22623,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "AMD",
   "name": "Zen 4: Ryzen 9 7950X(4.5GHz, 16c)",
   "single": 2626,
   "multi": 22124,
@@ -415,6 +423,14 @@ window.SDS_DATA.gb7Scores = [
   "name": "Zen 5: Ryzen 7 9800X3D(4.7GHz, 8c)",
   "single": 2969,
   "multi": 18700,
+  "kind": "実測",
+  "n": 200
+ },
+ {
+  "group": "AMD",
+  "name": "Zen 5: Ryzen 9 9950X3D(4.3GHz, 16c)",
+  "single": 3104,
+  "multi": 26844,
   "kind": "実測",
   "n": 200
  },

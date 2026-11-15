@@ -81,7 +81,8 @@
       ok: true, score: r.score, confidence: r.confidence, fallback: !!r.fallback,
       corrSource: kind === 'st' ? r.corrSource : null, corrFrom: kind === 'st' ? (r.corrFrom || null) : null, ...(kind === 'st' && r.corrSource === 'ratio' && r.corrUFrom ? { corrUFrom: r.corrUFrom, corrUarch: r.corrUarch } : {}), ...(kind === 'st' && r.dramLat ? { dramLat: r.dramLat } : {}), // ratio のときだけ(uFrom の SKU の評価 JSON は変えない)
       errPct: pct(r.score, pubVal), memory: r.memory || null,
-      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null, ...(r.l3NoTypes ? { l3NoTypes: r.l3NoTypes } : {}), // l3NoTypes: cfg.l3Types に無く L3 につながらないコア種別(MT のみ。2026-11-15)
+      noL3: !!r.noL3 || preset.cfg.l3MB === 0, l3Floor: !!r.l3Floor, l3Ccds: r.l3Ccds || null, ...(r.l3NoTypes ? { l3NoTypes: r.l3NoTypes } : {}), ...(r.l3CcdMB ? { l3CcdMB: r.l3CcdMB, l3CcdBig: r.l3CcdBig, ccd: r.ccd } : {}), ...(r.l3PerCcd ? { l3PerCcd: r.l3PerCcd } : {}), // l3CcdMB・l3PerCcd: cfg.l3CcdMB(CCD ごとの L3)で計算した ST・MT(2026-11-16。無い SKU には付かない)
+     // l3NoTypes: cfg.l3Types に無く L3 につながらないコア種別(MT のみ。2026-11-15)
     });
     if (kind === 'st') { base.fGHz = r.fGHz; base.parts = r.parts; } else {
       base.clockFactor = r.clockFactor == null ? 1 : r.clockFactor; base.clockInfo = r.clockInfo || null; base.mixedClock = !!r.mixedClock; base.uncalibrated = r.uncalibrated || []; base.threads = r.threads; base.detail = r.detail;
@@ -167,7 +168,9 @@
     // (0 は「L3 なし」の意味になるので、未取得のプリセットの結果が変わらないようにする)
     const l3MB = (preset.cfg.l3MB == null && cfg.l3MB === 0) ? preset.cfg.l3MB : cfg.l3MB;
     // メモリ構成の選択(cfg.mem。設計書 §5.2.4)も実効プリセットに渡す。無ければ基準構成
-    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores: cfg.cores, l3MB }, cfg.mem ? { mem: cfg.mem } : {}) });
+    // 【2026-11-16 CCD 別 L3】l3CcdMB・stCcd は preset.cfg から付く(上の Object.assign で残る)。コア記述の ccd は、設計側に無ければ(旧保存データ)同じ種別のプリセットの記述から補う。ccd を持つプリセットだけが対象で、ほかは cores をそのまま渡す
+    const cores = preset.cfg.cores && preset.cfg.cores.some((g) => g.ccd != null) ? cfg.cores.map((g) => { const b = preset.cfg.cores.find((x) => x.type === g.type); return g.ccd == null && b && b.ccd != null ? Object.assign({}, g, { ccd: b.ccd }) : g; }) : cfg.cores;
+    return Object.assign({}, preset, { cfg: Object.assign({}, preset.cfg, { cores, l3MB }, cfg.mem ? { mem: cfg.mem } : {}) });
   }
 
   const EPS = 1e-9; // 境界(ちょうど ±25% / 2 倍 / 半分)を範囲内にするための浮動小数の余裕

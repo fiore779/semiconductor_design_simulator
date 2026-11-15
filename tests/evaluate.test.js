@@ -506,3 +506,24 @@ test('l3Types: Lunar Lake 3 件の MT に l3NoTypes(LP-E)が出る(2026-11-15 �
   const old = JSON.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'intel-lnl-258v')))); delete old.cfg.l3Types; delete old.baseCfg.l3Types;
   assert.deepStrictEqual(E.evaluate(design.parse(JSON.stringify(old)).design, ctx).mt.l3NoTypes, ['LP-E']);
 });
+
+// 2026-11-16(Ryzen X3D の 2 CCD。9950X3D・7950X3D): ST は stCcd の CCD、MT は CCD ごとの L3。保存・復元(parse)しても同じ(l3CcdMB・stCcd は保存データに載せず preset から付く。ccd はコア記述に載る)
+test('l3CcdMB: 9950X3D・7950X3D の ST・MT に CCD の情報が出る。保存・復元しても同じ。旧保存データ(コア記述に ccd なし)も preset から補う。ほかの SKU には出ない', () => {
+  [['amd-zen4-7950x3d', 0, true, 96], ['amd-zen5-9950x3d', 1, false, 32]].forEach(([id, ccd, big, mb]) => {
+    const p = D.presets.find((x) => x.id === id); const r = ev(id);
+    assert.deepStrictEqual([r.st.ccd, r.st.l3CcdBig, r.st.l3CcdMB], [ccd, big, mb], id);
+    assert.deepStrictEqual(r.mt.l3PerCcd.map((x) => x.mb), [96, 32], id); assert.strictEqual(r.st.l3Ccds, null, id);
+    assert.strictEqual(r.edited, false, id);
+    const d = design.fromPreset(p); assert.strictEqual(JSON.stringify(d.cfg).includes('l3CcdMB'), false, id); assert.strictEqual(JSON.stringify(d.cfg).includes('stCcd'), false, id);
+    assert.deepStrictEqual(d.cfg.cores.map((g) => g.ccd), [0, 1], id);
+    assert.deepStrictEqual(design.validate(d), [], id);
+    const back = E.evaluate(design.parse(design.serialize(d)).design, ctx);
+    assert.strictEqual(back.st.score, r.st.score, id); assert.strictEqual(back.mt.score, r.mt.score, id); assert.strictEqual(back.edited, false, id);
+    // 旧保存データ(コア記述に ccd なし)でも、同じ種別のプリセットの記述から ccd を補って同じ評価になる
+    const old = JSON.parse(design.serialize(d)); [old.cfg, old.baseCfg].forEach((c) => c.cores.forEach((g) => { delete g.ccd; }));
+    const eo = E.evaluate(design.parse(JSON.stringify(old)).design, ctx); assert.strictEqual(eo.st.score, r.st.score, id); assert.strictEqual(eo.mt.score, r.mt.score, id);
+    // ccd の値の検証(整数 0〜15)
+    const bad = JSON.parse(design.serialize(d)); bad.cfg.cores[0].ccd = 1.5; assert.strictEqual(design.parse(JSON.stringify(bad)).ok, false, id);
+  });
+  ['amd-zen5-9950x', 'amd-zen4-7950x', 'amd-zen5-9800x3d'].forEach((id) => { const r = ev(id); assert.strictEqual(r.st.l3CcdMB, undefined, id); assert.strictEqual(r.mt.l3PerCcd, undefined, id); });
+});

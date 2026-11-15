@@ -192,7 +192,7 @@ test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と�
   // 2026-11-12: Meteor Lake 185H はタイルの並べ方を写真(MTL_annotated.jpg)に合わせて変えた(GPU・SoC・IO タイルの縦横比と、ブロックの寸法が変わる)ので除く(配置は floorplan-mtl-row.test.js で検証)。ほかの 66 件のハッシュは変更前のデータ・コードで同じ 66 件を計算しても同じ値
   const MTL_ROW = ['intel-mtl-185h'];
   // 2026-11-16: Ryzen X3D の 3 件(5800X3D・7800X3D・9800X3D)は変更前のデータに無いので除く。ほかの 66 件のハッシュは不変
-  const X3D_NEW = ['amd-zen3-5800x3d', 'amd-zen4-7800x3d', 'amd-zen5-9800x3d'];
+  const X3D_NEW = ['amd-zen3-5800x3d', 'amd-zen4-7800x3d', 'amd-zen5-9800x3d', 'amd-zen4-7950x3d', 'amd-zen5-9950x3d']; // 2026-11-16: 7950X3D・9950X3D(2 CCD)も追加
   SLC_L3.forEach((id) => assert.ok(mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'l3')), id));
   const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id) && !MTL_ROW.includes(p.id) && !X3D_NEW.includes(p.id));
   assert.strictEqual(rest.length, 66);

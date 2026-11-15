@@ -73,6 +73,25 @@
     return cores.slice().sort((a, b) => rank(b) - rank(a) || clk(b) - clk(a))[0] || null;
   }
 
+  // 【2026-11-16 Ryzen X3D の CCD 別 L3 と ST の CCD 指定(任意の cfg 項目。9950X3D・7950X3D だけ。ユーザー決定「7950X3D 用に CCD 別 L3 と ST の CCD 指定を入れる」。調査 docs/research/ryzen-x3d-2026-11-15.md §4.3)】
+  // cfg.l3CcdMB: CCD ごとの L3 容量 [MB](添字 = CCD 番号。例 [96, 32] = V-Cache 付き CCD 96MB + 通常 CCD 32MB。合計が cfg.l3MB)。cfg.cores[].ccd: そのコア記述が載る CCD 番号。cfg.stCcd: ST を実行する CCD 番号。
+  // ST はその CCD の記述のクロックと L3(÷1 スレッド)で計算し、MT は各記述の L3 を「自分の CCD の L3 ÷ 自分の CCD の総スレッド数」にする。
+  // 項目の無い SKU・旧保存データ・混合設計は従来どおり(l3Ccds の均等割り・最速コア)。設計の編集で l3MB が変わったときは l3CcdMB を比例して縮尺する。
+  function l3CcdOf(cfg, core) {
+    const a = cfg && cfg.l3CcdMB;
+    if (!Array.isArray(a) || !core || !Number.isInteger(core.ccd) || !(a[core.ccd] > 0)) return null;
+    const sum = a.reduce((t, x) => t + (x > 0 ? x : 0), 0);
+    const k = cfg.l3MB > 0 && sum > 0 && Math.abs(cfg.l3MB - sum) > 1e-9 ? cfg.l3MB / sum : 1;
+    const mb = a[core.ccd] * k;
+    return { mb, big: a.every((x) => !(x * k > mb + 1e-9)) };
+  }
+  // ST を実行するコア記述: cfg.stCcd の CCD に載るもの。無ければ最速コア
+  function stCoreOf(cfg) {
+    const cs = (cfg && cfg.cores) || [];
+    if (cfg && Number.isInteger(cfg.stCcd)) { const g = cs.find((c) => c.ccd === cfg.stCcd); if (g) return g; }
+    return topCore(cs);
+  }
+
   function memoryApi() {
     if (root.SDS && root.SDS.sim && root.SDS.sim.memory) return root.SDS.sim.memory;
     if (typeof require === 'function') return require('./memory.js');
@@ -81,7 +100,7 @@
 
   // シングルコア性能。cal: { u: {uarch→補正}, uIsa: {isa→既定補正} }。opts.noMemory: メモリ構成の補正を掛けない(MT の内部呼び出し用)
   function stScore(preset, cal, uarchDb, opts) {
-    const core = (opts && opts.core) || topCore(preset.cfg.cores || []);
+    const core = (opts && opts.core) || stCoreOf(preset.cfg);
     if (!core) return { ok: false, reason: 'コアなし' };
     const f = (opts && opts.fGHz) || core.boostGHz || core.maxGHz || core.baseGHz;
     if (!f) return { ok: false, reason: 'クロック未取得' };
@@ -98,8 +117,10 @@
     // チップレット(複数 CCD)の SKU は cfg.l3Ccds(CCD 数)を持つ。ST(threads=1)は 1 CCD 分(l3MB ÷ l3Ccds)だけを L3 容量にする。
     // 別 CCD の L3 はそのコアの L3 容量として使えない(IO ダイ経由のコア間転送のみ)ため、別 CCD 分は割引しても足さない(§5.3.3 G の3)。
     // MT は総 L3 ÷ 総スレッド数のまま(各 CCD の L3 を自分の CCD のスレッドで使うのと同じ値)。l3Ccds が無い SKU は従来どおり全量
-    const ccds = threads === 1 && preset.cfg.l3Ccds > 1 ? preset.cfg.l3Ccds : 1;
-    const l3KB = preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / ccds / ((opts && opts.l3Threads) || threads) : null;
+    // cfg.l3CcdMB(CCD ごとの L3。2026-11-16)があり、コアが ccd を持つときは、その CCD の L3 ÷ (ST は 1、MT は mtScore が渡す自分の CCD のスレッド数)
+    const ccdL3 = preset.cfg.l3MB ? l3CcdOf(preset.cfg, core) : null;
+    const ccds = !ccdL3 && threads === 1 && preset.cfg.l3Ccds > 1 ? preset.cfg.l3Ccds : 1;
+    const l3KB = ccdL3 ? (ccdL3.mb * 1024) / ((opts && opts.l3Threads) || 1) : preset.cfg.l3MB ? (preset.cfg.l3MB * 1024) / ccds / ((opts && opts.l3Threads) || threads) : null;
     // メモリ構成(§5.2.4)。選択が基準構成なら係数 1 で何も変えない。遅延は dramNs の差し替え(85 × lat(選択)/lat(基準))で入れ、帯域は後から ^bST を掛ける。
     // MT の呼び出し(opts.noMemory)では掛けない(MT は和にまとめて ^bMT を掛けるため。二重計上しない)
     const mem = opts && opts.noMemory ? null : memoryApi().evaluate(preset);
@@ -125,7 +146,7 @@
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     const memActive = !!(mem && mem.active);
     return {
-      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(dl ? { dramLat: dl } : {}), ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(corrUarch ? { corrUarch } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
+      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(dl ? { dramLat: dl } : {}), ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(corrUarch ? { corrUarch } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null, ...(ccdL3 ? { l3CcdMB: ccdL3.mb, l3CcdBig: ccdL3.big, ccd: core.ccd } : {}),
       confidence: isClone || corrSource === 'isa' || corrSource === 'ratio' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -264,6 +285,8 @@
     const l3Types = Array.isArray(preset.cfg.l3Types) && preset.cfg.l3Types.length ? preset.cfg.l3Types : null;
     const l3Threads = l3Types ? cores.filter((c) => l3Types.includes(c.type)).reduce((t, c) => t + c.count * (c.smt || 1), 0) : 0;
     const l3NoTypes = l3Types ? cores.filter((c) => !l3Types.includes(c.type)).map((c) => c.type) : [];
+    // l3CcdMB(任意。l3CcdOf の注記参照): 各 CCD の総スレッド数。無い SKU は空で従来どおり
+    const ccdThreads = {}; if (Array.isArray(preset.cfg.l3CcdMB)) cores.forEach((c) => { if (Number.isInteger(c.ccd)) ccdThreads[c.ccd] = (ccdThreads[c.ccd] || 0) + c.count * (c.smt || 1); });
     const clockInfo = mtClockInfo(preset); const kf = clockInfo.factor;
     const order = { high: 3, medium: 2, low: 1 }; let worst = 'high'; let anyFallback = false; let anyFloor = false;
     for (const c of cores) {
@@ -288,14 +311,14 @@
         }
       }
       if (!f) return { ok: false, reason: `${c.type} コアのクロック未取得` };
-      const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads, ...(l3Threads > 0 ? { l3Threads } : {}), noMemory: true });
+      const st = stScore(preset, cal, uarchDb, { core: c, fGHz: f, threads: totalThreads, ...(ccdThreads[c.ccd] > 0 && l3CcdOf(preset.cfg, c) ? { l3Threads: ccdThreads[c.ccd] } : l3Threads > 0 ? { l3Threads } : {}), noMemory: true });
       if (!st.ok) return { ok: false, reason: `${c.type} コア: ${st.reason}` };
       if (order[st.confidence] < order[worst]) worst = st.confidence;
       if (st.fallback) anyFallback = true;
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: clockCap ? f / f0 : applied, ...(clockCap ? { clockCap: true } : {}), clockSource, ...(l3Types && st.noL3 ? { noL3: true } : {}), corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.corrUarch ? { corrUarch: st.corrUarch } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: clockCap ? f / f0 : applied, ...(clockCap ? { clockCap: true } : {}), clockSource, ...(l3Types && st.noL3 ? { noL3: true } : {}), ...(st.l3CcdMB ? { ccd: c.ccd, l3CcdMB: st.l3CcdMB } : {}), corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.corrUarch ? { corrUarch: st.corrUarch } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // メモリ構成の MT 係数(§5.2.4)。基準構成では 1(厳密)。ST の内部呼び出しには掛けず、ここで 1 回だけ掛ける
@@ -305,7 +328,7 @@
     const sources = new Set(detail.map((d) => d.clockSource));
     const mixedClock = sources.has('base') && sources.size > 1;
     const uncalibrated = Object.keys(MT_DEFAULTS).filter((k) => !(cal && cal.mt && cal.mt.fitted && cal.mt.fitted.includes(k)) && !(mtParams && k in mtParams));
-    return { ok: true, score: sum * eta * memF, eta, ...(memActive ? { memory: mem } : {}), clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, memActive ? { memory: mem } : {}, { applied: detail.length && detail.every((d) => d.clockFactor !== 1 || d.clockCap) ? 'all' : detail.some((d) => d.clockFactor !== 1 || d.clockCap) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor, ...(l3NoTypes.length ? { l3NoTypes } : {}) };
+    return { ok: true, score: sum * eta * memF, eta, ...(detail.some((d) => d.l3CcdMB) ? { l3PerCcd: detail.filter((d) => d.l3CcdMB).map((d) => ({ ccd: d.ccd, mb: d.l3CcdMB, threads: ccdThreads[d.ccd] })) } : {}), ...(memActive ? { memory: mem } : {}), clockFactor: detail.some((d) => d.clockFactor !== 1) ? kf : 1, clockInfo: Object.assign({}, clockInfo, memActive ? { memory: mem } : {}, { applied: detail.length && detail.every((d) => d.clockFactor !== 1 || d.clockCap) ? 'all' : detail.some((d) => d.clockFactor !== 1 || d.clockCap) ? 'partial' : 'none' }), threads, detail, uncalibrated, confidence: uncalibrated.length || mixedClock ? 'low' : worst, fallback: anyFallback, mixedClock, noL3: preset.cfg.l3MB === 0, l3Floor: anyFloor, ...(l3NoTypes.length ? { l3NoTypes } : {}) };
   }
 
   // MT の並列効率 σ を、校正代表 SKU(calib:true)の GB7 マルチ値に合わせる(§5.3)。γ_smt は固定(1 つの σ だけでは SMT と並列効率を分離できないため)。

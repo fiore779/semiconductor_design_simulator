@@ -7,7 +7,7 @@
 
   // 根拠のない仮の既定値。コアは 1 個あたりの相対重み(power.js の DEFAULT_CEFF と同じ値)、他は面積 mm² あたり。
   const DEFAULT_WEIGHTS = {
-    core: { P: 1.0, super: 1.0, performance: 0.8, M: 0.8, M2: 0.8, C: 0.4, E: 0.35, 'LP-E': 0.1 },
+    core: { P: 1.0, P2: 1.0, super: 1.0, performance: 0.8, M: 0.8, M2: 0.8, C: 0.4, E: 0.35, 'LP-E': 0.1 },
     coreOther: 0.5,
     l3PerMm2: 0.02,
     gpuPerMm2: 0.05,

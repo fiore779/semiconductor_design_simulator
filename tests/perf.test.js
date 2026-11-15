@@ -59,6 +59,8 @@ const VALIDATION_PAIRS = [
   ['qc-7plus-gen3', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'], ['mt-9300', 'Cortex-X4(代表 8 Gen 3)。公開値は Android の通常の群の中央値(2026-11-14)'],
   // 2026-11-07(公開値を直近 25 件の全体中央値に取り直し。ユーザー指示「全体の中央値を取得してください」): 旧チャート値では ST が +13〜18% 高く外れ値だった 3 件が ±10% に入った(HX 370 +8.4%、268V +5.1%、395 +1.4%)
   // 2026-11-16(Ryzen X3D。L3 96MB を cfg.l3MB に入れるだけ。V-Cache の L3 遅延 +4 サイクルは入れていない): 5800X3D ST +1.9%・7800X3D +2.4%・9800X3D -2.1%。いずれも calib:false で校正に入らない
+  // 2026-11-16(その 2): 7950X3D ST +3.55%(V-Cache 付き CCD 5.25GHz・96MB で計算)・9950X3D ST +0.40%(通常 CCD 5.7GHz・32MB で計算)。perf.js の cfg.l3CcdMB・stCcd
+  ['amd-zen4-7950x3d', 'Zen 4(代表 7700)。ST は V-Cache 付き CCD(stCcd 0)。公開値は 2 群の混合の中央値(2026-11-15)'], ['amd-zen5-9950x3d', 'Zen 5(代表 9700X)。ST は通常 CCD(stCcd 1。V-Cache CCD のクロックは未取得)。公開値は Windows のみ n=200(2026-11-15)'],
   ['amd-zen3-5800x3d', 'Zen 3(代表 5800X)。L3 96MB(V-Cache)。公開値は Windows のみ n=200(2026-11-15)'], ['amd-zen4-7800x3d', 'Zen 4(代表 7700)。L3 96MB(V-Cache)。公開値は Windows のみ n=200(2026-11-15)'], ['amd-zen5-9800x3d', 'Zen 5(代表 9700X)。L3 96MB(V-Cache)。公開値は Windows のみ n=200(2026-11-15)'],
   ['amd-strix-hx370', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に直近25件の全体中央値から差し替え)'], ['amd-strixhalo-395', 'Zen 5(代表 9700X)。公開値は Windows のみの中央値(実測)n=200(2026-11-13 に全体中央値 n=171 から差し替え)'],
 ];
@@ -178,8 +180,9 @@ test('幅が未取得のコアは decodeWidth を IPC の上限に使う(ROB 由
 // (nv-orin-agx は 2026-11-05 に L3 6MB を取得〔公表〕して MT が -1.1% → -13.9% に悪化したため、この一覧から外した。ST は -6.6% → -0.3% に改善。以前の ok は L3 未取得時の参照値がスレッド数で割られないことによる見かけ。閾値は動かしていない。設計書 §2.7.7)
 // (amd-zen4-7950x は 2026-11-13(Windows のみ化 第 2 回) に MT が +9.3% → +11.4% になったため、この一覧から外した。1800X の MT 公開値 6671 → 7203〔Windows のみ。n=16 の低信頼〕で σ が 0.03306 → 0.03183 に下がり、16 コアの MT が +1.9% 上がったため。閾値は動かしていない。全コア実測クロック〔allCoreGHz〕は未取得で、根拠のある修正ができない。設計書 §5.3.0)
 // (2026-11-14: amd-zen4-7950x を一覧に戻した。全コア負荷時の実測クロック allCoreGHz 5.0GHz〔KitGuru。[二次]〕を入れて MT が +11.4% → +0.3% になったため。閾値は動かしていない。設計書 §5.3.0【2026-11-14 7950X】)
+// (2026-11-16(その 2): 7950X3D +2.3%〔CCD ごとの allCoreGHz 4.875 / 5.075〕・9950X3D +8.1%〔両 CCD 5.7GHz の暫定値。V-Cache 側が低い分だけ過大。縁〕を追加)
 // (2026-11-16: Ryzen X3D 3 件を一覧に追加。5800X3D +9.0%〔allCoreGHz 4.4 あり。なしは +11.1% で ng〕・7800X3D +3.6%・9800X3D +0.4%〔allCoreGHz 5.22 あり〕。5800X3D の +9.0% は縁で、5800X(+8.5%)と同じ傾向)
-['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x', 'amd-zen3-5800x3d', 'amd-zen4-7800x3d', 'amd-zen5-9800x3d'].forEach((id) => {
+['intel-adl-12900k', 'intel-rpl-14900k', 'amd-zenplus-2700x', 'amd-zen4-7950x', 'amd-zen3-5800x3d', 'amd-zen4-7800x3d', 'amd-zen5-9800x3d', 'amd-zen4-7950x3d', 'amd-zen5-9950x3d'].forEach((id) => {
   test(`検証 MT(±10%): ${id}`, () => {
     const c = F.calibrateMt(D.presets, gb7ByName, D.uarch, cal());
     const p = preset(id); const r = F.mtScore(p, c, D.uarch, null);
@@ -625,8 +628,9 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
   // 2026-11-10(Arrow Lake): 285K の P 5.4GHz・265K の P 5.2GHz(「3 つ以上のコアが動くとき」。TechPowerUp のレビュー、BIOS の画面と本文。E は常に 4.6GHz なので boost と同じで付けない)も持つ。ほかは持たない
   // 2026-11-14: 7950X の P 5.0GHz(KitGuru の Cinebench R23 全コア平均「5GHz 強」。[二次]。5950X と同じ出典・同じ測り方)を追加
   // 2026-11-14: 12100 の P 4.1GHz(HWCooling の 12100F レビューの仕様表「Max. boost (all-core) 4.1 GHz (P)」。[二次]。12100F は 12100 と同じ CPU コアで iGPU の有無だけの違い)を追加
+  // 2026-11-16(その 2): 7950X3D の P 4.875GHz(V-Cache 付き CCD)・P2 5.075GHz(通常 CCD)([二次] overclocking.com の Cinebench R23 全コア。平均 4.975GHz)。9950X3D は全コアクロック未取得で持たない
   // 2026-11-16: 5800X3D の P 4.4GHz(KitGuru の Cinebench R23 10 分ループ。5950X・7950X と同じ出典・同じ測り方 [二次])と 9800X3D の P 5.22GHz(TechPowerUp「5.22 GHz all the time」[二次])を追加
-  const WITH = { 'amd-zen3-5800x3d': { P: 4.4 }, 'amd-zen5-9800x3d': { P: 5.22 }, 'amd-zen4-7840hs': { P: 4.40 }, 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 }, 'intel-lnl-268v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-258v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-256v': { P: 3.0, 'LP-E': 3.5 } /* 2026-11-15(Lunar Lake の MT クロック。258V は [二次]、268V・256V は流用 [推定]) */ };
+  const WITH = { 'amd-zen4-7950x3d': { P: 4.875, P2: 5.075 }, 'amd-zen3-5800x3d': { P: 4.4 }, 'amd-zen5-9800x3d': { P: 5.22 }, 'amd-zen4-7840hs': { P: 4.40 }, 'amd-zen3-5950x': { P: 3.925 }, 'amd-zen4-7950x': { P: 5.0 }, 'intel-arl-285k': { P: 5.4 }, 'intel-arl-265k': { P: 5.2 }, 'intel-adl-12100': { P: 4.1 }, 'intel-lnl-268v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-258v': { P: 3.0, 'LP-E': 3.5 }, 'intel-lnl-256v': { P: 3.0, 'LP-E': 3.5 } /* 2026-11-15(Lunar Lake の MT クロック。258V は [二次]、268V・256V は流用 [推定]) */ };
   { // 12100: MT のクロックが全コアの 4.1GHz になる(係数は掛けない)。MT +10.9%(ng)→ +6.4%(ok)。allCoreGHz なしでは +10.9% のまま(ST は不変。uCal の標本は ST なので不変)
     const p1 = preset('intel-adl-12100'); const r1 = F.mtScore(p1, c, D.uarch, null);
     assert.strictEqual(r1.detail[0].clockSource, 'allcore'); assert.strictEqual(r1.detail[0].fGHz, 4.1); assert.strictEqual(r1.detail[0].clockFactor, 1);
@@ -838,7 +842,7 @@ test('dramLat: ST の dramNs = cfg.dramLat.ns(無ければ 85ns)。MT には入�
   assert.ok(Math.abs(c.mt.sigma - 0.03151202046273477) < 1e-12);
   assert.deepStrictEqual(['Golden Cove', 'Raptor Cove', 'Cougar Cove', 'Redwood Cove'].map((k) => c.u[k]), [116.4, 116.4, 102.1, 102.8]);
   // 区分: 実測・二次・推定。推定(別の SKU の値の代用)は src が「代用:」で始まる。値の例
-  const withDl = D.presets.filter((p) => p.cfg.dramLat); assert.strictEqual(withDl.length, 44); /* 2026-11-16: Ryzen X3D 3 件(5800X3D・7800X3D・9800X3D)の dramLat を追加 41 → 44(σ・uCal は不変) */
+  const withDl = D.presets.filter((p) => p.cfg.dramLat); assert.strictEqual(withDl.length, 46); /* 2026-11-16(その 2): 7950X3D・9950X3D の dramLat で 44 → 46 */ /* 2026-11-16: Ryzen X3D 3 件(5800X3D・7800X3D・9800X3D)の dramLat を追加 41 → 44(σ・uCal は不変) */
   withDl.forEach((p) => { const d = p.cfg.dramLat; assert.ok(['実測', '二次', '推定'].includes(d.s), p.id); assert.ok(d.ns >= 70 && d.ns <= 150 && d.src && d.cfg, p.id); if (d.s === '推定') assert.ok(/^代用:/.test(d.src), p.id); });
   const ns = (id) => preset(id).cfg.dramLat && preset(id).cfg.dramLat.ns;
   assert.deepStrictEqual(['amd-zen4-7840hs', 'amd-strix-hx370', 'amd-kraken-350', 'amd-zen3p-7735hs', 'amd-zen3-5800u', 'intel-arl-285h', 'intel-lnl-268v', 'amd-zen5-9700x'].map(ns), [103.3, 128, 128, 103.3, 78.8, 148, 131.4, 70]);
@@ -1034,4 +1038,47 @@ test('Ryzen X3D(1 CCD): L3 96MB を cfg.l3MB に入れるだけで ST が通常�
   assert.deepStrictEqual(PAIRS.map(([id]) => [gb7ByName[preset(id).gb7].single, gb7ByName[preset(id).gb7].multi, gb7ByName[preset(id).gb7].kind, gb7ByName[preset(id).gb7].n]), [[2055, 11814, '実測', 200], [2460, 15694, '実測', 200], [2969, 18700, '実測', 200]]);
   // 5800X3D の allCoreGHz 4.4 を外すと MT +11.1%(ng)
   const q1 = clone(preset('amd-zen3-5800x3d')); delete q1.cfg.cores[0].allCoreGHz; assert.ok(F.mtScore(q1, cm, D.uarch, null).score / gb7ByName[q1.gb7].multi - 1 > 0.10);
+});
+
+// ---- 2026-11-16: Ryzen X3D の 2 CCD(9950X3D・7950X3D)。cfg.l3CcdMB・cores[].ccd・cfg.stCcd(任意項目。無い SKU は完全に不変) ----
+test('l3CcdMB・ccd・stCcd: ST は stCcd の CCD のクロックと L3(÷1 スレッド)、MT は各 CCD の L3 を自分の CCD のスレッド数で割る。無い SKU は不変', () => {
+  const c = cal(); const cm = F.calibrateMt(D.presets, gb7ByName, D.uarch, c);
+  const x = preset('amd-zen4-7950x3d'); const y = preset('amd-zen5-9950x3d');
+  assert.deepStrictEqual([x.cfg.l3CcdMB, x.cfg.stCcd, y.cfg.l3CcdMB, y.cfg.stCcd], [[96, 32], 0, [96, 32], 1]);
+  // ST: 7950X3D は V-Cache 付き CCD(ccd 0。5.25GHz・96MB)、9950X3D は通常 CCD(ccd 1。5.7GHz・32MB)
+  const sx = F.stScore(x, c, D.uarch); const sy = F.stScore(y, c, D.uarch);
+  assert.deepStrictEqual([sx.fGHz, sx.l3CcdMB, sx.ccd, sx.l3CcdBig], [5.25, 96, 0, true]); assert.deepStrictEqual([sy.fGHz, sy.l3CcdMB, sy.ccd, sy.l3CcdBig], [5.7, 32, 1, false]);
+  assert.strictEqual(sx.l3Ccds, null);
+  // 式どおり: 同じクロックの 1 CCD の SKU(l3MB 96 / 32、1 CCD)と同じ値
+  const one = (p, i, f) => { const q = clone(p); q.cfg.cores = [q.cfg.cores[i]]; delete q.cfg.l3CcdMB; delete q.cfg.stCcd; delete q.cfg.cores[0].ccd; q.cfg.l3MB = p.cfg.l3CcdMB[i]; q.cfg.cores[0].boostGHz = f; return F.stScore(q, c, D.uarch).score; };
+  assert.ok(Math.abs(sx.score - one(x, 0, 5.25)) < 1e-9); assert.ok(Math.abs(sy.score - one(y, 1, 5.7)) < 1e-9);
+  // stCcd を変えると ST が変わる(9950X3D を V-Cache 側 5.7GHz・96MB にすると上がる)。stCcd が無ければ最速コア('P' = CCD 0)
+  const y0 = clone(y); y0.cfg.stCcd = 0; assert.ok(F.stScore(y0, c, D.uarch).score > sy.score);
+  const yn = clone(y); delete yn.cfg.stCcd; assert.strictEqual(F.stScore(yn, c, D.uarch).score, F.stScore(y0, c, D.uarch).score);
+  // 該当する ccd が無い stCcd は最速コアにフォールバック(落ちない)
+  const yb = clone(y); yb.cfg.stCcd = 5; assert.strictEqual(F.stScore(yb, c, D.uarch).score, F.stScore(y0, c, D.uarch).score);
+  // MT: 各記述の L3 は「自分の CCD の L3 ÷ 自分の CCD の総スレッド数(16)」
+  [x, y].forEach((p) => {
+    const m = F.mtScore(p, cm, D.uarch, null); assert.ok(m.ok);
+    assert.deepStrictEqual(m.l3PerCcd, [{ ccd: 0, mb: 96, threads: 16 }, { ccd: 1, mb: 32, threads: 16 }]);
+    const d0 = m.detail[0]; const d1 = m.detail[1];
+    assert.deepStrictEqual([d0.ccd, d0.l3CcdMB, d1.ccd, d1.l3CcdMB], [0, 96, 1, 32]);
+    const q = clone(p); q.cfg.l3MB = 96; delete q.cfg.l3CcdMB; delete q.cfg.stCcd; q.cfg.cores.forEach((g) => { delete g.ccd; });
+    assert.strictEqual(d0.perCore, F.stScore(Object.assign({}, q, { cfg: Object.assign({}, q.cfg, { l3MB: 96 }) }), c, D.uarch, { core: q.cfg.cores[0], fGHz: d0.fGHz, threads: 16, noMemory: true }).score);
+    assert.strictEqual(d1.perCore, F.stScore(Object.assign({}, q, { cfg: Object.assign({}, q.cfg, { l3MB: 32 }) }), c, D.uarch, { core: q.cfg.cores[1], fGHz: d1.fGHz, threads: 16, noMemory: true }).score);
+    // 項目を全部消すと従来の計算(総 L3 128MB ÷ 32 スレッド)に戻り、値が変わる(V-Cache の分け方が効いている)
+    const old = clone(p); delete old.cfg.l3CcdMB; delete old.cfg.stCcd; old.cfg.cores.forEach((g) => { delete g.ccd; });
+    const mo = F.mtScore(old, cm, D.uarch, null); assert.strictEqual(mo.l3PerCcd, undefined); assert.ok(mo.detail.every((d) => d.l3CcdMB === undefined)); assert.notStrictEqual(mo.score, m.score);
+  });
+  // l3MB を編集すると l3CcdMB は比例して縮尺する(合計 128 → 64 で [48, 16])
+  const half = clone(x); half.cfg.l3MB = 64; assert.strictEqual(F.stScore(half, c, D.uarch).l3CcdMB, 48);
+  // 既存の SKU(項目なし)の ST・MT の結果に l3CcdMB・ccd・l3PerCcd は出ない
+  D.presets.filter((p) => !p.cfg.l3CcdMB).forEach((p) => { const r = F.stScore(p, c, D.uarch); if (r.ok) assert.strictEqual(r.l3CcdMB, undefined, p.id); });
+  assert.deepStrictEqual(D.presets.filter((p) => p.cfg.l3CcdMB || p.cfg.stCcd !== undefined || (p.cfg.cores || []).some((g) => g.ccd !== undefined)).map((p) => p.id).sort(), ['amd-zen4-7950x3d', 'amd-zen5-9950x3d']);
+  // 7950X3D の ST・MT は V-Cache 側で ±10% 以内(+3.55% / +2.31%)、9950X3D は ST +0.40% / MT +8.08%
+  const err = (p, k, r) => r / gb7ByName[p.gb7][k] - 1;
+  assert.ok(Math.abs(err(x, 'single', sx.score) - 0.0355) < 0.0005 && Math.abs(err(x, 'multi', F.mtScore(x, cm, D.uarch, null).score) - 0.0231) < 0.0005);
+  assert.ok(Math.abs(err(y, 'single', sy.score) - 0.0040) < 0.0005 && Math.abs(err(y, 'multi', F.mtScore(y, cm, D.uarch, null).score) - 0.0808) < 0.0005);
+  // 公開値(Windows のみ・n=200)
+  assert.deepStrictEqual([gb7ByName[x.gb7].single, gb7ByName[x.gb7].multi, gb7ByName[y.gb7].single, gb7ByName[y.gb7].multi], [2550, 22623, 3104, 26844]);
 });

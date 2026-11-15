@@ -82,6 +82,22 @@ gbUsers.forEach((v, k) => ok(v.length === 1, `presets: gb7 "${k}" を複数の�
   ok(typeof p.cfg.l3MB === 'number' && p.cfg.l3MB > 0, `presets ${p.id}: cfg.l3Types があるのに l3MB が正の数でない`);
 });
 
+// cfg.l3CcdMB・cores[].ccd・cfg.stCcd(CCD ごとの L3 と ST の CCD 指定。2026-11-16。9950X3D・7950X3D): l3CcdMB は正の数の配列で合計が l3MB、cores の全記述が ccd(0 以上 l3CcdMB の長さ未満の整数)を持ち、
+// l3CcdMB の全 CCD にコア記述が 1 つ以上あり、stCcd は l3CcdMB の添字(整数)で、l3Ccds とは併用しない。保存データ(design.js)には l3CcdMB・stCcd を載せない(preset.cfg から effectivePreset が渡す。ccd だけコア記述に載る)
+(D.presets || []).forEach((p) => {
+  const c = p.cfg || {}; const cores = c.cores || [];
+  const has = c.l3CcdMB !== undefined || c.stCcd !== undefined || cores.some((g) => g.ccd !== undefined);
+  if (!has) return;
+  const a = c.l3CcdMB;
+  ok(Array.isArray(a) && a.length >= 2 && a.every((x) => typeof x === 'number' && x > 0), `presets ${p.id}: cfg.l3CcdMB は正の数の配列(2 個以上)であること`);
+  if (!Array.isArray(a)) return;
+  ok(typeof c.l3MB === 'number' && Math.abs(a.reduce((t, x) => t + x, 0) - c.l3MB) < 1e-9, `presets ${p.id}: cfg.l3CcdMB の合計が l3MB と一致しない`);
+  ok(cores.every((g) => Number.isInteger(g.ccd) && g.ccd >= 0 && g.ccd < a.length), `presets ${p.id}: cfg.cores の全記述が 0 以上 l3CcdMB の長さ未満の整数 ccd を持つこと`);
+  ok(a.every((_, i) => cores.some((g) => g.ccd === i)), `presets ${p.id}: l3CcdMB の全 CCD にコア記述が 1 つ以上あること`);
+  ok(Number.isInteger(c.stCcd) && c.stCcd >= 0 && c.stCcd < a.length, `presets ${p.id}: cfg.stCcd は l3CcdMB の添字(整数)であること`);
+  ok(c.l3Ccds === undefined, `presets ${p.id}: cfg.l3CcdMB と l3Ccds は併用しない`);
+});
+
 // M5b 追加分(addedIn:'M5b')だけの追加基準 C1〜C5(設計書 §13 M5b-4。C5 は第12世代以降の Intel を除く)。既存 65 件は対象外。
 // uCal.excluded(校正の標本から除外した preset id)は実在すること(typo で inUCalSet が狂わないように)
 Object.keys(D.uarch || {}).forEach((name) => {

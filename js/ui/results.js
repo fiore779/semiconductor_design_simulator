@@ -158,6 +158,9 @@
     if (r.noL3) out.push(note('L3 なしとして計算しています。', 'warn-note'));
     else if (r.l3Floor) out.push(note('スレッドあたりの L3 が小さく、L3 なしと同じ値になっています(モデルの下限)。', 'warn-note'));
     if (r.l3NoTypes && r.l3NoTypes.length) out.push(note(`${r.l3NoTypes.join('・')} は L3 につながらない(プリセットの l3Types)ため、L3 なしとして計算しています。L3 は、つながるコアのスレッド数だけで割っています。`, 'warn-note'));
+    // CCD ごとの L3(cfg.l3CcdMB。2026-11-16 の 9950X3D・7950X3D)。ST は指定した CCD(cfg.stCcd)のクロックと L3 で計算、MT は各 CCD の L3 をその CCD のスレッドで割って足す
+    if (r.l3CcdMB) out.push(note(`ST は ${r.l3CcdBig ? 'V-Cache 付き CCD' : '通常 CCD(V-Cache なし)'}(CCD ${r.ccd}。L3 ${Math.round(r.l3CcdMB * 100) / 100}MB。プリセットの stCcd)のクロックと L3 で計算しています。どちらの CCD で動くかは OS・ドライバの設定で決まり、公開値は両方の混合です。`, 'warn-note'));
+    if (r.l3PerCcd) out.push(note(`L3 は CCD ごとに計算しています(${r.l3PerCcd.map((x) => `CCD ${x.ccd}: ${Math.round(x.mb * 100) / 100}MB ÷ ${x.threads} スレッド`).join('、')})。`));
     if (r.l3Ccds > 1) out.push(note(`L3 は 1 CCD 分(合計 ÷ ${r.l3Ccds})で計算しています(別の CCD の L3 はこのコアの容量として使えないため)。`));
     return out;
   }

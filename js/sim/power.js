@@ -9,7 +9,8 @@
   // 校正前の仮の既定値(根拠なし)。リーク: kLeak[W/コア, V=V0・Tj=T0 のとき]·V·exp((V−V0)/Vs)·2^((Tj−T0)/Tdbl)。
   const DEFAULT_LEAK = { kLeak: 0.3, V0: 1.0, Vs: 0.15, T0: 70, Tdbl: 30 };
   // 校正前の仮の既定値(根拠なし)。コア種別ごとの実効容量 C_eff [nF](α=1 のとき。nF×GHz×V² = W)。
-  const DEFAULT_CEFF = { P: 1.0, super: 1.0, performance: 0.8, M: 0.8, M2: 0.8, C: 0.4, E: 0.35, 'LP-E': 0.1 };
+  // P2: 2 CCD のプリセット(7950X3D・9950X3D。2026-11-16)の 2 つ目のコア記述(通常 CCD)。種別名はプリセット内で一意なので 'P' と別名にし、P と同じコアなので同じ重み。既存のプリセットには P2 は無い
+  const DEFAULT_CEFF = { P: 1.0, P2: 1.0, super: 1.0, performance: 0.8, M: 0.8, M2: 0.8, C: 0.4, E: 0.35, 'LP-E': 0.1 };
   const DEFAULT_CEFF_OTHER = 0.5; // 上の表にない種別
   // 校正前の仮の既定値(根拠なし)。アンコア(L3 は MB あたり、メモリチャネルあたり)と、負荷ごとの稼働率。
   const DEFAULT_UNCORE = { wPerL3MB: 0.1, wPerMemCh: 2.0, idleFactor: 0.2, singleFactor: 0.6 };
