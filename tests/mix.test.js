@@ -666,3 +666,16 @@ test('Core Ultra 5 325・Core 5 320(addedIn:M5b・calib:false)は校正に影響
   const cal = S.calibrateMt(without, ctx.gb7ByName, ctx.uarch, cal0);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.cal)), JSON.parse(JSON.stringify(cal)));
 });
+
+// 2026-11-15: chips-pc.js の ERR_1114(errCause への追記表)は、同じ SKU のキーを 2 回書くと後ろが前を丸ごと置き換えて前の文が表示されない。
+// 5800U・HX 370・Kraken 350・285H で起きていた(統合済み)。キーの重複が無いことを固定する。
+test('chips-pc.js の ERR_1114 に同じ SKU のキーの重複が無い', () => {
+  const src = require('fs').readFileSync(path.join(__dirname, '..', 'data', 'presets', 'chips-pc.js'), 'utf8');
+  const lines = src.split(/\r?\n/);
+  const from = lines.findIndex((l) => l.includes('const ERR_1114 = {'));
+  assert.ok(from >= 0);
+  const keys = [];
+  for (let i = from + 1; i < lines.length && !/^  \};/.test(lines[i]); i++) { const m = lines[i].match(/^    '([a-z0-9-]+)': \{/); if (m) keys.push(m[1]); }
+  assert.ok(keys.length > 10);
+  assert.deepStrictEqual(keys.filter((k, i) => keys.indexOf(k) !== i), []);
+});
