@@ -380,7 +380,9 @@
     // 設定範囲(power.range)内で選んだ TDP(package.tdpW)。範囲の上限(既定)以外なら、公開値(既定の設定での測定)とは条件が違うので編集済み扱い
     const rg = preset0 && preset0.power && preset0.power.range;
     const tdpSel = rg && design.package && typeof design.package.tdpW === 'number' && design.package.tdpW >= rg.minW && design.package.tdpW <= rg.maxW ? design.package.tdpW : null;
-    const tdpNonDefault = hasCfg && tdpSel != null && tdpSel !== rg.maxW;
+    // 2026-11-15: 典型電力 typicalW(power.typicalW。14700HX)を持つ SKU の既定の MT の W は typicalW(range.maxW ではない)。typicalW と同じ値を選んでも既定のまま
+    const tdpDefaultW = rg && preset0.power && typeof preset0.power.typicalW === 'number' && preset0.power.typicalW > 0 ? preset0.power.typicalW : (rg && rg.maxW);
+    const tdpNonDefault = hasCfg && tdpSel != null && tdpSel !== tdpDefaultW;
     let preset = hasCfg ? effectivePreset(preset0, design.cfg) : preset0;
     if (preset && tdpSel != null) preset = Object.assign({}, preset, { power: Object.assign({}, preset.power, { tdpW: tdpSel }) });
     // 【2026-11-12】選んだ冷却がノート PC のクラス(sustainedW を持つ)なら、mobile-pc の MT の W を min(公表電力の W, sustainedW) にする(perf.mtPublishedW)。既存の仮置きの冷却は sustainedW を持たず、MT を制限しない(既定)。

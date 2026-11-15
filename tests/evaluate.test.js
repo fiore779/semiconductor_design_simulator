@@ -467,8 +467,8 @@ test('ratio の注記: 285H の P は ST・MT とも info「Arrow Lake-H の P �
   assert.deepStrictEqual(E.ratioInfosOf(r.mt).slice().sort(), [E.RATIO_INFO, E.RATIO_INFO_ARLH].sort());
   // 期待値: 285H ST +11.49 → +2.57%・MT +7.82 → +3.52%。14700HX ST +11.14 → +4.47%(ok)・MT +17.14 → +12.83%(ng のまま)。14900HX ST +1.69%・MT +2.52%、13980HX ST +0.56%・MT +2.19%。公開値には合わせていない(比は兄弟 SKU から)
   const near = (id, st, mt) => { const x = ev(id); assert.ok(Math.abs(x.st.errPct - st) < 0.05 && Math.abs(x.mt.errPct - mt) < 0.05, id + ' ' + x.st.errPct + ' ' + x.mt.errPct); };
-  near('intel-arl-285h', 2.57, 3.52); near('intel-rpl-14700hx', 4.47, 12.83); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
-  assert.ok(Math.abs(ev('intel-rpl-14700hx').st.errPct) <= 10); assert.ok(Math.abs(ev('intel-rpl-14700hx').mt.errPct) > 10); // MT は ng のまま(IPC では直らない)
+  near('intel-arl-285h', 2.57, 3.52); near('intel-rpl-14700hx', 4.47, 1.80 /* 2026-11-15(typicalW 69W): MT +12.83 → +1.80 */); near('intel-rpl-14900hx', 1.69, 2.52); near('intel-rpl-13980hx', 0.56, 2.19);
+  assert.ok(Math.abs(ev('intel-rpl-14700hx').st.errPct) <= 10); assert.ok(Math.abs(ev('intel-rpl-14700hx').mt.errPct) <= 10); // 2026-11-15(typicalW 69W): MT は ok になった。以前: MT は ng のまま(IPC では直らない)
 });
 
 // 2026-11-15(7840HS の allCoreGHz 4.40。mobile-pc で初めて): MT は電力の連続式を通らないので、冷却クラス・TDP を選んでも MT の数値は同じ。冷却は「制限」にも「編集済み」にもならず、注記が出る。5800U(allCoreGHz なし)は従来どおり冷却で下がる

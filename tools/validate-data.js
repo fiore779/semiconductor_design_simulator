@@ -56,6 +56,8 @@ const pids = new Set();
     ok(!d.nodeId || nodeIds.has(d.nodeId) || /^tsmc-n6$/.test(d.nodeId), `presets ${p.id}: nodeId ${d.nodeId} が nodes.js に無い`);
   });
   ['base', 'peak'].forEach((k) => { const w = p.power && p.power[k]; ok(!w || (typeof w.w === 'number' && ['pub', 'sec', 'meas'].includes(w.s)), `presets ${p.id}: power.${k} 不正`); });
+  { const tw = p.power && p.power.typicalW; // 2026-11-15: 任意項目 power.typicalW(MT のクロックを決める典型電力 W。プリセット由来のみで保存データには載らない)。数で、range があればその範囲内
+    if (tw !== undefined) { ok(typeof tw === 'number' && isFinite(tw) && tw > 0 && tw <= 1000, `presets ${p.id}: power.typicalW 不正`); const rg = p.power.range; if (rg && typeof rg.minW === 'number' && typeof rg.maxW === 'number' && typeof tw === 'number') ok(tw >= rg.minW && tw <= rg.maxW, `presets ${p.id}: power.typicalW が range の外`); ok(typeof p.power.typicalNote === 'string' && p.power.typicalNote.length > 0, `presets ${p.id}: power.typicalW に typicalNote(区分・根拠)が無い`); } }
   ok(typeof p.calib === 'boolean', `presets ${p.id}: calib が boolean でない`);
   if (p.calib) ok(!!p.calibNote, `presets ${p.id}: calib=true なのに calibNote が無い`);
 });

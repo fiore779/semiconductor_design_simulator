@@ -71,6 +71,9 @@ test('冷却を持続電力の小さい順に替えると MT は単調に下が�
 test('MT の W: min(公表電力から決めた W, 冷却の持続電力)。選んだ TDP がある場合はその値と比べる。係数は従来の連続式のまま', () => {
   const p = P('intel-rpl-14700hx');
   const q = JSON.parse(JSON.stringify(p));
+  // 2026-11-15: 14700HX は power.typicalW 69W を持つ(典型電力。range.maxW より優先)。この旧来の規則(既定は range.maxW)の確認は typicalW を外した複製で行い、typicalW ありは下の別ブロックで確認する
+  assert.strictEqual(F.mtPublishedW(q).w, 69); assert.strictEqual(F.mtPublishedW(q).source, 'typical');
+  delete q.power.typicalW;
   assert.strictEqual(F.mtPublishedW(q).w, 157); // 既定は range.maxW
   q.power.coolingW = 125; q.power.coolingId = 'laptop-gaming';
   const r = F.mtPublishedW(q); assert.deepStrictEqual([r.w, r.source, r.fromW, r.fromSource], [125, 'cooling', 157, 'range.maxW']);
@@ -80,18 +83,25 @@ test('MT の W: min(公表電力から決めた W, 冷却の持続電力)。選�
   q.power.coolingW = 125; q.power.tdpW = 100; const s = F.mtPublishedW(q);
   assert.strictEqual(s.w, 100); assert.strictEqual(s.source, 'selected'); // 選んだ TDP 100W < 冷却 125W なら TDP のまま
   q.power.tdpW = 150; const u = F.mtPublishedW(q); assert.deepStrictEqual([u.w, u.source, u.fromW, u.fromSource], [125, 'cooling', 150, 'selected']);
-  // coolingW が無い(従来の呼び出し)は不変
-  assert.strictEqual(F.mtPublishedW(P('intel-rpl-14700hx')).source, 'range.maxW');
+  // coolingW が無い(従来の呼び出し)は不変(typicalW を持たない SKU は range.maxW。14700HX は典型電力)
+  assert.strictEqual(F.mtPublishedW(P('intel-rpl-14900hx')).source, 'range.maxW'); assert.strictEqual(F.mtPublishedW(P('intel-rpl-14700hx')).source, 'typical');
+  { // typicalW あり(14700HX): 選んだ TDP が無ければ typicalW(69W)。冷却は min(typicalW, coolingW)。選んだ TDP は typicalW より優先
+    const t = JSON.parse(JSON.stringify(p)); assert.deepStrictEqual([F.mtPublishedW(t).w, F.mtPublishedW(t).source], [69, 'typical']);
+    t.power.coolingW = 46.5; t.power.coolingId = 'laptop-standard'; const a = F.mtPublishedW(t); assert.deepStrictEqual([a.w, a.source, a.fromW, a.fromSource], [46.5, 'cooling', 69, 'typical']);
+    t.power.coolingW = 125; assert.deepStrictEqual([F.mtPublishedW(t).w, F.mtPublishedW(t).source], [69, 'typical']); // 冷却の方が大きければ typicalW のまま
+    t.power.tdpW = 100; assert.deepStrictEqual([F.mtPublishedW(t).w, F.mtPublishedW(t).source], [100, 'selected']);
+    assert.ok(Math.abs(F.mtClockInfo(P('intel-rpl-14700hx')).factor - 0.405 * Math.pow(69, 0.15)) < 1e-12); assert.strictEqual(F.mtClockInfo(P('intel-rpl-14700hx')).powerW, 69);
+  }
 });
 
 test('冷却を変えても ST は不変・pc は不変の上で、冷却の影響は設計書の想定どおり緩やか(指数 0.15)', () => {
-  // 14700HX: 公表電力 157W → ゲーミング標準 125W → 標準 46.5W。MT の比は係数の比(0.443·W^0.15)とほぼ一致する(性能は周波数にほぼ比例だが完全な比例ではないので ±1%)
-  const base = E.evaluate(design.fromPreset(P('intel-rpl-14700hx'), { mode: 'reproduce' }), ctx).mt.score;
-  const g = evalC('intel-rpl-14700hx', 'laptop-gaming').mt.score; const s = evalC('intel-rpl-14700hx', 'laptop-standard').mt.score;
+  // 2026-11-15: 14700HX は typicalW 69W を持つので、同じ 157W の 14900HX で確認する。14900HX: 公表電力 157W → ゲーミング標準 125W → 標準 46.5W。MT の比は係数の比(0.443·W^0.15)とほぼ一致する(性能は周波数にほぼ比例だが完全な比例ではないので ±1%)
+  const base = E.evaluate(design.fromPreset(P('intel-rpl-14900hx'), { mode: 'reproduce' }), ctx).mt.score;
+  const g = evalC('intel-rpl-14900hx', 'laptop-gaming').mt.score; const s = evalC('intel-rpl-14900hx', 'laptop-standard').mt.score;
   assert.ok(Math.abs(g / base - Math.pow(125 / 157, 0.15)) < 0.01, String(g / base));
     // 係数は厳密に 0.443·W^0.15(W = 46.5)。MT の比は係数の比に近いが、L3・メモリ項があるので比そのものは検証せず、係数で見る
-  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-standard').mt.clockFactor, 0.405 * Math.pow(46.5, 0.15)); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
-  assert.strictEqual(evalC('intel-rpl-14700hx', 'laptop-gaming').mt.clockFactor, 0.405 * Math.pow(125, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.strictEqual(evalC('intel-rpl-14900hx', 'laptop-standard').mt.clockFactor, 0.405 * Math.pow(46.5, 0.15)); // 2026-11-13(Windows のみ化 第 2 回): c 0.411 → 0.406 // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
+  assert.strictEqual(evalC('intel-rpl-14900hx', 'laptop-gaming').mt.clockFactor, 0.405 * Math.pow(125, 0.15)); // 2026-11-14: c 0.406 → 0.411(Redwood Cove の uCal 99.5 を追加したあとの再校正。標本 11 件の中央値 0.4114)
   assert.ok(s / base > 0.8, '46.5W にしても MT は 2 割も下がらない(実機の機体差〔GB6 で最大÷最小 1.2〜1.3〕より小さい。設計書 §5.3.0 に明記)');
 });
 
@@ -118,7 +128,7 @@ test('熱モデルは新クラスでも動く(熱抵抗は仮置き)。持続電
 });
 
 test('evaluate: 選んだ TDP と冷却の組み合わせで edited・errPct が決まる(TDP 既定+制限なしは編集済みでない)', () => {
-  const id = 'intel-rpl-14700hx'; const rg = P(id).power.range;
+  const id = 'intel-arl-275hx'; /* 2026-11-15: 14700HX は typicalW 69W を持ち既定の W が range.maxW ではないので、range.maxW が既定の 275HX で確認する(typicalW ありの扱いは下の別テスト) */ const rg = P(id).power.range;
   const base = design.fromPreset(P(id), { mode: 'reproduce' });
   const e0 = E.evaluate(base, ctx); assert.strictEqual(e0.edited, false); assert.notStrictEqual(e0.mt.errPct, null);
   const tdp = (d, w) => { const r = design.setTdp(d, w, rg); assert.ok(r.ok, r.reason); return r.design; };
@@ -134,4 +144,31 @@ test('evaluate: 選んだ TDP と冷却の組み合わせで edited・errPct が
   // 設定(cfg)を持たない設計では、冷却の制限を入れず errPct も出さない
   const noCfg = JSON.parse(JSON.stringify(withCooling(id, 'laptop-standard'))); delete noCfg.cfg;
   const n = E.evaluate(noCfg, ctx); assert.ok(!(n.mt && n.mt.clockInfo && n.mt.clockInfo.source === 'cooling'));
+});
+
+// 2026-11-15: 典型電力 typicalW(14700HX。power.typicalW 69W [推定・校正値])。MT のクロックを決める W だけに使う。冷却の制限・選んだ TDP は従来どおり効く。冷却・温度・電力・ST は公表電力基準のまま。他の SKU の判定は不変
+test('typicalW: 14700HX の MT は 69W で計算され(+12.8% → +1.8%)、選んだ TDP・冷却は従来どおり効き、typicalW と同じ TDP は既定のまま', () => {
+  const id = 'intel-rpl-14700hx'; const p = P(id); const rg = p.power.range;
+  assert.strictEqual(p.power.typicalW, 69); assert.ok(typeof p.power.typicalNote === 'string' && /68.9W/.test(p.power.typicalNote) && /0.818/.test(p.power.typicalNote) && /推定・校正値/.test(p.power.typicalNote));
+  const base = E.evaluate(design.fromPreset(p, { mode: 'reproduce' }), ctx);
+  assert.strictEqual(base.edited, false); assert.ok(Math.abs(base.mt.errPct - 1.80) < 0.05, String(base.mt.errPct));
+  assert.strictEqual(base.mt.clockInfo.source, 'typical'); assert.strictEqual(base.mt.clockInfo.powerW, 69); assert.strictEqual(base.mt.clockFactor, 0.405 * Math.pow(69, 0.15));
+  assert.deepStrictEqual(base.mt.detail.map((d) => [d.type, +d.fGHz.toFixed(2)]), [['P', 4.20], ['E', 2.98]]);
+  // typicalW を外すと従来の range.maxW(157W)で +12.8%
+  const q = JSON.parse(JSON.stringify(p)); delete q.power.typicalW;
+  const r157 = F.mtScore(q, E.makeContext().cal, D.uarch, null); assert.ok(r157.ok);
+  assert.ok(Math.abs(r157.score / base.mt.score - 17369.902 / 15672.313) < 1e-3);
+  // 冷却 46.5W は typicalW より低いので制限が掛かる(制限前の出所は typical)。125W は typicalW より高いので効かない(編集済みでもない)
+  const c1 = evalC(id, 'laptop-standard'); assert.deepStrictEqual([c1.mt.clockInfo.source, c1.mt.clockInfo.coolingLimit.fromSource, c1.mt.clockInfo.coolingLimit.fromW, c1.mt.clockInfo.powerW], ['cooling', 'typical', 69, 46.5]); assert.strictEqual(c1.edited, true);
+  const c2 = evalC(id, 'laptop-gaming'); assert.strictEqual(c2.edited, false); assert.strictEqual(c2.mt.score, base.mt.score);
+  // TDP: typicalW(69W)と同じなら既定のまま(編集済みでない)。範囲の上限 157W を選ぶと既定ではなく(編集済み・公開値の比較なし)、W=157 で計算される
+  const tdp = (w) => { const r = design.setTdp(design.fromPreset(p, { mode: 'reproduce' }), w, rg); assert.ok(r.ok, r.reason); return E.evaluate(r.design, ctx); };
+  assert.strictEqual(tdp(69).edited, false); assert.strictEqual(tdp(69).mt.score, base.mt.score);
+  const t157 = tdp(157); assert.strictEqual(t157.edited, true); assert.strictEqual(t157.mt.errPct, null); assert.strictEqual(t157.mt.clockInfo.source, 'selected'); assert.ok(Math.abs(t157.mt.score - 17369.902) < 0.01, String(t157.mt.score));
+  // ST は typicalW の影響を受けない(typicalW を外した複製でも同じ。電力・温度・面積は評価がプリセットの power.typicalW を読まない〔106 件の評価の前後比較で ST・電力・温度・面積の不一致 0 を確認〕)
+  assert.strictEqual(F.stScore(p, E.makeContext().cal, D.uarch).score, F.stScore(q, E.makeContext().cal, D.uarch).score);
+  // typicalW を持つ SKU は 14700HX だけ(他の SKU の MT の W は従来どおり)
+  assert.deepStrictEqual(D.presets.filter((x) => x.power && x.power.typicalW !== undefined).map((x) => x.id), ['intel-rpl-14700hx']);
+  // UI の注記文(結果パネル): 典型電力を使っていることが出る
+  const res = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'ui', 'results.js'), 'utf8'); assert.ok(/典型電力 typicalW/.test(res) && /公表電力ではありません/.test(res));
 });

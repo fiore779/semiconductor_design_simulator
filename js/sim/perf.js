@@ -222,6 +222,9 @@
     // ユーザーが設定範囲内で選んだ TDP(package.tdpW を evaluate が power.tdpW として渡す)があればそれを優先
     const sel = pw.tdpW; const rg = pw.range;
     if (rg && typeof sel === 'number' && sel >= rg.minW && sel <= rg.maxW) return lim({ w: sel, source: 'selected' });
+    // 【2026-11-15 典型電力 typicalW(任意。14700HX だけ。[推定・校正値])】投稿機・レビュー機の典型的な持続電力 W。range.maxW や公表電力とは別の値で、MT のクロックを決める W としてだけ使う(選んだ TDP が無いとき、range.maxW より優先)。冷却の制限(lim)はそのまま効く(min(typicalW, coolingW))。冷却・温度・電力の計算は従来どおり公表電力基準(ここは mtPublishedW だけ)
+    const tw = pw.typicalW;
+    if (typeof tw === 'number' && tw > 0) return lim({ w: tw, source: 'typical' });
     const mx = pw.range && pw.range.maxW;
     if (typeof mx === 'number' && mx > 0) return lim({ w: mx, source: 'range.maxW' });
     const b = pw.base && pw.base.w;

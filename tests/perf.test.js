@@ -411,7 +411,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 2026-11-13(Windows のみ化 第 2 回): 標本内 MAE 0.0673 → 0.0821(実測 0.08208)。Cougar Cove の uCal で Panther Lake 系 5 件の必要係数が上がり、標本のばらつきが増えた(uCal なしでは 0.0689)
     // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 標本内 MAE 0.0821 → 0.0784
     // 2026-11-14(Cezanne の u × 0.95): 5800U の MT が下がり、標本内 MAE 0.0784 → 0.0729(実測 0.07291)。c の中央値 0.4114 は不変
-    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0600) < 0.001, /* 2026-11-15(285H・HX の u の比): 14700HX の MT が下がり、標本内 MAE 0.0639 → 0.0600(実測 0.06003)。c の中央値 0.4046 は不変(14700HX の k_i は中央値の下のまま) */ /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
+    assert.ok(Math.abs(inMae((W) => F.mtClockByPower(W)) - 0.0500) < 0.001, /* 2026-11-15(14700HX の typicalW 69W): 標本の 14700HX の W が 157W → 69W(mtPublishedW)になり、14700HX の MT 誤差 +12.8% → +1.8% で標本内 MAE 0.0600 → 0.0500(実測 0.05000)。c の中央値 0.4046 は不変(14700HX の k_i ÷ W_i^0.15 は 0.3505 → 0.3965 で中央値の下のまま) */ /* 2026-11-15(285H・HX の u の比): 14700HX の MT が下がり、標本内 MAE 0.0639 → 0.0600(実測 0.06003)。c の中央値 0.4046 は不変(14700HX の k_i は中央値の下のまま) */ /* 2026-11-15(Zen 3+ の u × 0.95): 7735HS の MT が下がり、標本内 MAE 0.0689 → 0.0639(実測 0.06395)。c の中央値 0.4046 は不変 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 標本内 MAE 0.0729 → 0.0689 */ '連続式の標本内 MAE ' + inMae((W) => F.mtClockByPower(W)));
     assert.ok(inMae((W) => F.mtClockByPower(W)) < inMae(() => 0.81));
     assert.ok(Math.abs(inMae(() => 0.81) - 0.0768) < 0.001, /* 2026-11-15(285H・HX の u の比): 0.0805 → 0.0768(実測 0.07678) */ /* 2026-11-15(Zen 3+ の u × 0.95): 0.0858 → 0.0805 */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): 0.0835 → 0.0858 */ 'X81 ' + inMae(() => 0.81)); /* 2026-11-14(Cezanne の u × 0.95): 0.0900 → 0.0835 */ /* 2026-11-14(Redwood Cove の uCal 99.5): 0.0899 → 0.0900 */ // 2026-11-13(Windows のみ化 第 2 回): 0.0910 → 0.0899(実測 0.08990)。連続式 0.0821 が小さいまま。以前: // 2026-11-10 γ=0.30 で 0.0890 → 0.0911、HX 取り直し後 0.0911 → 0.0835、2026-11-13 の Windows のみ GB7 差し替えで 0.0835 → 0.0910(実測 0.09098)。連続式 0.0673 が最小のまま // assert.ok(Math.abs(inMae((W) => (W <= 60 ? 0.84 : 0.81)) - 0.0897) < 0.001, 'X2 ' + inMae((W) => (W <= 60 ? 0.84 : 0.81)));
   }
@@ -435,7 +435,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
   // 2026-11-13(Windows のみ化 第 2 回): LOO MAE 0.0694 → 0.0905(実測 0.09047)。閾値 < 0.115 は満たす
   // 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): LOO MAE 0.0905 → 0.0842。閾値 < 0.115 は満たす
   // 2026-11-14(Cezanne の u × 0.95): LOO MAE 0.0842 → 0.0786(実測 0.07861)
-  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0660) < 0.001, /* 2026-11-15(285H・HX の u の比): LOO MAE 0.0700 → 0.0660(実測 0.06603) */ /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
+  assert.ok(Math.abs(mae(loo.map((l) => l.e)) - 0.0559) < 0.001, /* 2026-11-15(14700HX の typicalW 69W): LOO MAE 0.0660 → 0.0559(実測 0.05594)。一律 0.81 は 0.0768 のまま */ /* 2026-11-15(285H・HX の u の比): LOO MAE 0.0700 → 0.0660(実測 0.06603) */ /* 2026-11-15(Zen 3+ の u × 0.95): LOO MAE 0.0749 → 0.0700(実測 0.06998) */ /* 2026-11-15(DRAM 遅延 dramLat・c 0.405): LOO MAE 0.0786 → 0.0749 */ 'LOO MAE(固定値 0.0749): ' + mae(loo.map((l) => l.e)));
   // 2026-11-07: Zen 3 の代表(5800X)を加えた結果、一律 0.81 の MAE は 0.1268 → 0.0993 に下がり、旧閾値 > 0.12 を満たさなくなった(帯別 LOO は 0.0986)。帯モデルが一律 0.81 より明確に良い、という主張は弱まった(差は 0.0007)。
   // 閾値を下げて通すのではなく、他の帯テストと同じ「既知の値として固定」する方式に直した(Zen 3 代表化の直後は実測 0.0993。公開値の取り直し後は下の 0.1063 に固定し直した)。ユーザー回答「閾値を実測に合わせて緩める」(2026-11-07)の対象は LOO MAE の閾値(0.11 → 0.115)だけで、
   // この一律 0.81 の値の固定はその回答の対象ではない。帯別が一律 0.81 より良いかは設計書 §13.4 の判断待ち。相対比較(LOO < 一律 0.81)は残る
@@ -450,7 +450,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
   // 2026-11-05(265K の P boost 5.5→5.4 で Lion Cove の u を再校正): 帯 0 の中央値 0.6882→0.6856、帯 1 は 0.7595→0.7558(丸めた係数 0.69/0.76 は不変)。LOO MAE 0.1045→0.1050、一律 0.81 は 0.1217→0.1247。LOO 誤差が 10% を超えるのは 7735HS(9.66%→10.14%)が加わって 3→4 件(閾値は動かしていない)
   // 2026-11-07: 14700HX(+14.7%)が加わって 4 → 5 件(事実の固定。閾値を当て込みで動かしたものではない)。Zen 3 の代表を加えた後も LOO 誤差が 10% 超は 5 件のまま(一律 0.81 の MAE は上の固定値 0.0993)
   // 2026-11-09 続き(指数 0.15): LOO 誤差が 10% 超は 5 → 3 件に減った(事実の固定)
-  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 3); /* 2026-11-15(DRAM 遅延・c 0.405): 4 → 3 件(事実の固定。閾値は動かしていない) */ /* 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 3 → 4 件(事実の固定。閾値は動かしていない) */ // 2026-11-13(Windows のみの GB7 差し替え・c=0.411): 2 → 3 件(事実の固定。閾値は動かしていない)。以前: 2026-11-10(γ=0.30): 3 → 2 件
+  assert.strictEqual(loo.filter((l) => Math.abs(l.e) > 0.10).length, 2); /* 2026-11-15(14700HX の typicalW 69W): 3 → 2 件(事実の固定。閾値は動かしていない) */ /* 2026-11-15(DRAM 遅延・c 0.405): 4 → 3 件(事実の固定。閾値は動かしていない) */ /* 2026-11-14(Redwood Cove の uCal 99.5・c=0.411): 3 → 4 件(事実の固定。閾値は動かしていない) */ // 2026-11-13(Windows のみの GB7 差し替え・c=0.411): 2 → 3 件(事実の固定。閾値は動かしていない)。以前: 2026-11-10(γ=0.30): 3 → 2 件
 });
 
 test('TDP 帯別係数: σ の校正(x86 の代表 4 件。スマホ SoC は除く)(代表は pc で係数 1.0)', () => {
@@ -889,14 +889,14 @@ test('uRatio: HX 3 件の P は Raptor Cove の u × 0.94。比は兄弟 14900HX
   // 基準の取り方で 0.93〜0.96 と動く(14700K 基準 0.929・14900K 基準 0.958)
   assert.ok(Math.abs((450.62 / pg('intel-rpl-14900hx')) / bk7 - 0.9288) < 0.0005); assert.ok(Math.abs((450.62 / pg('intel-rpl-14900hx')) / bk9 - 0.9584) < 0.0005);
   // 3 件の P: ratio の経路。誤差(旧 → 新): 14700HX ST +11.14 → +4.47・MT +17.14 → +12.83(ng のまま)、14900HX ST +8.18 → +1.69・MT +5.98 → +2.52、13980HX ST +6.98 → +0.56・MT +5.63 → +2.19
-  const want = { 'intel-rpl-14700hx': [0.0447, 0.1283], 'intel-rpl-14900hx': [0.0169, 0.0252], 'intel-rpl-13980hx': [0.0056, 0.0219] };
+  const want = { 'intel-rpl-14700hx': [0.0447, 0.0180] /* 2026-11-15(14700HX の typicalW 69W): MT +12.83% → +1.80%(ok) */, 'intel-rpl-14900hx': [0.0169, 0.0252], 'intel-rpl-13980hx': [0.0056, 0.0219] };
   HX.forEach((id) => {
     const p = preset(id); const st = F.stScore(p, c, D.uarch);
     assert.strictEqual(st.corrSource, 'ratio', id); assert.strictEqual(st.corrUFrom, 'Raptor Cove', id); assert.strictEqual(st.corrUarch, R, id); assert.ok(Math.abs(st.corr - 0.94 * ru) < 1e-9, id); assert.strictEqual(st.confidence, 'low', id);
     assert.ok(Math.abs(st.score / gb7ByName[p.gb7].single - 1 - want[id][0]) < 0.0005, id + ' ST ' + st.score);
     assert.ok(Math.abs(F.mtScore(p, c, D.uarch, null).score / gb7ByName[p.gb7].multi - 1 - want[id][1]) < 0.0005, id + ' MT');
   });
-  assert.ok(Math.abs(F.mtScore(preset('intel-rpl-14700hx'), c, D.uarch, null).score / gb7ByName[preset('intel-rpl-14700hx').gb7].multi - 1) > 0.10); // 14700HX の MT は ng のまま(IPC では直らない)
+  assert.ok(Math.abs(F.mtScore(preset('intel-rpl-14700hx'), c, D.uarch, null).score / gb7ByName[preset('intel-rpl-14700hx').gb7].multi - 1) < 0.10); // 2026-11-15(typicalW 69W): 14700HX の MT は +1.8% で ok になった(IPC では直らず、典型電力で直した)。typicalW なしなら +12.8% の ng
   // デスクトップ・Raptor Lake の他 SKU・Golden Cove は不変('uarch' の u のまま)。uRatio を使うのは HX の P だけ
   ['intel-rpl-14700k', 'intel-rpl-14900k', 'intel-rpl-13900k', 'intel-rpl-13700k', 'intel-adl-12900k', 'intel-adl-12100'].forEach((id) => { const r = F.stScore(preset(id), c, D.uarch); assert.strictEqual(r.corrSource, 'uarch', id); assert.strictEqual(r.corrUarch, undefined, id); });
   const c2 = Object.assign({}, c, { u: Object.assign({}, c.u, { 'Raptor Cove': ru * 1.1 }) });

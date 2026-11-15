@@ -247,3 +247,11 @@ Windows 76 件の Maximum Frequency の中央値 4064MHz、4.4GHz 以上は 21 �
 - 結果(全 106 プリセットの前後比較): 7840HS の MT **-10.54% → +1.39%**(ng → ok)。ST は +8.82% のまま。**延べ ng 8 → 7**(ok → ng 0 件)。**ほかの SKU の ST・MT は完全一致**。σ 0.03151・連続式の c 0.4046(丸め 0.405)も不変(7840HS は c の標本 11 件に入っていないので、allCoreGHz は標本の k_i に効かない)。
 - 効かなくなる範囲(コードで確認): `mtScore` は allCoreGHz のあるコアに係数を掛けないので、7840HS の MT は選んだ TDP(35W)にも冷却クラス(laptop-thin-light 28W)にも効かない(試算で MT は 12619.6 のまま。allCoreGHz なしでは TDP 35W で下がる)。ST・電力・温度・面積は不変。
 - 追加の実装(逸脱として報告): ①`mtClockInfo` に `powerIgnored`(全コアが allCoreGHz を持つ mobile-pc だけ)、②`evaluate` の `coolLimited` を `powerIgnored` のとき偽に(MT が変わらないのに「冷却で制限」「編集済み」にしないため。TDP 選択の「編集済み」は従来どおり)、③`evaluate.allCoreInfo` と結果パネルの MT の注記・`calibrationWarnings` の info。デスクトップの allCoreGHz には出さない。
+
+### 10.2 E: 14700HX の MT(2 つ目のコミット)
+
+- 実装: プリセットの `power` に任意項目 `typicalW`(数。W)と `typicalNote` を追加し、14700HX に `typicalW: 69`([推定・校正値])。`mtPublishedW` の優先順位を「選んだ TDP > typicalW > range.maxW > base」とし、冷却の制限(min)はそのまま効く。`evaluate` の `tdpNonDefault` の既定値を typicalW(あれば)に。結果パネルの MT の係数の注記に「典型電力 typicalW」を出す。`tools/validate-data.js` に検査を追加。typicalW は保存データに載らない(プリセット由来のみ)。
+- 値の決め方: NBC の R23 マルチの比 14700HX ÷ 14900HX = 0.818 をモデルが再現する W = 68.9W → 69W。GB7 の比 0.824(約 72W)は追認。14700HX の公開値には合わせていない。
+- 結果(全 106 プリセットの前後比較): 14700HX の MT **+12.83% → +1.80%**(ng → ok)。ST は +4.47% のまま。**延べ ng 7 → 6**(7840HS と合わせて 8 → 6)。ほかの SKU の ST・MT は完全一致、電力・温度・面積も 14700HX を含め不変。連続式の c は 0.4046(丸め 0.405)で不変: 標本 11 件に 14700HX は入っており、k_i ÷ W_i^0.15 が 0.3505 → 0.3965 に動くが、中央値の下のまま。標本内 MAE 0.0600 → 0.0500、LOO MAE 0.0660 → 0.0559、一律 0.81 は 0.0768 のまま。
+- 試算(W → 14700HX MT): 157W +12.8%、100W +6.7%、80W +3.7%、69W +1.8%、55W -1.1%。調査メモ §5.2 の +1.7%(68.9W)は、69W で +1.80%。
+- 残る ng(ユーザー決定のとおり変えない): 5800U の ST・MT、7 Gen 1 の ST・MT、9200 の MT、888 の MT(合計 6 件)。
