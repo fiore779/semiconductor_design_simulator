@@ -116,6 +116,18 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 4.7 }], l3MB: 32, l2: '合計 4MB', memory: 'DDR4-3200, 2ch' },
     calib: true, calibNote: 'Zen 3 の代表(8コア 1 CCD、全コア同種。2026-11-07 追加。ユーザー指示「NG の原因をできれば特定して直して」の調査で、Zen 3 に代表がなく ISA 平均 u を使っていたことが 5800X・5600X・5950X の誤差の一因と分かったため。通常の手順 §5.3.1)', notes: 'AMD 公式の製品ページ(2026-11-06、[公表])とコア・クロック・L3・TDP・メモリが一致(PPT 142W は公式に項目なしで [二次] のまま)。L2 合計 4MB は依頼(2026-11-06)で示された公式値(原ページ未再取得)。以下は 2026-11-05 の記録: P コアのベース 3.8GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-7-5800x.c2362 。面積は設計書で未取得。TDP 105W・PPT 142W は 2026-11-05 に TechPowerUp(二次)で取得',
   });
+  // ---- 【2026-11-16 Ryzen X3D(3D V-Cache)】5800X3D・7800X3D・9800X3D(1 CCD の 3 件。データのみ。ユーザー指示「Ryzen X3D も追加して」。調査 docs/research/ryzen-x3d-2026-11-15.md)----
+  // 共通の方針: l3MB 96(= CCD 上の 32MB + 積層の 64MB)。V-Cache ダイは dies に入れない(積層ダイを面積・熱で二重に数えない設計が無いため)。L3 の追加遅延 +4 サイクルは入れない(調査で ok/ng が変わらず、任意)。
+  // power.base = TDP [公表]、power.peak = PPT [二次](AMD は PPT を公表しない)。addedIn:'M5b'(C1〜C5 の検証対象)、calib:false(校正に入れない)。
+  P.push({
+    id: 'amd-zen3-5800x3d', name: 'Ryzen 7 5800X3D', vendor: 'AMD', family: 'Zen 3 (Vermeer)', isa: 'x86', kind: 'pc', year: 2022, addedIn: 'M5b',
+    gb7: 'Zen 3: Ryzen 7 5800X3D(3.4GHz, 8c)',
+    dies: [die('Zen 3 CCD', 80.7, 'sec', 'tsmc-n7', '5600X と同じ値 [二次] SemiAccurate「A long look at AMD の Zen 3 core and chips」(2020-11-07)「Each CCD is 80.7mm^2」。AMD 公式の仕様一覧は CCD 74mm²・IOD 125mm²([公表]。調査 docs/research/ryzen-x3d-2026-11-15.md §1.1)で食い違い、未解決(既存の同じ世代の値に合わせた)。**V-Cache ダイ(Zen 3 は 41mm²。[二次] Tom\'s Hardware・TechPowerUp 5800X3D レビュー)は dies に入れていない**(CCD の上に積層するダイを面積・熱の合計で二重に数えない設計が無いため)。ダイ面積・熱の合計に V-Cache ダイは入らない。IOD は dies に入れず(Zen 3 の既存プリセットと同じ。飾りの IO ダイが別欄に出る)')],
+    power: { base: pw(105, 'pub', 'TDP 105W。AMD 公式の仕様一覧・製品ページ(https://www.amd.com/en/products/processors/desktops/ryzen/5000-series/amd-ryzen-7-5800x3d.html 、取得 2026-11-15、[公表])'), peak: null, range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 3', count: 8, smt: 2, baseGHz: 3.4, boostGHz: 4.5, allCoreGHz: 4.4 }], l3MB: 96, l3Note: '総容量 96MB = CCD 上の 32MB + 積層の 64MB(V-Cache)。内訳は [二次] TechPowerUp 5800X3D レビュー p.1(AMD 公式は総量 96MB のみ)', l2: '合計 4MB', memory: 'DDR4-3200, 2ch' },
+    notes: 'AMD 公式の仕様一覧・製品ページ(取得 2026-11-15、[公表])と、コア・クロック(ベース 3.4 / 最大 4.5GHz)・L3 96MB・L2 4MB・TDP 105W・DDR4-3200(2x1R、最大 128GB)・発売 2022-04-20 が一致。**PPT は AMD 公式に項目なし、TechPowerUp の 5800X3D 個別ページは取得できず出典未確認のため peak は null(未取得。5800X の 142W を流用しない)**。cfg.cores[0].allCoreGHz 4.4GHz(全コア負荷時の実測クロック [二次]。出典: KitGuru の 5800X3D レビュー「a 4.4GHz typical all-core speed after a 10-minute looped run of Cinebench R23」https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-7-5800x3d-review-worth-the-cache/3/ 、取得日 2026-11-15。5950X の 3.925GHz・7950X の 5.0GHz と同じ出典〔KitGuru〕・同じ測り方〔Cinebench R23 の 10 分ループ〕。入れないと MT +11.1% ng、入れると +9.0% ok。調査メモ §3.2)。dramLat は 5950X の値の代用 [推定]。L3 の追加遅延(+4 サイクル。[公表] AMD・[二次] Chips and Cheese)は入れていない(調査で ok/ng が変わらず、ユーザー決定で任意)。GB7 は Windows のみ・n=200 の中央値(取得 2026-11-15。設計書 §2.4)',
+    calib: false,
+  });
   // ---- M6 第5段(2026-10-31): Zen 3 デスクトップ 2 件(C5 の上限 2 件。mobile 補正と分離する標本用。addedIn:'M5b'、calib は false) ----
   P.push({
     id: 'amd-zen3-5600x', name: 'Ryzen 5 5600X', vendor: 'AMD', family: 'Zen 3 (Vermeer)', isa: 'x86', kind: 'pc', year: 2020, addedIn: 'M5b',
@@ -143,6 +155,15 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: true, calibNote: 'Geekbench 7 の基準機(2500 = Ryzen 7 7700)。8コア 1 CCD で単純',
   });
   P.push({
+    id: 'amd-zen4-7800x3d', name: 'Ryzen 7 7800X3D', vendor: 'AMD', family: 'Zen 4 (Raphael)', isa: 'x86', kind: 'pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Zen 4: Ryzen 7 7800X3D(4.2GHz, 8c)',
+    dies: P.find((p) => p.id === 'amd-zen4-7700').dies.map((d) => Object.assign({}, d, d.name === 'Zen 4 CCD' ? { note: '7700 と同じ値(既存の同じ世代と同じ)。AMD 公式の仕様一覧は CCD 71mm²・IOD 122mm²([公表]。調査 docs/research/ryzen-x3d-2026-11-15.md §1.1)で食い違い、未解決(既存の値に合わせた)。**V-Cache ダイ(Zen 4 は 36mm²、7nm。[二次] Tom\'s Hardware)は dies に入れていない**(CCD の上に積層するダイを面積・熱の合計で二重に数えない設計が無いため。ダイ面積・熱の合計に V-Cache ダイは入らない)' } : {})),
+    power: { base: pw(120, 'pub', 'TDP 120W。AMD 公式の仕様一覧・製品ページ(https://www.amd.com/en/products/processors/desktops/ryzen/7000-series/amd-ryzen-7-7800x3d.html 、取得 2026-11-15、[公表])'), peak: pw(162, 'sec', 'PPT 162W。AMD 公式に項目なし。TechPowerUp CPU データベース https://www.techpowerup.com/cpu-specs/ryzen-7-7800x3d.c3022 、Tom\'s Hardware 7950X3D レビュー「all have a base TPD of 120W and a max 162W PPT」(取得 2026-11-15、[二次])。PPT は公表されたソケットの電力上限で、実測ではない'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 8, smt: 2, baseGHz: 4.2, boostGHz: 5.0 }], l3MB: 96, l3Note: '総容量 96MB = CCD 上の 32MB + 積層の 64MB(V-Cache)。内訳は [二次] TechPowerUp・Tom\'s Hardware(AMD 公式は総量 96MB のみ)', l2: '合計 8MB', memory: 'DDR5-5200, 2ch' },
+    notes: 'AMD 公式の仕様一覧・製品ページ(取得 2026-11-15、[公表])と、コア・クロック(ベース 4.2 / 最大 5.0GHz)・L3 96MB・L2 8MB・TDP 120W・DDR5-5200(2x1R、最大 128GB)・発売 2023-04-06 が一致。PPT 162W は AMD 公式に項目なしで [二次]。全コアクロック(allCoreGHz)は出典が取れていない(TechPowerUp はグラフのみ)ので入れていない(未取得)。dramLat は 7950X3D の値(87.7ns [二次])を同じ Raphael の 7800X3D に当てた(代用ではないが SKU 自身の測定でもない。区分は 推定)。L3 の追加遅延(+4 サイクル)は入れていない(調査で ok/ng が変わらず、ユーザー決定で任意)。GB7 は Windows のみ・n=200 の中央値(取得 2026-11-15。設計書 §2.4)',
+    calib: false,
+  });
+  P.push({
     id: 'amd-zen4-7950x', name: 'Ryzen 9 7950X', vendor: 'AMD', family: 'Zen 4 (Raphael)', isa: 'x86', kind: 'pc', year: 2022,
     gb7: 'Zen 4: Ryzen 9 7950X(4.5GHz, 16c)',
     dies: [die('Zen 4 CCD ×2', 139.0, 'meas', 'tsmc-n5', '69.5 mm² × 2'), die('IOD', 117.8, 'sec', 'tsmc-n6', 'AMD ISSCC 2023 の発表を Tom\'s Hardware が表にした値 117.8mm²(2026-11-05 に原ページを確認、[二次]): https://www.tomshardware.com/news/amd-shares-new-second-gen-3d-v-cache-chiplet-details-up-to-25-tbs 。TechPowerUp は 122mm²(CPU データベースの I/O Die Size と 2024-07 のニュース https://www.techpowerup.com/324562/amd-granite-ridge-and-strix-point-zen-5-die-sizes-and-transistor-counts-confirmed )、124.7mm²(2022-08 のニュース https://www.techpowerup.com/298338/ )と食い違い、未解決(この値は Tom\'s Hardware の表に従った)。Granite Ridge の IOD は Raphael の 6nm cIOD の流用(TechPowerUp 324562 に明記)。IOD の縦横比 1.30 は floorplan.js の IOD_PLACE のまま(面積だけ入れた)')],
@@ -159,6 +180,15 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 5.5 }], l3MB: 32, l2MBPerCore: 1, l2: '合計 8MB', memory: 'DDR5-5600, 2ch' },
     notes: '2026-11-06: AMD 公式の製品ページでコア・クロック・L3 32MB・TDP 65W・DDR5-5600 の一致を確認([公表])。拡張 cTDP 105W・PPT 88W は公式に項目なし。L2 合計 8MB は依頼で示された公式値(原ページ未再取得。既存の l2MBPerCore:1 × 8 とも一致)',
     calib: true, calibNote: 'Zen 5 の代表(8コア 1 CCD、§5.3.1 の例)',
+  });
+  P.push({
+    id: 'amd-zen5-9800x3d', name: 'Ryzen 7 9800X3D', vendor: 'AMD', family: 'Zen 5 (Granite Ridge)', isa: 'x86', kind: 'pc', year: 2024, addedIn: 'M5b',
+    gb7: 'Zen 5: Ryzen 7 9800X3D(4.7GHz, 8c)',
+    dies: P.find((p) => p.id === 'amd-zen5-9700x').dies.map((d) => Object.assign({}, d, d.name === 'Zen 5 CCD' ? { note: '9700X と同じ値(既存の同じ世代と同じ。AMD 公式の X3D の製品ページに CCD・IOD の面積は無い)。**V-Cache ダイは dies に入れていない**: Zen 5 は CCD の下に置かれ CCD より各辺 50µm 大きい([二次] Tom Wassick の分解、Tom\'s Hardware 経由)が、面積は未取得。積層ダイを面積・熱の合計で二重に数えない設計が無いため、ダイ面積・熱の合計に V-Cache ダイは入らない' } : {})),
+    power: { base: pw(120, 'pub', 'TDP 120W。AMD 公式の仕様一覧・製品ページ(https://www.amd.com/en/products/processors/desktops/ryzen/9000-series/amd-ryzen-7-9800x3d.html 、取得 2026-11-15、[公表])'), peak: pw(162, 'sec', 'PPT 162W。AMD 公式に項目なし。Notebookcheck・HWBusters([二次]。調査メモは検索の要約で、原ページは未確認。HWCooling は 170W と食い違う。取得 2026-11-15)。PPT は公表されたソケットの電力上限で、実測ではない'), range: null },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 5', count: 8, smt: 2, baseGHz: 4.7, boostGHz: 5.2, allCoreGHz: 5.22 }], l3MB: 96, l3Note: '総容量 96MB = CCD 32MB + 積層の 64MB(V-Cache。Zen 5 では CCD の下)。内訳は [二次](AMD 公式は総量 96MB のみ)', l2MBPerCore: 1, l2: '合計 8MB', memory: 'DDR5-5600, 2ch' },
+    notes: 'AMD 公式の仕様一覧・製品ページ(取得 2026-11-15、[公表])と、コア・クロック(ベース 4.7 / 最大 5.2GHz)・L3 96MB・L2 8MB・TDP 120W・DDR5-5600(2x1R、最大 256GB)・発売 2024-11-07 が一致。PPT 162W は AMD 公式に項目なしで [二次](原ページ未確認)。cfg.cores[0].allCoreGHz 5.22GHz(全コア負荷時のクロック [二次]。出典: TechPowerUp の 9800X3D レビュー「The 9800X3D runs at 5.22 GHz all the time—no matter how many cores are active」https://www.techpowerup.com/review/amd-ryzen-7-9800x3d/26.html 、取得日 2026-11-15。MT はこのクロックで計算する。入れないと MT +0.09%、入れると +0.43%〔どちらも ok〕。調査メモ §3.2)。dramLat は 9950X の値の代用 [推定](Chips and Cheese は「V-Cache 品の DRAM 遅延は通常版とほぼ同じ」と書くが ns は取れず)。L3 の追加遅延(+4 サイクル)は入れていない(調査で ok/ng が変わらず、ユーザー決定で任意)。GB7 は Windows のみ・n=200 の中央値(取得 2026-11-15。設計書 §2.4)',
+    calib: false,
   });
   P.push({
     id: 'amd-zen5-9950x', name: 'Ryzen 9 9950X', vendor: 'AMD', family: 'Zen 5 (Granite Ridge)', isa: 'x86', kind: 'pc', year: 2024,
@@ -547,10 +577,10 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'intel-arl-285k': DL_ARL(true), 'intel-arl-265k': DL_ARL(false), 'intel-arl-275hx': DL_ARL(false), 'intel-arl-285h': DL_MTL(), 'intel-mtl-185h': DL_MTL(),
     'intel-lnl-268v': DL_LNL(true), 'intel-lnl-258v': DL_LNL(true), 'intel-lnl-256v': DL_LNL(true),
     'intel-ptl-x9-388h': DL_LNL(false), 'intel-ptl-x9-386h': DL_LNL(false), 'intel-ptl-x9-378h': DL_LNL(false), 'intel-ptl-x7-358h': DL_LNL(false), 'intel-ptl-u5-325': DL_LNL(false), 'intel-wcl-c5-320': DL_LNL(false),
-    'amd-zen3-5950x': DL_Z3(true), 'amd-zen3-5800x': DL_Z3(false), 'amd-zen3-5600x': DL_Z3(false), 'amd-zen3-5800u': DL_Z3(false),
+    'amd-zen3-5950x': DL_Z3(true), 'amd-zen3-5800x': DL_Z3(false), 'amd-zen3-5800x3d': DL_Z3(false), 'amd-zen3-5600x': DL_Z3(false), 'amd-zen3-5800u': DL_Z3(false),
     'amd-zen3p-7735hs': DL_PHX(false), 'amd-zen4-7840hs': DL_PHX(true),
-    'amd-zen4-7700': DL_Z4D(true), 'amd-zen4-7950x': DL_Z4D(true), 'amd-zen4-7945hx': DL_Z4D(false),
-    'amd-zen5-9950x': DL_Z5D(true), 'amd-zen5-9700x': DL_Z5D(false), 'amd-strix-hx370': DL_STRIX(true), 'amd-kraken-350': DL_STRIX(false),
+    'amd-zen4-7700': DL_Z4D(true), 'amd-zen4-7800x3d': DL_Z4D(true), 'amd-zen4-7950x': DL_Z4D(true), 'amd-zen4-7945hx': DL_Z4D(false),
+    'amd-zen5-9950x': DL_Z5D(true), 'amd-zen5-9700x': DL_Z5D(false), 'amd-zen5-9800x3d': DL_Z5D(false), 'amd-strix-hx370': DL_STRIX(true), 'amd-kraken-350': DL_STRIX(false),
     'amd-strixhalo-395': DL(140, '二次', 'Chips and Cheese の Strix Halo の測定(LPDDR5X-8000 で約 140ns。設計書 §5.3.3 J-3)。' + MEMO_SRC, 'LPDDR5X-8000(Strix Halo)'),
   };
   P.forEach((p) => { if (DRAM_LAT[p.id]) p.cfg = Object.assign({}, p.cfg, { dramLat: DRAM_LAT[p.id] }); });

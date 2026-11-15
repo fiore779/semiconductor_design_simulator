@@ -13,7 +13,7 @@ const HM = require('../js/sim/heatmap.js');
 
 const byId = (id) => D.presets.find((p) => p.id === id);
 const mk = (id) => design.fromPreset(byId(id));
-const IDS = ['amd-zen3-5600x', 'amd-zen3-5950x'];
+const IDS = ['amd-zen3-5600x', 'amd-zen3-5950x', 'amd-zen3-5800x3d']; // 2026-11-16: 5800X3D(Zen 3 の CCD 単独。IOD は dies に入れない)も飾りの IO ダイが付く。評価には入らない
 
 test('飾りのダイが付くのは、IOD のデータが無い Zen 3 の CCD 単独(5600X・5950X。IOD)と Panther Lake(GPU・Platform タイル)だけ。ほかには付かない', () => {
   const have = D.presets.filter((p) => mk(p.id).decorDies).map((p) => p.id).sort();

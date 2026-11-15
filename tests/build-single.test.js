@@ -38,7 +38,7 @@ test('外部 URL への参照(src / href / fetch / import / Worker / @import / u
   assert.ok(!/@import|url\(\s*["']?https?:/.test(norm('css/app.css')));
 });
 
-test('インライン版のスクリプトを、ブラウザと同じ条件(1 つずつ順に)で読み込める。プリセット 106 件・評価が動く', () => {
+test('インライン版のスクリプトを、ブラウザと同じ条件(1 つずつ順に)で読み込める。プリセット 109 件・評価が動く', () => {
   const { html } = build();
   const blocks = [...html.matchAll(/<script data-src="([^"]+)"[^>]*>\n([\s\S]*?)\n<\/script>/g)];
   assert.strictEqual(blocks.length, srcs.length);
@@ -50,7 +50,7 @@ test('インライン版のスクリプトを、ブラウザと同じ条件(1 �
   }
   const { evaluate, makeContext } = ctx.SDS.model.evaluate;
   const c = makeContext();
-  assert.strictEqual(c.presets.length, 106);
+  assert.strictEqual(c.presets.length, 109);
   const d = ctx.SDS.model.design.fromPreset(c.presets[0], { mode: 'reproduce' });
   const ev = evaluate(d, c);
   assert.ok(ev && typeof ev === 'object');
