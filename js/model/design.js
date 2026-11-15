@@ -645,6 +645,8 @@
   const ARL_RING_E_PRESETS = ['intel-arl-285k', 'intel-arl-265k', 'intel-arl-275hx', 'intel-arl-285h'];
   const CEZANNE = 'Zen 3 (Cezanne)';
   const CEZANNE_PRESETS = ['amd-zen3-5800u'];
+  const ZEN3P = 'Zen 3+ (Rembrandt-R)';
+  const ZEN3P_PRESETS = ['amd-zen3p-7735hs'];
   function serialize(design) { return JSON.stringify(design); }
   function parse(text) {
     let d; try { d = JSON.parse(text); } catch (e) { return { ok: false, reason: 'JSON として読めません' }; }
@@ -670,6 +672,12 @@
       const fixC = (c) => { if (c && c.uarch === 'Zen 3') c.uarch = CEZANNE; };
       [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixC); });
       (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixC(b); }); });
+    }
+    // 旧保存データの uarch 名(2026-11-15): Zen 3+(7735HS)も uarch 記録を「Zen 3」から「Zen 3+ (Rembrandt-R)」に分けた(u = Zen 3 の u × 0.95)。判定は Cezanne と同じ(presetId で 7735HS 由来だけ。Vermeer・5800U は変えない)
+    if (ZEN3P_PRESETS.includes(d.presetId)) {
+      const fixZ = (c) => { if (c && c.uarch === 'Zen 3') c.uarch = ZEN3P; };
+      [d.cfg, d.baseCfg].forEach((cfg) => { if (cfg && typeof cfg === 'object' && Array.isArray(cfg.cores)) cfg.cores.forEach(fixZ); });
+      (Array.isArray(d.dies) ? d.dies : []).forEach((die) => { if (die && Array.isArray(die.blocks)) die.blocks.forEach((b) => { if (b && b.kind === 'core') fixZ(b); }); });
     }
     const bad = checkShape(d);
     if (bad) return { ok: false, reason: bad };

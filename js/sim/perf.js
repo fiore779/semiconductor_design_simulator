@@ -111,18 +111,18 @@
     let corr = cal && cal.u && cal.u[core.uarch];
     let corrSource = 'uarch';
     // 同じコア設計の派生(Zen 5c など)は uarch.js の uFrom で借り先の uarch の u を使う(代表の u が無く借り先にあるときだけ。ISA 平均より先。設計書 §5.3.3 K)
-    let corrUFrom = null;
+    let corrUFrom = null; let corrUarch = null; // corrUarch(2026-11-15): ratio のコア自身の uarch 名(借り先が同じ Zen 3 の Cezanne と Zen 3+ の注記を分けるため。ratio のときだけ付く)
     if (corr == null && u && u.uFrom && cal && cal.u && cal.u[u.uFrom] != null) { corr = cal.u[u.uFrom]; corrUFrom = u.uFrom; }
     // 別の uarch の u に比を掛ける(uarch.js の uRatioOf・uRatio。2026-11-13 Arrow Lake のリング接続 E = Lion Cove の u × 0.90。借り先の u が動けば連動)。corrSource は 'ratio':
     // 比は MT から合わせた校正値で出典つきの u ではないため、calibrateMt の「全コア uarch 専用」の判定(corrSource === 'uarch')に通らず、σ の代表に入らない(循環を避ける。設計書 §5.3.0)
-    if (corr == null && u && u.uRatioOf && typeof u.uRatio === 'number' && cal && cal.u && cal.u[u.uRatioOf] != null) { corr = cal.u[u.uRatioOf] * u.uRatio; corrSource = 'ratio'; corrUFrom = u.uRatioOf; }
+    if (corr == null && u && u.uRatioOf && typeof u.uRatio === 'number' && cal && cal.u && cal.u[u.uRatioOf] != null) { corr = cal.u[u.uRatioOf] * u.uRatio; corrSource = 'ratio'; corrUFrom = u.uRatioOf; corrUarch = core.uarch; }
     if (corr == null) { corr = cal && cal.uIsa && cal.uIsa[core.isa || preset.isa]; /* 混合設計ではコアごとの isa(core.isa)を優先。通常のプリセットのコアには isa が無い */ corrSource = 'isa'; }
     const corrFrom = corrSource; // 補正の借り先('uarch'・'ratio'・'isa')。自作コアでは corrSource を 'clone' にするので別に残す
     if (isClone) corrSource = 'clone';
     if (corr == null) return { ok: false, reason: '補正係数なし(校正データ不足)' };
     const memActive = !!(mem && mem.active);
     return {
-      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(dl ? { dramLat: dl } : {}), ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
+      ok: true, score: corr * r.ipc * f * (memActive ? mem.stBwFactor : 1), ipc: r.ipc, fGHz: f, corr, ...(dl ? { dramLat: dl } : {}), ...(memActive ? { memory: mem } : {}), corrSource, ...(corrUFrom ? { corrUFrom } : {}), ...(corrUarch ? { corrUarch } : {}), ...(isClone ? { corrFrom, clone: true } : {}), core, noL3, l3Floor: !!r.l3Floor, l3Ccds: !noL3 && ccds > 1 ? ccds : null,
       confidence: isClone || corrSource === 'isa' || corrSource === 'ratio' ? 'low' : r.confidence, parts: r.parts, missing: r.missing,
       ...(r.fallback ? { fallback: true, note: r.note } : {}),
     };
@@ -282,7 +282,7 @@
       if (st.l3Floor) anyFloor = true;
       const smtGain = (c.smt || 1) === 2 ? 1 + mp.gammaSmt : 1;
       sum += st.score * c.count * smtGain; threads += c.count * (c.smt || 1);
-      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: clockCap ? f / f0 : applied, ...(clockCap ? { clockCap: true } : {}), clockSource, corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
+      detail.push({ type: c.type, count: c.count, perCore: st.score, fGHz: f, clockFactor: clockCap ? f / f0 : applied, ...(clockCap ? { clockCap: true } : {}), clockSource, corrSource: st.corrSource, ...(st.corrUFrom ? { corrUFrom: st.corrUFrom } : {}), ...(st.corrUarch ? { corrUarch: st.corrUarch } : {}), ...(st.clone ? { corrFrom: st.corrFrom, clone: true } : {}), confidence: st.confidence });
     }
     const eta = 1 / (1 + mp.sigma * (threads - 1));
     // メモリ構成の MT 係数(§5.2.4)。基準構成では 1(厳密)。ST の内部呼び出しには掛けず、ここで 1 回だけ掛ける

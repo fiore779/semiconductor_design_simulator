@@ -398,3 +398,34 @@ test('ratio の注記: 5800U は ST・MT とも info「Cezanne の u は Zen 3 �
   assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']);
   assert.ok(Math.abs(r.st.errPct - 14.44) < 0.05 && Math.abs(r.mt.errPct - 14.12) < 0.05) /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。u・uCal・σ が動き、c 0.405): 5800U の ST +14.26 → +14.44%、MT +15.90 → +14.12% */ /* 2026-11-15: MT +15.68 → +15.90(c 0.411 → 0.412) */; // ng のまま(母集団の差。設計書 §5.3.0【2026-11-14 Cezanne】)
 });
+
+// 2026-11-15(ユーザー指示「スコアと動作クロックから IPC を取得して直して」): Zen 3+(7735HS)の uarch 名を「Zen 3」→「Zen 3+ (Rembrandt-R)」に分けた。旧保存データの移行(Cezanne と同じ方式)と ratio の注記
+test('旧保存データの移行: 旧名「Zen 3」で保存した 7735HS は、parse で cfg・baseCfg・blocks の 3 か所とも「Zen 3+ (Rembrandt-R)」になり、評価は新規作成と同じ値。Vermeer(5800X)・5800U は変えない', () => {
+  const ZP = 'Zen 3+ (Rembrandt-R)';
+  const fresh = design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3p-7735hs'), { mode: 'improve' });
+  const old = JSON.parse(design.serialize(fresh)); let n = 0;
+  const back = (c) => { if (c.uarch === ZP) { c.uarch = 'Zen 3'; n++; } };
+  old.cfg.cores.forEach(back); old.baseCfg.cores.forEach(back); old.dies.forEach((die) => die.blocks.forEach(back));
+  assert.ok(n >= 3); assert.ok(!JSON.stringify(old).includes(ZP));
+  const r = design.parse(JSON.stringify(old)); assert.ok(r.ok, r.reason);
+  assert.deepStrictEqual(r.design, JSON.parse(design.serialize(fresh)));
+  const a = E.evaluate(r.design, ctx); const b = E.evaluate(fresh, ctx);
+  assert.strictEqual(a.st.score, b.st.score); assert.strictEqual(a.mt.score, b.mt.score); assert.strictEqual(a.st.corrSource, 'ratio'); assert.strictEqual(a.edited, false);
+  const v = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800x')))).design;
+  assert.ok(v.cfg.cores.every((c) => c.uarch === 'Zen 3')); assert.ok(!JSON.stringify(v).includes(ZP));
+  const u = design.parse(design.serialize(design.fromPreset(D.presets.find((p) => p.id === 'amd-zen3-5800u')))).design;
+  assert.ok(u.cfg.cores.every((c) => c.uarch === 'Zen 3 (Cezanne)')); assert.ok(!JSON.stringify(u).includes(ZP));
+});
+
+test('ratio の注記: 7735HS は ST・MT とも info「Zen 3+ の u は Zen 3 の u × 0.95 [推定・校正値]」(Cezanne の注記とは別。借り先は同じ Zen 3 でも corrUarch で分ける)。5800U・Vermeer には出ない', () => {
+  assert.ok(E.RATIO_INFO_ZEN3P.startsWith('Zen 3+ の u は Zen 3 の u × 0.95 [推定・校正値]'));
+  assert.strictEqual(E.ratioInfo('Zen 3', 'Zen 3+ (Rembrandt-R)'), E.RATIO_INFO_ZEN3P); assert.strictEqual(E.ratioInfo('Zen 3', 'Zen 3 (Cezanne)'), E.RATIO_INFO_CEZANNE);
+  const w = ev('amd-zen3p-7735hs').warnings;
+  assert.ok(w.some((x) => x.level === 'info' && x.text === 'MT: ' + E.RATIO_INFO_ZEN3P)); assert.ok(w.some((x) => x.level === 'info' && x.text === 'ST: ' + E.RATIO_INFO_ZEN3P));
+  assert.ok(!w.some((x) => x.text.includes(E.RATIO_INFO_CEZANNE)));
+  ['amd-zen3-5800u', 'amd-zen3-5800x', 'amd-zen3-5600x', 'amd-zen3-5950x'].forEach((id) => assert.ok(!ev(id).warnings.some((x) => x.text.includes(E.RATIO_INFO_ZEN3P)), id));
+  const r = ev('amd-zen3p-7735hs'); assert.strictEqual(r.mt.inRatioSet, false); assert.strictEqual(r.st.inRatioSet, false); assert.strictEqual(r.st.corrUFrom, 'Zen 3'); assert.strictEqual(r.st.corrUarch, 'Zen 3+ (Rembrandt-R)');
+  assert.deepStrictEqual(E.ratioFroms(r.mt), ['Zen 3']); assert.deepStrictEqual(E.ratioInfosOf(r.mt), [E.RATIO_INFO_ZEN3P]);
+  // ST +5.05%・MT +2.68%(旧 +10.58%・+8.08%。ng → ok)。公開値は 7735HS の Windows のみ n=200 の中央値(ST 1832 / MT 8341)
+  assert.ok(Math.abs(r.st.errPct - 5.05) < 0.05 && Math.abs(r.mt.errPct - 2.68) < 0.05); assert.ok(Math.abs(r.st.errPct) <= 10 && Math.abs(r.mt.errPct) <= 10);
+});

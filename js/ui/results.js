@@ -185,7 +185,7 @@
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note always'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note always'));
       (ev.mt.detail || []).filter((d) => d.corrSource === 'isa').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${NO_OWN_CORR}`, 'warn-note')));
-      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.ratioInfo(d.corrUFrom)}`, 'warn-note')));
+      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.ratioInfo(d.corrUFrom, d.corrUarch)}`, 'warn-note')));
     }
     l3Notes(ev.mt).forEach((n) => mtExtra.push(n));
     el.appendChild(mixPerfCard('マルチ性能 (GB7 MT) 混合設計(予測)', ev.mt, mtExtra, 'res:mt'));
@@ -205,7 +205,7 @@
     // ST
     const stExtra = [];
     if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
-    if (ev.st.ok && ev.st.corrSource === 'ratio') stExtra.push(note(root.SDS.model.evaluate.ratioInfo(ev.st.corrUFrom), 'warn-note'));
+    if (ev.st.ok && ev.st.corrSource === 'ratio') stExtra.push(note(root.SDS.model.evaluate.ratioInfo(ev.st.corrUFrom, ev.st.corrUarch), 'warn-note'));
     if (ev.st.ok && ev.st.dramLat) stExtra.push(note(root.SDS.model.evaluate.dramLatInfo(ev.st.dramLat), ev.st.dramLat.s === '推定' ? 'warn-note' : undefined));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note always'));
     l3Notes(ev.st).forEach((n) => stExtra.push(n));
@@ -235,7 +235,7 @@
       }
       if (ev.mt.mixedClock) mtExtra.push(note('一部コアのブーストクロックが未取得で基本クロックを使っており、数値が歪んでいます。', 'warn-note always'));
       if (ev.mt.fallback) mtExtra.push(note('in-order コアの仮の IPC を含むため信頼できません。', 'warn-note always'));
-      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.ratioInfo(d.corrUFrom)}`, 'warn-note')));
+      (ev.mt.detail || []).filter((d) => d.corrSource === 'ratio').forEach((d) => mtExtra.push(note(`${d.label || d.type}(${ghz(d.fGHz)}): ${root.SDS.model.evaluate.ratioInfo(d.corrUFrom, d.corrUarch)}`, 'warn-note')));
     }
     if (memDesc && ev.mt.ok) ocNotes.forEach((t) => mtExtra.push(note(t, 'warn-note')));
     if (memDesc && ev.mt.ok) mtExtra.push(note(`${memDesc.config}。${memDesc.mt}。メモリ構成による係数は推定(確度:低。GB7 の ST 実測は 0 件、帯域と遅延は分離できていない)`, 'warn-note'));
