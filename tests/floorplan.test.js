@@ -39,7 +39,7 @@ test('全プリセット: テンプレートごとの件数(Kraken Point など�
   assert.strictEqual(sum, presets.length);
   FP.TEMPLATE_IDS.forEach((t) => assert.ok(n[t] > 0, `${t} に当たるプリセットが無い`));
   assert.ok(n.other > 0);
-  assert.strictEqual(n['amd-apu'], 8, 'amd-apu: Kraken Point 追加後の件数(2026-11-16: Phoenix 2 の 7545U を追加して 7 → 8)');
+  assert.strictEqual(n['amd-apu'], 9, 'amd-apu: Kraken Point 追加後の件数(2026-11-16(その 4): Phoenix 2 の 7545U を外し、8500G・8700G を追加して 7 → 9)');
 });
 
 test('全プリセット: ブロックはダイ内に収まり、重ならず、検証の警告が無い', () => {

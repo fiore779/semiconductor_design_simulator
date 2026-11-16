@@ -183,7 +183,8 @@ window.SDS_DATA = window.SDS_DATA || {};
     W('am4-unconfirmed', 'AMD AM4(Zen 1・Zen+・Raven Ridge)', 'unknown', { basis: [b('推定', `蓋の下の配置は Zen 3(5600X)でのみ確認。Zen 1・Zen+・Raven Ridge は${NOPHOTO}`)] }),
     W('intel-mobile-unconfirmed', 'Intel モバイル BGA(Panther Lake・Wildcat Lake)', 'unknown', { basis: [b('推定', `Panther Lake・Wildcat Lake は${NOPHOTO}`)] }),
     W('intel-hx-bga', 'Intel HX(BGA)', 'unknown', { basis: [b('推定', `13980HX で検索した写真は実際には 13900K(LGA1700)で、HX の BGA の上面の写真は${NOPHOTO}`)] }),
-    W('amd-fp-unconfirmed', 'AMD モバイル単一ダイ(Strix Point・Rembrandt-R・Cezanne・Phoenix 2)', 'unknown', { basis: [b('推定', `Strix Point(HX 370)・Rembrandt-R(7735HS)・Cezanne(5800U)・Phoenix 2(7545U)は${NOPHOTO}`)] }),
+    W('amd-fp-unconfirmed', 'AMD モバイル単一ダイ(Strix Point・Rembrandt-R・Cezanne)', 'unknown', { basis: [b('推定', `Strix Point(HX 370)・Rembrandt-R(7735HS)・Cezanne(5800U)は${NOPHOTO}`)] }),
+    W('am5-apu', 'AMD AM5 の APU(Ryzen 8000G。8500G・8700G)', 'unknown', { basis: [b('推定', `AM5 の蓋付きの APU(Phoenix)は${NOPHOTO}。AM5 の既存の配置(Raphael・Granite Ridge の 2 チップレット構成の写真)は、モノリシックのダイの APU に当てはまるか未確認のため流用していない`)] }),
     W('amd-fp11', 'AMD Strix Halo(FP11)', 'unknown', { basis: [b('二次', `CES 2025 の写真(Tom\'s Hardware)は低解像度で、個数・向きを判断できなかった(左右に縦の列、下辺に 1 列に見える)`, URL.ces25)] }),
     W('amd-sp3', 'AMD SP3(EPYC)', 'unknown', { basis: [b('推定', `EPYC 7401 は${NOPHOTO}`)] }),
     W('apple-m-unconfirmed', 'Apple M 系(M1 以外)', 'unknown', { basis: [b('推定', `M1 Pro・Max・Ultra・M2〜M5 は${NOPHOTO}`)] }),
@@ -204,7 +205,8 @@ window.SDS_DATA = window.SDS_DATA || {};
   put('intel-mobile-unconfirmed', 'intel-ptl-x9-388h intel-ptl-x9-386h intel-ptl-x9-378h intel-ptl-x7-358h intel-ptl-u5-325 intel-wcl-c5-320');
   put('intel-hx-bga', 'intel-rpl-13980hx intel-rpl-14900hx intel-rpl-14700hx intel-arl-275hx');
   put('amd-fp-ring', 'amd-kraken-350 amd-zen4-7840hs');
-  put('amd-fp-unconfirmed', 'amd-strix-hx370 amd-zen3p-7735hs amd-zen3-5800u amd-zen4-7545u');
+  put('amd-fp-unconfirmed', 'amd-strix-hx370 amd-zen3p-7735hs amd-zen3-5800u');
+  put('am5-apu', 'amd-zen4-8500g amd-zen4-8700g');
   put('amd-fl1', 'amd-zen4-7945hx');
   put('amd-fp11', 'amd-strixhalo-395');
   put('amd-sp3', 'amd-epyc-7401');

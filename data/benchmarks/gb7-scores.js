@@ -404,11 +404,19 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "AMD",
-  "name": "Zen 4 モバイル(Phoenix 2): Ryzen 5 7545U(3.2GHz, 6c)",
-  "single": 2221,
-  "multi": 9805,
+  "name": "Zen 4 デスクトップ APU(Phoenix 2): Ryzen 5 8500G(3.5GHz, 6c)",
+  "single": 2361,
+  "multi": 10631,
   "kind": "実測",
-  "n": 14
+  "n": 132
+ },
+ {
+  "group": "AMD",
+  "name": "Zen 4 デスクトップ APU(Phoenix): Ryzen 7 8700G(4.2GHz, 8c)",
+  "single": 2352,
+  "multi": 14129,
+  "kind": "実測",
+  "n": 132
  },
  {
   "group": "AMD",

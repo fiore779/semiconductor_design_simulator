@@ -379,8 +379,6 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     if (['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v', 'intel-ptl-x9-388h', 'intel-arl-275hx'].includes(p.id)) return;
     // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX。calib:false)は連続式の標本に入れない(係数は動かさない。検証用。設計書 §13.4 項目⑦)
     if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id)) return;
-    // 2026-11-16: Phoenix 2 の 7545U(amd-zen4-7545u。calib:false。公開値の標本はミニ PC 2 系列の 14 件で、MT は cTDP 30W に対し -14.1%)も連続式の標本に入れない(係数は動かさない。docs/research/phoenix2-2026-11-16.md)
-    if (p.id === 'amd-zen4-7545u') return;
     if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, W: w.w, r: (lo + hi) / 2 / Math.pow(w.w, F.MT_CLOCK_POWER.exp) });
@@ -844,7 +842,7 @@ test('dramLat: ST の dramNs = cfg.dramLat.ns(無ければ 85ns)。MT には入�
   assert.ok(Math.abs(c.mt.sigma - 0.03151202046273477) < 1e-12);
   assert.deepStrictEqual(['Golden Cove', 'Raptor Cove', 'Cougar Cove', 'Redwood Cove'].map((k) => c.u[k]), [116.4, 116.4, 102.1, 102.8]);
   // 区分: 実測・二次・推定。推定(別の SKU の値の代用)は src が「代用:」で始まる。値の例
-  const withDl = D.presets.filter((p) => p.cfg.dramLat); assert.strictEqual(withDl.length, 47); /* 2026-11-16(その 3): Phoenix 2 の 7545U の dramLat(7840HS の値の代用 [推定])で 46 → 47 */ /* 2026-11-16(その 2): 7950X3D・9950X3D の dramLat で 44 → 46 */ /* 2026-11-16: Ryzen X3D 3 件(5800X3D・7800X3D・9800X3D)の dramLat を追加 41 → 44(σ・uCal は不変) */
+  const withDl = D.presets.filter((p) => p.cfg.dramLat); assert.strictEqual(withDl.length, 48); /* 2026-11-16(その 4): 7545U を外し、8500G・8700G の dramLat(7840HS の値の代用 [推定])を追加して 47 → 48 */ /* 2026-11-16(その 3): Phoenix 2 の 7545U の dramLat(7840HS の値の代用 [推定])で 46 → 47 */ /* 2026-11-16(その 2): 7950X3D・9950X3D の dramLat で 44 → 46 */ /* 2026-11-16: Ryzen X3D 3 件(5800X3D・7800X3D・9800X3D)の dramLat を追加 41 → 44(σ・uCal は不変) */
   withDl.forEach((p) => { const d = p.cfg.dramLat; assert.ok(['実測', '二次', '推定'].includes(d.s), p.id); assert.ok(d.ns >= 70 && d.ns <= 150 && d.src && d.cfg, p.id); if (d.s === '推定') assert.ok(/^代用:/.test(d.src), p.id); });
   const ns = (id) => preset(id).cfg.dramLat && preset(id).cfg.dramLat.ns;
   assert.deepStrictEqual(['amd-zen4-7840hs', 'amd-strix-hx370', 'amd-kraken-350', 'amd-zen3p-7735hs', 'amd-zen3-5800u', 'intel-arl-285h', 'intel-lnl-268v', 'amd-zen5-9700x'].map(ns), [103.3, 128, 128, 103.3, 78.8, 148, 131.4, 70]);
