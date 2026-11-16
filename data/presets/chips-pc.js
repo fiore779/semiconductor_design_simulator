@@ -221,7 +221,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false,
   });
   P.push({
-    id: 'amd-strix-hx370', name: 'Ryzen AI 9 HX 370', vendor: 'AMD', family: 'Strix Point', isa: 'x86', kind: 'mobile-pc', year: 2024,
+    id: 'amd-strix-hx370', name: 'Ryzen AI 9 HX 370', vendor: 'AMD', family: 'Zen 5 (Strix Point)', isa: 'x86', kind: 'mobile-pc', year: 2024,
     gb7: 'Strix Point: Ryzen AI 9 HX 370(2.0GHz, 12c)',
     errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2567(チャート 2350 の 1.093 倍))で、誤差の約半分を説明する。残りは +8.3% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で HX 370 約 128ns([二次])で、これを入れても ST は約 -2.8% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 92% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J', mt: 'Zen 5c(8 個)の ST 補正を Zen 5 の u に揃えて -24.4% → -21.9%(2026-11-02)、帯 0 の再校正(0.65 → 0.69、2026-11-05)で -21.9% → -17.7%(改善)。ユーザー申告(2026-11-05)で Zen 5c のブーストを 3.3 → 3.4GHz に更新して -17.7% → -16.5% にしたが、AMD 公式(2026-11-06)が 3.3GHz だったため公式優先で 3.4 → 3.3GHz に戻し、-16.5% → -17.7%。残りは、54W 級の帯係数 0.69 に対し公開値と一致する係数が 0.869(申告の 3.4GHz のときは 0.854)で、標本 11 件の中で最も高い側であること(5800U 0.498・7735HS 0.639・14700HX 0.654)。原因は未特定(Zen 5 + Zen 5c の持続クロック、チャートの偏り、並列スケールの切り分けはできていない)。設計書 §5.3.3 K' },
     dies: [die('Strix Point (モノリシック)', 225.6, 'meas', 'tsmc-n4')],
@@ -231,7 +231,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     calib: false,
   });
   P.push({
-    id: 'amd-kraken-350', name: 'Ryzen AI 7 350', vendor: 'AMD', family: 'Kraken Point', isa: 'x86', kind: 'mobile-pc', year: 2025, addedIn: 'M5b',
+    id: 'amd-kraken-350', name: 'Ryzen AI 7 350', vendor: 'AMD', family: 'Zen 5 (Kraken Point)', isa: 'x86', kind: 'mobile-pc', year: 2025, addedIn: 'M5b',
     gb7: 'Kraken Point: Ryzen AI 7 350(2.0GHz, 8c)',
     dies: [die('Kraken Point (モノリシック)', null, null, 'tsmc-n4', '面積は未取得(195 mm² は出典不明の DB サイトのみのため採用しない)。プロセスは TSMC N4P([二次] Wikipedia)だが nodes.js には N4 のみのため N4 で代用')],
     power: { base: pw(28, 'pub', '既定 TDP 28W・cTDP 15〜54W。AMD 公式ページ(2026-11-06、[公表])と一致。区分 sec → pub'), peak: null, range: { minW: 15, maxW: 54 } },
@@ -244,7 +244,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     notes: 'Zen 5 ×4 + Zen 5c ×4(16 スレッド)・Zen 5 最大 5.0GHz / Zen 5c 最大 3.5GHz・ベース 2.0GHz・L2 1MB/コア・iGPU Radeon 860M 8CU 3.0GHz・NPU XDNA 2 50 TOPS・TDP 28W(cTDP 15〜54W)・FP8・2025 年は [二次] Wikipedia「Template:AMD Ryzen AI Mobile 300 series」(原ページ直接取得、2026-10-31)。Zen 5c のベースクロック 2.0GHz は 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。旧: 未取得): https://www.techpowerup.com/cpu-specs/ryzen-ai-7-350.c4004 。ダイ面積・トランジスタ数・L3 内訳・ピーク電力は未取得。GB7 は Geekbench チャート値(ST 2116 / MT 11354)だが検索要約のみで原ページ未確認(403)。Notebookcheck の 2567 / 14103 は 1 件のみでチャートより約 2 割高く出る傾向があるため使わない。docs/research/kraken-point.md 参照。2026-11-06: AMD 公式ページでクロック・L3 16MB・TDP 28W(cTDP 15〜54W)の一致を確認し電力の区分を pub に。L2 合計 8MB(ノート: 上の「L2 1MB/コア」× 8)は依頼で示された公式値(原ページ未再取得)',
   });
   P.push({
-    id: 'amd-strixhalo-395', name: 'Ryzen AI Max+ 395', vendor: 'AMD', family: 'Strix Halo', isa: 'x86', kind: 'mobile-pc', year: 2025,
+    id: 'amd-strixhalo-395', name: 'Ryzen AI Max+ 395', vendor: 'AMD', family: 'Zen 5 (Strix Halo)', isa: 'x86', kind: 'mobile-pc', year: 2025,
     gb7: 'Strix Halo: Ryzen AI Max+ 395(3.0GHz, 16c)',
     errCause: { st: 'モデルの ST がチャートより高い主因は、モバイルのチャート平均が最良条件より低いこと(Notebookcheck の GB6 ラボ値からの推定 2616(チャート 2423 の 1.079 倍))で、誤差の約半分を説明する。残りは +7.1% で原因未特定。DRAM 遅延はモデルでは一定 85ns(メモリ種別は未使用)だが、実測は Chips and Cheese で Strix Halo 約 140ns〔GPU 負荷なしの基準〕([二次])で、これを入れても ST は約 -3.2% で足りない。残りの候補はクロックが max boost に届かない分(実効クロック 93% で説明できる)で、実クロックは未取得(Geekbench Browser は 403)。設計書 §5.3.3 J' },
     dies: [die('Zen 5 CCD ×2', 134.2, 'meas', 'tsmc-n4', '67.1 mm² × 2'), die('SoC/iGPU ダイ', 307.6, 'meas', 'tsmc-n4')],
@@ -348,6 +348,16 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     power: { base: pw(35, 'pub', 'Default TDP 35〜54W(AMD 公式は範囲表記)の下端 35W を採用。AMD 公式ページ(2026-11-06、[公表])。区分 sec → pub。範囲の下端を既定値とした選択はユーザー未確認。2026-11-05 は TechPowerUp https://www.techpowerup.com/cpu-specs/ryzen-7-7840hs.c3033 で取得'), peak: null, range: { minW: 35, maxW: 54 } },
     cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 8, smt: 2, baseGHz: 3.8, boostGHz: 5.1, allCoreGHz: 4.40 }], l3MB: 16, l2: '合計 8MB', memory: 'DDR5-5600 / LPDDR5X-7500(AMD 公式 [公表]。2 チャネル)' },
     calib: false, notes: '2026-11-06: AMD 公式ページでコア・クロック・L3 16MB・メモリ(DDR5-5600 / LPDDR5X-7500)・TDP 範囲 35〜54W の一致を確認([公表]。チャネル数「2」は TechPowerUp の値のまま)。L2 合計 8MB は依頼で示された公式値(原ページ未再取得)。以下は 2026-11-05 以降の記録: メモリ DDR5-5600 / LPDDR5X-7500・2 チャネルは 2026-11-05 に TechPowerUp CPU データベースの原ページを Chrome で確認([二次]。https://www.techpowerup.com/cpu-specs/ryzen-7-7840hs.c3033)。「2 チャネル」は意図的: 電力モデルが「数字+ch」の表記でチャンネル数を読むため、2ch と書くと電力・温度が変わる。電力(TDP 35W・cTDP 35〜54W)は 2026-11-05 に TechPowerUp(二次)の原ページで取得。ピーク電力は未取得。AMD 公式(2026-11-06、[公表]。https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-7-7840hs.html )は Default TDP を範囲「35〜54W」と表記し、単一の既定値を決めていない。power.base の 35W は範囲の下端を採用(公表の範囲の下端。値は変更なし)。【2026-11-13 追記・値は変更なし】単一の既定値はなく、35W は範囲の下端。発表時は 35-45W(2023-01-04 プレスリリース)、現在の製品ページは Default TDP・cTDP とも 35-54W。docs/research/amd-base-power-2026-11-13.md【2026-11-15 追記】cfg.cores[0].allCoreGHz 4.40GHz [推定](MT の全コア負荷時クロック。直接の測定ではなく 2 資料からの導出値): Notebookcheck の Cinebench R23 マルチの搭載機の集計の中央値([実測]。7840HS 16155.5、7700X 19088。https://www.notebookcheck.net/R7-7840HS-vs-R7-7700X-vs-R7-7800X3D_14948_14655_15064.247596.0.html 、取得日 2026-11-15)の比 0.846 × KitGuru の Ryzen 7 7700X の Cinebench R23 全コア「just under 5.2GHz」([二次]。7950X の allCoreGHz 5.0 と同じ出典・同じ測り方。https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-9-7950x-ryzen-7-7700x-zen-4-review/5/ 、取得日 2026-11-15)= 約 4.40GHz。7840HS 自身の全コアクロックの直接の測定は見つかっていない(NBC・Chips and Cheese に記載なし)。仮定: 7840HS と 7700X の Cinebench R23 マルチは同じクロックあたりの点(同じ Zen 4・8C16T。L3 16MB 対 32MB の差は R23 では小さい)。4.0〜4.65GHz のどの値でも MT は ±10% 以内。GB7 の公開値に合わせた値ではない。【allCoreGHz は電力係数を通らない】allCoreGHz があると MT のクロックは電力の連続式 min(1, c·W^0.15) を通らない(js/sim/perf.js mtScore)ので、この SKU の MT は選んだ TDP(35〜54W)にも冷却クラスにも効かなくなる(ST は元から効かない)。mobile-pc で初めての allCoreGHz。数値は range.maxW 54W 相当の値として扱う。docs/research/remaining-ng-2026-11-15.md の D、設計書 §5.3.0【2026-11-15 7840HS・14700HX の MT】',
+  });
+  P.push({
+    id: 'amd-zen4-7545u', name: 'Ryzen 5 7545U', vendor: 'AMD', family: 'Zen 4 (Phoenix 2)', isa: 'x86', kind: 'mobile-pc', year: 2023, addedIn: 'M5b',
+    gb7: 'Zen 4 モバイル(Phoenix 2): Ryzen 5 7545U(3.2GHz, 6c)',
+    dies: [die('Phoenix 2', 136.0, 'meas', 'tsmc-n4', 'Kurnal Insights の寸法 9.06 × 15.01 mm = 136.0 mm²([実測]。設計書 §2.2)。AMD 公式の仕様一覧の「CPU Compute Die (CCD) Size」は 137mm²([公表])で、1 mm² の差は丸めの範囲')],
+    power: { base: pw(28, 'pub', '既定 TDP 28W・cTDP 15〜30W。AMD 公式ページ(2026-11-16、[公表]): https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-5-7545u.html'), peak: null, range: { minW: 15, maxW: 30 } },
+    cfg: { cores: [{ type: 'P', uarch: 'Zen 4', count: 2, smt: 2, baseGHz: 3.7, boostGHz: 4.9 }, { type: 'C', uarch: 'Zen 4c', count: 4, smt: 2, baseGHz: 3.0, boostGHz: 3.5 }], l3MB: 16, l2: '合計 6MB', memory: 'DDR5-5600 / LPDDR5X-7500(AMD 公式 [公表]。2 チャネル)' },
+    calib: false,
+    errCause: { mt: '公開値(MT 9805。Windows 14 件の中央値)が高い側にずれている原因の最有力は、投稿の機種が 2 種類のミニ PC だけであること(GEEKOM A7 と Micro Computer (HK) の EliteMini の 2 系列、14 件。2026-11-16 に各結果ページを確認 [実測])。ミニ PC は 28W 級ノート(cTDP 15〜30W)より高い電力で動かせるのが普通で、モデルは cTDP の上限 30W から持続クロックを決める(クロック係数 0.675)。公開値に合うクロック係数は約 0.785(P コア約 3.85GHz 相当)で、AMD 公式のベースクロック(Zen 4 3.7GHz・Zen 4c 3.0GHz。TDP 28W での平均ベース)に近い。ただしこの値に合わせる補正(allCoreGHz など)は入れていない(ミニ PC の電力設定は未取得で、公開値に合わせた係数になるため)。投稿内の MT は 7929〜10556 とばらつきが大きく(14 件のうち 5 件は 8,000 台)、同じ機種でも電力設定で変わる。標本が 14 件(n<30)で 2 系列だけのため、MT の誤差は確度が低い。docs/research/phoenix2-2026-11-16.md' },
+    notes: '2026-11-16 に AMD 公式ページ(https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-5-7545u.html 、[公表])で確認: アーキテクチャ「2x Zen 4, 4x Zen 4c」・6 コア 12 スレッド・Max. Boost Clock 4.9GHz・Max Zen4c Clock 3.5GHz・Zen4 ベース 3.7GHz・Zen4c ベース 3GHz(平均ベース 3.2GHz)・L2 6MB・L3 16MB・既定 TDP 28W・cTDP 15〜30W・TSMC 4nm FinFET・ダイ 137mm²・DDR5-5600 / LPDDR5X-7500・iGPU Radeon 740M 4CU(2800MHz)・発売 2023-11-02。AMD は「Former Codename: Phoenix」と書くが、ダイは Phoenix 2(Zen 4 ×2 + Zen 4c ×4。Phoenix 1 の Zen 4 ×8 とは別ダイ)。同じ AMD の Ryzen 5 7540U は 6 コアすべて Zen 4(Phoenix 1 の欠け品。ダイ 178mm²)なのでこのプリセットには入れていない。Ryzen 3 7440U(1x Zen 4 + 3x Zen 4c、4 コア、L2 4MB・L3 8MB)も Phoenix 2 だが Geekbench 7 の投稿がなく(検索 0 件)プリセットにしていない。Ryzen AI(NPU)は 7545U の仕様に記載なし(AMD 公式)。GB7 は Windows のみ 14 件(n<30 のため [低信頼])。L3 16MB の P と C への割り当ては未取得。Zen 4c の u・面積は Zen 4 からの借用 [推定](uarch 記録 Zen 4c)。docs/research/phoenix2-2026-11-16.md、設計書 §2.4・§5.3.3。',
   });
   P.push({
     id: 'amd-zen3-5800u', name: 'Ryzen 7 5800U', vendor: 'AMD', family: 'Zen 3 (Cezanne)', isa: 'x86', kind: 'mobile-pc', year: 2021, addedIn: 'M5b',
@@ -599,7 +609,7 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'intel-lnl-268v': DL_LNL(true), 'intel-lnl-258v': DL_LNL(true), 'intel-lnl-256v': DL_LNL(true),
     'intel-ptl-x9-388h': DL_LNL(false), 'intel-ptl-x9-386h': DL_LNL(false), 'intel-ptl-x9-378h': DL_LNL(false), 'intel-ptl-x7-358h': DL_LNL(false), 'intel-ptl-u5-325': DL_LNL(false), 'intel-wcl-c5-320': DL_LNL(false),
     'amd-zen3-5950x': DL_Z3(true), 'amd-zen3-5800x': DL_Z3(false), 'amd-zen3-5800x3d': DL_Z3(false), 'amd-zen3-5600x': DL_Z3(false), 'amd-zen3-5800u': DL_Z3(false),
-    'amd-zen3p-7735hs': DL_PHX(false), 'amd-zen4-7840hs': DL_PHX(true),
+    'amd-zen3p-7735hs': DL_PHX(false), 'amd-zen4-7840hs': DL_PHX(true), 'amd-zen4-7545u': DL_PHX(false),
     'amd-zen4-7700': DL_Z4D(true), 'amd-zen4-7800x3d': DL_Z4D(true), 'amd-zen4-7950x3d': DL_Z4D(true), 'amd-zen4-7950x': DL_Z4D(true), 'amd-zen4-7945hx': DL_Z4D(false),
     'amd-zen5-9950x': DL_Z5D(true), 'amd-zen5-9700x': DL_Z5D(false), 'amd-zen5-9800x3d': DL_Z5D(false), 'amd-zen5-9950x3d': DL_Z5D(false), 'amd-strix-hx370': DL_STRIX(true), 'amd-kraken-350': DL_STRIX(false),
     'amd-strixhalo-395': DL(140, '二次', 'Chips and Cheese の Strix Halo の測定(LPDDR5X-8000 で約 140ns。設計書 §5.3.3 J-3)。' + MEMO_SRC, 'LPDDR5X-8000(Strix Halo)'),

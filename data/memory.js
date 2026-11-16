@@ -52,7 +52,7 @@
   add(['amd-zen3p-7735hs'], { type: 'DDR5', mts: 4800 }, [o('DDR5', 4800, 'pub', AMD), o('LPDDR5', 6400, 'pub', AMD)]);
   add(['amd-zen4-7700', 'amd-zen4-7800x3d', 'amd-zen4-7950x3d', 'amd-zen4-7950x', 'amd-zen4-7945hx'], { type: 'DDR5', mts: 5200 }, [o('DDR5', 5200, 'pub', AMD)]);
   add(['amd-zen5-9700x', 'amd-zen5-9800x3d', 'amd-zen5-9950x3d', 'amd-zen5-9950x'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD)]);
-  add(['amd-zen4-7840hs'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 7500, 'pub', AMD)]);
+  add(['amd-zen4-7840hs', 'amd-zen4-7545u'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 7500, 'pub', AMD)]);
   add(['amd-strix-hx370', 'amd-kraken-350'], { type: 'DDR5', mts: 5600 }, [o('DDR5', 5600, 'pub', AMD), o('LPDDR5X', 8000, 'pub', AMD)]);
   add(['amd-epyc-7401'], { type: 'DDR4', mts: 2666 }, [o('DDR4', 2666, 'pub', AMD)], 512);
 

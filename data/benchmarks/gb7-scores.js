@@ -404,6 +404,14 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "AMD",
+  "name": "Zen 4 モバイル(Phoenix 2): Ryzen 5 7545U(3.2GHz, 6c)",
+  "single": 2221,
+  "multi": 9805,
+  "kind": "実測",
+  "n": 14
+ },
+ {
+  "group": "AMD",
   "name": "Zen 4 モバイル(Rembrandt-R): Ryzen 7 7735HS(3.2GHz, 8c)",
   "single": 1832,
   "multi": 8341,
