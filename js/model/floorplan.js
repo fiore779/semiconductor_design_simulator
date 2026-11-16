@@ -659,20 +659,41 @@
     return { widthMm: px[0] * s, heightMm: px[1] * s };
   }
   // dies(design のダイ配列。x・y を書き換える)を並べる。対象外のチップなら false
+  // 2026-11-16: 位置は MTL_annotated.jpg(幅 2000 に縮小した座標)の測定どおり。タイルはほぼ隙間なく詰まっている:
+  //   Compute x510–862 y298–617 / IOE x500–862 y620–725 / SoC x863–1227 y305–725 / GPU x1229–1395 y318–717(px)。
+  //   隙間は Compute→SoC 1px・SoC→GPU 2px・Compute→IOE 3px、上端は SoC が Compute より 7px・GPU が 20px 下。1px は Compute の幅(352px)換算でスケールする。
+  //   (旧: ダイ間の隙間を表示用の 2mm〔GAP_MM〕で離していた。)
+  // Base タイル(Foveros の土台)は写真では独立して見えず、全タイルの下に敷かれる。外形は金属枠の内側(x490–1415 y270–745 = 925×475px)で、
+  //   タイル群の外接矩形に左 20・上 28・右 20・下 20 px 足した大きさ(目測)。面積が未取得の Base(185H)は、この外形を表示用の仮寸法にする(面積は未取得のまま)。
+  //   面積が既知の Base(285H の 178mm²)は面積を保ち、タイル群の中心に重ねる。どちらも die.underlay = true(描画で土台として低く・先に描く)。
+  const TILE_ROW_GAP_PX = { soc: 1, gpu: 2, ioe: 3 };
+  const TILE_ROW_DY_PX = { soc: 7, gpu: 20 };
+  const BASE_MARGIN_PX = { left: 20, top: 28, right: 20, bottom: 20 };
+  const BASE_NOTE = '表示用の仮寸法: MTL_annotated.jpg の金属枠の内側を、タイル群の外接矩形に左 20・上 28・右 20・下 20 px(Compute の幅 352px 換算)足して目測した。実寸ではなく、面積は未取得のまま';
   function tileRowPlace(presetId, dies, gap) {
     if (!TILE_ROW[presetId]) return false;
     const by = {}; dies.forEach((d) => { const r = tileRowRole(d.name); if (r && !by[r]) by[r] = d; });
     if (!by.compute) return false;
     const c = by.compute; c.x = 0; c.y = 0;
-    let x = c.widthMm + gap;
-    if (by.soc) { by.soc.x = x; by.soc.y = 0; x += by.soc.widthMm + gap; }
-    if (by.gpu) { by.gpu.x = x; by.gpu.y = 0; }
-    if (by.ioe) { by.ioe.x = 0; by.ioe.y = c.heightMm + gap; }
+    const u = c.widthMm / 352; // 1px(写真の縮小座標)あたりの mm
+    let x = c.widthMm + TILE_ROW_GAP_PX.soc * u;
+    if (by.soc) { by.soc.x = x; by.soc.y = TILE_ROW_DY_PX.soc * u; x += by.soc.widthMm + TILE_ROW_GAP_PX.gpu * u; }
+    if (by.gpu) { by.gpu.x = x; by.gpu.y = TILE_ROW_DY_PX.gpu * u; }
+    if (by.ioe) { by.ioe.x = 0; by.ioe.y = c.heightMm + TILE_ROW_GAP_PX.ioe * u; }
     const placed = [c, by.soc, by.gpu, by.ioe].filter(Boolean);
+    const left = Math.min.apply(null, placed.map((d) => d.x)); const top = Math.min.apply(null, placed.map((d) => d.y));
     const right = Math.max.apply(null, placed.map((d) => d.x + d.widthMm)); const bottom = Math.max.apply(null, placed.map((d) => d.y + d.heightMm));
-    if (by.base) { by.base.x = right / 2 - by.base.widthMm / 2; by.base.y = bottom + gap; }
-    const all = dies.filter((d) => d.x != null); const minX = Math.min.apply(null, all.map((d) => d.x));
-    all.forEach((d) => { d.x -= minX; });
+    if (by.base) {
+      const bs = by.base; bs.underlay = true;
+      if (bs.areaKnown === false) {
+        const M = BASE_MARGIN_PX;
+        bs.x = left - M.left * u; bs.y = top - M.top * u;
+        bs.widthMm = (right - left) + (M.left + M.right) * u; bs.heightMm = (bottom - top) + (M.top + M.bottom) * u;
+        bs.sizeNote = BASE_NOTE; // 評価(area.note)に出る areaNote は変えない
+      } else { bs.x = (left + right) / 2 - bs.widthMm / 2; bs.y = (top + bottom) / 2 - bs.heightMm / 2; }
+    }
+    const all = dies.filter((d) => d.x != null); const minX = Math.min.apply(null, all.map((d) => d.x)); const minY = Math.min.apply(null, all.map((d) => d.y));
+    all.forEach((d) => { d.x -= minX; d.y -= minY; });
     return true;
   }
   // AMD CCD(8 コア): top = 上部の帯(Debug / Infinity Fabric / SMU)の高さ比、core = コア+L2 の幅比(左右とも)、aspect = 幅/高さ。

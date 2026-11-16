@@ -400,23 +400,25 @@
           c.strokeText(dim, midX, botY + 29); c.fillText(dim, midX, botY + 29);
         });
         (showLabels ? design.dies : []).forEach((die) => { // ラベル非表示のときは何も出さず、物だけを見せる
+          const under = die.underlay === true; const dieTop = under ? scene.underTop : scene.dieTop; // 土台のダイは低く、名前・寸法は下側に出す(上のタイルのラベルに重ならない)
           // ダイ名と寸法(設計データの mm)。ダイの 4 隅を画面に投影し、画面上でいちばん上の縁のさらに上(=ダイの外側)に出して、ブロックに重ならないようにする
           const cs = [prj([die.x, dieTop, die.y]), prj([die.x + die.widthMm, dieTop, die.y]), prj([die.x, dieTop, die.y + die.heightMm]), prj([die.x + die.widthMm, dieTop, die.y + die.heightMm])];
           if (cs.every((p) => p.visible)) {
-            const topY = Math.min.apply(null, cs.map((p) => p.y));
+            const topY = Math.min.apply(null, cs.map((p) => p.y)); const botY = Math.max.apply(null, cs.map((p) => p.y));
             const midX = (Math.min.apply(null, cs.map((p) => p.x)) + Math.max.apply(null, cs.map((p) => p.x))) / 2;
             c.textAlign = 'center'; c.fillStyle = P.text; c.font = 'bold 13px sans-serif';
             const nm = (die.name || die.id) + (die.areaKnown === false ? '(面積未取得・仮寸法)' : '');
             c.lineJoin = 'round'; c.lineWidth = 3; c.strokeStyle = P.bg;
-            c.strokeText(nm, midX, topY - 22); c.fillText(nm, midX, topY - 22);
+            const ny = under ? botY + 14 : topY - 22; const dy = under ? botY + 29 : topY - 8;
+            c.strokeText(nm, midX, ny); c.fillText(nm, midX, ny);
             c.font = FONT; c.fillStyle = P.note;
             const dim = `${die.widthMm.toFixed(2)} × ${die.heightMm.toFixed(2)} mm`;
-            c.strokeText(dim, midX, topY - 8); c.fillText(dim, midX, topY - 8);
+            c.strokeText(dim, midX, dy); c.fillText(dim, midX, dy);
           }
           c.font = FONT;
           die.blocks.forEach((b) => {
             const text = b.label || '';
-            if (!text) return;
+            if (!text || under) return; // 土台のダイのブロック名は出さない(上のタイルに重なって見えるため)
             const sel = selection.indexOf(b.id) >= 0;
             const yy = dieTop + bh * (sel ? 2 : 1) + 0.002;
             const x0 = die.x + b.x; const z0 = die.y + b.y;

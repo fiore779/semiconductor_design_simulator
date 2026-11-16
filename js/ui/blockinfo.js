@@ -85,7 +85,7 @@
   // ---- 各セクション ----
   function dieAreaRow(die) {
     const known = num(die.areaMm2);
-    return row('ダイ面積', known ? nf(die.areaMm2, 1, 'mm²') : null, known ? sTag(die.areaSource) : null, known ? null : short(die.areaNote || 'このダイの面積は未取得(推測しない)', 100));
+    return row('ダイ面積', known ? nf(die.areaMm2, 1, 'mm²') : null, known ? sTag(die.areaSource) : null, known ? null : short([die.areaNote || 'このダイの面積は未取得(推測しない)', die.sizeNote].filter(Boolean).join('。'), 200));
   }
 
   function basicRows(design, ev, ctxInfo) {

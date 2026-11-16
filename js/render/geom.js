@@ -45,6 +45,9 @@
 
   const inRect = (r, x, y) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
 
+  // 描画順(後ろほど前面)。土台のダイ(die.underlay。Meteor Lake の Base タイルなど)は先(=最背面)に描く。元の配列は変えない
+  const paintOrder = (design) => (design.dies || []).slice().sort((a, b) => (b.underlay === true ? 1 : 0) - (a.underlay === true ? 1 : 0));
+
   // ヒットテスト(画面 px の座標)。優先順: 選択中ブロックのハンドル > 最前面のブロック > 最前面のダイ。
   // 後ろの要素ほど前面(描画順)。戻り値: {type:'handle',dieId,blockId,handle} | {type:'block',dieId,blockId} | {type:'die',dieId} | null
   // opts: { selectedIds:[], handlePx }
@@ -52,7 +55,7 @@
     const o = opts || {};
     const sel = o.selectedIds || [];
     const hs = (o.handlePx || HANDLE_PX) / 2 + 1; // ハンドルは画面 px で一定サイズ(少し余裕)
-    const dies = design.dies;
+    const dies = paintOrder(design);
     // 1) ハンドル(選択中ブロックのみ。前面側から)
     for (let i = dies.length - 1; i >= 0; i--) {
       const die = dies[i];
@@ -184,7 +187,7 @@
     dashedRectSegments, cellAt, maxCellIndex,
     MIN_SIZE_MM, DEFAULT_GRID_MM, HANDLE_PX, MIN_ZOOM, MAX_ZOOM, HANDLES,
     worldToScreen, screenToWorld, zoomAt, panBy, blockWorldRect, dieWorldRect, handlePoints, screenRect,
-    hitTest, snap, moveBlock, resizeBlock, fit, niceLength,
+    hitTest, paintOrder, snap, moveBlock, resizeBlock, fit, niceLength,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.geom = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

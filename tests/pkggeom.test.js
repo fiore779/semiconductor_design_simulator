@@ -199,3 +199,24 @@ test('createCamera: 外接直方体が球の 1.5 倍の距離でも収まらな�
   const b2 = { cx: 0, cy: 0, cz: 0, radius: 1 }; // box なしも球
   assert.strictEqual(G.createCamera(b2, 1.5, 'top').dist, G.fitDistance(1, G.FOV, 1.5));
 });
+
+test('土台(die.underlay)は低い板: 上面が通常のダイより低く(UF_H + dieT×0.45)、土台の上のタイルが先に選ばれる。underlay なしの設計は従来どおり', () => {
+  const d0 = design.fromPreset(D.presets.find((p) => p.id === 'intel-mtl-185h'));
+  const s = G.buildScene(d0, {});
+  assert.ok(near(s.underTop, s.dieTop - s.dieT * (1 - G.UNDERLAY_H), 1e-9) && s.underTop < s.dieTop);
+  // underlay を外すと通常のダイと同じ高さ(頂点数は同じで、高さだけが変わる)
+  const d1 = JSON.parse(JSON.stringify(d0)); d1.dies.forEach((x) => { delete x.underlay; });
+  const s1 = G.buildScene(d1, {});
+  assert.strictEqual(s1.opaque.length, s.opaque.length);
+  const maxY = (a) => { let m = -Infinity; for (let i = 1; i < a.length; i += FL) m = Math.max(m, a[i]); return m; };
+  assert.ok(maxY(s.opaque) <= maxY(s1.opaque) + 1e-9);
+  // 真上からの光線: Compute タイルの上(Base の上でもある)では、Compute のブロックが当たる(Base ではない)
+  const c = d0.dies.find((x) => /Compute/.test(x.name)); const cb = c.blocks[0];
+  const px = c.x + cb.x + cb.w / 2; const pz = c.y + cb.y + cb.h / 2;
+  const hit = G.pickTop({ o: [px, 50, pz], d: [0, -1, 0] }, d0.dies);
+  assert.ok(hit && hit.dieId === c.id, '上のタイルが優先');
+  // タイルのない土台の縁(左上の余白)では Base が当たる
+  const b = d0.dies.find((x) => x.underlay === true);
+  const hb = G.pickTop({ o: [b.x + 0.1, 50, b.y + 0.1], d: [0, -1, 0] }, d0.dies);
+  assert.ok(hb && hb.dieId === b.id);
+});

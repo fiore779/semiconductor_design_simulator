@@ -349,7 +349,7 @@
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         rect(r.x, r.y, r.w, r.h, rgba('#1f7a85', 0.32)); outline(r, 1, rgba('#1f7a85', 0.75));
       });
-      design.dies.forEach((die) => {
+      geom.paintOrder(design).forEach((die) => { // 土台のダイ(underlay)を先に描く
         const r = geom.screenRect(view, geom.dieWorldRect(die));
         const ht = heatOn ? heatTex.get(die.id) : null;
         if (ht) heatQuads.push({ tex: ht.tex, r });
@@ -361,7 +361,7 @@
       const dieEdgeHeat = (r) => { outline(r, 4, edgeDark); outline(r, 2, edgeLight); };
       const verts0 = verts.splice(0); // ここまで(ダイの下地)を 1 回目の描画に、以降を 2 回目に回す
       const selRects = [];
-      design.dies.forEach((die) => {
+      geom.paintOrder(design).forEach((die) => {
         if (heatOn && heatTex.get(die.id)) dieEdgeHeat(geom.screenRect(view, geom.dieWorldRect(die)));
         die.blocks.forEach((b) => {
           const r = geom.screenRect(view, geom.blockWorldRect(die, b));
@@ -458,19 +458,21 @@
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT; c.fillText(d.label, r.x + 6, r.y + 14); // ダイの内側(縮尺バー・注記と重ならない)
       });
-      design.dies.forEach((die) => {
+      geom.paintOrder(design).forEach((die) => {
         const r = geom.screenRect(view, geom.dieWorldRect(die));
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = 'bold 13px sans-serif';
         let name = die.name || die.id;
-        c.fillText(name, r.x, r.y - 10);
+        const ny = die.underlay === true ? r.y + r.h + 16 : r.y - 10; // 土台のダイの名前は下側(上のタイルの名前に重ならない)
+        c.fillText(name, r.x, ny);
         if (die.areaKnown === false) {
           const wName = c.measureText(name).width;
           c.font = FONT; c.fillStyle = P.sel;
-          c.fillText('面積未取得(仮寸法)', r.x + wName + 10, r.y - 10);
+          c.fillText('面積未取得(仮寸法)', r.x + wName + 10, ny);
         }
         c.font = FONT;
         die.blocks.forEach((b) => {
           if (b.schematic) anySchematic = true;
+          if (die.underlay === true) return; // 土台の上にタイルが載るので、土台のブロック名は出さない
           const br = geom.screenRect(view, geom.blockWorldRect(die, b));
           if (oInfo) { // 候補を長い順に試し、入る最初のものを使う(出所の略称・移植 ⇄・面積未取得を添える)
             const f = originFill(b, oInfo.byKey.get(originKey(b)).color);

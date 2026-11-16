@@ -165,3 +165,14 @@ test('dashedRectSegments: 不正入力は空', () => {
   assert.deepStrictEqual(g.dashedRectSegments({ x: 0, y: 0, w: 0, h: 5 }, 3, 2), []);
   assert.deepStrictEqual(g.dashedRectSegments({ x: 0, y: 0, w: 5, h: 5 }, 0, 2), []);
 });
+
+test('土台のダイ(underlay)は最背面: paintOrder で先頭になり、hitTest は上のタイルを優先する', () => {
+  const base = Object.assign(die('base', 0, 0, 20, 10, [blk('bb', 0, 0, 20, 10)]), { underlay: true });
+  const tile = die('tile', 5, 2, 8, 6, [blk('tb', 0, 0, 8, 6)]);
+  const design = { dies: [tile, base] }; // 配列の順序は変えない(土台が後ろにあっても前面にしない)
+  assert.deepStrictEqual(g.paintOrder(design).map((x) => x.id), ['base', 'tile']);
+  assert.deepStrictEqual(design.dies.map((x) => x.id), ['tile', 'base']);
+  const v = { x: 0, y: 0, zoom: 10 };
+  assert.strictEqual(g.hitTest(design, v, 80, 50).dieId, 'tile'); assert.strictEqual(g.hitTest(design, v, 80, 50).blockId, 'tb');
+  assert.strictEqual(g.hitTest(design, v, 10, 10).dieId, 'base');
+});
