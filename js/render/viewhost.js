@@ -93,6 +93,9 @@
     // バーは狭いと折り返して高くなる。ビュー領域の上端を実際の高さに合わせる
     function layout() {
       const h = Math.max(BAR_H, Math.ceil(bar.offsetHeight || 0)); stage.style.top = h + 'px';
+      // 型番キャプション(#viewcaption)は、折り返して高くなったバーの下に置く(重ならない・枠の内側)
+      const cap = doc.getElementById && doc.getElementById('viewcaption');
+      if (cap && cap.style) { cap.style.top = (h + 6) + 'px'; cap.style.maxHeight = 'calc(100% - ' + (h + 14) + 'px)'; }
       stage.style.bottom = (notesEl.style.display === 'none' ? 0 : Math.ceil(notesEl.offsetHeight || 0)) + 'px';
     }
     function updateNotes() {

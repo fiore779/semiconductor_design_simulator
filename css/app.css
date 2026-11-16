@@ -83,7 +83,7 @@ canvas:focus-visible { outline-offset: -3px; } /* ダイビューのフォーカ
 .blockcard { position: absolute; top: 44px; right: 8px; z-index: 3; width: min(360px, calc(100% - 16px)); max-height: calc(100% - 52px); overflow: auto; padding: 6px 10px 8px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, .35); font-size: 0.92em; }
 .blockcard[hidden] { display: none; }
 /* ビュー左上の型番表示(2026-11-16): プリセット選択画面の行と同じ型番+薄文字。操作は素通し。右上のブロック詳細カード(幅 360px)と重ならない幅に収める */
-.viewcaption { position: absolute; top: 8px; left: 8px; z-index: 1; box-sizing: border-box; max-width: calc(100% - 16px); max-height: calc(100% - 16px); overflow: hidden; pointer-events: none; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--text); line-height: 1.35; overflow-wrap: anywhere; }
+.viewcaption { position: absolute; top: 44px; left: 8px; z-index: 1; box-sizing: border-box; max-width: calc(100% - 16px); max-height: calc(100% - 16px); overflow: hidden; pointer-events: none; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--text); line-height: 1.35; overflow-wrap: anywhere; }
 .viewcaption[hidden] { display: none; }
 .viewcaption .small { color: var(--muted); }
 .bc-head { display: flex; gap: 6px; align-items: flex-start; justify-content: space-between; }
