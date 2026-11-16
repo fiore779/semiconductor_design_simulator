@@ -22,6 +22,7 @@ test('index.html の全スクリプト・CSS が、書かれた順に、ハッ�
   const { html, files } = build();
   assert.ok(srcs.length >= 50 && srcs.some((s) => s.startsWith('data/presets/')) && srcs.some((s) => s.startsWith('data/benchmarks/')));
   assert.ok(srcs.includes('js/ui/blockinfo.js'), 'ブロック詳細(blockinfo.js)がビルド対象に含まれる');
+  assert.ok(srcs.includes('data/caplayouts.js'), 'コンデンサ配置のデータ(caplayouts.js。2026-11-16)がビルド対象に含まれる');
   const tags = [...html.matchAll(/<script data-src="([^"]+)" data-sha256="([0-9a-f]{64})">/g)];
   assert.deepStrictEqual(tags.map((m) => m[1]), srcs);
   tags.forEach((m) => assert.strictEqual(m[2], sha(norm(m[1])), `${m[1]} のハッシュが一致しない`));

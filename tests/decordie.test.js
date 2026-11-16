@@ -108,6 +108,13 @@ test('3D: 基板・蓋・外接に飾りのダイが含まれ、頂点が増え�
   const s = G.buildScene(d, {}); const s0 = G.buildScene(bare, {});
   assert.strictEqual(s.counts.decor, 1); assert.strictEqual(s0.counts.decor, 0); assert.strictEqual(s.counts.dies, s0.counts.dies);
   assert.ok(s.opaque.length > s0.opaque.length); assert.ok(s.shadow.length > s0.shadow.length);
+  // 2026-11-16: コンデンサの規則(AM4 Zen 3 = 蓋の下)を渡したときも、飾りのダイが基板・蓋・ダイとの重なりの判定に入る(コンデンサは飾りのダイの上に置かない)
+  const spec = G.capSpecOf(D.caplayouts, 'amd-zen3-5950x'); assert.strictEqual(spec.place, 'underLid');
+  const sp = G.buildScene(d, { capSpec: spec }); const sp0 = G.buildScene(bare, { capSpec: spec });
+  assert.ok(sp.caps.length >= 1 && sp.counts.decor === 1 && sp.counts.dies === sp0.counts.dies);
+  assert.ok(sp.opaque.length > sp0.opaque.length && sp.shadow.length > sp0.shadow.length, '規則を渡しても飾りのダイぶん頂点が増える');
+  const dx = d.decorDies[0]; const over = (c) => { const hl = c.axis === 'x' ? c.len / 2 : c.wid / 2; const hw = c.axis === 'x' ? c.wid / 2 : c.len / 2; return c.cx + hl > dx.x + 1e-6 && c.cx - hl < dx.x + dx.widthMm - 1e-6 && c.cz + hw > dx.y + 1e-6 && c.cz - hw < dx.y + dx.heightMm - 1e-6; };
+  assert.ok(!sp.caps.some(over), 'コンデンサは飾りのダイと重ならない');
   const x = d.decorDies[0];
   assert.ok(s.sub.z1 > x.y + x.heightMm); assert.ok(s.sub.z1 > s0.sub.z1, '基板が飾りのダイぶん広がる');
   assert.ok(s.ihs.z1 >= x.y + x.heightMm && s.ihs.x0 <= x.x);

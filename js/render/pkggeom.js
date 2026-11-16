@@ -70,7 +70,59 @@
 
   // チップコンデンサ(SMD)の模式配置: 蓋と基板の縁のあいだの帯に、4 辺それぞれ等間隔で並べる(角は空ける)。
   // 帯の幅が足りない(< 1.4 mm)ときは置かない。戻り値: [{ cx, cz, axis:'x'|'z', len, wid, h }](個数は固定の規則で決まる。実機の配置ではない)
-  function capacitorLayout(sub, ihs) {
+  // spec(data/caplayouts.js の 1 種類。2026-11-16)があるときは、実物の写真から作った規則で置く(spec が無ければ上の模式配置)。dies は全ダイ(飾りを含む)。
+  //   state 'none'(実物の上面に無い)・'unknown'(未確認)は 0 個。'rules' は groups ごとに、外側の矩形 O と内側の矩形 I のあいだの帯に置く:
+  //     place 'outside': O = 基板、I = 蓋 / 'underLid': O = 蓋、I = 全ダイの外接矩形(蓋の内側)。frame 'portrait' で基板が横長なら時計回りに 90° 回す。
+  //   帯の厚さ・辺の長さに収まらない分は個数を減らす(重ならない)。ダイ・蓋(outside のとき)と重なるもの、基板・蓋(underLid のとき)の外に出るものは落とす。
+  function capacitorLayout(sub, ihs, spec, dies) {
+    if (!spec) return legacyCapacitorLayout(sub, ihs);
+    if (spec.state !== 'rules' || !Array.isArray(spec.groups)) return [];
+    const under = spec.place === 'underLid';
+    let O; let I;
+    if (under) { if (!dies || !dies.length) return []; O = ihs; I = diesBounds(dies); } else { O = sub; I = ihs; }
+    const rot = spec.frame === 'portrait' && (sub.x1 - sub.x0) > (sub.z1 - sub.z0); // 時計回りに 90°: 左→上、上→右、右→下、下→左
+    const ROT = { left: 'top', top: 'right', right: 'bottom', bottom: 'left' };
+    const GAP = 0.15; const EPS = 1e-6;
+    const out = [];
+    const hit = (a, r) => a.x0 < r.x1 - EPS && a.x1 > r.x0 + EPS && a.z0 < r.z1 - EPS && a.z1 > r.z0 + EPS; // 矩形どうしの重なり(接するだけは重ならない)
+    const rectOf = (c) => { const hl = c.axis === 'x' ? c.len / 2 : c.wid / 2; const hw = c.axis === 'x' ? c.wid / 2 : c.len / 2; return { x0: c.cx - hl, x1: c.cx + hl, z0: c.cz - hw, z1: c.cz + hw }; };
+    const diesR = (dies || []).map((d) => ({ x0: d.x, z0: d.y, x1: d.x + d.widthMm, z1: d.y + d.heightMm }));
+    const placed = [];
+    spec.groups.forEach((g) => {
+      let edge = g.edge; let from = g.from; let to = g.to;
+      if (rot) { // 辺に沿った向きも回す(上→下 / 左→右 の方向で割合を数え直す)
+        if (edge === 'left' || edge === 'right') { const f = from; from = 1 - to; to = 1 - f; }
+        edge = ROT[edge];
+      }
+      const horiz = edge === 'top' || edge === 'bottom'; // 帯が水平な辺(上・下)か
+      const t = edge === 'left' ? I.x0 - O.x0 : edge === 'right' ? O.x1 - I.x1 : edge === 'top' ? I.z0 - O.z0 : O.z1 - I.z1; // 帯の厚さ
+      if (!(t > 0)) return;
+      const along = g.axis === 'perp' ? CAP_WID : CAP_LEN; const across = g.axis === 'perp' ? CAP_LEN : CAP_WID; // 辺に沿った寸法 / 帯の厚さ方向の寸法
+      const spanT = (g.depth[1] - g.depth[0]) * t; const len = horiz ? O.x1 - O.x0 : O.z1 - O.z0; const spanA = (to - from) * len;
+      const nr = Math.min(g.rows, Math.floor((spanT + GAP) / (across + GAP) + EPS)); const np = Math.min(g.perRow, Math.floor((spanA + GAP) / (along + GAP) + EPS));
+      if (!(nr >= 1 && np >= 1)) return;
+      // frame 上の axis('perp' = 縁に垂直)を、辺の向きに合わせて x / z に直す(回転しても perp / para は変わらない)
+      const axis = (g.axis === 'perp') === horiz ? 'z' : 'x';
+      for (let r = 0; r < nr; r++) {
+        const dep = g.depth[0] * t + ((r + 0.5) / nr) * spanT;
+        for (let i = 0; i < np; i++) {
+          const a = from * len + ((i + 0.5) / np) * spanA;
+          const c = edge === 'left' ? { cx: O.x0 + dep, cz: O.z0 + a } : edge === 'right' ? { cx: O.x1 - dep, cz: O.z0 + a }
+            : edge === 'top' ? { cx: O.x0 + a, cz: O.z0 + dep } : { cx: O.x0 + a, cz: O.z1 - dep };
+          const cap = { cx: c.cx, cz: c.cz, axis, len: CAP_LEN, wid: CAP_WID, h: CAP_H };
+          const rc = rectOf(cap);
+          if (rc.x0 < sub.x0 || rc.x1 > sub.x1 || rc.z0 < sub.z0 || rc.z1 > sub.z1) continue; // 基板の外
+          if (under ? (rc.x0 < ihs.x0 - EPS || rc.x1 > ihs.x1 + EPS || rc.z0 < ihs.z0 - EPS || rc.z1 > ihs.z1 + EPS) : hit(rc, ihs)) continue; // 蓋の外(underLid)/ 蓋と重なる(outside)
+          if (diesR.some((d) => hit(rc, d)) || placed.some((p) => hit(rc, p))) continue;
+          placed.push(rc); out.push(cap);
+        }
+      }
+    });
+    return out;
+  }
+
+  // spec が無いときの模式配置(従来どおり)
+  function legacyCapacitorLayout(sub, ihs) {
     const out = [];
     const gx0 = ihs.x0 - sub.x0; const gx1 = sub.x1 - ihs.x1; const gz0 = ihs.z0 - sub.z0; const gz1 = sub.z1 - ihs.z1;
     const g = Math.min(gx0, gx1, gz0, gz1);
@@ -88,6 +140,23 @@
     place('z', (sub.x0 + ihs.x0) / 2, sub.z0 + cornerSkip, sub.z1 - cornerSkip);
     place('z', (sub.x1 + ihs.x1) / 2, sub.z0 + cornerSkip, sub.z1 - cornerSkip);
     return out;
+  }
+
+  // プリセット id からコンデンサ配置の種類(data/caplayouts.js の kinds の 1 つ)を引く。layouts = SDS_DATA.caplayouts。見つからなければ null。
+  function capSpecOf(layouts, presetId) {
+    if (!layouts || presetId == null || !Object.prototype.hasOwnProperty.call(layouts.presets || {}, presetId)) return null;
+    const id = layouts.presets[presetId];
+    return (layouts.kinds || []).find((k) => k.id === id) || null;
+  }
+
+  // 画面・PNG の注記(1 行)。spec = capSpecOf の結果か null(プリセット由来でない設計・対応表に無い id は従来の模式配置)。
+  function capacitorNote(spec) {
+    if (!spec) return 'コンデンサの位置は模式(根拠なし)';
+    if (spec.state === 'none') return 'この種類は実物の上面にコンデンサが無いので描いていません';
+    if (spec.state === 'unknown') return '実物の配置は未確認のため描いていません';
+    const lid = spec.place === 'underLid' ? '。蓋の下にあるため、蓋を透明にしたときに見えます(不透明の蓋では見えません)' : '';
+    const rot = spec.frame === 'portrait' ? '。基板の向きに合わせて 90° 回した位置は推定' : '';
+    return `コンデンサの位置は${spec.name}の実物写真に基づく模式(個数・サイズは目安)${lid}${rot}`;
   }
 
   // ---- 頂点の組み立て ----
@@ -156,6 +225,7 @@
   //   selection: string[]                      選択中のブロック ID
   //   heatDieIds: string[]                     ヒートマップのテクスチャを貼るダイの ID(上面をテクスチャ矩形に置き換え、ブロックは枠だけ)
   //   ihsMode: 'solid' | 'glass' | 'off'       既定 'glass'
+  //   capSpec: コンデンサ配置の種類(capSpecOf の結果)。無ければ従来の模式配置
   // }
   // 戻り値: { opaque, shadow, glass: Float32Array, heatQuads:[{dieId, verts}], sub, ihs, caps, dieT, blockH, dieTop, bounds:{cx,cy,cz,radius}, counts }
   function buildScene(design, opts) {
@@ -224,7 +294,7 @@
 
     // ヒートスプレッダ(蓋)と、その外側のコンデンサ
     const ihs = ihsRect(allDies, sub);
-    const caps = capacitorLayout(sub, ihs);
+    const caps = capacitorLayout(sub, ihs, o.capSpec, allDies);
     caps.forEach((c) => {
       const hl = c.axis === 'x' ? c.len / 2 : c.wid / 2; const hw = c.axis === 'x' ? c.wid / 2 : c.len / 2;
       const x0 = c.cx - hl; const x1 = c.cx + hl; const z0 = c.cz - hw; const z1 = c.cz + hw;
@@ -399,7 +469,7 @@
 
   const api = {
     FOV, PITCH_MIN, PITCH_MAX, VERTEX_FLOATS, MAT, UF_H, IHS_MODES, SUBSTRATE_STYLE, PRESETS, COL,
-    decorOf, DECOR_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, createMesh, buildScene,
+    decorOf, DECOR_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
     rayBox, pickTop, fitDistance, createCamera, orbit, zoom, pan, eyeOf, cameraAxes, cameraMatrices, screenRay, project,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.pkggeom = api;

@@ -296,6 +296,9 @@
       glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りのダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
     }
 
+    // コンデンサ配置の種類(design.presetId から data/caplayouts.js を引く。混合・新規など preset 由来でない設計は null = 従来の模式配置)
+    const capSpec = () => G.capSpecOf(root.SDS_DATA && root.SDS_DATA.caplayouts, design && design.presetId);
+
     // ---- シーン(頂点)の作り直し ----
     function rebuildScene() {
       sceneDirty = false;
@@ -304,7 +307,7 @@
       const colorOf = (die, b) => (oInfo ? originColor(b, oInfo.byKey.get(originKey(b)).color) : hexToRgb(P[blockColorKey(b)]));
       const dieTopColor = (die) => (die.areaKnown === false ? hexToRgb(P.unknownB) : [0.60, 0.63, 0.70]);
       scene = G.buildScene(design, {
-        colorOf, dieTopColor, selection, ihsMode: effIhs(),
+        colorOf, dieTopColor, selection, ihsMode: effIhs(), capSpec: capSpec(),
         heatDieIds: heatOn ? design.dies.filter((d) => heatTex.has(d.id)).map((d) => d.id) : [],
       });
       const up = (buf, data) => { gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); };
@@ -444,6 +447,12 @@
           const maxW = Math.max(120, cssW - 32 - 220); const ls = []; let cur2 = '';
           Array.from(sc).forEach((ch) => { if (c.measureText(cur2 + ch).width > maxW) { ls.push(cur2); cur2 = ch; } else cur2 += ch; });
           if (cur2) ls.push(cur2);
+          for (let i = ls.length - 1; i >= 0; i--) { yy -= 18; c.fillText(ls[i], x, yy); }
+        }
+        if (design.dies.length) { // コンデンサの位置の根拠(1 行。狭い画面では折り返す)
+          const maxW = Math.max(120, cssW - 32 - 220); const ls = []; let cur3 = '';
+          Array.from(G.capacitorNote(capSpec())).forEach((ch) => { if (c.measureText(cur3 + ch).width > maxW) { ls.push(cur3); cur3 = ch; } else cur3 += ch; });
+          if (cur3) ls.push(cur3);
           for (let i = ls.length - 1; i >= 0; i--) { yy -= 18; c.fillText(ls[i], x, yy); }
         }
         if (heatOn && heat.note && design.dies.length) {
@@ -665,6 +674,7 @@
       // 画面の注記(ビューの下に DOM で出す文)。PNG には従来どおり captureCanvas が画像に描く
       getNotes() {
         const n = [NOTE_3D]; const sc = scaleNote(design); if (sc) n.push(sc);
+        if (design.dies.length) n.push(G.capacitorNote(capSpec()));
         n.push(EDIT_HINT);
         if (heatActive() && heat.note && design.dies.length) n.push(String(heat.note));
         return n;

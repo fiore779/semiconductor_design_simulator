@@ -56,6 +56,9 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   const R = (n) => order(`js/render/${n}.js`);
   assert.ok(R('mat4') >= 0 && R('mat4') < R('pkggeom') && R('pkggeom') < R('pkgview3d') && R('dieview') < R('pkgview3d') && R('colormap') < R('pkgview3d') && R('pkgview3d') < R('viewhost'));
   assert.ok(R('viewhost') < order('js/main.js'));
+  // 2026-11-16: コンデンサ配置のデータ(3D のコンデンサの位置)が、pkgview3d より前に読み込まれ、全プリセットを覆う
+  assert.ok(order('data/caplayouts.js') >= 0 && order('data/caplayouts.js') < R('pkgview3d'));
+  assert.ok(ctx.SDS_DATA.caplayouts && ctx.SDS_DATA.caplayouts.kinds.length >= 15 && Object.keys(ctx.SDS_DATA.caplayouts.presets).length === 111);
 });
 
 test('main.js が使う SDS のモジュール(ui / sim / model / render / history)は、すべて読み込み後に登録されている', () => {
