@@ -106,10 +106,13 @@
     });
   }
   function renderHistory() { PN.renderHistory($('history'), history, jumpTo, undo, redo); }
+  // ダイビュー左上の型番表示(プリセット選択画面の行と同じ表記)。設計が無ければ隠す
+  function renderViewCaption() { const el = $('viewcaption'); if (el) PN.renderViewCaption(el, design, ctx, PF.isEdited(design)); }
   function renderButtons() {
     $('m-compare').disabled = !design; $('m-export').disabled = !design;
     $('m-undo').disabled = !history.canUndo(); $('m-redo').disabled = !history.canRedo(); $('m-save').disabled = !design;
     $('designname').textContent = design ? `設計: ${design.name}` : '';
+    renderViewCaption();
     const mi = PF.modeInfo(design); const mb = $('modebadge');
     mb.textContent = mi ? `${mi.symbol} ${mi.text}${mi.locked ? '(ロック中)' : ''}` : '';
     mb.className = 'badge modebadge' + (mi ? ` mode-${mi.code}` : ''); mb.hidden = !mi;

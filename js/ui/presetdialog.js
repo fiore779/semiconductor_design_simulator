@@ -74,23 +74,16 @@
       detailEl.appendChild(h('div', {}, rows));
     }
 
-    // 行末の GB7 区分。n が null のものは件数を出さない。信頼度が低いものは文字で「⚠ 信頼度低」と添える(色だけに頼らない)。
-    function gbText(gb) {
-      if (!gb) return 'GB7 ST 未取得';
-      const b = PL.gb7Basis(gb);
-      return `GB7 ST ${gb.single}(${b.label}${b.low ? ' ⚠ 信頼度低' : ''})`;
-    }
     function rowEl(p) {
       const el = rowEl0(p); focusEls['row:' + p.id] = el.firstChild; return el;
     }
     function rowEl0(p) {
-      const c = PL.completeness(p, g); const a = PL.areaSummary(p); const gb = g[p.gb7];
-      const node = p.dies && p.dies[0] && p.dies[0].nodeId ? (ctx.nodes.find((n) => n.id === p.dies[0].nodeId) || {}).name : null;
+      const c = PL.completeness(p, g); const sub = PL.subtitle(p, ctx, g);
       return h('li', { role: 'none' }, h('button', {
         type: 'button', role: 'option', dataset: { id: p.id }, class: 'preset-row' + (p === selected ? ' sel' : ''), 'aria-selected': p === selected ? 'true' : 'false',
         onclick: () => { selected = p; detail(p); refresh('row:' + p.id); }, ondblclick: () => cb.onReproduce(p),
-      }, h('span', { class: `badge fill-${c.level}`, title: c.text, text: c.symbol }), h('b', { text: p.name }),
-      h('span', { class: 'small', title: PL.lowReason(gb), text: ` ${p.family} ${p.year} / ${node || 'ノード未取得'} / 面積 ${a.text} / ${gbText(gb)}` })));
+      }, h('span', { class: `badge fill-${c.level}`, title: c.text, text: c.symbol }), h('b', { text: sub.name }),
+      h('span', { class: 'small', title: sub.title, text: sub.text })));
     }
 
     function refresh(focusKey) {

@@ -109,7 +109,34 @@
     return groups;
   }
 
-  const api = { gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets };
+  // 行末の GB7 区分。n が null のものは件数を出さない。信頼度が低いものは文字で「⚠ 信頼度低」と添える(色だけに頼らない)。
+  function gbText(gb) {
+    if (!gb) return 'GB7 ST 未取得';
+    const b = gb7Basis(gb);
+    return `GB7 ST ${gb.single}(${b.label}${b.low ? ' ⚠ 信頼度低' : ''})`;
+  }
+
+  // プリセット選択画面の行・ダイビュー左上の型番表示が共有する表記。{ name(太字), text(薄文字。先頭に空白), title }
+  function subtitle(p, ctx, gbRows) {
+    const gb = (gbRows || {})[p.gb7]; const a = areaSummary(p);
+    const node = p.dies && p.dies[0] && p.dies[0].nodeId ? ((ctx.nodes || []).find((n) => n.id === p.dies[0].nodeId) || {}).name : null;
+    return { name: p.name, text: ` ${p.family} ${p.year} / ${node || 'ノード未取得'} / 面積 ${a.text} / ${gbText(gb)}`, title: lowReason(gb) };
+  }
+
+  // ダイビュー左上の表示。design が無ければ null。edited は呼び出し側が判定(PF.isEdited)。
+  function viewCaption(design, ctx, gbRows, edited) {
+    if (!design) return null;
+    const p = design.presetId != null ? (ctx.presets || []).find((q) => q.id === design.presetId) : null;
+    if (p) {
+      const s = subtitle(p, ctx, gbRows);
+      return { name: s.name, text: s.text + (edited ? ' (編集済み)' : ''), title: s.title };
+    }
+    const o = design.origin || {};
+    const text = o.mode === 'mix' ? (o.entry === 'new' ? '新規設計' : '混合設計') : '';
+    return { name: String(design.name == null ? '' : design.name), text: text ? ' ' + text : '', title: null };
+  }
+
+  const api = { gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets, gbText, subtitle, viewCaption };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.presetlist = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

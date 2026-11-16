@@ -745,3 +745,81 @@ test('ブロック詳細カードの要素と配線: index.html の #blockcard(r
   assert.ok(/\.blockcard \{[^}]*position: absolute[^}]*max-height/.test(css) && /\.blockcard\[hidden\]/.test(css) && /@media \(max-width: 700px\)[\s\S]*\.blockcard \{/.test(css));
   assert.ok(html.includes('ブロック詳細:'), 'ヘルプに説明がある');
 });
+
+// ---- ビュー左上の型番表示(2026-11-16) ----
+test('PL.subtitle: 選択画面の行(openPresets)の文字列と一致する・代表プリセットで NaN/undefined を出さない・全プリセットで例外なし', () => {
+  const ctx = loadAll(stubDoc());
+  const { makeContext } = ctx.SDS.model.evaluate; const ui = ctx.SDS.ui; const PL = ui.presetlist;
+  const c = makeContext();
+  const body = new FakeNode('body');
+  ctx.document.body = body; ctx.document.addEventListener = () => {}; ctx.document.removeEventListener = () => {}; ctx.document.activeElement = null;
+  ui.dialogs.openPresets(c, { onReproduce() {}, onImprove() {} });
+  const rows = findAll(body, (n) => n.tag === 'button' && n.dataset && n.dataset.id && /preset-row/.test(n.className || ''));
+  assert.ok(rows.length >= c.presets.length, `行が足りない(${rows.length})`);
+  const byId = new Map(rows.map((r) => [r.dataset.id, r]));
+  const bad = /NaN|undefined|null|\[object/;
+  c.presets.forEach((p) => {
+    const s = PL.subtitle(p, c, c.gb7ByName);
+    assert.ok(!bad.test(s.name + s.text), `${p.id}: ${s.text}`);
+    const row = byId.get(p.id); assert.ok(row, `${p.id} の行がない`);
+    const [b, span] = row.children.slice(1);
+    assert.strictEqual(b.textContent, s.name); assert.strictEqual(span.textContent, s.text);
+    if (s.title) assert.strictEqual(span.attrs.title, s.title);
+  });
+  const get = (id) => PL.subtitle(c.presets.find((p) => p.id === id), c, c.gb7ByName);
+  const x3d = get('amd-zen4-7800x3d'); assert.strictEqual(x3d.name, c.presets.find((p) => p.id === 'amd-zen4-7800x3d').name); assert.ok(x3d.text.includes('面積') && x3d.text.includes('GB7 ST'));
+  // GB7 未取得・面積未取得・ノード未取得の表記
+  const noGb = c.presets.find((p) => !c.gb7ByName[p.gb7]); if (noGb) assert.ok(PL.subtitle(noGb, c, c.gb7ByName).text.includes('GB7 ST 未取得'));
+  const noArea = c.presets.find((p) => PL.areaSummary(p).mm2 == null); if (noArea) assert.ok(PL.subtitle(noArea, c, c.gb7ByName).text.includes('面積 未取得'));
+  ['snapdragon', '5800u'].forEach((k) => { const p = c.presets.find((q) => (q.id + q.name).toLowerCase().includes(k)); assert.ok(p, k); assert.ok(PL.subtitle(p, c, c.gb7ByName).text.length > 10); });
+  // gb7ByName 無し・nodes 無しでも例外にしない
+  assert.doesNotThrow(() => PL.subtitle(c.presets[0], {}, undefined));
+});
+
+test('ビュー左上の型番表示(DOM スタブ): 読み込みで出て選択画面と一致・編集で(編集済み)・混合/新規は設計名・undo で追従・空で非表示・全プリセットで例外なし', () => {
+  const ctx = loadAll(stubDoc());
+  const { makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui; const PL = ui.presetlist; const PF = ui.paramform;
+  const c = makeContext();
+  const el = new FakeNode('div'); el.hidden = true;
+  const render = (d) => ui.panels.renderViewCaption(el, d, c, PF.isEdited(d));
+  assert.strictEqual(render(null), null); assert.strictEqual(el.hidden, true); assert.strictEqual(el.children.length, 0);
+  const p = c.presets.find((q) => q.id === 'amd-zen4-7800x3d');
+  const d0 = DS.fromPreset(p, { mode: 'reproduce' });
+  render(d0);
+  const sub = PL.subtitle(p, c, c.gb7ByName);
+  assert.strictEqual(el.hidden, false);
+  assert.strictEqual(el.children[0].tag, 'b'); assert.strictEqual(el.children[0].textContent, sub.name);
+  assert.strictEqual(el.children[1].textContent, sub.text); assert.ok(el.attrs['aria-label'].includes(sub.name));
+  // 編集済み: 型番と元の表記はそのまま、末尾に (編集済み)
+  const d1 = DS.setCoreCount(d0, 'P', 4); const dd = d1.ok ? d1.design : DS.setClock(DS.unlock(d0), d0.cfg.cores[0].type, 3).design;
+  const ed = DS.ensureCfg(dd, p);
+  render(ed);
+  if (PF.isEdited(ed)) { assert.strictEqual(el.children[0].textContent, sub.name); assert.strictEqual(el.children[1].textContent, sub.text + ' (編集済み)'); }
+  else assert.fail('編集済みの設計を作れなかった');
+  // undo 相当(元の設計を渡す)で戻る
+  render(d0); assert.strictEqual(el.children[1].textContent, sub.text);
+  // 混合・新規
+  const m = DS.fromScratch({ name: '混合テスト', widthMm: 60, heightMm: 60, nodeId: 'tsmc-n4' });
+  render(m); assert.strictEqual(el.children[0].textContent, '混合テスト'); assert.strictEqual(el.children[1].textContent, ' 混合設計');
+  const n = DS.fromScratch({ name: '自作', widthMm: 40, heightMm: 40, nodeId: 'tsmc-n4', entry: 'new' });
+  render(n); assert.strictEqual(el.children[0].textContent, '自作'); assert.strictEqual(el.children[1].textContent, ' 新規設計');
+  // 空へ
+  render(null); assert.strictEqual(el.hidden, true); assert.strictEqual(el.children.length, 0);
+  // 全プリセット(再現・改良)で例外なし・NaN/undefined なし
+  c.presets.forEach((q) => ['reproduce', 'improve'].forEach((mode) => {
+    const dz = DS.ensureCfg(DS.fromPreset(q, { mode }), q);
+    const cap = render(dz); assert.ok(cap && !/NaN|undefined|null/.test(cap.name + cap.text), q.id);
+  }));
+});
+
+test('ビュー左上の型番表示の要素と配線: #viewcaption(role=note・ダイビュー領域内・hidden)・main.js・CSS(pointer-events: none・左上・狭い画面)・ヘルプ', () => {
+  const m = html.match(/<div id="viewcaption"[^>]*>/); assert.ok(m, '#viewcaption がない');
+  assert.ok(m[0].includes('role="note"') && /\shidden/.test(m[0]));
+  const wrapStart = html.indexOf('id="viewwrap"'); const wrapEnd = html.indexOf('<p id="heatnote"');
+  assert.ok(html.indexOf('id="viewcaption"') > wrapStart && html.indexOf('id="viewcaption"') < wrapEnd);
+  const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+  assert.ok(main.includes("PN.renderViewCaption(el, design, ctx") && main.includes('renderViewCaption();'));
+  const css = fs.readFileSync(path.join(root, 'css/app.css'), 'utf8');
+  assert.ok(/\.viewcaption \{[^}]*position: absolute[^}]*left: 8px[^}]*pointer-events: none/.test(css) && /@media \(max-width: 700px\)[\s\S]*\.viewcaption \{/.test(css));
+  assert.ok(html.includes('型番表示:'), 'ヘルプに説明がある');
+});

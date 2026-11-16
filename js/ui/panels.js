@@ -111,5 +111,16 @@
     return { select, refresh, sync, close, isOpen };
   }
 
-  root.SDS.ui.panels = { renderProps, renderHistory, renderValidation, findBlock, createBlockCard };
+  // ダイビュー左上の型番表示(2026-11-16)。プリセット選択画面の行と同じ表記(presetlist.viewCaption)。設計が無ければ隠す。edited は PF.isEdited(design)
+  function renderViewCaption(el, design, ctx, edited) {
+    const cap = design ? root.SDS.ui.presetlist.viewCaption(design, ctx, ctx.gb7ByName, !!edited) : null;
+    clear(el); el.hidden = !cap;
+    if (!cap) { el.removeAttribute('aria-label'); return null; }
+    el.setAttribute('aria-label', `設計の型番: ${cap.name}${cap.text}`);
+    el.appendChild(h('b', { text: cap.name }));
+    el.appendChild(h('span', { class: 'small', title: cap.title, text: cap.text }));
+    return cap;
+  }
+
+  root.SDS.ui.panels = { renderProps, renderHistory, renderValidation, findBlock, createBlockCard, renderViewCaption };
 })(window);
