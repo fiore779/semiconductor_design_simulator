@@ -4,10 +4,10 @@ CPU/SoC のダイ設計を、ブラウザ上で組み立てて性能・面積・
 
 ## すぐ開く
 
-**[▶ index.html を開く](index.html)**
+**[▶ ブラウザで開く(GitHub Pages)](https://fiore779.github.io/semiconductor_design_simulator/)**
 
 - このリポジトリを手元に置いた状態(クローン、または ZIP の展開後)で、**`起動.cmd` をダブルクリック**すると、既定のブラウザで開きます。ほかに、`index.html` をブラウザへドラッグするか、ダブルクリックしても開けます。インストールもビルドも不要です。
-- GitHub 上でこの README を見ているときは、上のリンクは HTML のソース表示になり(エディタのプレビューでも、リンクは編集画面で開くことがあります)、画面は動きません。実行するには次のどちらかを使ってください。
+- 上のリンクは GitHub Pages(main ブランチの `index.html`)で、インストール不要でそのまま動きます。オフラインで使うときは、次のどちらかを使ってください。
   - [Releases](https://github.com/fiore779/semiconductor_design_simulator/releases/latest) から `semiconductor-design-simulator.html`(1 ファイルだけで動く版)をダウンロードして、ブラウザで開く。
   - Windows なら、同じ Releases の `semiconductor-design-simulator.exe` をダブルクリックする(Node.js 不要。署名がないため、初回に SmartScreen の警告が出ることがあります)。
 
