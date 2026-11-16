@@ -666,6 +666,23 @@
   // Base タイル(Foveros の土台)は写真では独立して見えず、全タイルの下に敷かれる。外形は金属枠の内側(x490–1415 y270–745 = 925×475px)で、
   //   タイル群の外接矩形に左 20・上 28・右 20・下 20 px 足した大きさ(目測)。面積が未取得の Base(185H)は、この外形を表示用の仮寸法にする(面積は未取得のまま)。
   //   面積が既知の Base(285H の 178mm²)は面積を保ち、タイル群の中心に重ねる。どちらも die.underlay = true(描画で土台として低く・先に描く)。
+  // 面積が全部未取得のタイル(285H)は、写真の比を保ったまま全体を縮尺して、面積が既知の Base の内側(タイル群+写真の余白)に収める。
+  // 縮尺 u(mm/px)= min(Base 幅 / 外形幅, Base 高 / 外形高)。外形 = タイル群の外接矩形に左 20・上 28・右 20・下 20 px を足したもの(px は Compute 幅 352px 基準)。
+  // size = Compute の仮寸法({widthMm, heightMm})。戻り値: 縮尺した Compute の寸法か、対象外なら null。dieSize(mm2, aspect) は design.js のもの
+  function tileRowFit(presetId, srcDies, size, dieSize) {
+    if (!TILE_ROW[presetId] || !size || !(size.widthMm > 0)) return null;
+    const base = (srcDies || []).find((d) => tileRowRole(d.name) === 'base');
+    const tiles = (srcDies || []).filter((d) => ['compute', 'soc', 'gpu', 'ioe'].indexOf(tileRowRole(d.name)) >= 0);
+    if (!base || !(typeof base.mm2 === 'number' && base.mm2 > 0) || !tiles.length || tiles.some((d) => typeof d.mm2 === 'number')) return null;
+    const bs = dieSize(base.mm2, null); const cPxH = 352 * size.heightMm / size.widthMm;
+    const px = TILE_ROW_PX; const M = BASE_MARGIN_PX;
+    const wPx = 352 + TILE_ROW_GAP_PX.soc + px.soc[0] + TILE_ROW_GAP_PX.gpu + px.gpu[0];
+    const hPx = Math.max(cPxH + TILE_ROW_GAP_PX.ioe + px.ioe[1], TILE_ROW_DY_PX.soc + px.soc[1], TILE_ROW_DY_PX.gpu + px.gpu[1]);
+    const u = Math.min(bs.widthMm / (wPx + M.left + M.right), bs.heightMm / (hPx + M.top + M.bottom));
+    const k = (352 * u) / size.widthMm;
+    return { widthMm: size.widthMm * k, heightMm: size.heightMm * k };
+  }
+  const TILE_FIT_NOTE = '285H のタイルの実寸は未取得(面積も未取得)。写真(Meteor Lake)の比を保ったまま全体を縮尺し、タイル群と写真の余白(外形 925×475px 相当)が Base(面積 178mm²)の内側に収まる大きさにした表示用の仮寸法';
   const TILE_ROW_GAP_PX = { soc: 1, gpu: 2, ioe: 3 };
   const TILE_ROW_DY_PX = { soc: 7, gpu: 20 };
   const BASE_MARGIN_PX = { left: 20, top: 28, right: 20, bottom: 20 };
@@ -685,6 +702,7 @@
     const right = Math.max.apply(null, placed.map((d) => d.x + d.widthMm)); const bottom = Math.max.apply(null, placed.map((d) => d.y + d.heightMm));
     if (by.base) {
       const bs = by.base; bs.underlay = true;
+      if (bs.areaKnown !== false && placed.every((d) => d.areaKnown === false)) placed.forEach((d) => { d.sizeNote = TILE_FIT_NOTE; });
       if (bs.areaKnown === false) {
         const M = BASE_MARGIN_PX;
         bs.x = left - M.left * u; bs.y = top - M.top * u;
@@ -1069,7 +1087,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, tileRowFit, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

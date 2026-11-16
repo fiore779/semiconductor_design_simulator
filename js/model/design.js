@@ -101,7 +101,7 @@
       // 面積が未取得のダイは仮寸法(10×10 mm。実寸ではない)。実物風テンプレートのダイは枠の縦横比で仮の 100 mm² 相当にする(面積は null のまま)
       let size = known ? dieSize(sd.mm2, lay) : (lay ? dieSize(100, lay) : { widthMm: 10, heightMm: 10 });
       // Meteor Lake・Arrow Lake-H: GPU・SoC・IOE タイルは写真の縦横比(Compute の幅を基準)。Compute が先に作られている前提
-      if (i === computeIdx) computeW = size.widthMm;
+      if (i === computeIdx) { const fit = FP && FP.tileRowFit ? FP.tileRowFit(preset.id, srcDies, size, dieSize) : null; if (fit) size = fit; computeW = size.widthMm; } // 285H: 仮寸法のタイル群を Base の内側に収める縮尺
       else if (FP && FP.tileRowSize) { const t = FP.tileRowSize(preset.id, sd.name, known ? sd.mm2 : null, computeW); if (t) size = t; }
       const die = {
         id: `die${i}`, name: sd.name, nodeId: sd.nodeId || null, areaMm2: known ? sd.mm2 : null, areaSource: known ? sd.s : null,

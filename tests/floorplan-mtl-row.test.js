@@ -44,6 +44,27 @@ test('185H: Base は面積未取得のまま、外形はタイル群に左 20・
   assert.match(b.sizeNote, /MTL_annotated.jpg/); assert.strictEqual(b.areaNote, '寸法の記載なし');
 });
 
+test('285H: 面積未取得のタイル群は写真の比を保ったまま縮尺され、Base(178mm²。15.79×11.28 のまま)の内側に収まる。写真の余白(外形 925×475px 相当)込みで収まり、縮尺の根拠は sizeNote', () => {
+  const d = mk('intel-arl-285h'); const b = get(d, /Base/);
+  assert.strictEqual(b.areaMm2, 178); assert.ok(Math.abs(b.widthMm * b.heightMm - 178) < 0.01);
+  const tiles = d.dies.filter((x) => !x.underlay);
+  tiles.forEach((x) => {
+    assert.ok(x.x >= b.x - 1e-9 && x.y >= b.y - 1e-9 && x.x + x.widthMm <= b.x + b.widthMm + 1e-9 && x.y + x.heightMm <= b.y + b.heightMm + 1e-9, `${x.name} が Base の内側`);
+    assert.strictEqual(x.areaMm2, null); assert.match(x.sizeNote, /Base/);
+  });
+  const c = get(d, /Compute/); const u = c.widthMm / 352;
+  // 写真の余白(左 20・上 28・右 20・下 20 px)込みの外形が Base に収まり、どちらかの辺はちょうど接する(縮尺 = min(幅比, 高さ比))
+  const left = Math.min(...tiles.map((x) => x.x)); const right = Math.max(...tiles.map((x) => x.x + x.widthMm));
+  const top = Math.min(...tiles.map((x) => x.y)); const bottom = Math.max(...tiles.map((x) => x.y + x.heightMm));
+  const ow = right - left + 40 * u; const oh = bottom - top + 48 * u;
+  assert.ok(ow <= b.widthMm + 1e-9 && oh <= b.heightMm + 1e-9);
+  assert.ok(Math.abs(ow - b.widthMm) < 1e-6 || Math.abs(oh - b.heightMm) < 1e-6, '縮尺は収まる最大');
+  // 写真の比(SoC 361:423、GPU 163:400)は保つ。185H の寸法は変えない
+  const sdie = get(d, /SoC/); const g = get(d, /GPU/);
+  assert.ok(Math.abs(sdie.widthMm / sdie.heightMm - 361 / 423) < 1e-6 && Math.abs(g.widthMm / g.heightMm - 163 / 400) < 1e-6);
+  const d185 = mk('intel-mtl-185h'); assert.ok(Math.abs(get(d185, /Compute/).widthMm - 8.64) < 0.005, '185H は変えない');
+});
+
 test('土台(underlay)は Meteor Lake・Arrow Lake-H の Base だけ。Lunar Lake・Panther Lake の Base などには付けない', () => {
   D.presets.forEach((p) => { const d = mk(p.id); const n = d.dies.filter((x) => x.underlay === true).length; assert.strictEqual(n, p.id === 'intel-mtl-185h' || p.id === 'intel-arl-285h' ? 1 : 0, p.id); });
 });
