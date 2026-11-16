@@ -68,5 +68,48 @@
     if (infos.length) el.appendChild(more(`ⓘ 情報 ${infos.length} 件`, { key: 'val:info' }, h('ul', { class: 'warns' }, infos.map(li))));
   }
 
-  root.SDS.ui.panels = { renderProps, renderHistory, renderValidation, findBlock };
+  // ブロック詳細カード(2026-11-16)。ダイビューの上に重ねる浮動カードの制御。内容の整形は blockinfo(純関数)。
+  // el: カードの要素(role=region・aria-live は index.html)。deps: { getState() → { design, evalResult, ctx }, onClose?() }。
+  // sync(ids): main.js の renderProps から毎回呼ぶ。選択が変わったら開き(複数選択は『N 個選択中』だけ)、同じ選択なら内容だけ更新する(×で閉じた後は、選択が変わるまで開き直さない)。
+  function createBlockCard(el, deps) {
+    let sel = []; let open = false; let lastKey = null;
+    const keyOf = (ids) => ids.join(',');
+    function hide() { el.hidden = true; clear(el); lastKey = null; }
+    function render() {
+      const st = deps.getState() || {};
+      if (!open || !sel.length || !st.design) { hide(); return; }
+      const BI = root.SDS.ui.blockinfo;
+      let info = null; let err = null;
+      try { info = BI ? BI.describeSelection(st.design, st.evalResult, sel, st.ctx) : null; } catch (e) { err = e && e.message ? e.message : String(e); }
+      const key = keyOf(sel);
+      const top = key === lastKey ? el.scrollTop : 0;
+      clear(el); el.hidden = false; lastKey = key;
+      el.appendChild(h('div', { class: 'bc-head' },
+        h('h3', { class: 'bc-title', text: err ? 'ブロック詳細' : (info ? info.title : 'ブロック詳細') }),
+        h('button', { type: 'button', class: 'btn small-btn bc-close', 'aria-label': 'ブロック詳細を閉じる', title: '閉じる (Esc)', onclick: () => close() }, '×')));
+      if (err) { el.appendChild(h('p', { class: 'note', text: `詳細を表示できませんでした: ${err}` })); return; }
+      if (!info) { el.appendChild(h('p', { class: 'note', text: '詳細がありません。' })); return; }
+      if (info.subtitle) el.appendChild(h('p', { class: 'note bc-sub', text: info.subtitle }));
+      if (info.multi) { el.appendChild(h('p', { text: '1 個だけ選ぶと、そのブロックの詳細を表示します。' })); return; }
+      info.sections.forEach((sec) => {
+        const dl = h('dl', { class: 'bc-sec' });
+        sec.rows.forEach((r) => dl.appendChild(h('div', { class: 'bc-row' },
+          h('dt', { text: r.label }),
+          h('dd', {}, r.value, r.tag ? h('span', { class: 'badge bc-tag', dataset: { tag: r.tag }, text: `[${r.tag}]` }) : null, r.note ? h('div', { class: 'bc-note', text: r.note }) : null))));
+        el.appendChild(h('h4', { class: 'bc-h', text: sec.heading }));
+        el.appendChild(dl);
+      });
+      el.scrollTop = top;
+    }
+    function select(ids) { sel = (ids || []).slice(); open = sel.length > 0; render(); }
+    function refresh() { render(); }
+    function sync(ids) { const a = (ids || []).slice(); if (keyOf(a) !== keyOf(sel)) select(a); else render(); }
+    function close() { if (!open) return; open = false; hide(); if (deps.onClose) deps.onClose(); }
+    function isOpen() { return open && sel.length > 0 && !el.hidden; }
+    el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (e.preventDefault) e.preventDefault(); if (e.stopPropagation) e.stopPropagation(); close(); } });
+    hide();
+    return { select, refresh, sync, close, isOpen };
+  }
+
+  root.SDS.ui.panels = { renderProps, renderHistory, renderValidation, findBlock, createBlockCard };
 })(window);

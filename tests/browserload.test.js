@@ -45,7 +45,7 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   assert.ok(srcs.length > 20, 'script が少なすぎる');
   const ctx = loadAll();
   const ui = ctx.SDS && ctx.SDS.ui;
-  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor', 'layout'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
+  ['reproduce', 'results', 'paramform', 'packageform', 'packagepanel', 'heatdata', 'presetlist', 'diffpanel', 'mixform', 'library', 'mixpanel', 'coreform', 'coreeditor', 'layout', 'blockinfo'].forEach((m) => assert.ok(ui && ui[m], `SDS.ui.${m} が登録されていない`));
   ['perf', 'power', 'thermal', 'area', 'heatmap'].forEach((m) => assert.ok(ctx.SDS.sim[m], `SDS.sim.${m} が登録されていない`));
   ['floorplan', 'design', 'evaluate', 'diff', 'blocklib', 'compat', 'coredef', 'usercores'].forEach((m) => assert.ok(ctx.SDS.model[m], `SDS.model.${m} が登録されていない`));
   assert.ok(ctx.SDS.render && ctx.SDS.render.createDieView, 'SDS.render.createDieView が登録されていない');
@@ -683,4 +683,62 @@ test('メモリ欄: Lunar Lake はメモリ固定の読み取り専用表示(選
     assert.ok(text.includes(`オンパッケージ LPDDR5X-8533 / ${gb}(型番で固定。Intel ARK)`), `${id}: ${text}`);
   });
   assert.ok(render('intel-ptl-x9-388h').some((n) => n.tag === 'select' && n.attrs && n.attrs.id === 'pf-mem-speed'));
+});
+
+// ---- ブロック詳細カード(2026-11-16) ----
+test('ブロック詳細カード(DOM スタブ): 選択で出る・×と Esc で消える・複数選択と解除で内容が変わる・同じ選択で開き直さない', () => {
+  const ctx = loadAll(stubDoc());
+  const { evaluate, makeContext } = ctx.SDS.model.evaluate; const DS = ctx.SDS.model.design; const ui = ctx.SDS.ui;
+  const c = makeContext();
+  const d = DS.fromPreset(c.presets.find((p) => p.id === 'amd-zen4-7800x3d'), { mode: 'reproduce' });
+  const ev = evaluate(d, c);
+  const cores = d.dies[0].blocks.filter((b) => b.kind === 'core'); const l3 = d.dies[0].blocks.find((b) => b.kind === 'l3');
+  const el = new FakeNode('div');
+  let closed = 0; let state = { design: d, evalResult: ev, ctx: c };
+  const card = ui.panels.createBlockCard(el, { getState: () => state, onClose() { closed++; } });
+  const closeBtn = () => findAll(el, (n) => n.tag === 'button' && n.attrs['aria-label'] === 'ブロック詳細を閉じる')[0];
+  assert.strictEqual(el.hidden, true); assert.strictEqual(card.isOpen(), false);
+  card.sync([]); assert.strictEqual(el.hidden, true);
+  // 選択でカードが出る(コア)。2D 編集・3D 表示のどちらの onSelect でも同じ sync を呼ぶので、内容は同じ
+  card.sync([cores[0].id]);
+  assert.strictEqual(el.hidden, false); assert.strictEqual(card.isOpen(), true);
+  assert.ok(el.textContent.includes('P コア') && el.textContent.includes('Zen 4') && el.textContent.includes('P コア 8 基のうち 1 基') && el.textContent.includes('[二次]') && el.textContent.includes('未取得'));
+  assert.ok(closeBtn(), '× ボタンがある');
+  // 別のブロック(L3)へ: 内容が変わる
+  card.sync([l3.id]); assert.ok(el.textContent.includes('L3') && el.textContent.includes('V-Cache') && !el.textContent.includes('1 コア当たりのスコア'));
+  // 複数選択: 『N 個選択中』だけ
+  card.sync([cores[0].id, cores[1].id]);
+  assert.ok(el.textContent.includes('2 個選択中') && !el.textContent.includes('発行幅') && !el.textContent.includes('V-Cache'));
+  // 同じ選択での再描画(編集後など)は内容を更新する
+  card.sync([cores[0].id]); assert.ok(el.textContent.includes('発行幅'));
+  // × で閉じる(選択は残る。ダイビューへフォーカスを戻す onClose が呼ばれる)
+  closeBtn().listeners.click();
+  assert.strictEqual(el.hidden, true); assert.strictEqual(card.isOpen(), false); assert.strictEqual(closed, 1); assert.strictEqual(el.children.length, 0);
+  card.sync([cores[0].id]); assert.strictEqual(el.hidden, true, '同じ選択の再描画では開き直さない');
+  card.sync([cores[1].id]); assert.strictEqual(el.hidden, false, '選択が変わったら開く');
+  // Esc で閉じる(カード上のキー操作)
+  let stopped = 0; el.listeners.keydown({ key: 'Escape', preventDefault() {}, stopPropagation() { stopped++; } });
+  assert.strictEqual(el.hidden, true); assert.strictEqual(stopped, 1); assert.strictEqual(closed, 2);
+  el.listeners.keydown({ key: 'a', preventDefault() {}, stopPropagation() {} }); assert.strictEqual(closed, 2); // Esc 以外は何もしない
+  // 選択解除で消える
+  card.sync([l3.id]); assert.strictEqual(el.hidden, false);
+  card.sync([]); assert.strictEqual(el.hidden, true); assert.strictEqual(card.isOpen(), false); assert.strictEqual(el.children.length, 0);
+  // 評価結果が無い・設計が無いときも例外にならない
+  state = { design: d, evalResult: null, ctx: c }; card.sync([cores[0].id]); assert.strictEqual(el.hidden, false);
+  state = { design: null, evalResult: null, ctx: c }; card.refresh(); assert.strictEqual(el.hidden, true);
+  // 存在しない id は「見つかりません」のカード(例外にしない)
+  state = { design: d, evalResult: ev, ctx: c }; card.sync(['no-such']); assert.ok(el.textContent.includes('ブロックが見つかりません'));
+});
+
+test('ブロック詳細カードの要素と配線: index.html の #blockcard(role・aria-label・aria-live・フォーカス可・ダイビュー領域内)と main.js・CSS', () => {
+  const m = html.match(/<div id="blockcard"[^>]*>/); assert.ok(m, '#blockcard がない');
+  assert.ok(m[0].includes('role="region"') && m[0].includes('aria-label="ブロック詳細"') && m[0].includes('aria-live="polite"') && m[0].includes('tabindex="0"') && /\shidden/.test(m[0]));
+  const wrapStart = html.indexOf('id="viewwrap"'); const wrapEnd = html.indexOf('<p id="heatnote"');
+  assert.ok(wrapStart > 0 && html.indexOf('id="blockcard"') > wrapStart && html.indexOf('id="blockcard"') < wrapEnd, '#viewwrap(ダイビュー領域)の中にある(下段パネルに依存しない)');
+  assert.ok(srcs.indexOf('js/ui/blockinfo.js') > 0 && srcs.indexOf('js/ui/blockinfo.js') < srcs.indexOf('js/ui/panels.js'));
+  const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+  assert.ok(main.includes("PN.createBlockCard($('blockcard')") && main.includes('blockCard.sync(selection)') && main.includes('blockCard.isOpen()'));
+  const css = fs.readFileSync(path.join(root, 'css/app.css'), 'utf8');
+  assert.ok(/\.blockcard \{[^}]*position: absolute[^}]*max-height/.test(css) && /\.blockcard\[hidden\]/.test(css) && /@media \(max-width: 700px\)[\s\S]*\.blockcard \{/.test(css));
+  assert.ok(html.includes('ブロック詳細:'), 'ヘルプに説明がある');
 });

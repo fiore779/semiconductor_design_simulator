@@ -95,7 +95,16 @@
       onRemove: onRemoveBlock,
     };
   }
-  function renderProps() { PN.renderProps($('props'), design || { dies: [] }, selection, onPropEdit, propMsg, isMix() ? mixPropsExtra() : null); }
+  function renderProps() { PN.renderProps($('props'), design || { dies: [] }, selection, onPropEdit, propMsg, isMix() ? mixPropsExtra() : null); renderBlockCard(); }
+  // ブロック詳細カード(ダイビューの上の浮動カード。下段パネルの表示/非表示に依存しない)。選択が変わると開き、×・Esc で閉じる
+  let blockCard = null;
+  function renderBlockCard() { if (blockCard) blockCard.sync(selection); }
+  if ($('blockcard') && PN.createBlockCard && S.ui.blockinfo) {
+    blockCard = PN.createBlockCard($('blockcard'), {
+      getState: () => ({ design, evalResult: lastEval, ctx }),
+      onClose() { const cv = document.querySelector('#dieview canvas'); if (cv && cv.focus) cv.focus(); }, // 閉じたらキーボード操作をダイビューへ戻す
+    });
+  }
   function renderHistory() { PN.renderHistory($('history'), history, jumpTo, undo, redo); }
   function renderButtons() {
     $('m-compare').disabled = !design; $('m-export').disabled = !design;
@@ -564,6 +573,7 @@
     if (DG.isOpen() || document.querySelector('.dialog')) return; // ダイアログを開いている間は裏の設計を変えない
     const t = e.target; const tag = t && t.tagName;
     const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable);
+    if (e.key === 'Escape' && !inField && blockCard && blockCard.isOpen()) { blockCard.close(); return; } // ブロック詳細カードを閉じる(選択は残る)
     // 「/」で部品ライブラリの検索欄へ(混合・新規設計のときだけ。入力欄の中では普通の文字)
     if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !inField && isMix()) {
       if (leftTab !== 'library') setLeftTab('library');

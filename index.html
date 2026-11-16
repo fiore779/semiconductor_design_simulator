@@ -44,6 +44,7 @@
       <li>ダイビュー 3D 表示: ドラッグ=回転 / ホイール=拡大縮小 / 右・中・Shift+ドラッグ=移動 / 矢印=回転 / +/-=ズーム / 0=リセット / Esc=選択解除 / Shift+クリック=選択の追加/解除(編集は 2D 編集で)</li>
       <li>/: 部品ライブラリの検索欄へ移動(混合・新規設計のとき)/ 検索欄で Esc: 検索語を消す・Enter: 先頭の部品へ移動</li>
       <li>ツールバーの「結果」「下段」「配置」: 右の結果・下段(プロパティ/履歴/検証)・中央のダイビューの表示/非表示(状態は保存されます。隠している間は、検証の件数などをボタンのバッジで知らせます)</li>
+      <li>ブロック詳細: ダイビューでブロック(コア・L3 など)を選ぶと、ダイビューの上に詳細カード(クロック・マイクロアーキ・ST/MT への寄与・面積・電力の推定)が出ます。値には区分([実測]・[公表]・[二次]・[推定])を付け、無い値は「未取得」と書きます。× ボタンか Esc で閉じます(選択は残ります)。複数選択のときは個数だけ出ます</li>
       <li>入力欄にフォーカスがあるときは、ショートカットは無効です。</li>
     </ul>
     <p class="small">ブロックの配置は現実の CPU のレイアウトに倣った模式図で、大きさは実測ではありません(実チップのフロアプランではありません)。Uncore・iGPU・NPU は見た目だけの「飾り」で、計算に影響しません。</p>
@@ -76,6 +77,7 @@
       <div id="viewwrap">
         <div id="dieview" tabindex="-1"></div>
         <div id="viewmsg" class="viewmsg"></div>
+        <div id="blockcard" class="blockcard" role="region" aria-label="ブロック詳細" aria-live="polite" tabindex="0" hidden></div>
       </div>
       <p id="heatnote" class="small" hidden></p>
     </section>
@@ -150,6 +152,7 @@
 <script src="js/ui/library.js"></script>
 <script src="js/ui/coreeditor.js"></script>
 <script src="js/ui/mixpanel.js"></script>
+<script src="js/ui/blockinfo.js"></script>
 <script src="js/ui/panels.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/main.js"></script>

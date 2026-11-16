@@ -79,6 +79,22 @@ canvas:focus-visible { outline-offset: -3px; } /* ダイビューのフォーカ
 .vh-bar .btn { padding: 2px 8px; }
 .viewmsg { position: absolute; inset: 0; padding: 16px; overflow: auto; background: var(--panel); z-index: 2; }
 .viewmsg[hidden] { display: none; }
+/* ブロック詳細カード(2026-11-16): ダイビューの上に重ねる浮動カード。ポインターイベントは自分の範囲だけで受け(ダイビューのドラッグ・ホイール・矢印キーを妨げない)、狭いビューでは幅いっぱいまで縮む */
+.blockcard { position: absolute; top: 44px; right: 8px; z-index: 3; width: min(360px, calc(100% - 16px)); max-height: calc(100% - 52px); overflow: auto; padding: 6px 10px 8px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, .35); font-size: 0.92em; }
+.blockcard[hidden] { display: none; }
+.bc-head { display: flex; gap: 6px; align-items: flex-start; justify-content: space-between; }
+.bc-title { margin: 0.2em 0; overflow-wrap: anywhere; }
+.bc-sub { margin: 0 0 0.3em; }
+.bc-h { margin: 0.7em 0 0.2em; border-bottom: 1px solid var(--border); }
+.bc-sec { margin: 0; }
+.bc-row { display: grid; grid-template-columns: minmax(6em, 38%) 1fr; gap: 2px 8px; padding: 2px 0; }
+.bc-row dt { color: var(--muted); }
+.bc-row dd { margin: 0; overflow-wrap: anywhere; }
+.bc-tag { margin-left: 4px; font-size: 0.8em; padding: 0 5px; }
+.bc-tag[data-tag="実測"], .bc-tag[data-tag="公表"] { border-color: var(--ok); }
+.bc-tag[data-tag="二次"], .bc-tag[data-tag="推定"], .bc-tag[data-tag="校正値"] { border-color: var(--warn); }
+.bc-tag[data-tag="未取得"], .bc-tag[data-tag="模式図"] { border-style: dashed; color: var(--muted); }
+.bc-note { color: var(--muted); font-size: 0.88em; }
 #center > .err { margin: 4px 10px; }
 .fallback h4 { margin-top: 0.8em; }
 
@@ -272,6 +288,7 @@ details.more[open] > summary { color: var(--text); }
   #parts, #right { overflow: visible; border: none; border-bottom: 1px solid var(--border); }
   #center { min-height: 70vh; }
   #viewwrap { min-height: 60vh; }
+  .blockcard { top: auto; bottom: 8px; max-height: 60%; }
   #bottom { display: block; height: auto; }
   #bottom > section { max-height: 50vh; margin-bottom: 1px; }
   #help { right: 4px; left: 4px; width: auto; }
