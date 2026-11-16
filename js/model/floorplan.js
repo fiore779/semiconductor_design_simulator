@@ -356,6 +356,17 @@
     'rembrandt-r': tf([0, 0, 1579, 2000], { p: 8, e: 0, lp: 0 }, RMB.big, [], [], RMB.l3, restOf([0, 0, 1579, 2000], [165, 15, 1175, 775], REST_LABEL)),
     // Phoenix 1(zen4-Phoenix1-15.91x11.11x0.35mm.jpg 4439×6358 の表示 1396×2000。注釈なしの写真。縦横比 0.698 はファイル名の 15.91×11.11 mm と一致)。上の CCX だけ判別
     phoenix1: tf([0, 0, 1396, 2000], { p: 8, e: 0, lp: 0 }, PH1.big, [], [], PH1.l3, restOf([0, 0, 1396, 2000], [300, 110, 1290, 770], REST_LABEL)),
+    // Phoenix 2(AMD-Phoenix-2-Die-Shot-annotated.preview.jpg 640×382 の注釈つきプレビュー。2026-11-16 追加)。Zen 4 ×2(左下)、Zen 4c ×4(左上 3 + 下に 1)、中央左に L3 16MB、右に GPU(4CU。WGP ×2)・メモリコントローラ・Media Engine、上辺に DDR5 PHY、下辺に PCIe、右辺に Display・USB。
+    // 座標は表示ピクセルからの目測(±5〜10%。低解像度のプレビューで境界は粗い)。box は縦横比を Kurnal の寸法 15.01×9.06 mm(1.657)に合わせた(画像の 640×382 は 1.675 で、縁の約 1%)。コアは Zen 4(P)→ Zen 4c(C。small)の順に枠へ
+    phoenix2: tf([3, 0, 636, 382], { p: 2, e: 4, lp: 0 },
+      [[40, 205, 55, 112], [97, 205, 55, 112]],
+      [[40, 38, 58, 60], [100, 38, 58, 60], [160, 38, 58, 60], [153, 205, 60, 58]], [], [40, 108, 225, 95], [
+        ['ddr-a', 'DDR5 PHY(32bit + 8bit ECC)', 'u', 15, 4, 135, 28], ['ddr-b', 'DDR5 PHY(32bit + 8bit ECC)', 'u', 158, 4, 130, 28], ['ddr-c', 'DDR5 PHY(32bit + 8bit ECC)', 'u', 348, 4, 135, 28], ['ddr-d', 'DDR5 PHY(32bit + 8bit ECC)', 'u', 490, 4, 130, 28],
+        ['mc', 'Memory Controller', 'u', 225, 36, 145, 66], ['media', 'Media Engine', 'u', 375, 36, 125, 66],
+        ['gpu', 'GPU(4CU)', 'g', 277, 127, 210, 78], ['gpu-l', 'GPU', 'g', 277, 207, 78, 70], ['gpu-wgp', 'GPU(WGP ×2)', 'g', 357, 207, 130, 70],
+        ['display', 'Display', 'u', 596, 70, 38, 56], ['usb', 'USB(USB2・USB4 / USB3)', 'u', 583, 172, 52, 110], ['usb-b', 'USB2', 'u', 583, 300, 52, 56],
+        ['pcie', 'PCIe(x4 ×3・x2)', 'u', 285, 327, 255, 46], ['misc', 'MISC', 'u', 10, 322, 60, 52], ['io-l', 'I/O(左辺の列)', 'u', 10, 36, 25, 284],
+        ['rest', 'そのほか(注釈なし。内訳は未判別)', 'u', 503, 104, 78, 218]]),
     // Strix Halo の SoC ダイ(Strix-Halo-All-16.02x19.20.jpg 6724×8237 の表示 1633×2000 の下側。Kurnal 注釈。上の 2 つは Zen 5 CCD)。ダイ 約 1625×1360 px(縦横比 1.195 = 19.2×16.02 mm)。コアは無く全部が飾り相当
     'strix-halo-soc': tf([5, 635, 1630, 1995], { p: 0, e: 0, lp: 0 }, [], [], [], null, [
       ['ifop1', 'New IFOP#1 with TSV?', 'u', 48, 640, 610, 38], ['ifop2', 'New IFOP#2 with TSV?', 'u', 835, 640, 605, 38], ['phy-l', 'LPDDR5X / DDR5 Memory PHY', 'u', 10, 740, 130, 645], ['phy-r', 'LPDDR5X / DDR5 Memory PHY(4×32bit)', 'u', 1492, 760, 135, 640],
@@ -542,13 +553,14 @@
     cezanne: 'Cx4d2xiOUBzlnMX4.jpg(Cezanne。Locuza 注釈。Fritzchens Fritz のダイ写真。画像内の出典 https://www.flickr.com/photos/130561288@N04/51375154375/)。Zen 3 コア 4+4、L3、Vega の GPU、PHY。写真の L3 は「8MB」の注記で、プリセットの 16MB とは別(L3 は 1 枠に全量を割り当てた)。実寸の注記なしで、縦横比は写真の 1.083',
     'rembrandt-r': 'Rembrandt-R-12.84x16.25.jpg(Rembrandt-R。4275×5415。@Kurnal の表記はないが Strix Halo の画像と同じ透かしあり。**注釈なし**。縦横比 0.790 = ファイル名の 12.84×16.25 mm と一致。ただし面積 208.7 mm² のプリセットの注記が Kurnal の実測 12.84×16.25 mm 由来で、同じ出典の可能性があり独立した検証にはならない。出典 URL 未取得)。上の CCX(左右 4 コア + 中央 L3)だけ写真の構造から置き、そのほか(GPU・NPU・メモリ PHY・I/O)は判別せず 1 種類の「未判別」の飾りにした。FH9oQiNXEAAwTeZ.jpg(Locuza の Rembrandt の推定モックアップ。Cezanne・Navi22 の写真から組んだ想像図)は実物と配置が違うので根拠にしていない',
     phoenix1: 'zen4-Phoenix1-15.91x11.11x0.35mm.jpg(Phoenix 1。4439×6358。**注釈なし**。縦横比 0.698 = ファイル名の 15.91×11.11 mm と一致、積 176.8 mm² = プリセット。出典 URL 未取得)。上の CCX(左右 4 コア + 中央 L3)だけ写真の構造から置き、そのほか(GPU・NPU・PHY・I/O)は判別せず 1 種類の「未判別」の飾りにした。Phoenix 2 の注釈つき写真(AMD-Phoenix-2-Die-Shot-annotated.preview.jpg)は別のダイ(Zen 4 ×2 + Zen 4c ×4)で、プリセットが無く使っていない',
+    phoenix2: 'AMD-Phoenix-2-Die-Shot-annotated.preview.jpg(Phoenix 2。640×382 の低解像度プレビュー。作者・出典 URL 未取得。注釈つき: Zen 4 ×2・Zen 4c ×4・16 MB L3・GPU・WGP ×2・Memory Controller・Media Engine・DDR5 PHY・PCIe・USB・Display・MISC)。縦横比は Kurnal の寸法 15.01×9.06 mm(1.657。プリセットのダイ面積 136.0 mm²)に合わせた(画像は 1.675)。プレビューが低解像度のため、各ブロックの境界は粗い目測。GPU は写真の「GPU」と「WGP」の注記から 4CU(WGP ×2)',
   };
   const AMD_MAP = {
     'amd-zen1-1800x': { frame: 'zeppelin', basis: 'photo' }, 'amd-zen1-1500x': { frame: 'zeppelin', basis: 'photo', extra: '同じ Zeppelin ダイの SKU(コア無効。空き枠を残す)' }, 'amd-zen1-1200': { frame: 'zeppelin', basis: 'photo', extra: '同じ Zeppelin ダイの SKU(コア無効。空き枠を残す)' },
     'amd-zenplus-2700x': { frame: 'zeppelin', basis: 'reuse', extra: 'Zen+(Pinnacle Ridge。12nm)は Zeppelin(14nm)と同じ設計・ほぼ同じ面積(211.7 / 213 mm²)なので Zeppelin の写真の配置を流用(Pinnacle Ridge 自身の写真・測定なし)' },
     'amd-zenplus-2600x': { frame: 'zeppelin', basis: 'reuse', extra: 'Zen+(Pinnacle Ridge。12nm)は Zeppelin(14nm)と同じ設計・ほぼ同じ面積(211.7 / 213 mm²)なので Zeppelin の写真の配置を流用(Pinnacle Ridge 自身の写真・測定なし)。コア無効の SKU で空き枠を残す' },
     'amd-raven-2400g': { frame: 'raven-ridge', basis: 'photo' }, 'amd-raven-2200g': { frame: 'raven-ridge', basis: 'photo', extra: '2400G と同じダイ' },
-    'amd-zen3-5800u': { frame: 'cezanne', basis: 'photo' }, 'amd-zen3p-7735hs': { frame: 'rembrandt-r', basis: 'photo' }, 'amd-zen4-7840hs': { frame: 'phoenix1', basis: 'photo' }, 'amd-zen4-8700g': { frame: 'phoenix1', basis: 'photo' },
+    'amd-zen3-5800u': { frame: 'cezanne', basis: 'photo' }, 'amd-zen3p-7735hs': { frame: 'rembrandt-r', basis: 'photo' }, 'amd-zen4-7840hs': { frame: 'phoenix1', basis: 'photo' }, 'amd-zen4-8700g': { frame: 'phoenix1', basis: 'photo' }, 'amd-zen4-8500g': { frame: 'phoenix2', basis: 'photo' },
   };
   // Qualcomm Snapdragon の写真の枠(arm-soc)。出典の URL は C:\LocalAI\画像\必要な画像リスト.md の Kurnal Insights のページ(チップ名・SM 型番で対応づけた候補。ページ本文は未取得)
   const QC_SRC = {

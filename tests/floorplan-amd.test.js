@@ -1,5 +1,5 @@
 'use strict';
-// AMD のモノリシック・APU のダイ写真(Zeppelin・Raven Ridge・Cezanne・Rembrandt-R・Phoenix 1)と Strix Halo の SoC ダイ・CCD の写真の枠(2026-11-03)のテスト。
+// AMD のモノリシック・APU のダイ写真(Zeppelin・Raven Ridge・Cezanne・Rembrandt-R・Phoenix 1・Phoenix 2)と Strix Halo の SoC ダイ・CCD の写真の枠(2026-11-03)のテスト。
 // 配置は写真の目測で、実チップのフロアプランではない。画像は C:\LocalAI\画像。docs/research/user-images.md 参照。
 const test = require('node:test');
 const assert = require('node:assert');
@@ -116,10 +116,24 @@ test('熱マップの電力按分: Strix Halo の CCD / SoC は 60.4 / 39.6%(従
   assert.ok(Math.abs(sh[0] + sh[1] - 100) < 1e-9);
 });
 
+test('Phoenix 2(8500G): 注釈つきプレビューの枠。Zen 4 ×2・Zen 4c ×4・L3・GPU・Memory Controller・Media Engine。縦横比は Kurnal の寸法 15.01×9.06 mm と一致。コアは P→C の順に枠へ', () => {
+  const d = mk('amd-zen4-8500g').dies[0];
+  assert.strictEqual(d.layout.scaleBasis, 'photo'); assert.strictEqual(d.layout.frame, 'phoenix2'); assert.strictEqual(d.layout.template, 'amd-apu');
+  assert.ok(Math.abs(d.widthMm / d.heightMm / (15.01 / 9.06) - 1) < 0.005);
+  const cs = blocksOf(d, 'core'); assert.strictEqual(cs.length, 6);
+  assert.strictEqual(cs.filter((b) => b.label === 'C').length, 4); assert.strictEqual(cs.filter((b) => b.label === 'P').length, 2);
+  assert.deepStrictEqual(blocksOf(d, 'l3').map((b) => b.label), ['L3 16MB']);
+  ['Memory Controller', 'Media Engine'].forEach((l) => assert.ok(d.blocks.some((b) => b.label === l), l));
+  assert.ok(blocksOf(d, 'gpu').length >= 1 && d.blocks.some((b) => b.kind === 'gpu' && b.label.includes('WGP')));
+  assert.ok(d.layout.scaleNote.includes('Phoenix 2') && d.layout.scaleNote.includes('低解像度'));
+  // Phoenix 1(8700G)は従来どおり注釈なしの phoenix1 の枠
+  assert.strictEqual(mk('amd-zen4-8700g').dies[0].layout.frame, 'phoenix1');
+});
+
 test('checkLayout: 枠ごとに使えるテンプレートがある(Intel の枠は x86-tile だけ、AMD の単体ダイの枠は amd-apu / x86-mono、strix-halo-soc は amd-apu だけ)', () => {
   const ok = (t, f) => assert.strictEqual(FP.checkLayout({ template: t, frame: f }), null, t + '+' + f);
   const ng = (t, f) => assert.ok(FP.checkLayout({ template: t, frame: f }), t + '+' + f);
-  ['zeppelin', 'raven-ridge', 'cezanne', 'rembrandt-r', 'phoenix1'].forEach((f) => { ok('amd-apu', f); ok('x86-mono', f); ng('x86-tile', f); ng('amd-chiplet', f); });
+  ['zeppelin', 'raven-ridge', 'cezanne', 'rembrandt-r', 'phoenix1', 'phoenix2'].forEach((f) => { ok('amd-apu', f); ok('x86-mono', f); ng('x86-tile', f); ng('amd-chiplet', f); });
   ok('amd-apu', 'strix-halo-soc'); ng('x86-mono', 'strix-halo-soc'); ng('x86-tile', 'strix-halo-soc');
   ['mtl-compute', 'arl-compute', 'lnl-compute', 'ptl-compute'].forEach((f) => { ok('x86-tile', f); ng('amd-apu', f); ng('x86-mono', f); });
   ng('apple-soc', 'zeppelin'); ng('x86-tile', 'strix-point'); ng('x86-mono', 'strix-point'); ok('amd-apu', 'strix-point');
@@ -131,7 +145,7 @@ test('checkLayout: 枠ごとに使えるテンプレートがある(Intel の枠
 });
 
 test('新しい AMD の枠: 全部のブロックがダイ内に収まり、重ならない(空き枠・コア数が枠一杯でも)。SCALE_TEXT.photo は「注釈つき」と言わない', () => {
-  const frames = ['zeppelin', 'raven-ridge', 'cezanne', 'rembrandt-r', 'phoenix1', 'strix-halo-soc'];
+  const frames = ['zeppelin', 'raven-ridge', 'cezanne', 'rembrandt-r', 'phoenix1', 'phoenix2', 'strix-halo-soc'];
   frames.forEach((f) => {
     const tf = FP.TILE_FRAMES[f]; assert.ok(tf, f);
     const die = { id: 'd', widthMm: 20, heightMm: 20 / tf.aspect };
