@@ -485,6 +485,11 @@ test('設定ダイアログ: ボタンが有効で、undo/redo が既存関数�
     assert.strictEqual(byId('set-redo').disabled, true); assert.strictEqual(byId('set-undo').disabled, false);
     byId('set-preset').listeners.click();
     assert.deepStrictEqual(calls, ['undo', 'redo', 'redo', 'presets']);
+    // 2026-11-16: 製作者・版・リポジトリの表示(ユーザー指示「設定にシミュレーターの製作者を書いてください」。製作者名はユーザーが fiore779 と指定)
+    assert.strictEqual(byId('set-author').textContent, '製作者: fiore779');
+    assert.ok(/^版: v\d{4}\.\d{1,2}\.\d{1,2}$/.test(byId('set-version').textContent), byId('set-version').textContent);
+    assert.strictEqual(byId('set-repo').attrs.href, 'https://github.com/fiore779/semiconductor_design_simulator');
+    assert.ok(byId('set-repo').attrs.rel.includes('noopener'));
   } finally { delete FakeNode.prototype.focus; ctx.SDS.ui.dialogs.close(); }
 });
 

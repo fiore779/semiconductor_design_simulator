@@ -178,7 +178,10 @@
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: create }, '作成'), h('button', { type: 'button', class: 'btn', onclick: close }, 'キャンセル'))));
   }
 
-  // ---- 設定(元に戻す/やり直す、プリセット呼び出しの 2 つだけ) ----
+  // 設定ダイアログに出す製作者・版・リポジトリ。版はリリースのタグ名(新しい版を出すときに更新する)
+  const ABOUT = { author: 'fiore779', version: 'v2026.11.15', repo: 'https://github.com/fiore779/semiconductor_design_simulator' };
+
+  // ---- 設定(元に戻す/やり直す、プリセット呼び出し、製作者・版の表示) ----
   // cb: getState() → { canUndo, canRedo, pos, total }, onUndo(), onRedo(), onOpenPresets()
   function openSettings(cb) {
     const status = h('p', { class: 'small', role: 'status', 'aria-live': 'polite' });
@@ -193,11 +196,18 @@
       if (pressed && pressed.disabled) { const alt = pressed === undoBtn ? redoBtn : undoBtn; (alt.disabled ? presetBtn : alt).focus(); }
     }
     refresh();
+    // 製作者・版・リポジトリ(2026-11-16 ユーザー指示「設定にシミュレーターの製作者を書いてください」。製作者名はユーザーが「fiore779」と指定)
+    const about = h('div', { class: 'about', id: 'set-about' },
+      h('h3', {}, 'このシミュレーターについて'),
+      h('p', { class: 'small', id: 'set-author' }, `製作者: ${ABOUT.author}`),
+      h('p', { class: 'small', id: 'set-version' }, `版: ${ABOUT.version}`),
+      h('p', { class: 'small' }, 'リポジトリ: ', h('a', { id: 'set-repo', href: ABOUT.repo, target: '_blank', rel: 'noopener noreferrer' }, ABOUT.repo)));
     open('設定', h('div', {},
       h('div', { class: 'actions' }, undoBtn, redoBtn),
       status,
-      h('div', { class: 'actions' }, presetBtn)));
+      h('div', { class: 'actions' }, presetBtn),
+      about));
   }
 
-  root.SDS.ui.dialogs = { openNew, openPresets, openMix, openSettings, open, close, isOpen };
+  root.SDS.ui.dialogs = { ABOUT, openNew, openPresets, openMix, openSettings, open, close, isOpen };
 })(window);
