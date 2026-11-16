@@ -130,6 +130,7 @@
     if (layout && layout.template === 'x86-tile' && FP.tileDecor) decorDies = FP.tileDecor(layout, dies[computeIdx], preset.id); // Panther Lake: GPU・Platform タイルの飾り(Kurnal 全体図の相対位置。推定)
     if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || [], iodPlaced ? { gap: FP.IOD_PLACE.gap, dxFrac: layout.units === 1 ? FP.IOD_PLACE.dx1 : 0 } : null);
     if (FP && FP.tileRowPlace) FP.tileRowPlace(preset.id, dies, GAP_MM); // Meteor Lake・Arrow Lake-H: Compute | SoC | GPU の横一列、IOE は Compute の下、Base は全体の下
+    if (FP && FP.tileRowMoveLpe) FP.tileRowMoveLpe(preset.id, dies); // LP-E コアのブロックは写真どおり SoC タイルへ
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
     // メモリ固定で容量を選べるチップ(Apple M。2026-11-13): 容量(GB)の選択は cfg の外(design.memGb)に持つ。評価に使わないので、編集済み判定・差分には入れない
@@ -262,6 +263,7 @@
       // 根拠なしに落ちた Apple(apple-soc で schematic)は、写真の枠を使わず従来の配置にする(layout は注記のために残す)
       const legacy = !die.layout || !FP || ((die.layout.template === 'apple-soc' || die.layout.template === 'arm-soc') && die.layout.scaleBasis === 'schematic');
       die.blocks = legacy ? layoutCompute(die, d.cfg.cores, d.cfg.l3MB) : FP.layoutDie(die, d.cfg.cores, d.cfg.l3MB, die.layout);
+      if (FP && FP.tileRowMoveLpe && d.presetId) FP.tileRowMoveLpe(d.presetId, d.dies); // MTL・ARL-H: LP-E は SoC タイルへ
     }
     return d;
   }

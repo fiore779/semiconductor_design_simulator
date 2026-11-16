@@ -33,7 +33,7 @@ test('Intel タイル: ダイ面積は公表値のまま・縦横比は写真の
     const fr = FP.TILE_FRAMES[die.layout.frame];
     assert.ok(Math.abs(die.widthMm / die.heightMm / fr.aspect - 1) < 1e-6, id);
     const want = p.cfg.cores.reduce((s, g) => s + g.count, 0);
-    assert.strictEqual(die.blocks.filter((b) => b.kind === 'core').length, want, id);
+    assert.strictEqual(d.dies.reduce((n, x) => n + x.blocks.filter((b) => b.kind === 'core').length, 0), want, id); // MTL・ARL-H の LP-E は SoC タイルのブロック
     assert.strictEqual(die.blocks.filter((b) => b.kind === 'l3').length, 1, id);
     assert.deepStrictEqual(design.validate(d), [], id);
     die.blocks.forEach((b) => { if (b.decorative) assert.ok(['uncore', 'gpu', 'npu'].includes(b.kind), id); else assert.ok(['core', 'l3'].includes(b.kind), id); });

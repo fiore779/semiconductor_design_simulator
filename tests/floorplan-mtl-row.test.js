@@ -93,3 +93,19 @@ test('ほかの SKU のタイルの並べ方は変えない(275HX・285K・LNL�
     d.dies.slice(1).forEach((x) => assert.strictEqual(x.y, 0, id)); // 従来は横並び(y = 0)
   });
 });
+
+test('185H・285H: LP-E 2 コアは写真どおり SoC タイルに置く(2-Core Crestmont Cluster。タイル内 x27 y33 幅 98 高 50 px)。Compute には無く、重ならず、何度再配置しても同じ', () => {
+  const FPm = require('../js/model/floorplan.js'); const DSm = require('../js/model/design.js'); const { D: DD } = require('./helpers.js');
+  ['intel-mtl-185h', 'intel-arl-285h'].forEach((id) => {
+    const d = DSm.fromPreset(DD.presets.find((p) => p.id === id));
+    const comp = d.dies.find((x) => /Compute/.test(x.name)); const soc = d.dies.find((x) => /SoC/.test(x.name));
+    assert.strictEqual(comp.blocks.filter((b) => b.coreType === 'LP-E').length, 0, id);
+    const lp = soc.blocks.filter((b) => b.kind === 'core'); assert.strictEqual(lp.length, 2, id);
+    lp.forEach((b) => { assert.strictEqual(b.coreType, 'LP-E', id); assert.ok(b.x >= 0 && b.y >= 0 && b.x + b.w <= soc.widthMm && b.y + b.h <= soc.heightMm, id); });
+    const s = soc.widthMm / 361; assert.ok(Math.abs(lp[0].x - 27 * s) < soc.widthMm * 0.01, id);
+    assert.deepStrictEqual(DSm.validate(d), [], id);
+    const r = DSm.relayoutCompute(d); assert.deepStrictEqual(r.dies.find((x) => /SoC/.test(x.name)).blocks, soc.blocks, id);
+    assert.strictEqual(r.dies.find((x) => /Compute/.test(x.name)).blocks.filter((b) => b.kind === 'core').length, 14, id);
+  });
+  assert.strictEqual(typeof FPm.tileRowMoveLpe, 'function');
+});

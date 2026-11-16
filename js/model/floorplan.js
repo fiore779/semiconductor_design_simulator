@@ -612,7 +612,7 @@
   // Strix Halo の Zen 5 CCD(CCD ×2 の写真。同じ画像の上側。SoC ダイと同尺で、CCD 1 つ 767×625 px = 約 9.06×7.39 mm = 66.9 mm² でプリセットの 67.1 mm² と整合)
   const RECIPE_OF = { 'amd-strixhalo-395': 'Zen 5 (Strix Halo)' };
   const TILE_SRC = {
-    'mtl-compute': 'MTL_annotated.jpg(Meteor Lake。作者表記なし。チップ名は画像内の Redwood Cove / Crestmont / Xe-LPG とファイル名から)。P 6 + E 4 コア×2 クラスタ。LP-E 2 は写真では SoC タイル側にあるが、コアのブロックは Compute タイルのダイに置く仕様なので、右端の SoC Tile Interconnect の帯の上に模式で重ねた(実際の位置ではない)',
+    'mtl-compute': 'MTL_annotated.jpg(Meteor Lake。作者表記なし。チップ名は画像内の Redwood Cove / Crestmont / Xe-LPG とファイル名から)。P 6 + E 4 コア×2 クラスタ。LP-E 2(2-Core Crestmont Cluster)は写真どおり SoC タイルの左上寄りに置く(Compute タイルの枠の LP-E 枠は使わない)',
     'arl-compute': 'arrow lake cpudie al3.jpg(Arrow Lake の Compute タイルの拡大注釈。ARL_LQ_annotated.jpg の左のタイルと同じ配置。作者表記なし)。P #1〜#8、E クラスタ #1〜#4(各 4 コア)、中央に L3 とリングエージェントの帯',
     'lnl-compute': 'LNL_Package_Annotated.jpg(Lunar Lake のパッケージ注釈。作者表記なし)。Compute タイル(P 4・LP-E 4・L3・GPU・NPU・メディアが一枚)',
     'ptl-compute': 'Kurnal の Panther Lake 全体図 dh0gWbF8gG9AXfQw.jpg と panther-lake-computex26-die-annotated.jpg(同じ Compute タイル。縦横比 1.77 が一致)。P 4・Darkmont E 4×2 クラスタ・LPE 4・L3 18MiB・NPU・メディアなど',
@@ -687,6 +687,30 @@
   const TILE_ROW_DY_PX = { soc: 7, gpu: 20 };
   const BASE_MARGIN_PX = { left: 20, top: 28, right: 20, bottom: 20 };
   const BASE_NOTE = '表示用の仮寸法: MTL_annotated.jpg の金属枠の内側を、タイル群の外接矩形に左 20・上 28・右 20・下 20 px(Compute の幅 352px 換算)足して目測した。実寸ではなく、面積は未取得のまま';
+  // LP-E コアは写真では SoC タイル(2-Core "Crestmont" Cluster。SoC タイル左上寄り)にある。MTL_annotated.jpg(幅 2000 の座標)の測定:
+  //   SoC タイル x863–1227 y305–725(361×423px 換算の原点は 863,305)に対し、LP-E の 2 コアは x890–988 y338–388(タイル内 x27 y33 幅 98 高 50 px)。
+  // レイアウトは Compute ダイが作るので、その後でこの関数が LP-E のブロックを SoC ダイへ移す(ブロック id は変えない。計算はダイをまたいで全ブロックを見るため影響なし)。
+  // SoC ダイのブロックは、LP-E の枠を除いた 4 枚の「SoC / I/O」に作り直す(同じ高さの箱が重なって 3D で面がちらつくのを避ける)。何度呼んでも同じ結果
+  const LPE_IN_SOC_PX = { x: 27, y: 33, w: 98, h: 50 };
+  function tileRowMoveLpe(presetId, dies) {
+    if (!TILE_ROW[presetId]) return false;
+    const comp = dies.find((d) => tileRowRole(d.name) === 'compute'); const soc = dies.find((d) => tileRowRole(d.name) === 'soc');
+    if (!comp || !soc) return false;
+    const isLpe = (b) => b.kind === 'core' && /^LP/i.test(String(b.coreType || b.label || ''));
+    const moved = comp.blocks.filter(isLpe);
+    comp.blocks = comp.blocks.filter((b) => !isLpe(b));
+    if (!moved.length) return false;
+    const sx = soc.widthMm / 361; const sy = soc.heightMm / 423; const R = (v) => Math.round(v * 1e4) / 1e4;
+    const g = Math.min(soc.widthMm, soc.heightMm) * 0.004; // ブロック間の隙間(縁が接して「重なり」と判定されないよう縮める)
+    const m = Math.min(soc.widthMm, soc.heightMm) * 0.06; const L = LPE_IN_SOC_PX;
+    const lx = L.x * sx; const ly = L.y * sy; const lw = L.w * sx; const lh = L.h * sy;
+    const n = moved.length; const cw = lw / n;
+    moved.forEach((b, i) => { b.x = R(lx + i * cw + g); b.y = R(ly + g); b.w = R(cw - 2 * g); b.h = R(lh - 2 * g); });
+    const rects = [[m, ly + lh, soc.widthMm - 2 * m, soc.heightMm - m - (ly + lh)], [m, m, soc.widthMm - 2 * m, ly - m], [m, ly, lx - m, lh], [lx + lw, ly, soc.widthMm - m - (lx + lw), lh]];
+    const uncore = []; rects.forEach((r) => { if (r[2] > 1e-6 && r[3] > 1e-6) uncore.push({ id: `${soc.id}-uncore${uncore.length ? '-' + uncore.length : ''}`, kind: 'uncore', label: 'SoC / I/O', x: R(r[0] + g), y: R(r[1] + g), w: R(r[2] - 2 * g), h: R(r[3] - 2 * g), schematic: true }); });
+    soc.blocks = uncore.concat(moved);
+    return true;
+  }
   function tileRowPlace(presetId, dies, gap) {
     if (!TILE_ROW[presetId]) return false;
     const by = {}; dies.forEach((d) => { const r = tileRowRole(d.name); if (r && !by[r]) by[r] = d; });
@@ -1087,7 +1111,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, tileRowFit, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, tileRowFit, tileRowMoveLpe, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
