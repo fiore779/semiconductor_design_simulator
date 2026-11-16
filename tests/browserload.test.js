@@ -820,6 +820,6 @@ test('ビュー左上の型番表示の要素と配線: #viewcaption(role=note�
   const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
   assert.ok(main.includes("PN.renderViewCaption(el, design, ctx") && main.includes('renderViewCaption();'));
   const css = fs.readFileSync(path.join(root, 'css/app.css'), 'utf8');
-  assert.ok(/\.viewcaption \{[^}]*position: absolute[^}]*left: 8px[^}]*pointer-events: none/.test(css) && /@media \(max-width: 700px\)[\s\S]*\.viewcaption \{/.test(css));
+  assert.ok(/\.viewcaption \{[^}]*position: absolute[^}]*right: 10px[^}]*pointer-events: none/.test(css) && /@media \(max-width: 700px\)[\s\S]*\.viewcaption \{/.test(css));
   assert.ok(html.includes('型番表示:'), 'ヘルプに説明がある');
 });
