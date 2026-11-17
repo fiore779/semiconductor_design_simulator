@@ -243,3 +243,10 @@ test('1CCD の AMD 品の基板は 2CCD 品と同じ広さ(同じソケット。
   const a = sz('amd-zen5-9800x3d'); const b = sz('amd-zen5-9950x3d');
   assert.ok(Math.abs(a.w - b.w) / b.w < 0.03, a.w + ' ' + b.w); assert.ok(Math.abs(a.d - b.d) / b.d < 0.03);
 });
+
+test('AMD チップレットの基板は最小 32mm 角(CCD・IOD が基板に対して大きすぎない)。蓋はダイの外接矩形のまま、AMD 以外は変えない', () => {
+  const { D } = require('./helpers.js'); const DSn = require('../js/model/design.js'); const Gn = require('../js/render/pkggeom.js');
+  const sc = (id) => Gn.buildScene(DSn.fromPreset(D.presets.find((p) => p.id === id)), {});
+  ['amd-zen5-9800x3d', 'amd-zen5-9950x3d', 'amd-zen4-7800x3d'].forEach((id) => { const s = sc(id); assert.ok(s.sub.w >= 32 - 1e-6 && s.sub.d >= 32 - 1e-6, id); assert.ok(s.ihs.x1 - s.ihs.x0 < s.sub.w - 4, id); });
+  assert.strictEqual(Gn.substrateMinOf(DSn.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285k'))), 0);
+});

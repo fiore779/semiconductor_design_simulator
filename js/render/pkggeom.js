@@ -54,11 +54,15 @@
   const UNDERLAY_H = 0.45; // 土台のダイ(die.underlay)の厚み(通常のダイの 0.45 倍)。上に載るタイルと上面が重ならない
 
   // パッケージ基板の矩形。substrateId が無い/未知なら既定(有機基板)。余白は基板種別ごとの既定と、ダイの大きさの 12% の大きいほう。
-  function substrateSize(dies, substrateId) {
+  function substrateSize(dies, substrateId, minSide) {
     const st = SUBSTRATE_STYLE[substrateId] || SUBSTRATE_STYLE[DEFAULT_SUBSTRATE_ID];
     const b = diesBounds(dies);
     const margin = Math.max(st.margin, 0.12 * Math.max(b.x1 - b.x0, b.z1 - b.z0));
-    const x0 = b.x0 - margin; const z0 = b.z0 - margin; const x1 = b.x1 + margin; const z1 = b.z1 + margin;
+    let x0 = b.x0 - margin; let z0 = b.z0 - margin; let x1 = b.x1 + margin; let z1 = b.z1 + margin;
+    if (minSide > 0) { // 基板の最小の辺(ダイに対して基板が小さすぎないように。margin は蓋の余白に使うので変えない)
+      const cx0 = (x0 + x1) / 2; const cz0 = (z0 + z1) / 2; const hw = Math.max(x1 - x0, minSide) / 2; const hd = Math.max(z1 - z0, minSide) / 2;
+      x0 = cx0 - hw; x1 = cx0 + hw; z0 = cz0 - hd; z1 = cz0 + hd;
+    }
     return { x0, z0, x1, z1, w: x1 - x0, d: z1 - z0, cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, margin, thickness: st.thickness, id: SUBSTRATE_STYLE[substrateId] ? substrateId : DEFAULT_SUBSTRATE_ID };
   }
 
@@ -212,12 +216,15 @@
   // 基板の大きさ用の見えない占有範囲: AMD の 1 CCD 品も 2 CCD 品と同じソケット・同じパッケージなので、基板・蓋・コンデンサは 2 CCD 分の幅で作る(ダイは描かない。ユーザー指示 2026-11-17「1ccd は 2ccd と同じ広さに」)
   const CCD_GAP_FRAC = 0.03;
   const footprintOf = (design) => { const c = ((design && design.dies) || []).find((d) => d && d.layout && d.layout.template === 'amd-chiplet' && (d.layout.units || 1) === 1); return c ? [{ id: 'footprint', x: c.x, y: c.y, widthMm: c.widthMm * (2 + CCD_GAP_FRAC), heightMm: c.heightMm, blocks: [], virtual: true }] : []; };
+  // AMD チップレット(AM4・AM5 とも実物は 40×40mm)の基板の最小の辺。CCD・IOD が実物より大きく見えないよう、実物の約 8 割の 32mm にした表示用の値(実寸ではない)
+  const AMD_SUBSTRATE_MIN = 32;
+  const substrateMinOf = (design) => (((design && design.dies) || []).some((d) => d && d.layout && d.layout.template === 'amd-chiplet') ? AMD_SUBSTRATE_MIN : 0);
   const DECOR_H = 0.7; // 飾りダイの高さ(通常のダイの厚みに対する比)
 
   // 描画対象全体の外接球(カメラの注視点・距離・パンの制限に使う)。頂点は作らない。
   function designBounds(design) {
     const dies = ((design && design.dies) || []).concat(decorOf(design), stackOf(design), footprintOf(design));
-    const sub = substrateSize(dies, design && design.package && design.package.substrateId);
+    const sub = substrateSize(dies, design && design.package && design.package.substrateId, substrateMinOf(design));
     const dieT = dieThickness(dies); const bh = blockHeight(dieT);
     const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T + (stackOf(design).length ? dieT * STACK_EXTRA : 0);
     return {
@@ -244,7 +251,7 @@
     const heatIds = new Set(o.heatDieIds || []);
     const ihsMode = IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass';
     const substrateId = design && design.package && design.package.substrateId;
-    const sub = substrateSize(allDies, substrateId);
+    const sub = substrateSize(allDies, substrateId, substrateMinOf(design));
     const dieT = dieThickness(allDies); const bh = blockHeight(dieT);
     const dieTop = UF_H + dieT;
     const underTop = UF_H + dieT * UNDERLAY_H; // 土台のダイ(die.underlay。Meteor Lake の Base タイルなど)は上のタイルより低い板にする
@@ -318,7 +325,8 @@
 
     // ヒートスプレッダ(蓋)と、その外側のコンデンサ
     const ihs = ihsRect(allDies, sub);
-    const caps = capacitorLayout(sub, ihs, o.capSpec, allDies);
+    const capSub = substrateMinOf(design) > 0 ? substrateSize(allDies, substrateId, 0) : sub; // コンデンサは蓋の近くに置く(基板を広げても個数・位置は広げる前のまま。実物も縁は空いている)
+    const caps = capacitorLayout(capSub, ihs, o.capSpec, allDies);
     caps.forEach((c) => {
       const hl = c.axis === 'x' ? c.len / 2 : c.wid / 2; const hw = c.axis === 'x' ? c.wid / 2 : c.len / 2;
       const x0 = c.cx - hl; const x1 = c.cx + hl; const z0 = c.cz - hw; const z1 = c.cz + hw;
@@ -494,7 +502,7 @@
 
   const api = {
     FOV, PITCH_MIN, PITCH_MAX, VERTEX_FLOATS, MAT, UF_H, IHS_MODES, SUBSTRATE_STYLE, PRESETS, COL,
-    decorOf, stackOf, footprintOf, liftsOf, STACK_TOP, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
+    decorOf, stackOf, footprintOf, substrateMinOf, liftsOf, STACK_TOP, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
     rayBox, pickTop, fitDistance, createCamera, orbit, zoom, pan, eyeOf, cameraAxes, cameraMatrices, screenRay, project,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.pkggeom = api;
