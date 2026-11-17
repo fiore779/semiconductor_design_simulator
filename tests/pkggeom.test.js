@@ -244,9 +244,13 @@ test('1CCD の AMD 品の基板は 2CCD 品と同じ広さ(同じソケット。
   assert.ok(Math.abs(a.w - b.w) / b.w < 0.03, a.w + ' ' + b.w); assert.ok(Math.abs(a.d - b.d) / b.d < 0.03);
 });
 
-test('AMD チップレットの基板は最小 32mm 角(CCD・IOD が基板に対して大きすぎない)。蓋はダイの外接矩形のまま、AMD 以外は変えない', () => {
+test('AMD チップレットは CCD・IOD を基板の中心に向けて 0.8 倍に縮めて描く(基板・蓋は縮める前のダイから。データの寸法・面積は不変、ブロックも比例)。AMD 以外は縮めない', () => {
   const { D } = require('./helpers.js'); const DSn = require('../js/model/design.js'); const Gn = require('../js/render/pkggeom.js');
-  const sc = (id) => Gn.buildScene(DSn.fromPreset(D.presets.find((p) => p.id === id)), {});
-  ['amd-zen5-9800x3d', 'amd-zen5-9950x3d', 'amd-zen4-7800x3d'].forEach((id) => { const s = sc(id); assert.ok(s.sub.w >= 32 - 1e-6 && s.sub.d >= 32 - 1e-6, id); assert.ok(s.ihs.x1 - s.ihs.x0 < s.sub.w - 4, id); });
-  assert.strictEqual(Gn.substrateMinOf(DSn.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285k'))), 0);
+  const d = DSn.fromPreset(D.presets.find((p) => p.id === 'amd-zen5-9950x3d')); const w0 = d.dies[0].widthMm;
+  const sc = Gn.buildScene(d, {}); const dd = sc.display;
+  assert.strictEqual(d.dies[0].widthMm, w0); assert.ok(Math.abs(dd.dies[0].widthMm - w0 * 0.8) < 1e-9); assert.strictEqual(dd.dies[0].realWidthMm, w0);
+  assert.ok(Math.abs(dd.dies[0].blocks[0].w - d.dies[0].blocks[0].w * 0.8) < 1e-9);
+  assert.strictEqual(Gn.substrateMinOf(d), 0);
+  const x = DSn.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285k')); assert.strictEqual(Gn.displayDesign(x), x);
+  const { x0, x1, z0, z1 } = sc.sub; dd.dies.forEach((q) => assert.ok(q.x > x0 && q.x + q.widthMm < x1 && q.y > z0 && q.y + q.heightMm < z1));
 });
