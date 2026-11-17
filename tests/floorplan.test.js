@@ -58,8 +58,11 @@ test('全プリセット: コア数・L3 の個数と容量が元のプリセッ
     const lay = (d.dies.find((x) => x.layout) || {}).layout;
     // 2026-11-07: Apple・Snapdragon・Dimensity は cfg.l3MB に SLC(Dimensity・Snapdragon は L3 + SLC)を入れたが、写真の枠に L3 の置き場所が無く(飾りの SLC)、L3 ブロックは出ない。写真なしの従来配置(M5 Max・8+ Gen 1)は L3 ブロックが 1 つ出る
     const socNoSlot = ['apple-soc', 'arm-soc'].includes(tplOf(p)) && p.id !== 'nv-orin-agx' && p.id !== 'nv-t239' && p.id !== 'nv-gb10' && !!(lay && lay.frame && !(FP.TILE_FRAMES[lay.frame] && FP.TILE_FRAMES[lay.frame].l3));
-    const want = socNoSlot ? 0 : p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && (lay.frame === 'strix-point' || lay.frame === 'zeppelin' || lay.frame === 'gb10') ? 2 : 1)) : 0;
+    // 2026-11-17: 古い Intel Core i の枠は L3 を SRAM の帯ごと(枠の l3 の配列の長さ)に分ける。容量は帯の重みで按分し、合計は cfg.l3MB のまま
+    const tfL3 = lay && lay.frame && FP.TILE_FRAMES[lay.frame] && Array.isArray(FP.TILE_FRAMES[lay.frame].l3 && FP.TILE_FRAMES[lay.frame].l3[0]) && p.addedIn === 'old-intel' ? FP.TILE_FRAMES[lay.frame].l3.length : 0;
+    const want = socNoSlot ? 0 : tfL3 && p.cfg.l3MB ? tfL3 : p.cfg.l3MB ? (tplOf(p) === 'amd-chiplet' ? lay.units : (lay && (lay.frame === 'strix-point' || lay.frame === 'zeppelin' || lay.frame === 'gb10') ? 2 : 1)) : 0;
     assert.strictEqual(l3.length, want, `${p.id}: L3 ブロック数`);
+    if (tfL3 && p.cfg.l3MB) assert.ok(Math.abs(l3.reduce((t, b) => t + parseFloat(/L3 ([\d.]+)MB/.exec(b.label)[1]), 0) - p.cfg.l3MB) < 0.05, `${p.id}: L3 の按分の合計`);
     const srcDies = p.dies && p.dies.length ? p.dies : [{ mm2: null }];
     assert.strictEqual(d.dies.length, srcDies.length, `${p.id}: ダイ数`);
     d.dies.forEach((die, i) => {

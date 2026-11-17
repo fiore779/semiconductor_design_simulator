@@ -377,6 +377,57 @@
       ['usb4', 'USB4 Buffer / PHY ×2', 'u', 1122, 1772, 265, 190], ['phy-br', 'USB / Display PHY ほか', 'u', 1390, 1860, 235, 135]]),
   };
   Object.assign(TILE_FRAMES, AMD_FRAMES);
+  // ---- 古い Intel Core i(第 2〜10 世代のデスクトップ・H 系のモノリシックダイ)の写真の枠(2026-11-17 追加。ユーザー指示「ダイショットは新しく追加したプリセット群に使用してください」)----
+  // 座標は各写真をブラウザで表示したときのピクセルの目測(±5〜10%)。box = ダイの外形(縦横比は写真の自然な縦横比と一致させた。実寸の注記は無い)。写真は注釈なしなので、コア・L3・GPU・リングバス・System Agent は
+  // 見た目から判別し、判別できない領域は「内訳は未判別」の飾りにした。L3 は SRAM の縦帯(コアの間・端)を枠にし、5 番目の数(重み)でスライス数に近い比に分ける。docs/research/old-intel-dieshots-2026-11-17.md
+  const UNK = '(内訳は未判別)';
+  const colRows = (xs, w, yT, hT, yB, hB) => { const r = []; xs.forEach((x) => { r.push([x, yT, w, hT]); r.push([x, yB, w, hB]); }); return r; }; // 列ごとに上段・下段の順
+  const ringCols = (xs, w, y, h, label) => xs.map((x, i) => [`ring${i}`, label, 'u', x, y, w, h]); // 中段のリング帯は L3 の縦帯と交差するので、コアの列ごとに分ける
+  const INTEL_OLD_FRAMES = {
+    // Sandy Bridge 4 コア(Intel in Deutschland の写真 4465×2160)。左に GPU、4 つのコア(上)と各コアの下の L3 スライス、右に System Agent
+    'snb-4c': tf([0, 37, 1191, 613], { p: 4, e: 0, lp: 0 },
+      [[278, 45, 182, 310], [463, 45, 182, 310], [648, 45, 182, 310], [832, 45, 182, 310]], [], [],
+      [[278, 360, 182, 182], [463, 360, 182, 182], [648, 360, 182, 182], [832, 360, 182, 182]], [
+        ['gpu', 'GPU(内蔵。左側の大きな領域)', 'g', 8, 45, 267, 495], ['sa', `System Agent${UNK}`, 'u', 1018, 45, 110, 495], ['io-r', `I/O・PHY(右端${UNK})`, 'u', 1131, 45, 54, 495],
+        ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 428, 545, 700, 66], ['io-bl', `I/O(左下${UNK})`, 'u', 5, 545, 420, 66]]),
+    // Haswell 4 コア GT2(Intel in Deutschland の写真 5863×2160)。左に I/O、4 つの「L3 スライス(上)+ コア(下)」、右に GPU
+    'hsw-4c': tf([0, 106, 1191, 545], { p: 4, e: 0, lp: 0 },
+      [[170, 280, 155, 262], [332, 280, 155, 262], [493, 280, 155, 262], [655, 280, 155, 262]], [], [],
+      [[170, 150, 155, 130], [332, 150, 155, 130], [493, 150, 155, 130], [655, 150, 155, 130]], [
+        ['io-l', `System Agent・I/O(左端${UNK})`, 'u', 2, 150, 165, 392], ['pad-t', `I/O・PHY(上辺${UNK})`, 'u', 2, 108, 848, 40],
+        ['sa', `System Agent・メディア(GPU の左${UNK})`, 'u', 815, 150, 45, 392], ['gpu', 'GPU(内蔵 GT2。右側の大きな領域)', 'g', 862, 108, 326, 434]]),
+    // Skylake 4 コア GT2(Skylake_(quad-core).png 3158×2160)。左に GPU、中央に 2×2 のコアと L3(縦帯)、右に System Agent・I/O
+    'skl-4c': tf([120, 0, 1070, 650], { p: 4, e: 0, lp: 0 },
+      [[510, 45, 155, 255], [510, 385, 155, 255], [715, 45, 155, 255], [715, 385, 155, 255]], [], [],
+      [[487, 45, 23, 595, 1], [668, 45, 47, 595, 2], [872, 45, 23, 595, 1]], [
+        ['disp-t', `ディスプレイ・I/O(左上の帯${UNK})`, 'u', 127, 3, 245, 42], ['io-t', `I/O・PHY(上辺${UNK})`, 'u', 375, 3, 692, 40], ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 127, 52, 252, 588],
+        ['sa-l', `System Agent・メディア(GPU と L3 の間${UNK})`, 'u', 382, 52, 103, 588], ...ringCols([510, 715], 155, 300, 85, `コア間のリング・L2 まわり(中段${UNK})`), ['sa-r', `System Agent・I/O(右側${UNK})`, 'u', 897, 45, 170, 595]]),
+    // Kaby Lake 4 コア GT2(Kaby_lake_(quad_core).png 3254×2160)。Skylake と同じ設計だが、写真は左右が逆(左に I/O・コア、右に GPU)
+    'kbl-4c': tf([106, 0, 1085, 650], { p: 4, e: 0, lp: 0 },
+      [[305, 45, 158, 255], [305, 385, 158, 255], [510, 45, 158, 255], [510, 385, 158, 255]], [], [],
+      [[283, 45, 22, 595, 1], [465, 45, 45, 595, 2], [668, 45, 24, 595, 1]], [
+        ['io-t', `I/O・PHY(上辺${UNK})`, 'u', 110, 3, 975, 40], ['io-l', `I/O(左辺${UNK})`, 'u', 110, 48, 172, 592], ...ringCols([305, 510], 158, 300, 85, `コア間のリング・L2 まわり(中段${UNK})`),
+        ['sa', `System Agent・メディア(コアと GPU の間${UNK})`, 'u', 694, 48, 135, 592], ['gpu', 'GPU(内蔵 GT2。右側の大きな領域)', 'g', 830, 48, 255, 592]]),
+    // Coffee Lake 6 コア(Intel_Core_i7_Gen8_(Coffee_Lake-S_14nm).jpg 3213×1758)。左に GPU、3 列 × 上下 2 段のコア、右に System Agent
+    'cfl-6c': tf([0, 0, 1191, 651], { p: 6, e: 0, lp: 0 },
+      colRows([415, 627, 830], 153, 10, 252, 350, 248), [], [],
+      [[396, 10, 19, 588, 1], [570, 10, 55, 588, 2], [782, 10, 46, 588, 2], [985, 10, 25, 588, 1]], [
+        ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 8, 8, 386, 590], ...ringCols([415, 627, 830], 153, 262, 86, `コア間のリング(中段${UNK})`), ['sa', `System Agent・I/O(右側${UNK})`, 'u', 1012, 10, 175, 590],
+        ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 8, 602, 1180, 46]]),
+    // Coffee Lake Refresh 8 コア(Intel-9th-Gen-Core.jpg 1935×906)。左に GPU、4 列 × 上下 2 段のコア、右に System Agent
+    'cfl-8c': tf([0, 57, 1489, 754], { p: 8, e: 0, lp: 0 },
+      colRows([440, 660, 885, 1100], 170, 70, 275, 430, 275), [], [],
+      [[415, 70, 25, 635, 1], [612, 70, 46, 635, 2], [832, 70, 51, 635, 2], [1057, 70, 41, 635, 2], [1272, 70, 28, 635, 1]], [
+        ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 2, 70, 410, 636], ...ringCols([440, 660, 885, 1100], 170, 345, 85, `コア間のリング(中段${UNK})`), ['sa', `System Agent・I/O(右側${UNK})`, 'u', 1302, 70, 185, 636],
+        ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 2, 710, 1485, 44]]),
+    // Comet Lake 10 コア(Intel_Core_i7_Gen10_(Comet_Lake-S_14nm).jpg 4880×2040)。左に GPU、5 列 × 上下 2 段のコア、右に System Agent
+    'cml-10c': tf([0, 76, 1191, 574], { p: 10, e: 0, lp: 0 },
+      colRows([315, 468, 620, 772, 922], 115, 90, 190, 338, 188), [], [],
+      [[297, 88, 18, 437, 1], [432, 88, 34, 437, 2], [585, 88, 33, 437, 2], [737, 88, 33, 437, 2], [890, 88, 30, 437, 2], [1038, 88, 17, 437, 1]], [
+        ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 8, 88, 287, 437], ...ringCols([315, 468, 620, 772, 922], 115, 280, 56, `コア間のリング(中段${UNK})`), ['sa', `System Agent・I/O(右側${UNK})`, 'u', 1057, 88, 128, 437],
+        ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 8, 528, 1177, 44]]),
+  };
+  Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
   // big = プライム → 中間コアの順(cfg の P → M → M2 の順に埋める)、small = 小コア(cfg の E)。cfg に L3 が無い(l3MB なし)ので frame の l3 は null で、写真の L3 は飾り(deco)で置く。座標は表示ピクセルからの目測(±5〜10%)。
   const qf = (box, big, small, deco) => tf(box, { p: big.length, e: small.length, lp: 0 }, big, small, [], null, deco);
@@ -543,6 +594,7 @@
   Object.assign(TILE_FRAMES, MT_FRAMES, NV_FRAMES);
   // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
   Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
+  Object.keys(INTEL_OLD_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = ['x86-mono']; }); // 古い Intel のモノリシックダイ(x86-mono だけ)
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
   TILE_FRAMES.gb10.l3Frac = 0.6; // 2026-11-07: GB10 の cfg.l3MB は L3 24 + SLC 16 = 40MB(SLC 全体を L3 相当)。写真の L3 枠(16 + 8MB)が表すのは 24/40
   TILE_FRAMES['gb10-gpu'].live = true; // GB10 の G-die も同じ(従来の「GPU」1 ブロックは飾りではなかった。'deco' を付けた「未判別」だけ飾り)
@@ -563,6 +615,25 @@
     'amd-zen3-5800u': { frame: 'cezanne', basis: 'photo' }, 'amd-zen3p-7735hs': { frame: 'rembrandt-r', basis: 'photo' }, 'amd-zen4-7840hs': { frame: 'phoenix1', basis: 'photo' }, 'amd-zen4-8700g': { frame: 'phoenix1', basis: 'photo' }, 'amd-zen4-8500g': { frame: 'phoenix2', basis: 'photo' },
   };
   // Qualcomm Snapdragon の写真の枠(arm-soc)。出典の URL は C:\LocalAI\画像\必要な画像リスト.md の Kurnal Insights のページ(チップ名・SM 型番で対応づけた候補。ページ本文は未取得)
+  // 古い Intel Core i(2026-11-17)。写真は WikiChip 由来の画像(Intel 著作)の転載サイト happytrees.org(CPU Graveyard)で表示して目測した。ライセンス表記の確認は 9900K のページだけ(Intel 著作)。写真は注釈なし。縦横比は写真のもの(実寸の注記なし)
+  const INTEL_OLD_SRC = {
+    'snb-4c': 'Sandy Bridge 4 コアのダイ写真(Intel-sandy_bridge-4-core-Intel_in_Deutschland.jpg 4465×2160。出典 https://happytrees.org/dieshots/Intel_-_Sandy_Bridge_(4-core))。コア ×4 + 各コア下の L3 スライス ×4、左に GPU、右に System Agent。縦横比 2.07(実寸の注記なし)',
+    'hsw-4c': 'Haswell 4 コア GT2 のダイ写真(Intel-4th_Generation_Intel_Core_Processor_Die-Intel_in_Deutschland.jpg 5863×2160。出典 https://happytrees.org/dieshots/Intel_-_Haswell_(quad_core))。左に I/O、4 つの「L3 スライス + コア」、右に GPU。縦横比 2.71(Intel の配布画像で、実寸と一致するかは未確認)',
+    'skl-4c': 'Skylake 4 コア GT2 のダイ写真(Skylake_(quad-core).png 3158×2160。出典 https://happytrees.org/dieshots/Intel_-_Skylake_(quad-core))。左に GPU、2×2 のコアと L3 の縦帯、右に System Agent・I/O。縦横比 1.46(実寸の注記なし)',
+    'kbl-4c': 'Kaby Lake 4 コア GT2 のダイ写真(Kaby_lake_(quad_core).png 3254×2160。出典 https://happytrees.org/dieshots/Intel_-_Kaby_Lake_(quad_core))。Skylake と同じ設計で左右が逆(右に GPU)。縦横比 1.51(実寸の注記なし)',
+    'cfl-6c': 'Coffee Lake 6 コア GT2 のダイ写真(Intel_Core_i7_Gen8_(Coffee_Lake-S_14nm).jpg 3213×1758。出典 https://happytrees.org/dieshots/Intel_-_Core_i7_Gen8_(Coffee_Lake-S_14nm))。左に GPU、3 列 × 上下 2 段のコア、右に System Agent。縦横比 1.83(実寸の注記なし)',
+    'cfl-8c': 'Coffee Lake Refresh 8 コア GT2 のダイ写真(Intel-9th-Gen-Core.jpg 1935×906。出典 https://happytrees.org/dieshots/Intel_-_Core_i9-9900K_(Coffee_Lake)。Intel 著作と表記)。左に GPU、4 列 × 上下 2 段のコア、右に System Agent。縦横比 2.14(実寸の注記なし)',
+    'cml-10c': 'Comet Lake 10 コア GT2 のダイ写真(Intel_Core_i7_Gen10_(Comet_Lake-S_14nm).jpg 4880×2040。出典 https://happytrees.org/dieshots/Intel_-_Core_i7_Gen10_(Comet_Lake-S_14nm))。左に GPU、5 列 × 上下 2 段のコア、右に System Agent。縦横比 2.39(実寸の注記なし)',
+  };
+  const INTEL_OLD_MAP = {
+    'intel-snb-2600k': { frame: 'snb-4c', basis: 'photo' }, 'intel-snb-2500k': { frame: 'snb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 を 6MB に制限)' }, 'intel-snb-2720qm': { frame: 'snb-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
+    'intel-hsw-4770k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4790k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4690k': { frame: 'hsw-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-hsw-4700hq': { frame: 'hsw-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU' },
+    'intel-skl-6700k': { frame: 'skl-4c', basis: 'photo' }, 'intel-skl-6600k': { frame: 'skl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-skl-6700hq': { frame: 'skl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
+    'intel-kbl-7700k': { frame: 'kbl-4c', basis: 'photo' }, 'intel-kbl-7600k': { frame: 'kbl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-kbl-7700hq': { frame: 'kbl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
+    'intel-cfl-8700k': { frame: 'cfl-6c', basis: 'photo' }, 'intel-cfl-8400': { frame: 'cfl-6c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 9MB)' },
+    'intel-cfr-9900k': { frame: 'cfl-8c', basis: 'photo' }, 'intel-cfr-9700k': { frame: 'cfl-8c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 12MB)' },
+    'intel-cml-10900k': { frame: 'cml-10c', basis: 'photo' }, 'intel-cml-10700k': { frame: 'cml-10c', basis: 'photo', extra: '同じダイの SKU(コア 2 つ無効。空き枠を残す)' },
+  };
   const QC_SRC = {
     'sd-855': '855 sm8150.jpg(Kurnal の注釈。5670×5925。SM8150。URL 候補: https://kurnal-insights.com/en/dieshot/dieshotqualcomm-snapdragon-855sm8150/)',
     'sd-865': '865 sm8250.jpg(Kurnal の注釈。5674×6695。SM8250。URL 候補: https://kurnal-insights.com/en/dieshot/qualcomm-snapdragon-865/)',
@@ -865,6 +936,11 @@
         if (m && slots.p === 8 && slots.e === 8) { basis = 'photo'; note = '12900K(Alder Lake-S 8P+8E)の TechPowerUp 注釈つきダイ写真(ユーザーが会話に貼付)の目測。Locuza の面積測定(二次)の P コア 3.57%・E クラスタ 4.16%・iGPU 16.1% と、実装は ±10% 以内で一致。コアを無効化した SKU は空き枠を残す'; }
         else if (m && slots.p === 8 && slots.e === 16) { basis = 'photo'; note = '13900K(Raptor Lake-S 8P+16E)の TechPowerUp 注釈つきダイ写真(arch2.jpg)の目測。ダイの縦横比は写真の 2.15(実寸 23.8×10.8 mm なら 2.20 で、差 2%)。コアを無効化した SKU は空き枠を残す'; }
         return Object.assign(base, { template: 'intel-hybrid', uncore: true, igpu: !!facts.igpu, dieIndex: ci, slots, scaleBasis: basis, scaleNote: note });
+      }
+      const io = INTEL_OLD_MAP[preset.id];
+      if (io && TILE_FRAMES[io.frame]) {
+        const note = `${INTEL_OLD_SRC[io.frame]}${io.extra ? `。${io.extra}` : ''}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま`;
+        return Object.assign(base, { template: 'x86-mono', uncore: true, igpu: !!facts.igpu, dieIndex: ci, frame: io.frame, scaleBasis: io.basis, scaleNote: note });
       }
       return Object.assign(base, { template: 'x86-mono', uncore: true, igpu: !!facts.igpu, dieIndex: ci });
     }
