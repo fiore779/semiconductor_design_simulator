@@ -426,6 +426,31 @@
       [[297, 88, 18, 437, 1], [432, 88, 34, 437, 2], [585, 88, 33, 437, 2], [737, 88, 33, 437, 2], [890, 88, 30, 437, 2], [1038, 88, 17, 437, 1]], [
         ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 8, 88, 287, 437], ...ringCols([315, 468, 620, 772, 922], 115, 280, 56, `コア間のリング(中段${UNK})`), ['sa', `System Agent・I/O(右側${UNK})`, 'u', 1057, 88, 128, 437],
         ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 8, 528, 1177, 44]]),
+    // 2026-11-18 追加(第1・第3・第5世代)。座標は写真の表示ピクセルの目測(±5〜10%)
+    // Nehalem Lynnfield 4 コア(Intel_nehalem_lynfield_die_shot.jpg 2196×1351)。上辺に I/O、4 つのコア(上段)、中央に Uncore、下段に L3(左右 2 つの大きな領域)、右に PCIe・DMI など
+    'nhm-lyn-4c': tf([0, 0, 1154, 710], { p: 4, e: 0, lp: 0 },
+      [[62, 96, 201, 372], [267, 96, 196, 372], [569, 96, 197, 372], [770, 96, 196, 372]], [], [],
+      [[66, 480, 396, 220], [568, 480, 396, 220]], [
+        ['io-t', `I/O・PHY(上辺${UNK})`, 'u', 5, 8, 1015, 84], ['io-l', `I/O(左端${UNK})`, 'u', 5, 95, 55, 605], ['unc', `Uncore(中央の縦帯。メモリコントローラ・QPI など${UNK})`, 'u', 466, 95, 100, 605],
+        ['io-r', `PCIe・DMI・I/O(右側${UNK})`, 'u', 970, 95, 180, 605], ['io-tr', `I/O(右上${UNK})`, 'u', 1022, 8, 128, 84]]),
+    // Westmere(Gulftown)6 コア(Intel-xeon_5600-westmere-die-6-core-intel_in_deutschland.jpg 3226×1724)。上段に L3(左右 2 つ)、その下に 6 つのコア、中央に Uncore、下段に I/O
+    'wsm-6c': tf([0, 0, 1154, 617], { p: 6, e: 0, lp: 0 },
+      [[62, 192, 160, 308], [226, 192, 160, 308], [386, 192, 158, 308], [616, 192, 160, 308], [776, 192, 160, 308], [936, 192, 162, 308]], [], [],
+      [[62, 10, 482, 176], [618, 10, 480, 176]], [
+        ['unc', `Uncore(中央の縦帯。メモリコントローラ・QPI など${UNK})`, 'u', 547, 8, 68, 602], ['io-l', `I/O(左端${UNK})`, 'u', 5, 8, 55, 492], ['io-r', `I/O(右端${UNK})`, 'u', 1100, 8, 50, 492],
+        ['io-bl', `I/O・PHY(下段左${UNK})`, 'u', 5, 503, 540, 107], ['io-br', `I/O・PHY(下段右${UNK})`, 'u', 618, 503, 532, 107]]),
+    // Ivy Bridge 4 コア GT2(Ivy_bridge_die_(quad-core).jpg 800×336)。左に GPU(EU 16 基が左端に 2 段)、4 つのコア(上)と各コアの下の L3 スライス、右に System Agent・I/O
+    'ivb-4c': tf([0, 0, 1154, 485], { p: 4, e: 0, lp: 0 },
+      [[389, 8, 148, 267], [539, 8, 148, 267], [690, 8, 146, 267], [839, 8, 145, 267]], [], [],
+      [[357, 282, 180, 136], [538, 282, 150, 136], [689, 282, 148, 136], [838, 282, 147, 136]], [
+        ['gpu', 'GPU(内蔵 GT2。左側の大きな領域)', 'g', 8, 8, 347, 410], ['sa', `System Agent(右側${UNK})`, 'u', 987, 8, 90, 412], ['io-r', `I/O・PHY(右端${UNK})`, 'u', 1080, 8, 72, 414],
+        ['phy-b', `メモリ・I/O の PHY(下辺${UNK})`, 'u', 38, 424, 1040, 59], ['io-bl', `I/O(左下${UNK})`, 'u', 6, 424, 30, 58]]),
+    // Broadwell-H 4 コア GT3e(Intel_Core_i7_Gen5_(Broadwell-H_QC_GT3e_14nm).jpg 1097×976)。上段に「L3 スライス(上)+ コア(下)」×4、左右に System Agent・I/O、下半分に GPU(GT3e の大きな領域)
+    'bdw-4c': tf([0, 0, 1154, 1027], { p: 4, e: 0, lp: 0 },
+      [[270, 195, 145, 305], [420, 195, 158, 305], [595, 195, 145, 305], [748, 195, 157, 305]], [], [],
+      [[270, 55, 145, 135], [420, 55, 158, 135], [595, 55, 145, 135], [748, 55, 157, 135]], [
+        ['io-t', `I/O・PHY(上辺${UNK})`, 'u', 145, 8, 935, 42], ['sa-l', `System Agent・I/O(左側${UNK})`, 'u', 8, 55, 258, 445], ['sa-r', `System Agent・I/O(右側${UNK})`, 'u', 915, 55, 235, 445],
+        ['gpu', 'GPU(内蔵 GT3e。下半分の大きな領域)', 'g', 8, 505, 970, 515], ['io-br', `I/O・eDRAM 接続など(右下${UNK})`, 'u', 982, 505, 168, 515]]),
   };
   Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
@@ -625,7 +650,16 @@
     'cfl-8c': 'Coffee Lake Refresh 8 コア GT2 のダイ写真(Intel-9th-Gen-Core.jpg 1935×906。出典 https://happytrees.org/dieshots/Intel_-_Core_i9-9900K_(Coffee_Lake)。Intel 著作と表記)。左に GPU、4 列 × 上下 2 段のコア、右に System Agent。縦横比 2.14(実寸の注記なし)',
     'cml-10c': 'Comet Lake 10 コア GT2 のダイ写真(Intel_Core_i7_Gen10_(Comet_Lake-S_14nm).jpg 4880×2040。出典 https://happytrees.org/dieshots/Intel_-_Core_i7_Gen10_(Comet_Lake-S_14nm))。左に GPU、5 列 × 上下 2 段のコア、右に System Agent。縦横比 2.39(実寸の注記なし)',
   };
+  Object.assign(INTEL_OLD_SRC, {
+    'nhm-lyn-4c': 'Nehalem Lynnfield 4 コアのダイ写真(Intel_nehalem_lynfield_die_shot.jpg 2196×1351。出典 https://happytrees.org/dieshots/Intel_-_Nehalem-Lynnfield_(quad-core))。上に I/O、4 コア、中央に Uncore、下に L3。縦横比 1.63(実寸の注記なし)',
+    'wsm-6c': 'Westmere 6 コアのダイ写真(Intel-xeon_5600-westmere-die-6-core-intel_in_deutschland.jpg 3226×1724。Xeon 5600 の写真で、Core i7-980X(Gulftown)と同じ 6 コアのダイとみなした([二次]。設計書 §2.1 の Gulftown 239mm² と Westmere-EP 248mm² は食い違い)。出典 https://happytrees.org/dieshots/Intel_-_Xeon_5600_(Westmere_6-core))。上段に L3、6 コア、中央に Uncore。縦横比 1.87(実寸の注記なし)',
+    'ivb-4c': 'Ivy Bridge 4 コアのダイ写真(Ivy_bridge_die_(quad-core).jpg 800×336。Intel 著作と表記。出典 https://happytrees.org/dieshots/Intel_-_Ivy_Bridge_(4-core))。左に GPU、4 コアと各コア下の L3 スライス、右に System Agent。縦横比 2.38(実寸の注記なし)',
+    'bdw-4c': 'Broadwell-H 4 コア GT3e のダイ写真(Intel_Core_i7_Gen5_(Broadwell-H_QC_GT3e_14nm).jpg 1097×976。出典 https://happytrees.org/dieshots/Intel_-_Core_i7_Gen5_(Broadwell-H_QC_GT3e_14nm))。上に「L3 スライス + コア」、下半分に GPU(GT3e)。128MB の eDRAM は別ダイで写真に含まれない。縦横比 1.12(実寸の注記なし)',
+  });
   const INTEL_OLD_MAP = {
+    'intel-nhm-860': { frame: 'nhm-lyn-4c', basis: 'photo' }, 'intel-wsm-980x': { frame: 'wsm-6c', basis: 'photo' },
+    'intel-ivb-3770k': { frame: 'ivb-4c', basis: 'photo' }, 'intel-ivb-3570k': { frame: 'ivb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' },
+    'intel-bdw-5775c': { frame: 'bdw-4c', basis: 'photo' },
     'intel-snb-2600k': { frame: 'snb-4c', basis: 'photo' }, 'intel-snb-2500k': { frame: 'snb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 を 6MB に制限)' }, 'intel-snb-2720qm': { frame: 'snb-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
     'intel-hsw-4770k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4790k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4690k': { frame: 'hsw-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-hsw-4700hq': { frame: 'hsw-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU' },
     'intel-skl-6700k': { frame: 'skl-4c', basis: 'photo' }, 'intel-skl-6600k': { frame: 'skl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-skl-6700hq': { frame: 'skl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },

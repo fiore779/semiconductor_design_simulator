@@ -1,4 +1,4 @@
-// プリセット(古い Core i シリーズ。第2〜10世代のデスクトップ・ノート): 2026-11-17 追加(ユーザー指示「古いチップも追加。現在情報がある Core i シリーズだけ」)。
+// プリセット(古い Core i シリーズ。第2〜10世代のデスクトップ・ノート。2026-11-18 に第1・第3・第5世代の 5 SKU を追加 = 23 SKU。詳細は docs/research/old-intel-gen135-2026-11-18.md): 2026-11-17 追加(ユーザー指示「古いチップも追加。現在情報がある Core i シリーズだけ」)。
 // 値は設計書 §2.8(参考データ。調査 2026-10-26〜27)と §2.4(GB7 のチャート値)から転記。未取得は null のまま(推測で埋めない)。
 // 対象は、コア設計の幅・ROB が分かる世代(Sandy Bridge・Haswell・Skylake と、同じコア設計の Kaby Lake・Coffee Lake・Comet Lake)で、
 // ダイ面積・構成(Intel ARK)・GB7 の行がそろう 18 SKU(i5-8400 は 2026-11-17 のユーザー判断で外した。MT が公開値より +18.2% 高く、原因が特定できなかったため)。見送り: Ivy Bridge・Broadwell(ROB 未取得)、Rocket Lake・Tiger Lake・Ice Lake(幅・ROB 未取得)、
@@ -21,17 +21,27 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   const CFL6 = { name: 'Coffee Lake 6C+GT2', mm2: 149.6, s: 'sec', nodeId: 'intel-14', note: 'AnandTech の推定(約 149.6mm²。[二次]。設計書 §2.8.1。WikiChip は 149、殻割りの実測は約 151、TechPowerUp DB は 154 で食い違い)' };
   const CFL8 = { name: 'Coffee Lake Refresh 8C+GT2', mm2: 176.3, s: 'meas', nodeId: 'intel-14', note: 'Kurnal の測定([実測]。設計書 §2.8.1)' };
   const CML10 = { name: 'Comet Lake 10C+GT2', mm2: 206.1, s: 'sec', nodeId: 'intel-14', note: 'der8auer の計測のフォーラム転載(206.1mm²。[二次]。AnandTech の推定は約 198.4mm²。設計書 §2.8.1)' };
+  // 2026-11-18 追加(第1・第3・第5世代。ユーザー指示「5、3、1世代の core i が追加されていないので追加してください」)
+  const LYN4 = { name: 'Lynnfield 4C', mm2: 296, s: 'sec', nodeId: 'intel-45', note: 'WikiChip: Nehalem・ComputerBase の 296mm²([二次]。設計書 §2.1)。PCIe・DMI を内蔵し、GPU はない' };
+  const GFT6 = { name: 'Gulftown 6C', mm2: 239, s: 'sec', nodeId: 'intel-32', note: 'Wikipedia の Core i7 一覧の 239mm²([二次]。設計書 §2.1。Westmere-EP の 248mm² は同じ 6 コアのダイとみられるが食い違い)。GPU はない' };
+  const IVB4 = { name: 'Ivy Bridge 4C+GT2', mm2: 160, s: 'sec', nodeId: 'intel-22', note: '設計書 §2.8.1 の 160mm²(Wikipedia。3DCenter と表記が食い違う。[二次]。区分は設計書では [公表] だが原ページは未確認)' };
+  const BDW4 = { name: 'Broadwell-H 4C+GT3e', mm2: 182, s: 'sec', nodeId: 'intel-14', note: 'TechPowerUp の CPU DB の 182mm²([二次]。HMC-Tech の比較表も同じ値)。128MB の eDRAM は別の 22nm ダイ(77mm²。HW-Museum。[二次])で、この面積に含めない' };
   const reuse = (d, why) => Object.assign({}, d, { note: d.note + '。' + why });
 
   // [id, 名前, family, kind, 年, GB7 行, ダイ, TDP(W), TDP 区分, uarch, コア数, スレッド(smt), base GHz, boost GHz, L3 MB, メモリ, 備考]
   const rows = [
+    ['intel-nhm-860', 'Core i7-860', 'Nehalem', 'pc', 2009, 'i7-860(4c)', LYN4, 95, 'sec', 'Nehalem', 4, 2, 2.8, 3.46, 8, 'DDR3-1333', '第1世代(45nm、Lynnfield)。Intel ARK のページが取得できず、構成・クロック・TDP は Wikipedia と検索の要約([二次])。メモリは 2 チャネル(Wikipedia)。'],
+    ['intel-wsm-980x', 'Core i7-980X', 'Westmere', 'pc', 2010, 'i7-980X(6c、参考: Westmere)', GFT6, 130, 'sec', 'Nehalem', 6, 2, 3.33, 3.6, 12, 'DDR3-1066', '第1世代(32nm、Gulftown)。6 コア。Intel ARK のページが取得できず、構成・クロックは Wikipedia、TDP 130W は Intel の製品概要(検索の要約。[二次])。メモリは 3 チャネル(Intel の製品概要・Wikipedia)。'],
     ['intel-snb-2600k', 'Core i7-2600K', 'Sandy Bridge', 'pc', 2011, 'i7-2600K(4c)', SB4, 95, 'pub', 'Sandy Bridge', 4, 2, 3.4, 3.8, 8, 'DDR3-1333', '第2世代(32nm)。4C+GT2(HD Graphics 3000)ダイ。'],
     ['intel-snb-2500k', 'Core i5-2500K', 'Sandy Bridge', 'pc', 2011, 'i5-2500K(4c)', reuse(SB4, '2600K と同じ 4C ダイからハイパースレッディングと L3 2MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 95, 'pub', 'Sandy Bridge', 4, 1, 3.3, 3.7, 6, 'DDR3-1333', '第2世代(32nm)。ハイパースレッディングなし。'],
     ['intel-snb-2720qm', 'Core i7-2720QM', 'Sandy Bridge', 'mobile-pc', 2011, 'i7-2720QM(4c、モバイル)', reuse(SB4, 'モバイル(QM)も 4C+GT2 のダイと考えられる([推定]。個別の確認は未取得)'), 45, 'pub', 'Sandy Bridge (モバイル)', 4, 2, 2.2, 3.3, 6, 'DDR3-1600', '第2世代モバイル(32nm)。'],
+    ['intel-ivb-3770k', 'Core i7-3770K', 'Ivy Bridge', 'pc', 2012, 'i7-3770K(4c)', IVB4, 77, 'pub', 'Ivy Bridge', 4, 2, 3.5, 3.9, 8, 'DDR3-1600', '第3世代(22nm)。4C+GT2(HD Graphics 4000)ダイ。構成・クロック・TDP は Intel ARK(2026-11-18 取得)。'],
+    ['intel-ivb-3570k', 'Core i5-3570K', 'Ivy Bridge', 'pc', 2012, 'i5-3570K(4c)', reuse(IVB4, '3770K と同じ 4C ダイからハイパースレッディングと L3 2MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 77, 'pub', 'Ivy Bridge', 4, 1, 3.4, 3.8, 6, 'DDR3-1600', '第3世代(22nm)。ハイパースレッディングなし。構成・クロック・TDP は Intel ARK(2026-11-18 取得)。'],
     ['intel-hsw-4770k', 'Core i7-4770K', 'Haswell', 'pc', 2013, 'i7-4770K(4c)', HSW4, 84, 'pub', 'Haswell', 4, 2, 3.5, 3.9, 8, 'DDR3-1600', '第4世代(22nm)。'],
     ['intel-hsw-4790k', 'Core i7-4790K', 'Haswell', 'pc', 2014, 'i7-4790K(4c)', reuse(HSW4, 'Haswell Refresh(Devil\'s Canyon)も同じ 4C+GT2 ダイとして流用([推定]。個別の確認は未取得)'), 88, 'pub', 'Haswell', 4, 2, 4.0, 4.4, 8, 'DDR3-1600', '第4世代 Refresh(22nm)。'],
     ['intel-hsw-4690k', 'Core i5-4690K', 'Haswell', 'pc', 2014, 'i5-4690K(4c)', reuse(HSW4, '4790K と同じ 4C ダイからハイパースレッディングと L3 2MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 88, 'pub', 'Haswell', 4, 1, 3.5, 3.9, 6, 'DDR3-1600', '第4世代 Refresh(22nm)。ハイパースレッディングなし。'],
     ['intel-hsw-4700hq', 'Core i7-4700HQ', 'Haswell', 'mobile-pc', 2013, 'i7-4700HQ(4c、モバイル)', reuse(HSW4, 'モバイル(HQ)も 4C+GT2 のダイと考えられる([推定]。個別の確認は未取得)'), 47, 'sec', 'Haswell (モバイル)', 4, 2, 2.4, 3.4, 6, 'DDR3L-1600', '第4世代モバイル(22nm)。TDP 47W は ARK を取得できず [二次]。'],
+    ['intel-bdw-5775c', 'Core i7-5775C', 'Broadwell', 'pc', 2015, 'i7-5775C(4c)', BDW4, 65, 'pub', 'Broadwell', 4, 2, 3.3, 3.7, 6, 'DDR3L-1600', '第5世代(14nm、Broadwell-H)。デスクトップ向けの Broadwell はこの SKU(と i5-5675C)だけ。128MB の eDRAM(L4)と Iris Pro 6200(GT3e)を持つが、モデルは L4 を扱わない。GB7 は標本が少ない(Windows 7 件)。構成・クロック・TDP は Intel ARK(2026-11-18 取得)。'],
     ['intel-skl-6700k', 'Core i7-6700K', 'Skylake', 'pc', 2015, 'i7-6700K(4c)', SKL4, 91, 'pub', 'Skylake', 4, 2, 4.0, 4.2, 8, 'DDR4-2133', '第6世代(14nm)。'],
     ['intel-skl-6600k', 'Core i5-6600K', 'Skylake', 'pc', 2015, 'i5-6600K(4c)', reuse(SKL4, '6700K と同じ 4C ダイからハイパースレッディングと L3 2MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 91, 'pub', 'Skylake', 4, 1, 3.5, 3.9, 6, 'DDR4-2133', '第6世代(14nm)。ハイパースレッディングなし。'],
     ['intel-skl-6700hq', 'Core i7-6700HQ', 'Skylake', 'mobile-pc', 2015, 'i7-6700HQ(4c、モバイル)', reuse(SKL4, 'モバイル(HQ)も 4C+GT2 のダイと考えられる([推定]。個別の確認は未取得)'), 45, 'pub', 'Skylake (モバイル)', 4, 2, 2.6, 3.5, 6, 'DDR4-2133', '第6世代モバイル(14nm)。'],
@@ -47,6 +57,9 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   // 全コア負荷時のクロック(allCoreGHz。2026-11-17。MT の予測に使う。区分 [二次]。取得日 2026-11-17。Intel ARK には載っていない)。出典を確認できた SKU だけ(確認できない SKU は未取得のまま)
   const WC = 'WikiChip'; const CM = 'CPU-Monkey'; const TH = "Tom's Hardware";
   const ALLCORE = {
+    'intel-nhm-860': [2.93, "AnandTech の i7-860 のターボ表(全 4 コア 2.93GHz。基本 2.8GHz の 1 ビン上。https://at-web1.www.anandtech.com/show/2832/5 の検索抜粋)"],
+    'intel-ivb-3770k': [3.7, WC + ' の 4 コア時ターボ 3,700MHz(https://en.wikichip.org/wiki/intel/core i7/i7-3770k の検索抜粋)'],
+    'intel-bdw-5775c': [3.6, WC + ' の 4 コア時ターボ 3,600MHz(https://en.wikichip.org/wiki/intel/core i7/i7-5775c の検索抜粋)'],
     'intel-skl-6700hq': [3.1, WC + ' の 4 コア時ターボ 3.1GHz(https://en.wikichip.org/wiki/i7-6700hq)'],
     'intel-kbl-7700hq': [3.4, 'ultrabookreview の「Max Quad Core Turbo 3.4GHz」(https://ultrabookreview.com/14101-intel-core-i7-7700hq-benchmarks)'],
     'intel-hsw-4700hq': [3.0, 'CPU-Monkey・CPU-Compare の 4 コア時ターボ 3.00GHz(https://www.cpu-monkey.com/en/cpu-intel_core_i7_4700hq)。Notebookcheck(オランダ語版)は 4 コア 3.2GHz と書き食い違う。どちらを採っても MT の誤差は ±3% 以内(感度 3.0→-2.6%・3.2→+2.6%)なので、低い方を採った'],

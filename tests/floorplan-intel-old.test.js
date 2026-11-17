@@ -7,23 +7,23 @@ const FP = require('../js/model/floorplan.js');
 const design = require('../js/model/design.js');
 
 const olds = D.presets.filter((p) => p.addedIn === 'old-intel');
-const FRAMES = ['snb-4c', 'hsw-4c', 'skl-4c', 'kbl-4c', 'cfl-6c', 'cfl-8c', 'cml-10c'];
+const FRAMES = ['snb-4c', 'hsw-4c', 'skl-4c', 'kbl-4c', 'cfl-6c', 'cfl-8c', 'cml-10c', 'nhm-lyn-4c', 'wsm-6c', 'ivb-4c', 'bdw-4c'];
 const mk = (p) => design.fromPreset(p, { mode: 'reproduce' });
 
-test('古い Intel の枠: 7 枠で、コア枠の数・縦横比・テンプレートが決めたとおり', () => {
-  const want = { 'snb-4c': [4, 4465 / 2160], 'hsw-4c': [4, 5863 / 2160], 'skl-4c': [4, 3158 / 2160], 'kbl-4c': [4, 3254 / 2160], 'cfl-6c': [6, 3213 / 1758], 'cfl-8c': [8, 1935 / 906], 'cml-10c': [10, 4880 / 2040] };
+test('古い Intel の枠: 11 枠で、コア枠の数・縦横比・テンプレートが決めたとおり', () => {
+  const want = { 'snb-4c': [4, 4465 / 2160], 'hsw-4c': [4, 5863 / 2160], 'skl-4c': [4, 3158 / 2160], 'kbl-4c': [4, 3254 / 2160], 'cfl-6c': [6, 3213 / 1758], 'cfl-8c': [8, 1935 / 906], 'cml-10c': [10, 4880 / 2040], 'nhm-lyn-4c': [4, 2196 / 1351], 'wsm-6c': [6, 3226 / 1724], 'ivb-4c': [4, 800 / 336], 'bdw-4c': [4, 1097 / 976] };
   FRAMES.forEach((k) => {
     const t = FP.TILE_FRAMES[k];
     assert.ok(t, k);
     assert.strictEqual(t.big.length, want[k][0], `${k}: コア枠の数`);
     assert.deepStrictEqual(t.tpl, ['x86-mono'], `${k}: テンプレート`);
     assert.ok(Math.abs(t.aspect / want[k][1] - 1) < 0.01, `${k}: 縦横比は写真の自然な縦横比(誤差 1% 以内) ${t.aspect.toFixed(3)} / ${want[k][1].toFixed(3)}`);
-    assert.ok(Array.isArray(t.l3[0]) && t.l3.length >= 3, `${k}: L3 は帯ごとの枠`);
+    assert.ok(Array.isArray(t.l3[0]) && t.l3.length >= 2, `${k}: L3 は帯ごとの枠`);
   });
 });
 
-test('古い Intel の 18 プリセット: 全部が photo の枠を持ち、コア数・L3 の合計が元のまま、ブロックはダイの内側で重ならない', () => {
-  assert.strictEqual(olds.length, 18); // 8400 を外した(2026-11-17)
+test('古い Intel の 23 プリセット: 全部が photo の枠を持ち、コア数・L3 の合計が元のまま、ブロックはダイの内側で重ならない', () => {
+  assert.strictEqual(olds.length, 23); // 8400 を外した(2026-11-17)。第1・3・5世代 5 件を追加(2026-11-18)
   olds.forEach((p) => {
     const d = mk(p); const die = d.dies[0]; const l = die.layout;
     assert.ok(l && FRAMES.includes(l.frame), `${p.id}: frame`);

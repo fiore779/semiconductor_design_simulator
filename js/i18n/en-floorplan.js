@@ -27,6 +27,8 @@
     'layout: 形式が違います': 'layout: the format is wrong', 'layout.template が文字列ではありません': 'layout.template is not a string', 'layout.template「${1}」は未知のテンプレートです': 'layout.template "${1}" is an unknown template', 'layout.units は 1〜${1} の整数にしてください': 'layout.units must be an integer from 1 to ${1}', 'layout.frame が文字列ではありません': 'layout.frame is not a string', 'layout.recipe が未知です': 'layout.recipe is unknown',
     // 古い Intel Core i のダイ写真の枠のブロック名(2026-11-17。語句の断片置換)
     'コア間のリング・L2 まわり': 'inter-core ring / around L2', 'コア間のリング': 'inter-core ring', 'メモリ・I/O の PHY': 'memory / I/O PHY', 'I/O・PHY': 'I/O / PHY', 'ディスプレイ・I/O': 'display / I/O', 'System Agent・メディア': 'System Agent / media', 'System Agent・I/O': 'System Agent / I/O',
-    '内蔵 GT2': 'integrated GT2', '左側の大きな領域': 'large area on the left', '右側の大きな領域': 'large area on the right', 'GPU と L3 の間': 'between the GPU and L3', 'コアと GPU の間': 'between the cores and the GPU', 'GPU の左': 'left of the GPU', '左上の帯': 'top-left band', '左下': 'bottom left', '中段': 'middle row', '下辺': 'bottom edge', '上辺': 'top edge', '左端': 'left edge', '右端': 'right edge', '左辺': 'left side', '右側': 'right side'
+    '内蔵 GT2': 'integrated GT2', '左側の大きな領域': 'large area on the left', '右側の大きな領域': 'large area on the right', 'GPU と L3 の間': 'between the GPU and L3', 'コアと GPU の間': 'between the cores and the GPU', 'GPU の左': 'left of the GPU', '左上の帯': 'top-left band', '左下': 'bottom left', '中段': 'middle row', '下辺': 'bottom edge', '上辺': 'top edge', '左端': 'left edge', '右端': 'right edge', '左辺': 'left side', '右側': 'right side',
+    // 第1・3・5世代の枠(2026-11-18)
+    '内蔵 GT3e': 'integrated GT3e', '下半分の大きな領域': 'large area in the lower half', '中央の縦帯': 'central vertical strip', 'メモリコントローラ・QPI など': 'memory controller / QPI etc.', 'PCIe・DMI・I/O': 'PCIe / DMI / I/O', 'I/O・eDRAM 接続など': 'I/O / eDRAM link etc.', '右上': 'top right', '右下': 'bottom right', '下段左': 'lower left', '下段右': 'lower right'
   });
 })(typeof window !== 'undefined' ? window : globalThis);

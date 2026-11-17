@@ -1263,6 +1263,15 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel 第2〜第11世代",
+  "generation": "第1世代 Nehalem(Lynnfield)",
+  "name": "i7-860(4c)",
+  "single": 544,
+  "multi": 1714,
+  "kind": "実測",
+  "n": 14
+ },
+ {
+  "group": "Intel 第2〜第11世代",
   "generation": "第2世代 Sandy Bridge",
   "name": "i7-2600K(4c)",
   "single": 787,
@@ -1319,28 +1328,28 @@ window.SDS_DATA.gb7Scores = [
   "group": "Intel 第2〜第11世代",
   "generation": "第2世代 Sandy Bridge",
   "name": "i7-980X(6c、参考: Westmere)",
-  "single": 658,
-  "multi": 3230,
-  "kind": "チャート",
-  "n": null
+  "single": 650,
+  "multi": 3193,
+  "kind": "実測",
+  "n": 21
  },
  {
   "group": "Intel 第2〜第11世代",
   "generation": "第3世代 Ivy Bridge",
   "name": "i7-3770K(4c)",
-  "single": 844,
-  "multi": 3011,
-  "kind": "チャート",
-  "n": null
+  "single": 849,
+  "multi": 3036,
+  "kind": "実測",
+  "n": 52
  },
  {
   "group": "Intel 第2〜第11世代",
   "generation": "第3世代 Ivy Bridge",
   "name": "i5-3570K(4c)",
-  "single": 815,
-  "multi": 2343,
-  "kind": "チャート",
-  "n": null
+  "single": 809,
+  "multi": 2431,
+  "kind": "実測",
+  "n": 44
  },
  {
   "group": "Intel 第2〜第11世代",
@@ -1391,10 +1400,10 @@ window.SDS_DATA.gb7Scores = [
   "group": "Intel 第2〜第11世代",
   "generation": "第5世代 Broadwell",
   "name": "i7-5775C(4c)",
-  "single": 1347,
-  "multi": 5031,
-  "kind": "チャート",
-  "n": null
+  "single": 1351,
+  "multi": 4949,
+  "kind": "実測",
+  "n": 7
  },
  {
   "group": "Intel 第2〜第11世代",
