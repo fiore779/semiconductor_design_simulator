@@ -59,10 +59,12 @@
     const val = (p) => key === 'year' ? p.year : key === 'area' ? areaSummary(p).mm2 : key === 'gb7' ? ((gb7ByName && gb7ByName[p.gb7]) ? gb7ByName[p.gb7].single : null) : p.name;
     return list.slice().sort((a, b) => {
       const x = val(a); const y = val(b);
-      if (x == null && y == null) return 0;
+      const byName = () => a.name.localeCompare(b.name, 'ja', { numeric: true }) * d; // 同値(同じ発売年など)は名前順。新しい順なら 8000 番台が 7000 番台より上
+      if (x == null && y == null) return key === 'name' ? 0 : byName();
       if (x == null) return 1;
       if (y == null) return -1;
-      return (typeof x === 'string' ? x.localeCompare(y, 'ja') : x - y) * d;
+      const c = (typeof x === 'string' ? x.localeCompare(y, 'ja') : x - y) * d;
+      return c !== 0 || key === 'name' ? c : byName();
     });
   }
 
