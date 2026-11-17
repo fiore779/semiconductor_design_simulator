@@ -22,8 +22,8 @@ test('古い Intel の枠: 7 枠で、コア枠の数・縦横比・テンプレ
   });
 });
 
-test('古い Intel の 19 プリセット: 全部が photo の枠を持ち、コア数・L3 の合計が元のまま、ブロックはダイの内側で重ならない', () => {
-  assert.strictEqual(olds.length, 19);
+test('古い Intel の 18 プリセット: 全部が photo の枠を持ち、コア数・L3 の合計が元のまま、ブロックはダイの内側で重ならない', () => {
+  assert.strictEqual(olds.length, 18); // 8400 を外した(2026-11-17)
   olds.forEach((p) => {
     const d = mk(p); const die = d.dies[0]; const l = die.layout;
     assert.ok(l && FRAMES.includes(l.frame), `${p.id}: frame`);

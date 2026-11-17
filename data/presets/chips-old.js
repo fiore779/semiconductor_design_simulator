@@ -1,12 +1,12 @@
 // プリセット(古い Core i シリーズ。第2〜10世代のデスクトップ・ノート): 2026-11-17 追加(ユーザー指示「古いチップも追加。現在情報がある Core i シリーズだけ」)。
 // 値は設計書 §2.8(参考データ。調査 2026-10-26〜27)と §2.4(GB7 のチャート値)から転記。未取得は null のまま(推測で埋めない)。
 // 対象は、コア設計の幅・ROB が分かる世代(Sandy Bridge・Haswell・Skylake と、同じコア設計の Kaby Lake・Coffee Lake・Comet Lake)で、
-// ダイ面積・構成(Intel ARK)・GB7 の行がそろう 19 SKU。見送り: Ivy Bridge・Broadwell(ROB 未取得)、Rocket Lake・Tiger Lake・Ice Lake(幅・ROB 未取得)、
+// ダイ面積・構成(Intel ARK)・GB7 の行がそろう 18 SKU(i5-8400 は 2026-11-17 のユーザー判断で外した。MT が公開値より +18.2% 高く、原因が特定できなかったため)。見送り: Ivy Bridge・Broadwell(ROB 未取得)、Rocket Lake・Tiger Lake・Ice Lake(幅・ROB 未取得)、
 // i3 系・U 系(ダイ面積が未取得)、第8〜10世代のモバイル(H 系のダイが未確認)、i5-10600K(ARK の構成が未取得)。
 // 区分: 面積 dies[].s は 'meas'/'pub'/'sec'、電力 power.* は 'pub'/'sec'。GB7 は [チャート](Geekbench 7 のプロセッサチャートの SKU 平均。Windows のみの中央値ではない)。
 // ここでは校正の代表(calib)にしない。ST 補正 u は uarch.js の uCal(各 uarch のデスクトップ SKU の SKU 別 u の中央値。チャート値に合わせた学習内の値で、検証ではない)。
 // モバイル 4 件は別の uarch 名(「… (モバイル)」)で、デスクトップの u に 1 SKU から合わせた比を掛ける(これも学習内)。確度は低い。
-// 2026-11-17 の再現度: 19 件中 17 件が ST・MT とも ±10% 以内。残る ng は i5-8400(MT +18.2%)と i7-9700K(MT +11.3%)の 2 件で、どちらもハイパースレッディングなしの SKU。原因は 1 つには特定できていない(調査 2026-11-17: docs/research/old-intel-mt-ng-2026-11-17.md。スレッド数に対する伸び方 σ・γ が古い Intel に合っていないことが主因とみられ、全コアクロック・L3・メモリ速度は原因ではない。同じくハイパースレッディングなしの 2500K・4690K・6600K・7600K も +6〜8% と高め)。公開値に合わせた調整はしていない。
+// 2026-11-17 の再現度: 18 件中 17 件が ST・MT とも ±10% 以内。残る ng は i7-9700K(MT +11.3%)の 1 件(ハイパースレッディングなし。ユーザー指示で再調査中。i5-8400 は同じ傾向で +18.2% だったため外した)。原因は 1 つには特定できていない(調査 2026-11-17: docs/research/old-intel-mt-ng-2026-11-17.md。スレッド数に対する伸び方 σ・γ が古い Intel に合っていないことが主因とみられ、全コアクロック・L3・メモリ速度は原因ではない。同じくハイパースレッディングなしの 2500K・4690K・6600K・7600K も +6〜8% と高め)。公開値に合わせた調整はしていない。
 window.SDS_DATA = window.SDS_DATA || {};
 window.SDS_DATA.presets = window.SDS_DATA.presets || [];
 (function () {
@@ -39,7 +39,6 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     ['intel-kbl-7600k', 'Core i5-7600K', 'Kaby Lake', 'pc', 2017, 'i5-7600K(4c)', reuse(KBL4, '7700K と同じ 4C ダイからハイパースレッディングと L3 2MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 91, 'pub', 'Kaby Lake', 4, 1, 3.8, 4.2, 6, 'DDR4-2400', '第7世代(14nm+)。ハイパースレッディングなし。'],
     ['intel-kbl-7700hq', 'Core i7-7700HQ', 'Kaby Lake', 'mobile-pc', 2017, 'i7-7700HQ(4c、モバイル)', reuse(KBL4, 'モバイル(HQ)も 4C+GT2 のダイと考えられる([推定]。個別の確認は未取得)'), 45, 'pub', 'Kaby Lake (モバイル)', 4, 2, 2.8, 3.8, 6, 'DDR4-2400', '第7世代モバイル(14nm+)。'],
     ['intel-cfl-8700k', 'Core i7-8700K', 'Coffee Lake', 'pc', 2017, 'i7-8700K(6c)', CFL6, 95, 'pub', 'Coffee Lake', 6, 2, 3.7, 4.7, 12, 'DDR4-2666', '第8世代(14nm++)。'],
-    ['intel-cfl-8400', 'Core i5-8400', 'Coffee Lake', 'pc', 2017, 'i5-8400(6c)', reuse(CFL6, '8700K と同じ 6C ダイからハイパースレッディングと L3 3MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 65, 'pub', 'Coffee Lake', 6, 1, 2.8, 4.0, 9, 'DDR4-2666', '第8世代(14nm++)。ハイパースレッディングなし。MT が公開値より +18.2% 高く出る(ng。原因は docs/research/old-intel-mt-ng-2026-11-17.md。σ・γ の形が古い Intel に合わないとみられ、8400 は σ・γ をどう振っても +9.5% 以上残る)。'],
     ['intel-cfr-9900k', 'Core i9-9900K', 'Coffee Lake Refresh', 'pc', 2018, 'i9-9900K(8c)', CFL8, 95, 'pub', 'Coffee Lake', 8, 2, 3.6, 5.0, 16, 'DDR4-2666', '第9世代(14nm++)。'],
     ['intel-cfr-9700k', 'Core i7-9700K', 'Coffee Lake Refresh', 'pc', 2018, 'i7-9700K(8c)', reuse(CFL8, '9900K と同じ 8C ダイからハイパースレッディングと L3 4MB を無効にした SKU として面積を流用([推定]。個別の確認は未取得)'), 95, 'pub', 'Coffee Lake', 8, 1, 3.6, 4.9, 12, 'DDR4-2666', '第9世代(14nm++)。ハイパースレッディングなし。MT が公開値より +11.3% 高く出る(ng。原因は docs/research/old-intel-mt-ng-2026-11-17.md。HT の効果を約 8% 低く見積もっているため。σ・γ を γ 0.40・σ 0.05 にすると +0.6%)。'],
     ['intel-cml-10900k', 'Core i9-10900K', 'Comet Lake', 'pc', 2020, 'i9-10900K(10c)', CML10, 125, 'pub', 'Comet Lake', 10, 2, 3.7, 5.3, 20, 'DDR4-2933', '第10世代(14nm++)。'],
@@ -56,7 +55,6 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'intel-skl-6700k': [4.0, WC + ' の 2〜4 コア時ターボ 4,000MHz(https://en.wikichip.org/wiki/intel/core i7/i7-6700k)。CPU-Monkey も 4 コア 4.0GHz'],
     'intel-kbl-7600k': [4.0, WC + ' の 4 コア時ターボ(https://en.wikichip.org/wiki/intel/core i5/i5-7600k)'],
     'intel-kbl-7700k': [4.4, 'IgorsLab の表(2〜4 コア 4.4GHz。https://www.igorslab.de/en/intel-kaby-lake-i7-7700k-i7-7700-i5-7600k-i5-7600-2/)。CPU-Monkey も同じ'],
-    'intel-cfl-8400': [3.8, WC + '(5〜6 コア 3.8GHz。https://en.wikichip.org/wiki/intel/core i5/i5-8400)と ' + TH + ' の表(6 コア 3.8GHz)'],
     'intel-cfr-9900k': [4.7, TH + ' の全コアブースト(https://www.tomshardware.com/reviews/intel-core-i9-10900k-cpu-review の比較表)'],
     'intel-cfr-9700k': [4.6, WC + ' の 5〜8 コア時ターボ(https://en.wikichip.org/wiki/9700k)。Hexus・TechPowerUp も 4.6GHz'],
     'intel-cml-10900k': [4.8, TH + ' の全コアブースト 4.8GHz(TVB の 4.9GHz は使わない。https://www.tomshardware.com/reviews/intel-core-i9-10900k-cpu-review)'],

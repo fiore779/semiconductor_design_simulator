@@ -630,7 +630,7 @@
     'intel-hsw-4770k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4790k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4690k': { frame: 'hsw-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-hsw-4700hq': { frame: 'hsw-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU' },
     'intel-skl-6700k': { frame: 'skl-4c', basis: 'photo' }, 'intel-skl-6600k': { frame: 'skl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-skl-6700hq': { frame: 'skl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
     'intel-kbl-7700k': { frame: 'kbl-4c', basis: 'photo' }, 'intel-kbl-7600k': { frame: 'kbl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-kbl-7700hq': { frame: 'kbl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
-    'intel-cfl-8700k': { frame: 'cfl-6c', basis: 'photo' }, 'intel-cfl-8400': { frame: 'cfl-6c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 9MB)' },
+    'intel-cfl-8700k': { frame: 'cfl-6c', basis: 'photo' },
     'intel-cfr-9900k': { frame: 'cfl-8c', basis: 'photo' }, 'intel-cfr-9700k': { frame: 'cfl-8c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 12MB)' },
     'intel-cml-10900k': { frame: 'cml-10c', basis: 'photo' }, 'intel-cml-10700k': { frame: 'cml-10c', basis: 'photo', extra: '同じダイの SKU(コア 2 つ無効。空き枠を残す)' },
   };
