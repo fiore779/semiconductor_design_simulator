@@ -2,11 +2,13 @@
 // A 再現・B 改良・C 混合・D 新規が有効。
 (function (root) {
   'use strict';
-  const { h, clear, num } = root.SDS.ui.dom;
+  const { h, clear, num, more } = root.SDS.ui.dom;
   const PL = root.SDS.ui.presetlist;
   const { srcBadge } = root.SDS.ui.results;
 
   let overlay = null; let lastFocus = null;
+  // プリセット選択画面の状態(絞り込み・並べ替え・選んだチップ・グループの開閉・スクロール)。再現などで閉じたあとに開き直したら、前の状態で開く(ページを開いている間だけ保存)
+  let presetState = null;
 
   function close() {
     if (overlay) { overlay.remove(); overlay = null; }
@@ -42,10 +44,11 @@
   // ---- プリセット選択 ----
   function openPresets(ctx, cb) {
     const presets = ctx.presets; const g = ctx.gb7ByName;
-    const f = { vendors: [], kinds: [], isa: [], query: '', yearMin: null, yearMax: null, levels: [] };
-    let sortKey = 'name'; let sortDir = 1; let selected = null;
+    const S = presetState || (presetState = { f: { vendors: [], kinds: [], isa: [], query: '', yearMin: null, yearMax: null, levels: [] }, sortKey: 'name', sortDir: 1, selectedId: null, openGroups: new Map(), scroll: { list: 0, col: 0, detail: 0 } });
+    const f = S.f; let sortKey = S.sortKey; let sortDir = S.sortDir; let selected = presets.find((p) => p.id === S.selectedId) || null;
+    const save = () => { S.sortKey = sortKey; S.sortDir = sortDir; S.selectedId = selected ? selected.id : null; };
     let focusEls = {}; // refresh のたびに作り直す: キー → 要素(フォーカスの復帰用)
-    const openGroups = new Map(); // 利用者が手で開閉したグループ(自動の開閉より優先)
+    const openGroups = S.openGroups; // 利用者が手で開閉したグループ(自動の開閉より優先。開き直しても残す)
     const listEl = h('div', { class: 'preset-list' });
     const detailEl = h('div', { class: 'preset-detail', 'aria-live': 'polite' });
     const countEl = h('p', { class: 'small', role: 'status' });
@@ -67,9 +70,9 @@
       rows.push(h('p', { class: 'small', text: `L3: ${p.cfg.l3MB != null ? p.cfg.l3MB + ' MB' : '未取得'} / メモリ: ${p.cfg.memory || '未取得'}` }));
       rows.push(h('h4', { text: 'ダイ面積' }), p.dies && p.dies.length ? h('ul', {}, p.dies.map((d) => h('li', {}, `${d.name}: `, d.mm2 != null ? [`${d.mm2} mm² `, srcBadge(d.s)] : h('b', { text: '未取得' }), d.nodeId ? ` (${(ctx.nodes.find((n) => n.id === d.nodeId) || { name: d.nodeId }).name})` : ''))) : h('p', {}, h('b', { text: '未取得' })));
       const pv = (label, v) => h('li', {}, `${label}: `, v ? [`${v.w} W `, srcBadge(v.s), v.note ? ` ${v.note}` : ''] : h('b', { text: '未取得' }));
-      rows.push(h('h4', { text: '消費電力(公表値)' }), h('ul', {}, pv('基準', pw.base), pv('ピーク', pw.peak), pw.range ? h('li', { text: pw.range.minW == null ? `範囲: 最大 ${pw.range.maxW} W(下限は未取得)` : `範囲: ${pw.range.minW}〜${pw.range.maxW} W` }) : null));
+      rows.push(more('消費電力(公表値)の詳細', { key: 'preset-power' }, h('ul', {}, pv('基準', pw.base), pv('ピーク', pw.peak), pw.range ? h('li', { text: pw.range.minW == null ? `範囲: 最大 ${pw.range.maxW} W(下限は未取得)` : `範囲: ${pw.range.minW}〜${pw.range.maxW} W` }) : null)));
       rows.push(h('h4', { text: 'Geekbench 7' }), gb ? h('p', {}, `ST ${gb.single} / MT ${gb.multi != null ? gb.multi : '未取得'} `, h('span', { class: 'badge', title: PL.lowReason(gb), text: PL.gb7Basis(gb).label + (PL.gb7Basis(gb).low ? ' ⚠ 信頼度低' : '') })) : h('p', {}, h('b', { text: '未取得' })));
-      if (p.notes) rows.push(h('p', { class: 'small', text: `備考: ${p.notes}` }));
+      if (p.notes) rows.push(more('備考', { key: 'preset-notes' }, h('p', { class: 'small', text: p.notes })));
       c.missing.length && rows.push(h('p', { class: 'note warn-note', text: `未取得の項目: ${c.missing.join('・')}` }));
       detailEl.appendChild(h('div', {}, rows));
     }
@@ -81,13 +84,13 @@
       const c = PL.completeness(p, g); const sub = PL.subtitle(p, ctx, g);
       return h('li', { role: 'none' }, h('button', {
         type: 'button', role: 'option', dataset: { id: p.id }, class: 'preset-row' + (p === selected ? ' sel' : ''), 'aria-selected': p === selected ? 'true' : 'false',
-        onclick: () => { selected = p; detail(p); refresh('row:' + p.id); }, ondblclick: () => cb.onReproduce(p),
+        onclick: () => { selected = p; save(); detail(p); refresh('row:' + p.id); }, ondblclick: () => cb.onReproduce(p),
       }, h('span', { class: `badge fill-${c.level}`, title: c.text, text: c.symbol }), h('b', { text: sub.name }),
       h('span', { class: 'small', title: sub.title, text: sub.text })));
     }
 
     function refresh(focusKey) {
-      focusEls = {};
+      save(); focusEls = {};
       refresh0();
       const t = focusKey && focusEls[focusKey];
       if (t && t.focus) t.focus();
@@ -118,24 +121,27 @@
       });
     }
 
-    const checks = (label, name, opts, arr) => h('fieldset', {}, h('legend', { text: label }), opts.map(([v, t]) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', onchange: (e) => { const i = arr.indexOf(v); if (e.target.checked && i < 0) arr.push(v); if (!e.target.checked && i >= 0) arr.splice(i, 1); changed(); } }), ' ' + t)));
+    const checks = (label, name, opts, arr) => h('fieldset', {}, h('legend', { text: label }), opts.map(([v, t]) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: arr.indexOf(v) >= 0, onchange: (e) => { const i = arr.indexOf(v); if (e.target.checked && i < 0) arr.push(v); if (!e.target.checked && i >= 0) arr.splice(i, 1); changed(); } }), ' ' + t)));
     const vendors = [...new Set(presets.map((p) => p.vendor))];
     const kinds = [...new Set(presets.map((p) => p.kind))];
     const yr = (k) => (e) => { const v = parseInt(e.target.value, 10); f[k] = isNaN(v) ? null : v; changed(); };
     const years = presets.map((p) => p.year);
     const filters = h('div', { class: 'filters' },
-      h('label', {}, '検索(チップ名・世代・コア名)', h('input', { type: 'search', placeholder: '例: 9700X, Zen 5, M1', oninput: (e) => { f.query = e.target.value; changed(); } })),
+      h('label', {}, '検索(チップ名・世代・コア名)', h('input', { type: 'search', value: f.query, placeholder: '例: 9700X, Zen 5, M1', oninput: (e) => { f.query = e.target.value; changed(); } })),
       checks('メーカー', 'v', vendors.map((v) => [v, v]), f.vendors),
       checks('種別', 'k', kinds.map((k) => [k, PL.kindLabel(k)]), f.kinds),
-      h('fieldset', {}, h('legend', { text: '年代' }), h('input', { type: 'number', 'aria-label': '年(から)', placeholder: String(Math.min(...years)), oninput: yr('yearMin') }), ' 〜 ', h('input', { type: 'number', 'aria-label': '年(まで)', placeholder: String(Math.max(...years)), oninput: yr('yearMax') })),
+      h('fieldset', {}, h('legend', { text: '年代' }), h('input', { type: 'number', 'aria-label': '年(から)', value: f.yearMin != null ? String(f.yearMin) : null, placeholder: String(Math.min(...years)), oninput: yr('yearMin') }), ' 〜 ', h('input', { type: 'number', 'aria-label': '年(まで)', value: f.yearMax != null ? String(f.yearMax) : null, placeholder: String(Math.max(...years)), oninput: yr('yearMax') })),
       checks('命令セット', 'i', [...new Set(presets.map((p) => p.isa).filter(Boolean))].map((v) => [v, v]), f.isa),
       checks('データの充実度', 'l', [['full', '● 完全'], ['partial', '◐ 一部未取得'], ['poor', '○ 大半が未取得']], f.levels),
       h('label', {}, '並べ替え', h('select', { onchange: (e) => { const [k, d] = e.target.value.split(':'); sortKey = k; sortDir = parseInt(d, 10); refresh(); } },
-        [['name:1', '名前'], ['year:-1', '新しい順'], ['year:1', '古い順'], ['area:-1', '面積が大きい順'], ['gb7:-1', 'GB7 ST が高い順']].map(([v, t]) => h('option', { value: v, text: t })))));
+        [['name:1', '名前'], ['year:-1', '新しい順'], ['year:1', '古い順'], ['area:-1', '面積が大きい順'], ['gb7:-1', 'GB7 ST が高い順']].map(([v, t]) => h('option', { value: v, text: t, selected: v === sortKey + ':' + sortDir })))));
 
-    detail(null); refresh();
-    open('プリセットを選ぶ(A 再現 / B 改良)', h('div', { class: 'preset-dialog' },
-      filters, h('div', { class: 'list-col' }, countEl, listEl), h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn))));
+    refresh(); detail(selected);
+    const listCol = h('div', { class: 'list-col' }, countEl, listEl); const detailCol = h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn));
+    listCol.addEventListener('scroll', () => { S.scroll.col = listCol.scrollTop; }); detailCol.addEventListener('scroll', () => { S.scroll.detail = detailCol.scrollTop; });
+    open('プリセットを選ぶ(A 再現 / B 改良)', h('div', { class: 'preset-dialog' }, filters, listCol, detailCol));
+    listCol.scrollTop = S.scroll.col; detailCol.scrollTop = S.scroll.detail; // 前に開いていたスクロール位置へ(選んだ行が見えない場合は行へ)
+    const selRow = selected && listEl.querySelector('.preset-row.sel'); if (selRow && selRow.scrollIntoView && S.scroll.col === 0) selRow.scrollIntoView({ block: 'nearest' });
   }
 
   // ---- 混合設計の設定(モード C の入口。opts.entry === 'new' なら D 新規の入口: ① プロセス ② ダイ寸法の 2 ステップ。設計書 §3.7.2) ----
