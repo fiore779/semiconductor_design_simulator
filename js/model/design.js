@@ -131,6 +131,7 @@
     if (layout && layout.template === 'amd-chiplet') arrangeChiplet(dies, computeIdx, decorDies || [], iodPlaced ? { gap: FP.IOD_PLACE.gap, dxFrac: layout.units === 1 ? FP.IOD_PLACE.dx1 : 0 } : null);
     if (FP && FP.tileRowPlace) FP.tileRowPlace(preset.id, dies, GAP_MM); // Meteor Lake・Arrow Lake-H: Compute | SoC | GPU の横一列、IOE は Compute の下、Base は全体の下
     if (FP && FP.tileRowMoveLpe) FP.tileRowMoveLpe(preset.id, dies); // LP-E コアのブロックは写真どおり SoC タイルへ
+    const stackDies = FP && FP.stackDies ? FP.stackDies(preset.id, dies[computeIdx]) : null; // Ryzen X3D: V-Cache の積層(表示専用。評価に入らない)
     const mode = o.mode === 'improve' ? 'improve' : 'reproduce';
     const cfg = cfgFromPreset(preset);
     // メモリ固定で容量を選べるチップ(Apple M。2026-11-13): 容量(GB)の選択は cfg の外(design.memGb)に持つ。評価に使わないので、編集済み判定・差分には入れない
@@ -142,7 +143,7 @@
       locks: { params: mode === 'reproduce' },
       presetId: preset.id, dies,
       cfg, baseCfg: clone(cfg), package: defaultPackage(preset),
-    }, decorDies ? { decorDies } : {}, memGb || {});
+    }, decorDies ? { decorDies } : {}, stackDies ? { stackDies } : {}, memGb || {});
   }
 
   // ---- パッケージ設定(冷却・基板・電力制限)。環境の設定でチップの設計ではないので、ロック(A 再現)の対象外 ----

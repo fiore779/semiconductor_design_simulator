@@ -199,20 +199,24 @@
   };
   const COL = {
     subSide: [0.55, 0.45, 0.22], metalSide: [0.15, 0.16, 0.19], underfill: [0.38, 0.27, 0.12], capBody: [0.30, 0.20, 0.13], capGold: [0.86, 0.68, 0.22],
-    ihs: [0.80, 0.82, 0.85], sel: [0.91, 0.35, 0.05], frameWhite: [1, 1, 1], iod: [0.10, 0.36, 0.42], iodSide: [0.06, 0.20, 0.24],
+    ihs: [0.80, 0.82, 0.85], sel: [0.91, 0.35, 0.05], frameWhite: [1, 1, 1], vcache: [0.55, 0.40, 0.72], siFill: [0.52, 0.54, 0.60], iod: [0.10, 0.36, 0.42], iodSide: [0.06, 0.20, 0.24],
   };
   const withA = (c, a) => [c[0], c[1], c[2], a === undefined ? 1 : a];
 
   // 飾りの IO ダイ(design.decorDies。評価に影響しない見た目だけのダイ)。基板サイズ・蓋・ダイの厚み・カメラの外接には含める。選択・光線交差の対象外。
   const decorOf = (design) => (design && Array.isArray(design.decorDies) ? design.decorDies : []);
+  // X3D の積層(design.stackDies。表示専用): base = CCD の下のベースダイ(CCD を持ち上げる)、vcache・si-fill = CCD の上の積層
+  const stackOf = (design) => (design && Array.isArray(design.stackDies) ? design.stackDies : []);
+  const STACK_LIFT = 0.3; const STACK_TOP = 0.5; const STACK_EXTRA = 0.55; // ダイの厚み dieT に対する比(持ち上げ・上の積層の厚み・蓋の余裕)
+  const liftsOf = (design, dieT) => { const m = {}; stackOf(design).forEach((d) => { if (d.kind === 'base' && d.dieId) m[d.dieId] = dieT * STACK_LIFT; }); return m; };
   const DECOR_H = 0.7; // 飾りダイの高さ(通常のダイの厚みに対する比)
 
   // 描画対象全体の外接球(カメラの注視点・距離・パンの制限に使う)。頂点は作らない。
   function designBounds(design) {
-    const dies = ((design && design.dies) || []).concat(decorOf(design));
+    const dies = ((design && design.dies) || []).concat(decorOf(design), stackOf(design));
     const sub = substrateSize(dies, design && design.package && design.package.substrateId);
     const dieT = dieThickness(dies); const bh = blockHeight(dieT);
-    const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T;
+    const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T + (stackOf(design).length ? dieT * STACK_EXTRA : 0);
     return {
       cx: sub.cx, cy: (ihsTop - sub.thickness) / 2, cz: sub.cz, radius: 0.5 * Math.sqrt(sub.w * sub.w + sub.d * sub.d + (ihsTop + sub.thickness) * (ihsTop + sub.thickness)),
       box: { x0: sub.x0, x1: sub.x1, z0: sub.z0, z1: sub.z1, y0: -sub.thickness, y1: ihsTop }, // 基板〜蓋の外接直方体(初期カメラを画面いっぱいに合わせる用)
@@ -232,7 +236,7 @@
   function buildScene(design, opts) {
     const o = opts || {};
     const dies = (design && design.dies) || [];
-    const decor = decorOf(design); const allDies = dies.concat(decor); // 基板・蓋・厚みは飾りのダイも含めて決める
+    const decor = decorOf(design); const stack = stackOf(design); const allDies = dies.concat(decor, stack); // 基板・蓋・厚みは飾りのダイも含めて決める
     const sel = new Set(o.selection || []);
     const heatIds = new Set(o.heatDieIds || []);
     const ihsMode = IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass';
@@ -241,6 +245,7 @@
     const dieT = dieThickness(allDies); const bh = blockHeight(dieT);
     const dieTop = UF_H + dieT;
     const underTop = UF_H + dieT * UNDERLAY_H; // 土台のダイ(die.underlay。Meteor Lake の Base タイルなど)は上のタイルより低い板にする
+    const lifts = liftsOf(design, dieT); const stackTopH = dieT * STACK_TOP;
     const colorOf = o.colorOf || (() => [0.6, 0.6, 0.6]);
     const dieTopColor = o.dieTopColor || (() => [0.82, 0.83, 0.86]);
 
@@ -252,7 +257,8 @@
     opaque.box(sub.x0, -sub.thickness, sub.z0, sub.x1, 0, sub.z1, withA(sc), MAT.SUB_SIDE, { bottom: true }, { topColor: withA(sc), topMat: MAT.SUB_TOP, sideColor: withA(COL.subSide) });
 
     dies.forEach((die) => {
-      const dTop = die.underlay === true ? underTop : dieTop;
+      const lift = lifts[die.id] || 0;
+      const dTop = (die.underlay === true ? underTop : dieTop) + lift;
       const x0 = die.x; const z0 = die.y; const x1 = die.x + die.widthMm; const z1 = die.y + die.heightMm;
       // 接地面の暗いにじみ(3 層)
       [[0.9, 0.16], [0.5, 0.14], [0.2, 0.12]].forEach((s) => {
@@ -260,10 +266,10 @@
         shadow.quad([x0 - e, 0.004, z1 + e], [x1 + e, 0.004, z1 + e], [x1 + e, 0.004, z0 - e], [x0 - e, 0.004, z0 - e], [0, 1, 0], withA([0, 0, 0], s[1]), MAT.SHADOW);
       });
       // アンダーフィル/バンプ層(側面にバンプの粒を模したパターン)
-      opaque.box(x0 - UF_MARGIN, 0, z0 - UF_MARGIN, x1 + UF_MARGIN, UF_H, z1 + UF_MARGIN, withA(COL.underfill), MAT.UNDERFILL, null, { topMat: MAT.GENERIC });
+      if (!lift) opaque.box(x0 - UF_MARGIN, 0, z0 - UF_MARGIN, x1 + UF_MARGIN, UF_H, z1 + UF_MARGIN, withA(COL.underfill), MAT.UNDERFILL, null, { topMat: MAT.GENERIC });
       // ダイ本体(側面は金属光沢の暗色。ヒートマップ時は上面をテクスチャ矩形に置き換える)
       const hasHeat = heatIds.has(die.id);
-      opaque.box(x0, UF_H, z0, x1, dTop, z1, withA(COL.metalSide), MAT.METAL, { top: !hasHeat }, { topColor: withA(dieTopColor(die)), topMat: MAT.SILICON });
+      opaque.box(x0, UF_H + lift, z0, x1, dTop, z1, withA(COL.metalSide), MAT.METAL, { top: !hasHeat }, { topColor: withA(dieTopColor(die)), topMat: MAT.SILICON });
       if (hasHeat) {
         const q = createMesh();
         q.quad([x0, dTop, z1], [x1, dTop, z1], [x1, dTop, z0], [x0, dTop, z0], [0, 1, 0], [1, 1, 1, 1], MAT.HEAT, [[0, 1], [1, 1], [1, 0], [0, 0]]);
@@ -283,6 +289,18 @@
         opaque.box(bx0, dTop, bz0, bx1, dTop + bh + lift, bz1, top, MAT.BLOCK, null, { sideColor: side });
         if (selected) opaque.frame(bx0, bz0, bx1, bz1, dTop + bh + lift, dTop + bh + lift + bh * 0.4, Math.max(0.025, Math.min(0.07, 0.15 * Math.min(b.w, b.h))), withA(COL.sel), MAT.BLOCK);
       });
+    });
+
+    // X3D の積層: ベースダイ(CCD の下。CCD を持ち上げた分の厚み)・V-Cache ダイと構造用シリコン(CCD の上)
+    stack.forEach((d) => {
+      const x0 = d.x; const z0 = d.y; const x1 = d.x + d.widthMm; const z1 = d.y + d.heightMm; const lift = d.kind === 'base' ? (lifts[d.dieId] || 0) : 0;
+      if (d.kind === 'base') {
+        [[0.9, 0.16], [0.5, 0.14], [0.2, 0.12]].forEach((sh) => { const e = sh[0] * Math.max(0.4, dieT); shadow.quad([x0 - e, 0.004, z1 + e], [x1 + e, 0.004, z1 + e], [x1 + e, 0.004, z0 - e], [x0 - e, 0.004, z0 - e], [0, 1, 0], withA([0, 0, 0], sh[1]), MAT.SHADOW); });
+        opaque.box(x0 - UF_MARGIN, 0, z0 - UF_MARGIN, x1 + UF_MARGIN, UF_H, z1 + UF_MARGIN, withA(COL.underfill), MAT.UNDERFILL, null, { topMat: MAT.GENERIC });
+        opaque.box(x0, UF_H, z0, x1, UF_H + lift, z1, withA(COL.metalSide), MAT.METAL, null, { topColor: withA(COL.vcache), topMat: MAT.SILICON });
+      } else {
+        const y0 = dieTop; opaque.box(x0, y0, z0, x1, y0 + stackTopH, z1, withA(COL.metalSide), MAT.METAL, null, { topColor: withA(d.kind === 'vcache' ? COL.vcache : COL.siFill), topMat: MAT.SILICON });
+      }
     });
 
     // 飾りの IO ダイ: 通常のダイより少し低い、濃い青緑の直方体(ブロックなし)
@@ -310,7 +328,7 @@
         opaque.box(x0, 0, z0, x1, c.h, z0 + t, withA(COL.capGold), MAT.GOLD); opaque.box(x0, 0, z1 - t, x1, c.h, z1, withA(COL.capGold), MAT.GOLD);
       }
     });
-    const ihsTop = dieTop + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T; // 選択で持ち上げたブロックの上に収まる高さ
+    const ihsTop = dieTop + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T + (stack.length ? dieT * STACK_EXTRA : 0); // 選択で持ち上げたブロックの上に収まる高さ
     if (ihsMode !== 'off') {
       const target = ihsMode === 'solid' ? opaque : glass;
       const a = ihsMode === 'solid' ? 1 : 0.28;
@@ -327,9 +345,9 @@
 
     return {
       opaque: opaque.toFloat32(), shadow: shadow.toFloat32(), glass: glass.toFloat32(), heatQuads,
-      sub, ihs, caps, dieT, blockH: bh, dieTop, underTop, ihsTop,
+      sub, ihs, caps, dieT, blockH: bh, dieTop, underTop, ihsTop, lifts, stackTopH,
       bounds: designBounds(design),
-      counts: { dies: dies.length, decor: decor.length, blocks: dies.reduce((s, d) => s + d.blocks.length, 0), caps: caps.length },
+      counts: { dies: dies.length, decor: decor.length, stack: stack.length, blocks: dies.reduce((s, d) => s + d.blocks.length, 0), caps: caps.length },
     };
   }
 
@@ -363,7 +381,7 @@
       best = type === 'block' ? { type, dieId: die.id, blockId, t, point, u, v } : { type, dieId: die.id, t, point, u, v };
     };
     dies.forEach((die) => {
-      const dTop = die.underlay === true ? underTop : dieTop;
+      const dTop = (die.underlay === true ? underTop : dieTop) + ((o.lifts && o.lifts[die.id]) || 0);
       // ダイ上面(平面 y = dTop。土台のダイは低い)
       if (Math.abs(ray.d[1]) > 1e-12) {
         const t = (dTop - ray.o[1]) / ray.d[1];
@@ -473,7 +491,7 @@
 
   const api = {
     FOV, PITCH_MIN, PITCH_MAX, VERTEX_FLOATS, MAT, UF_H, IHS_MODES, SUBSTRATE_STYLE, PRESETS, COL,
-    decorOf, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
+    decorOf, stackOf, liftsOf, STACK_TOP, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
     rayBox, pickTop, fitDistance, createCamera, orbit, zoom, pan, eyeOf, cameraAxes, cameraMatrices, screenRay, project,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.pkggeom = api;

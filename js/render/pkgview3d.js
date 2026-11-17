@@ -210,7 +210,7 @@
 
     // ---- カメラ ----
     const aspect = () => (cssH > 0 ? cssW / cssH : 1);
-    const designSig = (d) => (d.package && d.package.substrateId || '') + '#' + d.dies.concat(G.decorOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|');
+    const designSig = (d) => (d.package && d.package.substrateId || '') + '#' + d.dies.concat(G.decorOf(d), G.stackOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|');
     function currentBounds() { return G.designBounds(design); }
     function resetCamera(preset) {
       cam = G.createCamera(currentBounds(), aspect(), preset || 'oblique'); invalidate();
@@ -388,6 +388,16 @@
         const bh = scene.blockH; const dieTop = scene.dieTop;
         // 飾りのダイ(IOD・GPU・Platform タイル)のラベル(ダイの下側。CCD のブロックに重ならない)
         const showLabels = labelsOn && cam.pitch >= 0; // 下から見ているときは、上面のラベルを出さない(裏から透けて見えるため)
+        if (showLabels) G.stackOf(design).filter((d) => d.kind !== 'si-fill').forEach((d) => { // 積層(ベースダイ・V-Cache ダイ)のラベル
+          const hh = d.kind === 'base' ? 0.1 + (scene.lifts[d.dieId] || 0) : scene.dieTop + scene.stackTopH;
+          const cs = [prj([d.x, hh, d.y]), prj([d.x + d.widthMm, hh, d.y]), prj([d.x, hh, d.y + d.heightMm]), prj([d.x + d.widthMm, hh, d.y + d.heightMm])];
+          if (!cs.every((p) => p.visible)) return;
+          const botY = Math.max.apply(null, cs.map((p) => p.y)); const topY = Math.min.apply(null, cs.map((p) => p.y));
+          const midX = (Math.min.apply(null, cs.map((p) => p.x)) + Math.max.apply(null, cs.map((p) => p.x))) / 2;
+          c.textAlign = 'center'; c.lineJoin = 'round'; c.lineWidth = 3; c.strokeStyle = P.bg; c.font = FONT; c.fillStyle = P.text;
+          const ty = d.kind === 'base' ? botY + 44 : topY - 6; const t2 = d.label + (d.areaMm2 ? ' ' + d.areaMm2 + 'mm²' : '') + ' ' + d.widthMm.toFixed(2) + '×' + d.heightMm.toFixed(2) + 'mm';
+          c.strokeText(t2, midX, ty); c.fillText(t2, midX, ty);
+        });
         if (showLabels) G.decorOf(design).forEach((d) => {
           const hh = scene.dieT * G.DECOR_H;
           const cs = [prj([d.x, hh, d.y]), prj([d.x + d.widthMm, hh, d.y]), prj([d.x, hh, d.y + d.heightMm]), prj([d.x + d.widthMm, hh, d.y + d.heightMm])];
@@ -400,7 +410,7 @@
           c.strokeText(dim, midX, botY + 29); c.fillText(dim, midX, botY + 29);
         });
         (showLabels ? design.dies : []).forEach((die) => { // ラベル非表示のときは何も出さず、物だけを見せる
-          const under = die.underlay === true; const dieTop = under ? scene.underTop : scene.dieTop; // 土台のダイは低く、名前・寸法は下側に出す(上のタイルのラベルに重ならない)
+          const under = die.underlay === true; const dieTop = (under ? scene.underTop : scene.dieTop) + ((scene.lifts && scene.lifts[die.id]) || 0); // 土台のダイは低く、名前・寸法は下側に出す(上のタイルのラベルに重ならない)
           // ダイ名と寸法(設計データの mm)。ダイの 4 隅を画面に投影し、画面上でいちばん上の縁のさらに上(=ダイの外側)に出して、ブロックに重ならないようにする
           const cs = [prj([die.x, dieTop, die.y]), prj([die.x + die.widthMm, dieTop, die.y]), prj([die.x, dieTop, die.y + die.heightMm]), prj([die.x + die.widthMm, dieTop, die.y + die.heightMm])];
           if (cs.every((p) => p.visible)) {
@@ -420,8 +430,9 @@
             const text = b.label || '';
             if (!text || under) return; // 土台のダイのブロック名は出さない(上のタイルに重なって見えるため)
             const sel = selection.indexOf(b.id) >= 0;
-            const yy = dieTop + bh * (sel ? 2 : 1) + 0.002;
             const x0 = die.x + b.x; const z0 = die.y + b.y;
+            const onStack = G.stackOf(design).some((q) => q.kind !== 'base' && q.dieId === die.id && x0 + b.w / 2 >= q.x && x0 + b.w / 2 <= q.x + q.widthMm); // 積層の下のブロックの名前は積層の上面に出す
+            const yy = dieTop + (onStack ? scene.stackTopH : 0) + bh * (sel ? 2 : 1) + 0.002;
             const pts = [prj([x0, yy, z0]), prj([x0 + b.w, yy, z0]), prj([x0, yy, z0 + b.h]), prj([x0 + b.w, yy, z0 + b.h])];
             if (pts.some((p) => !p.visible)) return;
             if (effIhs() === 'solid') return; // 不透明の蓋の下のブロック名は出さない
@@ -556,7 +567,8 @@
       if (effIhs() === 'solid') return null; // 不透明の蓋の下は選べない
       const ray = G.screenRay(cam, aspect(), (px / cssW) * 2 - 1, 1 - (py / cssH) * 2);
       if (!ray) return null;
-      return G.pickTop(ray, design.dies, { selection, decor: G.decorOf(design) });
+      const dT = G.dieThickness(design.dies.concat(G.decorOf(design), G.stackOf(design)));
+      return G.pickTop(ray, design.dies, { selection, decor: G.decorOf(design).concat(G.stackOf(design)), lifts: G.liftsOf(design, dT) });
     }
     function setSel(ids) {
       selection = ids.slice(); sceneDirty = true; updateAria(); invalidate();

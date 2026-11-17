@@ -220,3 +220,19 @@ test('土台(die.underlay)は低い板: 上面が通常のダイより低く(UF_
   const hb = G.pickTop({ o: [b.x + 0.1, 50, b.y + 0.1], d: [0, -1, 0] }, d0.dies);
   assert.ok(hb && hb.dieId === b.id);
 });
+
+test('X3D の積層(design.stackDies。表示専用): Zen 3・4 は CCD の上に V-Cache + 構造用シリコン、Zen 5 は CCD の下のベースダイ(1CCD 品も 2CCD 分の幅)。評価・ダイ数は変わらない', () => {
+  const { D } = require('./helpers.js'); const DSn = require('../js/model/design.js'); const Gn = require('../js/render/pkggeom.js'); const En = require('../js/model/evaluate.js');
+  const mk = (id) => DSn.fromPreset(D.presets.find((p) => p.id === id));
+  const z4 = mk('amd-zen4-7800x3d'); const vc = z4.stackDies.find((x) => x.kind === 'vcache'); const c = z4.dies[0];
+  assert.ok(vc.x >= c.x && vc.x + vc.widthMm <= c.x + c.widthMm + 1e-6 && vc.y >= c.y && vc.y + vc.heightMm <= c.y + c.heightMm + 1e-6);
+  const cover = z4.stackDies.reduce((s, x) => s + x.widthMm * x.heightMm, 0); assert.ok(Math.abs(cover / (c.widthMm * c.heightMm) - 1) < 0.01);
+  const z4b = mk('amd-zen4-7950x3d'); assert.ok(z4b.stackDies.every((x) => x.x + x.widthMm <= z4b.dies[0].widthMm / 2 + 1e-6)); // 2CCD は左の CCD だけ
+  const b1 = mk('amd-zen5-9800x3d').stackDies[0]; const b2 = mk('amd-zen5-9950x3d').stackDies[0];
+  assert.strictEqual(b1.kind, 'base'); assert.ok(b1.widthMm > mk('amd-zen5-9800x3d').dies[0].widthMm * 1.9); assert.ok(Math.abs(b1.widthMm - b2.widthMm) < 0.3);
+  assert.strictEqual(b1.areaMm2, null);
+  const sc = Gn.buildScene(mk('amd-zen5-9800x3d'), {}); assert.ok(sc.lifts.die0 > 0); assert.ok(sc.opaque.length > 0);
+  const base = mk('amd-zen5-9800x3d'); const noStack = Object.assign({}, base); delete noStack.stackDies;
+  assert.deepStrictEqual(En.evaluate(base, En.makeContext()), En.evaluate(noStack, En.makeContext()));
+  assert.strictEqual(base.dies.length, 2);
+});

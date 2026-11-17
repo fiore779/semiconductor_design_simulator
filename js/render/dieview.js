@@ -255,8 +255,9 @@
 
     // ---- fit ----
     const decorOf = (d) => (d && Array.isArray(d.decorDies) ? d.decorDies : []);
-    function designSig(d) { return d.dies.concat(decorOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|'); }
-    function doFit() { view = geom.fit(design.dies.concat(decorOf(design)), cssW, cssH, 48); invalidate(); }
+    const stackOf = (d) => (d && Array.isArray(d.stackDies) ? d.stackDies : []); // X3D の積層(表示専用。V-Cache ダイ・ベースダイ・構造用シリコン)
+    function designSig(d) { return d.dies.concat(decorOf(d), stackOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|'); }
+    function doFit() { view = geom.fit(design.dies.concat(decorOf(design), stackOf(design)), cssW, cssH, 48); invalidate(); }
     function maybeAutoFit() {
       if (cssW === 0 || !design.dies.length) { if (design.dies.length) fitSig = 'pending'; return; }
       const sig = designSig(design);
@@ -348,6 +349,10 @@
       decorOf(design).forEach((d) => {
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         rect(r.x, r.y, r.w, r.h, rgba('#1f7a85', 0.32)); outline(r, 1, rgba('#1f7a85', 0.75));
+      });
+      stackOf(design).filter((d) => d.kind === 'base').forEach((d) => { // CCD の下のベースダイ(CCD より広い)を先に描く
+        const r = geom.screenRect(view, geom.dieWorldRect(d));
+        rect(r.x, r.y, r.w, r.h, rgba('#8a64b8', 0.38)); outline(r, 2, rgba('#8a64b8', 0.9));
       });
       geom.paintOrder(design).forEach((die) => { // 土台のダイ(underlay)を先に描く
         const r = geom.screenRect(view, geom.dieWorldRect(die));
@@ -454,6 +459,14 @@
       const heatOn = heatActive();
       const oInfo = originOn() ? originInfo() : null;
 
+      stackOf(design).filter((d) => d.kind !== 'base').forEach((d) => { // CCD の上の V-Cache ダイ・構造用シリコン(半透明で重ねる)
+        const r = geom.screenRect(view, geom.dieWorldRect(d)); const col = d.kind === 'vcache' ? '#8a64b8' : '#7b8190';
+        rect(r.x, r.y, r.w, r.h, rgba(col, d.kind === 'vcache' ? 0.45 : 0.3)); outline(r, 1, rgba(col, 0.9));
+      });
+      stackOf(design).filter((d) => d.kind !== 'si-fill').forEach((d) => {
+        const r = geom.screenRect(view, geom.dieWorldRect(d));
+        c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT; c.fillText(d.label + (d.areaMm2 ? ' ' + d.areaMm2 + 'mm²' : ''), r.x + 6, d.kind === 'base' ? r.y + r.h - 6 : r.y + 14);
+      });
       decorOf(design).forEach((d) => { // 飾りのダイ(IOD・GPU・Platform タイル)のラベル(ダイの内側)
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         c.textAlign = 'left'; c.fillStyle = P.text; c.font = FONT; c.fillText(d.label, r.x + 6, r.y + 14); // ダイの内側(縮尺バー・注記と重ならない)

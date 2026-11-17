@@ -711,6 +711,36 @@
     soc.blocks = uncore.concat(moved);
     return true;
   }
+  // ---- Ryzen X3D の積層(表示専用。評価・面積・ダイ数に入らない。design.stackDies)----
+  // top: Zen 3・Zen 4 は V-Cache ダイが CCD の上に載る(Zen 3 41mm²・Zen 4 36mm²。[二次] Tom's Hardware。docs/research/ryzen-x3d-2026-11-15.md §1.2)。V-Cache の無い部分は構造用シリコンで高さをそろえる。
+  //   載る位置・縦横比は表示用の目測(出典なし)。2 CCD 品は V-Cache が片方(左)の CCD だけ。
+  // under: Zen 5 は V-Cache ダイが CCD の下(ベースダイ)。面積は未取得。CCD より各辺 50µm 大きい([二次] Tom Wassick の分解)が、見て分かるよう各辺 0.25mm にした表示用の値。
+  //   ベースダイの幅は 2CCD 品の CCD ダイと同じ(1CCD 品も 2CCD 分の広さ。ユーザー指示 2026-11-17)。
+  const STACK = { 'amd-zen3-5800x3d': { kind: 'top', mm2: 41 }, 'amd-zen4-7800x3d': { kind: 'top', mm2: 36 }, 'amd-zen4-7950x3d': { kind: 'top', mm2: 36 }, 'amd-zen5-9800x3d': { kind: 'under' }, 'amd-zen5-9950x3d': { kind: 'under' } };
+  const STACK_MARGIN = 0.25;
+  // ccd = 配置後の CCD ダイ(x・y・widthMm・heightMm・blocks・layout.units)。戻り値: stackDies の配列(対象外は null)
+  function stackDies(presetId, ccd) {
+    const st = STACK[presetId]; if (!st || !ccd) return null;
+    const units = (ccd.layout && ccd.layout.units) || 1; const cw = ccd.widthMm / (units > 1 ? units + (units - 1) * CCD_GAP : 1); const ch = ccd.heightMm;
+    const R = (v) => Math.round(v * 1e4) / 1e4; const out = [];
+    if (st.kind === 'under') {
+      const w = cw * (2 + CCD_GAP) + 2 * STACK_MARGIN; const h = ch + 2 * STACK_MARGIN;
+      out.push({ id: 'stack-base', kind: 'base', dieId: ccd.id, label: 'ベースダイ(V-Cache ダイ。CCD の下)', x: R(ccd.x - STACK_MARGIN), y: R(ccd.y - STACK_MARGIN), widthMm: R(w), heightMm: R(h), areaMm2: null,
+        note: '面積は未取得。幅は 2CCD 品の CCD ダイと同じ(1CCD 品も同じ広さ)、各辺の余りは表示用の 0.25mm(実測は 50µm。Tom Wassick の分解 [二次])' });
+      return out;
+    }
+    const l3 = (ccd.blocks || []).filter((b) => b.kind === 'l3' && b.x < cw);
+    const cxl = l3.length ? (Math.min.apply(null, l3.map((b) => b.x)) + Math.max.apply(null, l3.map((b) => b.x + b.w))) / 2 : cw / 2;
+    const vh = Math.min(ch * 0.8, Math.sqrt(st.mm2 * 1.1)); const vw = Math.min(cw * 0.9, st.mm2 / vh);
+    const vx = Math.max(0, Math.min(cw - vw, cxl - vw / 2)); const vy = (ch - vh) / 2;
+    const ar = Math.abs(vw * vh / st.mm2 - 1) < 0.01 ? st.mm2 : null;
+    out.push({ id: 'stack-vcache', kind: 'vcache', dieId: ccd.id, label: 'V-Cache ダイ(CCD の上)', x: R(ccd.x + vx), y: R(ccd.y + vy), widthMm: R(vw), heightMm: R(vh), areaMm2: ar,
+      note: '面積 ' + st.mm2 + 'mm² は [二次] Tom\'s Hardware。載る位置・縦横比は表示用の目測' });
+    [[0, 0, vx, ch], [vx + vw, 0, cw - vx - vw, ch], [vx, 0, vw, vy], [vx, vy + vh, vw, ch - vy - vh]].forEach((r, i) => {
+      if (r[2] > 1e-3 && r[3] > 1e-3) out.push({ id: 'stack-fill-' + i, kind: 'si-fill', dieId: ccd.id, label: '構造用シリコン', x: R(ccd.x + r[0]), y: R(ccd.y + r[1]), widthMm: R(r[2]), heightMm: R(r[3]), areaMm2: null });
+    });
+    return out;
+  }
   function tileRowPlace(presetId, dies, gap) {
     if (!TILE_ROW[presetId]) return false;
     const by = {}; dies.forEach((d) => { const r = tileRowRole(d.name); if (r && !by[r]) by[r] = d; });
@@ -1111,7 +1141,7 @@
     return blocks;
   }
 
-  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, tileRowFit, tileRowMoveLpe, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
+  const api = { TEMPLATES, TEMPLATE_IDS, DECOR_FACTS, CCD_RECIPES, SCALE_BASES, SCALE_TEXT, MAX_UNITS, DECOR_IOD, IOD_PLACE, tileRowSize, tileRowPlace, tileRowFit, tileRowMoveLpe, stackDies, APPLE_FRAMES, TILE_FRAMES, tileDecor, classify, toLayout, socLayout, aspectOf, checkDecorDies, decorNote, checkLayout, fits, afterEdit, layoutDie, iodBlocks, scaleText, isSmall };
   root.SDS = root.SDS || {}; root.SDS.model = root.SDS.model || {}; root.SDS.model.floorplan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
