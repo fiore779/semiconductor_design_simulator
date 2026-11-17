@@ -389,7 +389,7 @@
         const bh = scene.blockH; const dieTop = scene.dieTop;
         // 飾りのダイ(IOD・GPU・Platform タイル)のラベル(ダイの下側。CCD のブロックに重ならない)
         const showLabels = labelsOn && cam.pitch >= 0; // 下から見ているときは、上面のラベルを出さない(裏から透けて見えるため)
-        if (showLabels) G.stackOf(dsg).filter((d) => d.kind !== 'si-fill').forEach((d) => { // 積層(ベースダイ・V-Cache ダイ)のラベル
+        if (showLabels) G.stackOf(dsg).filter((d) => d.kind !== 'si-fill').forEach((d) => { // 積層(V-Cache ダイ)のラベル
           const hh = d.kind === 'base' ? 0.1 + (scene.lifts[d.dieId] || 0) : scene.dieTop + scene.stackTopH;
           const cs = [prj([d.x, hh, d.y]), prj([d.x + d.widthMm, hh, d.y]), prj([d.x, hh, d.y + d.heightMm]), prj([d.x + d.widthMm, hh, d.y + d.heightMm])];
           if (!cs.every((p) => p.visible)) return;

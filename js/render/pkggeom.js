@@ -209,7 +209,7 @@
 
   // 飾りの IO ダイ(design.decorDies。評価に影響しない見た目だけのダイ)。基板サイズ・蓋・ダイの厚み・カメラの外接には含める。選択・光線交差の対象外。
   const decorOf = (design) => (design && Array.isArray(design.decorDies) ? design.decorDies : []);
-  // X3D の積層(design.stackDies。表示専用): base = CCD の下のベースダイ(CCD を持ち上げる)、vcache・si-fill = CCD の上の積層
+  // X3D の積層(design.stackDies。表示専用): base = CCD の下の V-Cache ダイ(Zen 5。CCD を持ち上げる)、vcache・si-fill = CCD の上の積層
   const stackOf = (design) => (design && Array.isArray(design.stackDies) ? design.stackDies : []);
   const STACK_LIFT = 0.3; const STACK_TOP = 0.5; const STACK_EXTRA = 0.55; // ダイの厚み dieT に対する比(持ち上げ・上の積層の厚み・蓋の余裕)
   const liftsOf = (design, dieT) => { const m = {}; stackOf(design).forEach((d) => { if (d.kind === 'base' && d.dieId) m[d.dieId] = dieT * STACK_LIFT; }); return m; };
@@ -312,7 +312,7 @@
       });
     });
 
-    // X3D の積層: ベースダイ(CCD の下。CCD を持ち上げた分の厚み)・V-Cache ダイと構造用シリコン(CCD の上)
+    // X3D の積層: Zen 5 の V-Cache ダイ(CCD の下。CCD を持ち上げた分の厚み)・V-Cache ダイと構造用シリコン(CCD の上)
     stack.forEach((d) => {
       const x0 = d.x; const z0 = d.y; const x1 = d.x + d.widthMm; const z1 = d.y + d.heightMm; const lift = d.kind === 'base' ? (lifts[d.dieId] || 0) : 0;
       if (d.kind === 'base') {

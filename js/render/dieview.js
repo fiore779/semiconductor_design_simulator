@@ -255,7 +255,7 @@
 
     // ---- fit ----
     const decorOf = (d) => (d && Array.isArray(d.decorDies) ? d.decorDies : []);
-    const stackOf = (d) => (d && Array.isArray(d.stackDies) ? d.stackDies : []); // X3D の積層(表示専用。V-Cache ダイ・ベースダイ・構造用シリコン)
+    const stackOf = (d) => (d && Array.isArray(d.stackDies) ? d.stackDies : []); // X3D の積層(表示専用。V-Cache ダイ・構造用シリコン)
     function designSig(d) { return d.dies.concat(decorOf(d), stackOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|'); }
     function doFit() { view = geom.fit(design.dies.concat(decorOf(design), stackOf(design)), cssW, cssH, 48); invalidate(); }
     function maybeAutoFit() {
@@ -350,7 +350,7 @@
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         rect(r.x, r.y, r.w, r.h, rgba('#1f7a85', 0.32)); outline(r, 1, rgba('#1f7a85', 0.75));
       });
-      stackOf(design).filter((d) => d.kind === 'base').forEach((d) => { // CCD の下のベースダイ(CCD より広い)を先に描く
+      stackOf(design).filter((d) => d.kind === 'base').forEach((d) => { // CCD の下の V-Cache ダイ(CCD より広い)を先に描く
         const r = geom.screenRect(view, geom.dieWorldRect(d));
         rect(r.x, r.y, r.w, r.h, rgba('#8a64b8', 0.38)); outline(r, 2, rgba('#8a64b8', 0.9));
       });

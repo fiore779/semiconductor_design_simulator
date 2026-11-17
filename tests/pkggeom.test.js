@@ -221,7 +221,7 @@ test('土台(die.underlay)は低い板: 上面が通常のダイより低く(UF_
   assert.ok(hb && hb.dieId === b.id);
 });
 
-test('X3D の積層(design.stackDies。表示専用): Zen 3・4 は CCD の上に V-Cache + 構造用シリコン、Zen 5 は CCD の下のベースダイ(1CCD 品も 2CCD 分の幅)。評価・ダイ数は変わらない', () => {
+test('X3D の積層(design.stackDies。表示専用): Zen 3・4 は CCD の上に V-Cache + 構造用シリコン、Zen 5 は CCD の下の V-Cache ダイ(1CCD 品も 2CCD 分の幅)。評価・ダイ数は変わらない', () => {
   const { D } = require('./helpers.js'); const DSn = require('../js/model/design.js'); const Gn = require('../js/render/pkggeom.js'); const En = require('../js/model/evaluate.js');
   const mk = (id) => DSn.fromPreset(D.presets.find((p) => p.id === id));
   const z4 = mk('amd-zen4-7800x3d'); const vc = z4.stackDies.find((x) => x.kind === 'vcache'); const c = z4.dies[0];

@@ -714,7 +714,7 @@
   // ---- Ryzen X3D の積層(表示専用。評価・面積・ダイ数に入らない。design.stackDies)----
   // top: Zen 3・Zen 4 は V-Cache ダイが CCD の上に載る(Zen 3 41mm²・Zen 4 36mm²。[二次] Tom's Hardware。docs/research/ryzen-x3d-2026-11-15.md §1.2)。V-Cache の無い部分は構造用シリコンで高さをそろえる。
   //   載る位置・縦横比は表示用の目測(出典なし)。2 CCD 品は V-Cache が片方(左)の CCD だけ。
-  // under: Zen 5 は V-Cache ダイが CCD の下(ベースダイ)。面積は未取得。CCD より各辺 50µm 大きい([二次] Tom Wassick の分解)が、見て分かるよう各辺 0.1mm にした表示用の値。
+  // under: Zen 5 は V-Cache ダイが CCD の下(CCD を上に載せる。基板=ベースダイではない)。面積は未取得。CCD より各辺 50µm 大きい([二次] Tom Wassick の分解)が、見て分かるよう各辺 0.1mm にした表示用の値。
   const STACK = { 'amd-zen3-5800x3d': { kind: 'top', mm2: 41 }, 'amd-zen4-7800x3d': { kind: 'top', mm2: 36 }, 'amd-zen4-7950x3d': { kind: 'top', mm2: 36 }, 'amd-zen5-9800x3d': { kind: 'under' }, 'amd-zen5-9950x3d': { kind: 'under' } };
   const STACK_MARGIN = 0.1;
   // ccd = 配置後の CCD ダイ(x・y・widthMm・heightMm・blocks・layout.units)。戻り値: stackDies の配列(対象外は null)
@@ -724,7 +724,7 @@
     const R = (v) => Math.round(v * 1e4) / 1e4; const out = [];
     if (st.kind === 'under') {
       const w = ccd.widthMm + 2 * STACK_MARGIN; const h = ch + 2 * STACK_MARGIN;
-      out.push({ id: 'stack-base', kind: 'base', dieId: ccd.id, label: 'ベースダイ(V-Cache ダイ。CCD の下)', x: R(ccd.x - STACK_MARGIN), y: R(ccd.y - STACK_MARGIN), widthMm: R(w), heightMm: R(h), areaMm2: null,
+      out.push({ id: 'stack-base', kind: 'base', dieId: ccd.id, label: 'V-Cache ダイ(CCD の下)', x: R(ccd.x - STACK_MARGIN), y: R(ccd.y - STACK_MARGIN), widthMm: R(w), heightMm: R(h), areaMm2: null,
         note: '面積は未取得。CCD より各辺 0.1mm 大きい表示用の値(実測は 50µm。Tom Wassick の分解 [二次])' });
       return out;
     }
