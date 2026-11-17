@@ -194,7 +194,7 @@ test('Snapdragon・Dimensity 9000〜9600 Pro・T239・Raphael/Granite Ridge と�
   // 2026-11-16: Ryzen X3D の 3 件(5800X3D・7800X3D・9800X3D)は変更前のデータに無いので除く。ほかの 66 件のハッシュは不変
   const X3D_NEW = ['amd-zen3-5800x3d', 'amd-zen4-7800x3d', 'amd-zen5-9800x3d', 'amd-zen4-7950x3d', 'amd-zen5-9950x3d', 'amd-zen4-8500g', 'amd-zen4-8700g']; // 2026-11-16: 7950X3D・9950X3D(2 CCD)も追加。2026-11-16(その 3): Phoenix 2 の 7545U(amd-zen4-7545u)も変更前のデータに無いので除く(ほかの 66 件のハッシュは不変)
   SLC_L3.forEach((id) => assert.ok(mk(id).dies.some((x) => x.blocks.some((b) => b.kind === 'l3')), id));
-  const rest = D.presets.filter((p) => !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id) && !MTL_ROW.includes(p.id) && !X3D_NEW.includes(p.id));
+  const rest = D.presets.filter((p) => p.addedIn !== 'old-intel' /* 2026-11-17: 古い Core i 19 件は後から追加 */ && !MAPPED.includes(p.id) && !IOD_MOVED.includes(p.id) && !ASPECT_4.includes(p.id) && !ORIN_L3.includes(p.id) && !SLC_L3.includes(p.id) && !HX_NEW.includes(p.id) && !MTL_ROW.includes(p.id) && !X3D_NEW.includes(p.id));
   assert.strictEqual(rest.length, 66);
   const h = require('crypto').createHash('sha256');
   rest.forEach((p) => { const d = mk(p.id); h.update(JSON.stringify({ id: p.id, dies: d.dies.map((x) => ({ layout: x.layout || null, w: x.widthMm, h: x.heightMm, blocks: x.blocks })), decor: d.decorDies || null })); });

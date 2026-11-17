@@ -10,6 +10,9 @@ window.SDS_DATA = window.SDS_DATA || {};
   const secR = (v, lo, hi) => ({ v, s: 'sec', range: [lo, hi] });
   const nodes = [
     // id, 名前, 製造元, 密度 MTr/mm², SRAM µm², CPP nm, Mx nm, 量産開始
+    // 2026-11-17: 古い Core i シリーズ(第2〜10世代)のプリセット用。密度・SRAM・CPP・Mx は未取得のまま(推測しない。移植の面積換算はできない)
+    { id: 'intel-32', name: 'Intel 32nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2010 },
+    { id: 'intel-22', name: 'Intel 22nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2012 },
     { id: 'intel-14', name: 'Intel 14nm', vendor: 'Intel', density: pub(37.5), sram: pub(0.0588), cpp: pub(70), mx: pub(52), start: 2014 },
     { id: 'intel-7', name: 'Intel 7 (10nm ESF)', vendor: 'Intel', density: secR(80, 80, 100), densityNote: '約80(HP)〜約100(13900K 逆算)', sram: sec(0.0312), cpp: sec(54), mx: sec(36), start: 2019 },
     { id: 'intel-4', name: 'Intel 4', vendor: 'Intel', density: sec(160), sram: pub(0.0240), cpp: sec(50), mx: sec(30), start: 2023 },

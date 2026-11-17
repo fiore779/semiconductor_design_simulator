@@ -378,7 +378,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 参考: 5 件を含めた 16 件の中央値は帯 0 が 0.6943、帯 1 が 0.7556 で、丸めると 0.69 / 0.76 のまま不変。標本外での MT の誤差は設計書 §2.7.7)
     if (['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v', 'intel-ptl-x9-388h', 'intel-arl-275hx'].includes(p.id)) return;
     // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX。calib:false)は連続式の標本に入れない(係数は動かさない。検証用。設計書 §13.4 項目⑦)
-    if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id)) return;
+    if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id) || p.addedIn === 'old-intel') return; // 2026-11-17: 古い Core i(chips-old.js)も標本に入れない
     if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, W: w.w, r: (lo + hi) / 2 / Math.pow(w.w, F.MT_CLOCK_POWER.exp) });

@@ -18,19 +18,19 @@ const overlap = (a, b) => a.x0 < b.x1 - E && a.x1 > b.x0 + E && a.z0 < b.z1 - E 
 const dieRects = (d) => d.dies.concat(d.decorDies || []).map((x) => ({ x0: x.x, z0: x.y, x1: x.x + x.widthMm, z1: x.y + x.heightMm }));
 
 test('対応表: 全プリセットを網羅し、未知の id も、種類の取りこぼしも無い。種類ごとに状態・根拠(区分・取得日)がある', () => {
-  assert.strictEqual(D.presets.length, 113);
+  assert.strictEqual(D.presets.length, 132); // 2026-11-17: 古い Core i 19 件(chips-old.js)を追加(113 → 132)
   const missing = D.presets.filter((p) => !(p.id in L.presets)).map((p) => p.id);
   assert.deepStrictEqual(missing, []);
   const known = new Set(D.presets.map((p) => p.id));
   assert.deepStrictEqual(Object.keys(L.presets).filter((id) => !known.has(id)), [], '対応表に無いプリセット id がある');
-  assert.strictEqual(Object.keys(L.presets).length, 113);
+  assert.strictEqual(Object.keys(L.presets).length, 132);
   const ids = L.kinds.map((k) => k.id);
   assert.strictEqual(new Set(ids).size, ids.length, '種類 id の重複');
   Object.values(L.presets).forEach((k) => assert.ok(ids.includes(k), `未定義の種類 ${k}`));
   ids.forEach((k) => assert.ok(Object.values(L.presets).includes(k), `どのプリセットにも使われない種類 ${k}`));
   L.kinds.forEach((k) => {
     assert.ok(STATES.includes(k.state), k.id);
-    assert.ok(k.basis.length >= 1 && k.basis.every((b) => GRADES.includes(b.grade) && b.date === '2026-11-16' && typeof b.text === 'string' && b.text.length > 5), `${k.id} の根拠`);
+    assert.ok(k.basis.length >= 1 && k.basis.every((b) => GRADES.includes(b.grade) && ['2026-11-16', '2026-11-17'].includes(b.date) && typeof b.text === 'string' && b.text.length > 5), `${k.id} の根拠`);
     if (k.state === 'rules') {
       assert.ok(k.groups.length >= 1 && ['outside', 'underLid'].includes(k.place) && ['square', 'portrait'].includes(k.frame), k.id);
       assert.ok(k.basis.some((b) => b.grade !== '推定' && (b.url || b.grade === '推定')), `${k.id} に推定以外の根拠(出典)がある`);
@@ -41,7 +41,7 @@ test('対応表: 全プリセットを網羅し、未知の id も、種類の�
   // 件数(2026-11-16 時点): ① 30 件(am4-zen3 4・am5 8・lga1700 10・lga1851 2・amd-fp-ring 2・amd-fl1 1・apple-m1 1・nv-orin 1・nv-gb10 1)、② 42 件(モバイル BGA の MTL・LNL 4・ARL-H 1・スマホ PoP 37)、③ 39 件
   const by = { rules: 0, none: 0, unknown: 0 };
   D.presets.forEach((p) => { by[G.capSpecOf(L, p.id).state]++; });
-  assert.deepStrictEqual(by, { rules: 30, none: 42, unknown: 41 }); // 2026-11-16(その 4): Phoenix 2 の 7545U を外し(ユーザー決定: 一般的でない)、Ryzen 5 8500G・7 8700G を追加(112 → 113)(8500G・8700G は AM5 の APU で写真なし → unknown。7545U の分が減り 2 件が増える。40 → 41)。旧: 2026-11-16: Phoenix 2 の 7545U(パッケージ写真なし → unknown)で 39 → 40
+  assert.deepStrictEqual(by, { rules: 30, none: 42, unknown: 60 }); /* 2026-11-17: 古い Core i 19 件(写真未確認の unknown)を追加 */ // // 2026-11-16(その 4): Phoenix 2 の 7545U を外し(ユーザー決定: 一般的でない)、Ryzen 5 8500G・7 8700G を追加(112 → 113)(8500G・8700G は AM5 の APU で写真なし → unknown。7545U の分が減り 2 件が増える。40 → 41)。旧: 2026-11-16: Phoenix 2 の 7545U(パッケージ写真なし → unknown)で 39 → 40
 });
 
 test('capSpecOf: 引ける id は種類を返し、null・未知の id・プロトタイプ上の名前は null', () => {

@@ -58,7 +58,7 @@ test('index.html の script は、ブラウザと同じ条件で順に読み込�
   assert.ok(R('viewhost') < order('js/main.js'));
   // 2026-11-16: コンデンサ配置のデータ(3D のコンデンサの位置)が、pkgview3d より前に読み込まれ、全プリセットを覆う
   assert.ok(order('data/caplayouts.js') >= 0 && order('data/caplayouts.js') < R('pkgview3d'));
-  assert.ok(ctx.SDS_DATA.caplayouts && ctx.SDS_DATA.caplayouts.kinds.length >= 15 && Object.keys(ctx.SDS_DATA.caplayouts.presets).length === 113);
+  assert.ok(ctx.SDS_DATA.caplayouts && ctx.SDS_DATA.caplayouts.kinds.length >= 15 && Object.keys(ctx.SDS_DATA.caplayouts.presets).length === 132);
 });
 
 test('main.js が使う SDS のモジュール(ui / sim / model / render / history)は、すべて読み込み後に登録されている', () => {
@@ -378,7 +378,7 @@ test('PNG 書き出し: ダイ図なし・2D 不可・toBlob なし/null・高�
 });
 
 // ---- プリセット一覧(グループ化) ----
-test('プリセット一覧: 113 行・35 見出し(2026-11-16(その 4): 7545U を外して 8500G(見出し「AMD / Zen 4 (Phoenix 2)」は残る)・8700G(既存の見出し「Zen 4 (Phoenix)」に入る)を追加。見出しは 35 のまま。2026-11-16(その 3): Phoenix 2 の 7545U の追加で見出し「AMD / Zen 4 (Phoenix 2)」が 1 つ増えた。2026-11-11: HX 系 4 件の追加で見出しが 3 増えた。2026-11-16: Ryzen X3D 3 件の追加は既存の見出し〔Zen 3・Zen 4・Zen 5 のデスクトップ〕に入り見出しは増えない)・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
+test('プリセット一覧: 132 行・42 見出し(2026-11-17: 古い Core i 19 件を追加して 113 → 132 行・35 → 42 見出し。2026-11-16(その 4): 7545U を外して 8500G(見出し「AMD / Zen 4 (Phoenix 2)」は残る)・8700G(既存の見出し「Zen 4 (Phoenix)」に入る)を追加。見出しは 35 のまま。2026-11-16(その 3): Phoenix 2 の 7545U の追加で見出し「AMD / Zen 4 (Phoenix 2)」が 1 つ増えた。2026-11-11: HX 系 4 件の追加で見出しが 3 増えた。2026-11-16: Ryzen X3D 3 件の追加は既存の見出し〔Zen 3・Zen 4・Zen 5 のデスクトップ〕に入り見出しは増えない)・初期は全て閉じる・見出しで開閉してフォーカスを保つ・行の文字に n=null 等が出ない・dblclick で全件が重複なく渡る(DOM スタブ)', () => {
   const ctx = loadAll(stubDoc());
   const ui = ctx.SDS.ui; const c = ctx.SDS.model.evaluate.makeContext();
   const body = new FakeNode('body');
@@ -390,9 +390,9 @@ test('プリセット一覧: 113 行・35 見出し(2026-11-16(その 4): 7545U 
     ui.dialogs.openPresets(c, { onReproduce(p) { got.push(p.id); }, onImprove() {} });
     const rows = () => findAll(body, (n) => n.tag === 'button' && n.attrs.role === 'option');
     const heads = () => findAll(body, (n) => n.tag === 'button' && n.className === 'group-head');
-    assert.strictEqual(c.presets.length, 113);
-    assert.strictEqual(rows().length, 113);
-    assert.strictEqual(heads().length, 35);
+    assert.strictEqual(c.presets.length, 132);
+    assert.strictEqual(rows().length, 132);
+    assert.strictEqual(heads().length, 42); // 2026-11-17: 古い Core i の 7 世代(Sandy Bridge・Haswell・Skylake・Kaby Lake・Coffee Lake・Coffee Lake Refresh・Comet Lake)で見出しが 7 増えた
     assert.ok(heads().every((n) => n.attrs['aria-expanded'] === 'false'));
     const key = heads()[0].dataset.key;
     heads()[0].listeners.click();
@@ -405,8 +405,8 @@ test('プリセット一覧: 113 行・35 見出し(2026-11-16(その 4): 7545U 
     r1.listeners.click();
     assert.ok(focused && focused.dataset.id === id);
     rows().forEach((r) => r.listeners.dblclick());
-    assert.strictEqual(got.length, 113);
-    assert.strictEqual(new Set(got).size, 113);
+    assert.strictEqual(got.length, 132);
+    assert.strictEqual(new Set(got).size, 132);
     assert.strictEqual([...got].sort().join(','), Array.from(c.presets, (p) => p.id).sort().join(','));
   } finally { delete FakeNode.prototype.focus; ui.dialogs.close(); }
 });

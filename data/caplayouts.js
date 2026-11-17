@@ -181,6 +181,7 @@ window.SDS_DATA = window.SDS_DATA || {};
     }),
     // ---- ③ 写真が取れず不明 ----
     W('am4-unconfirmed', 'AMD AM4(Zen 1・Zen+・Raven Ridge)', 'unknown', { basis: [b('推定', `蓋の下の配置は Zen 3(5600X)でのみ確認。Zen 1・Zen+・Raven Ridge は${NOPHOTO}`)] }),
+    W('intel-old-unconfirmed', 'Intel LGA1155・1150・1151・1200・モバイル(第2〜10世代の Core i)', 'unknown', { basis: [{ grade: '推定', text: `第2〜10世代の Core i(2026-11-17 に追加)は${NOPHOTO}(調べていない)`, date: '2026-11-17' }] }),
     W('intel-mobile-unconfirmed', 'Intel モバイル BGA(Panther Lake・Wildcat Lake)', 'unknown', { basis: [b('推定', `Panther Lake・Wildcat Lake は${NOPHOTO}`)] }),
     W('intel-hx-bga', 'Intel HX(BGA)', 'unknown', { basis: [b('推定', `13980HX で検索した写真は実際には 13900K(LGA1700)で、HX の BGA の上面の写真は${NOPHOTO}`)] }),
     W('amd-fp-unconfirmed', 'AMD モバイル単一ダイ(Strix Point・Rembrandt-R・Cezanne)', 'unknown', { basis: [b('推定', `Strix Point(HX 370)・Rembrandt-R(7735HS)・Cezanne(5800U)は${NOPHOTO}`)] }),
@@ -192,7 +193,7 @@ window.SDS_DATA = window.SDS_DATA || {};
     W('nv-tegra-unconfirmed', 'NVIDIA Thor・T239', 'unknown', { basis: [b('推定', `Thor・T239 は${NOPHOTO}`)] }),
   ];
 
-  // プリセット id → 種類 id(111 件すべて。調査メモ §1.1)
+  // プリセット id → 種類 id(全件。調査メモ §1.1)
   const map = {};
   const put = (kind, ids) => ids.split(/\s+/).forEach((id) => { map[id] = kind; });
   put('am4-zen3', 'amd-zen3-5800x amd-zen3-5800x3d amd-zen3-5600x amd-zen3-5950x');
@@ -202,6 +203,7 @@ window.SDS_DATA = window.SDS_DATA || {};
   put('lga1851', 'intel-arl-285k intel-arl-265k');
   put('intel-mobile-bga', 'intel-mtl-185h intel-lnl-268v intel-lnl-258v intel-lnl-256v');
   put('intel-arl-h', 'intel-arl-285h');
+  put('intel-old-unconfirmed', 'intel-snb-2600k intel-snb-2500k intel-snb-2720qm intel-hsw-4770k intel-hsw-4790k intel-hsw-4690k intel-hsw-4700hq intel-skl-6700k intel-skl-6600k intel-skl-6700hq intel-kbl-7700k intel-kbl-7600k intel-kbl-7700hq intel-cfl-8700k intel-cfl-8400 intel-cfr-9900k intel-cfr-9700k intel-cml-10900k intel-cml-10700k');
   put('intel-mobile-unconfirmed', 'intel-ptl-x9-388h intel-ptl-x9-386h intel-ptl-x9-378h intel-ptl-x7-358h intel-ptl-u5-325 intel-wcl-c5-320');
   put('intel-hx-bga', 'intel-rpl-13980hx intel-rpl-14900hx intel-rpl-14700hx intel-arl-275hx');
   put('amd-fp-ring', 'amd-kraken-350 amd-zen4-7840hs');

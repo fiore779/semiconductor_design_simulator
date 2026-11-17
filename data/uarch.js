@@ -49,6 +49,10 @@ window.SDS_DATA.uarch = (function () {
     'Sandy Bridge': u({ width: 4, decodeWidth: 4, rob: 168, brPenalty: 14, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 28, mshr: 10, smt: 2, vecBits: 256 }),
     'Haswell': u({ width: 4, decodeWidth: 4, rob: 192, brPenalty: 15, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 36, smt: 2, vecBits: 256 }),
     'Skylake': u({ width: 4, decodeWidth: 4, rob: 224, brPenalty: 16.5, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 42, smt: 2, vecBits: 256 }),
+    // 第7〜10世代はコア設計が Skylake と同じ(クロック・キャッシュ容量・プロセスの改良のみ)。ST 補正 u は借りる先(Skylake)に専用の値が無いので、命令セット平均で代用(確度:低)
+    'Kaby Lake': u({ uFrom: 'Skylake', width: 4, decodeWidth: 4, rob: 224, brPenalty: 16.5, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 42, smt: 2, vecBits: 256, note: 'Skylake と同じコア設計として値を準用(Wikipedia・Intel の説明では Kaby Lake の IPC は Skylake と同じ。14nm+ でクロックが上がっただけ)。この世代そのものの測定値は未取得' }),
+    'Coffee Lake': u({ uFrom: 'Skylake', width: 4, decodeWidth: 4, rob: 224, brPenalty: 16.5, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 42, smt: 2, vecBits: 256, note: 'Skylake と同じコア設計として値を準用(第8・9世代。コア数と L3 が増えただけ)。L3 遅延はリング構成が変わるので 42 は Skylake 4C の値で、この世代の測定は未取得' }),
+    'Comet Lake': u({ uFrom: 'Skylake', width: 4, decodeWidth: 4, rob: 224, brPenalty: 16.5, l1dKB: 32, l1dLat: 4, l2KB: 256, l2Lat: 12, l3Lat: 42, smt: 2, vecBits: 256, note: 'Skylake と同じコア設計として値を準用(第10世代デスクトップ)。10 コアのリング構成での L3 遅延は未取得(42 は Skylake 4C の値)' }),
     // ---- Apple ----
     'Firestorm': u({ width: 8, decodeWidth: 8, rob: 330, brPenalty: 13, l1dKB: 128, l1dLat: 3, l2KB: 3072, l2Lat: 18, vecBits: 128, note: 'ROB はリタイアキュー約330エントリ(1エントリ最大7µop)。AnandTech 由来の630という値もあるが裏付け弱い。L2 は12MB/4コアクラスタ' }),
     'Icestorm': u({ vecBits: 128, note: 'L1I 128KB / L1D 64KB / L2 4MB/4コア。幅・ROB は未取得' }),
