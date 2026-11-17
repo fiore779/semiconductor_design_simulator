@@ -9,7 +9,7 @@
     'WebGL が使えません。ブラウザの設定(ハードウェアアクセラレーション)を確認するか、別のブラウザでお試しください。ダイビューは表示できません。': 'WebGL is unavailable. Check the browser settings (hardware acceleration) or try another browser. The die view cannot be shown.',
     '選択中のブロックはありません': 'No block selected', '選択中: ${1}': 'Selected: ${1}', '選択中: ${1} 個のブロック': 'Selected: ${1} blocks', '最高 ${1} ${2} 付近${3}': 'Max ${1} ${2} near ${3}', '、最低 ${1}': ', min ${1}',
     '${1}のヒートマップ(模式図)。${2}。配置の編集はできません。': 'Heat map of ${1} (schematic). ${2}. The layout cannot be edited.', 'ダイビュー(配置図): ダイ ${1} 個、ブロック ${2} 個。${3}': 'Die view (layout): ${1} die(s), ${2} block(s). ${3}',
-    '${1}。矢印キーで選択ブロックを移動、Esc で選択解除。': '${1}. Arrow keys move the selected block; Esc clears the selection.', '面積未取得(仮寸法)': 'Area not obtained (provisional size)', ' 面積未取得': ' area not obtained', 'ほか ': 'and ', ' 件': ' more',
+    '${1}。矢印キーで選択ブロックを移動、Alt と矢印キーで選択の枠を移動、Esc で選択解除。': '${1}. Arrow keys move the selected block; Alt with arrow keys moves the selection frame; Esc clears the selection.', '面積未取得(仮寸法)': 'Area not obtained (provisional size)', ' 面積未取得': ' area not obtained', 'ほか ': 'and ', ' 件': ' more',
     '⇄ 破線の枠(小さい部品は隅の点)= 移植した部品': '⇄ Dashed frame (a dot in the corner for small parts) = ported part', '斜線 = 面積未取得': 'Hatching = area not obtained', '出所': 'Source', '範囲 ${1} K': 'Range ${1} K',
     // ---- pkggeom / pkgview3d ----
     'コンデンサの位置は模式(根拠なし)': 'Capacitor positions are schematic (no basis)', 'この種類は実物の上面にコンデンサが無いので描いていません': 'Not drawn because this type has no capacitors on the top surface of the real product',
@@ -17,7 +17,7 @@
     '。基板の向きに合わせて 90° 回した位置は推定': '. The position rotated by 90° to match the substrate orientation is estimated', 'コンデンサの位置は${1}の実物写真に基づく模式(個数・サイズは目安)${2}${3}': 'Capacitor positions are a schematic based on a photo of the real ${1} (counts and sizes are approximate)${2}${3}',
     '3D は模式図。形状・厚みは実物と異なります': 'The 3D view is schematic. Shapes and thicknesses differ from the real product', '編集は 2D 表示で行います(3D では選択のみ)': 'Edit in the 2D view (selection only in 3D)', '蓋を表示': 'Show the lid', '蓋は半透明': 'Lid is translucent', '蓋は非表示': 'Lid is hidden',
     '${1}のヒートマップ。': 'Heat map of ${1}. ', '出所で色分け(${1} 種類)。': 'Colored by source (${1} kinds). ', 'パッケージの 3D 表示(模式図): ダイ ${1} 個${2}': 'Package 3D view (schematic): ${1} die(s)${2}',
-    '、ブロック ${1} 個。${2}${3}。${4}。矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。': ', ${1} block(s). ${2}${3}. ${4}. Arrow keys rotate, plus and minus zoom, Esc clears the selection. Edit in the 2D view.',
+    '、ブロック ${1} 個。${2}${3}。${4}。矢印キーで選択の枠を移動、Shift と矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。': ', ${1} block(s). ${2}${3}. ${4}. Arrow keys move the selection frame, Shift with arrow keys rotates, plus and minus zoom, Esc clears the selection. Edit in the 2D view.',
     '(面積未取得・仮寸法)': '(area not obtained, provisional size)', '⇄ = 移植した部品': '⇄ = ported part', '薄い色 = 面積未取得': 'Pale color = area not obtained',
     // ---- viewhost ----
     '表示': 'Show', '半透明': 'Translucent', '非表示': 'Hide', 'ドラッグ=回転 / ホイール=拡大縮小 / 右ドラッグ・Shift+ドラッグ=移動 / 矢印キー=回転、+ −=拡大縮小': 'Drag = rotate / wheel = zoom / right-drag or Shift+drag = pan / arrow keys = rotate, + − = zoom',

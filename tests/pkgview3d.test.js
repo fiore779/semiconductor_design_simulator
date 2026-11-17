@@ -105,7 +105,7 @@ test('3D ビュー: 外部からの選択・消えたブロックの選択除去
   const { view, runRaf, canvas, st, ev } = setup();
   view.setDesign(full); view.setSelection(['b1']); runRaf();
   const L = canvas().listeners; const n0 = st.selected.length;
-  ['ArrowLeft', 'ArrowUp', '+', '-', '0'].forEach((key) => { L.keydown({ key, preventDefault() {} }); assert.ok(runRaf() > 0, key); });
+  ['ArrowLeft', 'ArrowUp', '+', '-', '0'].forEach((key) => { L.keydown({ key, shiftKey: true, preventDefault() {} }); assert.ok(runRaf() > 0, key); });
   L.wheel({ deltaY: 100, deltaMode: 0, preventDefault() {} }); assert.ok(runRaf() > 0);
   L.pointerdown(ev(300, 300, { button: 2 })); L.pointermove(ev(340, 330, { button: 2 })); L.pointerup(ev(340, 330, { button: 2 }));
   assert.ok(runRaf() > 0);
@@ -213,7 +213,7 @@ test('3D ビュー: 基板種別やダイ寸法が変わっても向きは保ち
   const { view, runRaf, canvas } = setup();
   const mk = (w, sub) => ({ package: { substrateId: sub }, dies: [{ id: 'd', name: 'd', x: 0, y: 0, widthMm: w, heightMm: w, blocks: [] }] });
   view.setDesign(mk(10, 'organic')); runRaf();
-  canvas().listeners.keydown({ key: 'ArrowLeft', preventDefault() {} }); canvas().listeners.keydown({ key: 'ArrowUp', preventDefault() {} });
+  canvas().listeners.keydown({ key: 'ArrowLeft', shiftKey: true, preventDefault() {} }); canvas().listeners.keydown({ key: 'ArrowUp', shiftKey: true, preventDefault() {} });
   const a = view.getCamera();
   view.setDesign(mk(30, 'si-interposer'));
   const b = view.getCamera();

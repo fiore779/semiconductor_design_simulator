@@ -8,6 +8,7 @@
 
   const isNode = typeof module !== 'undefined' && module.exports && typeof require === 'function';
   const G = isNode ? require('./pkggeom.js') : root.SDS.render.pkggeom;
+  const geom2d = isNode ? require('./geom.js') : root.SDS.render.geom;
   const colormap = isNode ? require('./colormap.js') : root.SDS.render.colormap;
   const palette = isNode ? require('./palette.js') : root.SDS.render.palette;
   const dv = isNode ? require('./dieview.js') : root.SDS.render.dieview;
@@ -293,7 +294,7 @@
       const selText = names.length === 0 ? '選択中のブロックはありません' : names.length <= 3 ? `選択中: ${names.join('、')}` : `選択中: ${names.length} 個のブロック`;
       const ihsText = ihsMode === 'solid' ? '蓋を表示' : ihsMode === 'glass' ? '蓋は半透明' : '蓋は非表示';
       const mode = heatActive() ? `${KIND_NAMES[heat.kind]}のヒートマップ。` : viewMode !== 'place' ? '' : (originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : '');
-      glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りのダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
+      glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りのダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで選択の枠を移動、Shift と矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
     }
 
     // コンデンサ配置の種類(design.presetId から data/caplayouts.js を引く。混合・新規など preset 由来でない設計は null = 従来の模式配置)
@@ -628,6 +629,13 @@
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Escape') { if (selection.length) setSel([]); return; }
       if (!cam) return;
+      const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (dir && !e.shiftKey) { // 矢印=選択の枠を隣のブロックへ(上から見た配置の向き)。Shift+矢印=回転
+        e.preventDefault();
+        const nb = geom2d.neighborBlock(design, selection.length ? selection[selection.length - 1] : null, dir);
+        if (nb) setSel([nb]);
+        return;
+      }
       const rot = { ArrowLeft: [-15, 0], ArrowRight: [15, 0], ArrowUp: [0, -15], ArrowDown: [0, 15] }[e.key];
       if (rot) { e.preventDefault(); cam = G.orbit(cam, rot[0], rot[1]); invalidate(); return; }
       if (e.key === '+' || e.key === '=') { e.preventDefault(); cam = G.zoom(cam, 0.85); invalidate(); }

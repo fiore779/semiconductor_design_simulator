@@ -322,7 +322,7 @@
         glCanvas.setAttribute('aria-label', `${KIND_NAMES[heat.kind]}のヒートマップ(模式図)。${text}。配置の編集はできません。`);
         return;
       }
-      glCanvas.setAttribute('aria-label', `ダイビュー(配置図): ダイ ${design.dies.length} 個、ブロック ${nBlocks} 個。${originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : ''}${selText}。矢印キーで選択ブロックを移動、Esc で選択解除。`);
+      glCanvas.setAttribute('aria-label', `ダイビュー(配置図): ダイ ${design.dies.length} 個、ブロック ${nBlocks} 個。${originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : ''}${selText}。矢印キーで選択ブロックを移動、Alt と矢印キーで選択の枠を移動、Esc で選択解除。`);
     }
 
     // ---- 描画 ----
@@ -776,6 +776,12 @@
       if (e.key === 'Escape') { if (selection.length) setSel([]); return; }
       const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       const dv = dirs[e.key];
+      if (dv && !drag && (viewMode !== 'place' || e.altKey || !selection.length)) { // 選択の枠を隣のブロックへ(配置では Alt+矢印、未選択のとき・ヒートマップ表示では矢印だけ)
+        e.preventDefault();
+        const nb = geom.neighborBlock(design, selection.length === 1 ? selection[0] : selection[selection.length - 1], dv);
+        if (nb) setSel([nb]);
+        return;
+      }
       if (!dv || !selection.length || viewMode !== 'place' || drag) return;
       e.preventDefault();
       const g = geom.DEFAULT_GRID_MM;

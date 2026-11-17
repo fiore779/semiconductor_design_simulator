@@ -176,3 +176,15 @@ test('土台のダイ(underlay)は最背面: paintOrder で先頭になり、hit
   assert.strictEqual(g.hitTest(design, v, 80, 50).dieId, 'tile'); assert.strictEqual(g.hitTest(design, v, 80, 50).blockId, 'tb');
   assert.strictEqual(g.hitTest(design, v, 10, 10).dieId, 'base');
 });
+
+test('neighborBlock: 矢印の向きの隣のブロックを返す(横ずれが小さいものを優先)', () => {
+  const g = require('../js/render/geom.js');
+  const mk = (id, x, y) => ({ id, x, y, w: 1, h: 1 });
+  const d = { dies: [{ x: 0, y: 0, widthMm: 10, heightMm: 10, blocks: [mk('a', 0, 0), mk('b', 3, 0), mk('c', 6, 0), mk('d', 0, 3), mk('e', 3.2, 6)] }] };
+  assert.strictEqual(g.neighborBlock(d, 'a', [1, 0]), 'b');
+  assert.strictEqual(g.neighborBlock(d, 'b', [1, 0]), 'c');
+  assert.strictEqual(g.neighborBlock(d, 'a', [0, 1]), 'd');
+  assert.strictEqual(g.neighborBlock(d, 'c', [1, 0]), null);
+  assert.strictEqual(g.neighborBlock(d, 'b', [0, 1]), 'e');
+  assert.strictEqual(g.neighborBlock(d, null, [1, 0]), 'a');
+});

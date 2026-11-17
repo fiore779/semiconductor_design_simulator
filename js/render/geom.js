@@ -183,8 +183,27 @@
     return out;
   }
 
+  // 選択の枠を矢印キーで隣のブロックへ動かす。dir は [dx, dy](x 右・y 下)。curId が無ければ左上寄りの 1 個を返す。無ければ null
+  function neighborBlock(design, curId, dir) {
+    const all = [];
+    (design.dies || []).forEach((die) => (die.blocks || []).forEach((b) => { const r = blockWorldRect(die, b); all.push({ id: b.id, cx: r.x + r.w / 2, cy: r.y + r.h / 2 }); }));
+    if (!all.length) return null;
+    const cur = all.find((o) => o.id === curId);
+    if (!cur) { all.sort((p, q) => (p.cy + p.cx * 0.01) - (q.cy + q.cx * 0.01)); return all[0].id; }
+    let best = null; let bs = Infinity;
+    all.forEach((o) => {
+      if (o === cur) return;
+      const ax = (o.cx - cur.cx) * dir[0] + (o.cy - cur.cy) * dir[1]; // 進む向きの距離
+      if (ax <= 1e-9) return;
+      const pp = Math.abs((o.cx - cur.cx) * dir[1]) + Math.abs((o.cy - cur.cy) * dir[0]); // 横ずれ
+      const sc = ax + 2 * pp;
+      if (sc < bs) { bs = sc; best = o; }
+    });
+    return best ? best.id : null;
+  }
+
   const api = {
-    dashedRectSegments, cellAt, maxCellIndex,
+    neighborBlock, dashedRectSegments, cellAt, maxCellIndex,
     MIN_SIZE_MM, DEFAULT_GRID_MM, HANDLE_PX, MIN_ZOOM, MAX_ZOOM, HANDLES,
     worldToScreen, screenToWorld, zoomAt, panBy, blockWorldRect, dieWorldRect, handlePoints, screenRect,
     hitTest, paintOrder, snap, moveBlock, resizeBlock, fit, niceLength,
