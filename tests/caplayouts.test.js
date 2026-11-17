@@ -81,7 +81,7 @@ test('個数の目安: 12900K 8 個・285K 12 個(調査メモの目視)。AM5 �
 
 test('spec なしは従来の模式配置のまま(buildScene・capacitorLayout とも)。spec = null も同じ', () => {
   const d = mk('amd-zen4-7800x3d');
-  const all = d.dies.concat(d.decorDies || []);
+  const all = d.dies.concat(d.decorDies || [], d.stackDies || [], G.footprintOf(d));
   const sub = G.substrateSize(all, d.package && d.package.substrateId); const ihs = G.ihsRect(all, sub);
   const legacy = G.capacitorLayout(sub, ihs);
   assert.ok(legacy.length >= 1);

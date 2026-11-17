@@ -209,11 +209,14 @@
   const stackOf = (design) => (design && Array.isArray(design.stackDies) ? design.stackDies : []);
   const STACK_LIFT = 0.3; const STACK_TOP = 0.5; const STACK_EXTRA = 0.55; // ダイの厚み dieT に対する比(持ち上げ・上の積層の厚み・蓋の余裕)
   const liftsOf = (design, dieT) => { const m = {}; stackOf(design).forEach((d) => { if (d.kind === 'base' && d.dieId) m[d.dieId] = dieT * STACK_LIFT; }); return m; };
+  // 基板の大きさ用の見えない占有範囲: AMD の 1 CCD 品も 2 CCD 品と同じソケット・同じパッケージなので、基板・蓋・コンデンサは 2 CCD 分の幅で作る(ダイは描かない。ユーザー指示 2026-11-17「1ccd は 2ccd と同じ広さに」)
+  const CCD_GAP_FRAC = 0.03;
+  const footprintOf = (design) => { const c = ((design && design.dies) || []).find((d) => d && d.layout && d.layout.template === 'amd-chiplet' && (d.layout.units || 1) === 1); return c ? [{ id: 'footprint', x: c.x, y: c.y, widthMm: c.widthMm * (2 + CCD_GAP_FRAC), heightMm: c.heightMm, blocks: [], virtual: true }] : []; };
   const DECOR_H = 0.7; // 飾りダイの高さ(通常のダイの厚みに対する比)
 
   // 描画対象全体の外接球(カメラの注視点・距離・パンの制限に使う)。頂点は作らない。
   function designBounds(design) {
-    const dies = ((design && design.dies) || []).concat(decorOf(design), stackOf(design));
+    const dies = ((design && design.dies) || []).concat(decorOf(design), stackOf(design), footprintOf(design));
     const sub = substrateSize(dies, design && design.package && design.package.substrateId);
     const dieT = dieThickness(dies); const bh = blockHeight(dieT);
     const ihsTop = UF_H + dieT + 2 * bh + IHS_TIM_GAP + IHS_PLATE_T + (stackOf(design).length ? dieT * STACK_EXTRA : 0);
@@ -236,7 +239,7 @@
   function buildScene(design, opts) {
     const o = opts || {};
     const dies = (design && design.dies) || [];
-    const decor = decorOf(design); const stack = stackOf(design); const allDies = dies.concat(decor, stack); // 基板・蓋・厚みは飾りのダイも含めて決める
+    const decor = decorOf(design); const stack = stackOf(design); const allDies = dies.concat(decor, stack, footprintOf(design)); // 基板・蓋・厚みは飾りのダイも含めて決める
     const sel = new Set(o.selection || []);
     const heatIds = new Set(o.heatDieIds || []);
     const ihsMode = IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass';
@@ -491,7 +494,7 @@
 
   const api = {
     FOV, PITCH_MIN, PITCH_MAX, VERTEX_FLOATS, MAT, UF_H, IHS_MODES, SUBSTRATE_STYLE, PRESETS, COL,
-    decorOf, stackOf, liftsOf, STACK_TOP, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
+    decorOf, stackOf, footprintOf, liftsOf, STACK_TOP, DECOR_H, UNDERLAY_H, diesBounds, designBounds, dieThickness, blockHeight, substrateSize, ihsRect, capacitorLayout, capSpecOf, capacitorNote, createMesh, buildScene,
     rayBox, pickTop, fitDistance, createCamera, orbit, zoom, pan, eyeOf, cameraAxes, cameraMatrices, screenRay, project,
   };
   root.SDS = root.SDS || {}; root.SDS.render = root.SDS.render || {}; root.SDS.render.pkggeom = api;

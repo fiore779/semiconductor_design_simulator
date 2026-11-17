@@ -210,7 +210,7 @@
 
     // ---- カメラ ----
     const aspect = () => (cssH > 0 ? cssW / cssH : 1);
-    const designSig = (d) => (d.package && d.package.substrateId || '') + '#' + d.dies.concat(G.decorOf(d), G.stackOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|');
+    const designSig = (d) => (d.package && d.package.substrateId || '') + '#' + d.dies.concat(G.decorOf(d), G.stackOf(d), G.footprintOf(d)).map((x) => `${x.id}:${x.x},${x.y},${x.widthMm},${x.heightMm}`).join('|');
     function currentBounds() { return G.designBounds(design); }
     function resetCamera(preset) {
       cam = G.createCamera(currentBounds(), aspect(), preset || 'oblique'); invalidate();
@@ -567,8 +567,8 @@
       if (effIhs() === 'solid') return null; // 不透明の蓋の下は選べない
       const ray = G.screenRay(cam, aspect(), (px / cssW) * 2 - 1, 1 - (py / cssH) * 2);
       if (!ray) return null;
-      const dT = G.dieThickness(design.dies.concat(G.decorOf(design), G.stackOf(design)));
-      return G.pickTop(ray, design.dies, { selection, decor: G.decorOf(design).concat(G.stackOf(design)), lifts: G.liftsOf(design, dT) });
+      const dT = G.dieThickness(design.dies.concat(G.decorOf(design), G.stackOf(design), G.footprintOf(design)));
+      return G.pickTop(ray, design.dies, { selection, decor: G.decorOf(design).concat(G.stackOf(design), G.footprintOf(design)), lifts: G.liftsOf(design, dT) });
     }
     function setSel(ids) {
       selection = ids.slice(); sceneDirty = true; updateAria(); invalidate();

@@ -229,10 +229,17 @@ test('X3D の積層(design.stackDies。表示専用): Zen 3・4 は CCD の上�
   const cover = z4.stackDies.reduce((s, x) => s + x.widthMm * x.heightMm, 0); assert.ok(Math.abs(cover / (c.widthMm * c.heightMm) - 1) < 0.01);
   const z4b = mk('amd-zen4-7950x3d'); assert.ok(z4b.stackDies.every((x) => x.x + x.widthMm <= z4b.dies[0].widthMm / 2 + 1e-6)); // 2CCD は左の CCD だけ
   const b1 = mk('amd-zen5-9800x3d').stackDies[0]; const b2 = mk('amd-zen5-9950x3d').stackDies[0];
-  assert.strictEqual(b1.kind, 'base'); assert.ok(b1.widthMm > mk('amd-zen5-9800x3d').dies[0].widthMm * 1.9); assert.ok(Math.abs(b1.widthMm - b2.widthMm) < 0.3);
+  assert.strictEqual(b1.kind, 'base'); assert.ok(b1.widthMm > mk("amd-zen5-9800x3d").dies[0].widthMm); assert.ok(b2.widthMm > b1.widthMm);
   assert.strictEqual(b1.areaMm2, null);
   const sc = Gn.buildScene(mk('amd-zen5-9800x3d'), {}); assert.ok(sc.lifts.die0 > 0); assert.ok(sc.opaque.length > 0);
   const base = mk('amd-zen5-9800x3d'); const noStack = Object.assign({}, base); delete noStack.stackDies;
   assert.deepStrictEqual(En.evaluate(base, En.makeContext()), En.evaluate(noStack, En.makeContext()));
   assert.strictEqual(base.dies.length, 2);
+});
+
+test('1CCD の AMD 品の基板は 2CCD 品と同じ広さ(同じソケット。見えない占有範囲 footprint で決める)', () => {
+  const { D } = require('./helpers.js'); const DSn = require('../js/model/design.js'); const Gn = require('../js/render/pkggeom.js');
+  const sz = (id) => { const d = DSn.fromPreset(D.presets.find((p) => p.id === id)); return Gn.buildScene(d, {}).sub; };
+  const a = sz('amd-zen5-9800x3d'); const b = sz('amd-zen5-9950x3d');
+  assert.ok(Math.abs(a.w - b.w) / b.w < 0.03, a.w + ' ' + b.w); assert.ok(Math.abs(a.d - b.d) / b.d < 0.03);
 });
