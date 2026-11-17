@@ -97,17 +97,18 @@
   // 各グループ内は名前順。family が未定義・空なら 'その他'。
   function groupByFamily(list) {
     const map = new Map();
-    (list || []).forEach((p) => {
+    (list || []).forEach((p, idx) => {
       const vendor = p.vendor || 'その他';
       const family = p.family || 'その他';
       const key = vendor + '\u0000' + family;
-      if (!map.has(key)) map.set(key, { vendor, family, items: [] });
-      map.get(key).items.push(p);
+      if (!map.has(key)) map.set(key, { vendor, family, items: [], last: -1 });
+      map.get(key).items.push(p); map.get(key).last = Math.max(map.get(key).last, idx);
     });
     const yearOf = (g) => g.items.reduce((m, p) => (typeof p.year === 'number' && p.year > m ? p.year : m), -Infinity);
+    const old = (g) => g.items.every((p) => p.addedIn === 'old-intel'); // 古い Core i は発売年が同じ世代があるので、追加順(古い順に並べてある)で新しい方を上にする
     const groups = Array.from(map.values());
     groups.forEach((g) => g.items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja')));
-    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || b.family.localeCompare(a.family, 'ja', { numeric: true }));
+    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || (old(a) && old(b) ? b.last - a.last : 0) || b.family.localeCompare(a.family, 'ja', { numeric: true }));
     return groups;
   }
 
