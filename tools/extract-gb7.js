@@ -76,11 +76,14 @@ if (genStart >= 0) {
     if (line.startsWith('#### ')) break;
     if (!line.trim().startsWith('|')) continue;
     const c = line.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
-    if (c.length !== 4 || c[0] === '世代' || /^[-: ]+$/.test(c[0])) continue;
+    if (c.length < 4 || c.length > 5 || c[0] === '世代' || /^[-: ]+$/.test(c[0])) continue;
     if (c[0]) g = c[0];
     const s = num(c[2]); const m = num(c[3]);
     if (s === null || m === null) continue;
     gen.push({ group: 'Intel 第2〜第11世代', generation: g, name: c[1], single: s.v, multi: m.v, kind: 'チャート', n: null });
+    if (c[4]) { // 5 列目に [実測] と件数が書いてある行(Windows のみの中央値に差し替えた SKU)
+      const last = gen[gen.length - 1]; last.kind = (c[4].match(/\[(.+?)\]/) || [, 'チャート'])[1]; const nn = c[4].match(/(\d+)件/); last.n = nn ? Number(nn[1]) : null;
+    }
   }
 }
 // 上のループが第2〜11世代の表を誤って拾っていたら除去(列数が違うため)

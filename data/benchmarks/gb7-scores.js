@@ -1499,10 +1499,10 @@ window.SDS_DATA.gb7Scores = [
   "group": "Intel 第2〜第11世代",
   "generation": "第9世代 Coffee Lake Refresh",
   "name": "i7-9700K(8c)",
-  "single": 1659,
-  "multi": 8031,
-  "kind": "チャート",
-  "n": null
+  "single": 1670,
+  "multi": 8224,
+  "kind": "実測",
+  "n": 200
  },
  {
   "group": "Intel 第2〜第11世代",
