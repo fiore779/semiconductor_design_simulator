@@ -126,8 +126,6 @@
     document.documentElement.setAttribute('lang', lang);
     const tt = document.querySelector('title');
     if (tt) { if (!tt.__ja) tt.__ja = tt.textContent; tt.textContent = lang === 'en' ? tr(tt.__ja) : tt.__ja; }
-    const b = document.getElementById('m-lang');
-    if (b) { b.textContent = lang === 'en' ? '日本語' : 'English'; b.setAttribute('aria-label', lang === 'en' ? '日本語に切り替え' : 'Switch to English'); b.setAttribute('title', lang === 'en' ? '表示を日本語にする (Switch to Japanese)' : 'Switch the display language to English'); }
   }
 
   function setLang(l, opt) {
@@ -145,8 +143,6 @@
     let saved = null; try { saved = root.localStorage.getItem(KEY); } catch (e) { saved = null; }
     const nav = (root.navigator && (root.navigator.language || '')) || '';
     const want = saved || (/^ja/i.test(nav) ? 'ja' : 'en');
-    const b = document.getElementById('m-lang');
-    if (b) b.addEventListener('click', () => setLang(lang === 'en' ? 'ja' : 'en'));
     startObserver(); refreshChrome();
     if (want === 'en') setLang('en', { noSave: !saved });
   }

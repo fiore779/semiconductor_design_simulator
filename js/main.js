@@ -548,6 +548,7 @@
   $('m-new').addEventListener('click', openNew);
   $('m-preset').addEventListener('click', openPresets);
   $('m-settings').addEventListener('click', openSettings);
+  $('m-history').addEventListener('click', () => DG.openHistory());
   $('m-open').addEventListener('click', () => $('fileinput').click());
   $('fileinput').addEventListener('change', onFile);
   $('m-save').addEventListener('click', save);

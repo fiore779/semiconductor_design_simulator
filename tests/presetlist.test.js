@@ -30,3 +30,12 @@ test('世代の歴史: Intel・AMD のすべての family に概説と出典が�
   H.overall.forEach((e) => assert.ok(Number.isInteger(e.year) && H.sources[e.src] && e.text.length > 5));
   for (let i = 1; i < H.overall.length; i++) assert.ok(H.overall[i].year >= H.overall[i - 1].year, '年表は年の順');
 });
+
+test('ツールバー: 「歴史」ボタンがあり、言語ボタン(m-lang)は無い(切り替えは設定ダイアログの set-lang。2026-11-18)', () => {
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(/<button[^>]*id="m-history"[^>]*>歴史<\/button>/.test(html));
+  assert.ok(!/id="m-lang"/.test(html));
+  const dlg = require('fs').readFileSync(require('path').join(__dirname, '..', 'js/ui/presetdialog.js'), 'utf8');
+  assert.ok(/id: 'set-lang'/.test(dlg) && /openHistory/.test(dlg));
+  assert.ok(/\$\('m-history'\)/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'js/main.js'), 'utf8')));
+});

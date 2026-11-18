@@ -184,6 +184,20 @@
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: create }, '作成'), h('button', { type: 'button', class: 'btn', onclick: close }, 'キャンセル'))));
   }
 
+  // ---- 歴史(2026-11-18。ツールバーの「歴史」。data/history.js): 全体の歴史(年表)と、メーカーごとの世代の歴史(古い → 新しい) ----
+  function openHistory() {
+    const HI = root.SDS_DATA && root.SDS_DATA.history;
+    if (!HI) { open('歴史', h('p', { class: 'note', text: '歴史のデータを読み込めませんでした。' })); return; }
+    const usedSrc = [...new Set(HI.overall.map((e) => e.src).concat(Object.values(HI.families).map((x) => x.src)))];
+    const overall = h('section', { 'aria-label': '全体の歴史(年表)' }, h('h3', { text: '全体の歴史(年表)' }),
+      h('ol', { class: 'history-list' }, HI.overall.map((e) => h('li', {}, h('b', { text: `${e.year} 年 ` }), e.text))));
+    const gens = Object.keys(HI.order).map((v) => h('section', { 'aria-label': `${v} の世代ごとの歴史` }, h('h3', { text: `${v} の世代ごとの歴史(古い順)` }),
+      h('dl', { class: 'history-gens' }, HI.order[v].map((fam) => { const e = HI.families[v + '/' + fam]; return e ? [h('dt', { text: fam }), h('dd', { text: e.text })] : null; }))));
+    open('歴史', h('div', { class: 'history-dialog' }, overall, gens,
+      h('p', { class: 'small', text: `出典(すべて [二次]): ${usedSrc.map((k) => HI.sources[k]).join(' / ')}` }),
+      h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn', onclick: close }, '閉じる'))));
+  }
+
   // 設定ダイアログに出す製作者・版・リポジトリ。版はリリースのタグ名(新しい版を出すときに更新する)
   const ABOUT = { author: 'fiore779', version: 'v2026.11.15', repo: 'https://github.com/fiore779/semiconductor_design_simulator' };
 
@@ -208,12 +222,18 @@
       h('p', { class: 'small', id: 'set-author' }, `製作者: ${ABOUT.author}`),
       h('p', { class: 'small', id: 'set-version' }, `版: ${ABOUT.version}`),
       h('p', { class: 'small' }, 'リポジトリ: ', h('a', { id: 'set-repo', href: ABOUT.repo, target: '_blank', rel: 'noopener noreferrer' }, ABOUT.repo)));
+    // 表示言語(2026-11-18 ユーザー指示「言語設定は設定から変える方式にして」。以前はツールバーの「English」ボタン)
+    const I = root.I18N;
+    const langSel = h('select', { id: 'set-lang', 'aria-label': '表示言語 / Display language', onchange: (e) => { if (I) I.setLang(e.target.value); } },
+      h('option', { value: 'ja', lang: 'ja', selected: !I || I.getLang() === 'ja' }, '日本語'), h('option', { value: 'en', lang: 'en', selected: !!I && I.getLang() === 'en' }, 'English'));
+    const langRow = h('div', { class: 'pfield' }, h('label', { for: 'set-lang', text: '表示言語(Language)' }), h('div', { class: 'pinput' }, langSel));
     open('設定', h('div', {},
+      langRow,
       h('div', { class: 'actions' }, undoBtn, redoBtn),
       status,
       h('div', { class: 'actions' }, presetBtn),
       about));
   }
 
-  root.SDS.ui.dialogs = { ABOUT, openNew, openPresets, openMix, openSettings, open, close, isOpen };
+  root.SDS.ui.dialogs = { ABOUT, openNew, openPresets, openMix, openSettings, openHistory, open, close, isOpen };
 })(window);
