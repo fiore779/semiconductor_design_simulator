@@ -1,4 +1,4 @@
-// プリセット(古い Core i シリーズ。第2〜10世代のデスクトップ・ノート。2026-11-18 に第1・第3・第5世代の 5 SKU を追加 = 23 SKU。同日 Core 2 世代(E8400・Q9550・Q9650)を追加 = 26 SKU。詳細は docs/research/old-intel-gen135-2026-11-18.md・docs/research/core2-2026-11-18.md。Core 2 は MT が公開値より +16〜24% 高く許容を超える): 2026-11-17 追加(ユーザー指示「古いチップも追加。現在情報がある Core i シリーズだけ」)。
+// プリセット(古い Core i シリーズ。第2〜10世代のデスクトップ・ノート。2026-11-18 に第1・第3・第5世代の 5 SKU を追加 = 23 SKU。同日 Core 2 世代(E8400・Q9550・Q9650)を追加 = 26 SKU。さらに同日 Pentium III 〜 Core 2 の 65nm の 14 SKU(世代ごとに 1 つ。docs/research/pentium3-to-core2-2026-11-18.md)を追加 = 40 SKU。詳細は docs/research/old-intel-gen135-2026-11-18.md・docs/research/core2-2026-11-18.md。Core 2 は MT が公開値より +16〜24% 高く許容を超える): 2026-11-17 追加(ユーザー指示「古いチップも追加。現在情報がある Core i シリーズだけ」)。
 // 値は設計書 §2.8(参考データ。調査 2026-10-26〜27)と §2.4(GB7 のチャート値)から転記。未取得は null のまま(推測で埋めない)。
 // 対象は、コア設計の幅・ROB が分かる世代(Sandy Bridge・Haswell・Skylake と、同じコア設計の Kaby Lake・Coffee Lake・Comet Lake)で、
 // ダイ面積・構成(Intel ARK)・GB7 の行がそろう 18 SKU(i5-8400 は 2026-11-17 のユーザー判断で外した。MT が公開値より +18.2% 高く、原因が特定できなかったため)。見送り: Ivy Bridge・Broadwell(ROB 未取得)、Rocket Lake・Tiger Lake・Ice Lake(幅・ROB 未取得)、
@@ -29,10 +29,40 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   // 2026-11-18 追加(Core 2 世代。ユーザー指示「core2も追加してください」。docs/research/core2-2026-11-18.md)
   const WLF2 = { name: 'Wolfdale 2C', mm2: 107, s: 'pub', nodeId: 'intel-45', note: 'Intel の 2007-03-28 の Penryn 資料(https://www.intel.com/pressroom/archive/releases/2007/20070328fact.htm。「デュアルコアの Penryn は 107mm²」。[公表])。Wikipedia の Core 2 一覧(Wolfdale 107mm²)も同じ。L3 はなく、2 コアで共有する L2 6MB を持つ。GPU・メモリコントローラはない(チップセット側)' };
   const YFD4 = { name: 'Yorkfield 4C(Wolfdale ×2。MCM)', mm2: 214, s: 'sec', nodeId: 'intel-45', note: '107mm² のダイ(Intel の 2007 年の資料。[公表])を 2 つ同じパッケージに載せた構成(Wikipedia の Core 2 一覧「2 × 107 mm²」。Tom\'s Hardware・HotHardware は 214mm² と記載。[二次])。2 つのダイは FSB 経由でつながり、L2 は各ダイの 6MB(合計 12MB)。ダイが 2 つの構成だが、モデルでは面積 214mm² の 1 つのダイとして扱う(Zen の「CCD ×2」と同じ書き方)' };
+  // 2026-11-18 追加(Pentium III 〜 Core 2 の 65nm。ユーザー指示「ペン3まで作ってください」。docs/research/pentium3-to-core2-2026-11-18.md)
+  const KTM = { name: 'Katmai', mm2: 128, s: 'sec', nodeId: 'intel-250', note: 'AnandTech の Coppermine の記事「0.18 ミクロンで 128mm² から 106mm² に縮む」(Katmai は 128mm²。12.3 × 10.4mm の記載もある。[二次])。L2 は別チップ(カートリッジ内の外付けキャッシュ)で、この面積に含まない' };
+  const CPM = { name: 'Coppermine', mm2: 106, s: 'sec', nodeId: 'intel-180', note: 'AnandTech の Coppermine の記事(106mm²。[二次])。L2 256KB を同じダイに載せる' };
+  const TLT = { name: 'Tualatin', mm2: 80, s: 'sec', nodeId: 'intel-130', note: 'Hardware Museum の 80mm²(PC Watch の資料は 80.4mm²。[二次])' };
+  const WLM = { name: 'Willamette', mm2: 217, s: 'sec', nodeId: 'intel-180', note: 'Wikipedia の Pentium 4 一覧(Willamette 217mm²・4200 万トランジスタ。[二次])' };
+  const NWD = { name: 'Northwood', mm2: 131, s: 'sec', nodeId: 'intel-130', note: 'Wikipedia の Pentium 4 一覧(Northwood 131mm²。[二次])。ほかの資料と数値が食い違う可能性があるが、別の出典は未取得' };
+  const PRS = { name: 'Prescott', mm2: 112, s: 'sec', nodeId: 'intel-90', note: 'Wikipedia の Pentium 4 一覧(Prescott 112mm²・1.25 億トランジスタ。[二次])' };
+  const CDM = { name: 'Cedar Mill', mm2: 81, s: 'sec', nodeId: 'intel-65', note: 'Wikipedia の Pentium 4 一覧(Cedar Mill 81mm²・1.88 億トランジスタ。[二次])' };
+  const SMF = { name: 'Smithfield 2C', mm2: 206, s: 'sec', nodeId: 'intel-90', note: 'Wikipedia の Pentium D 一覧(Smithfield 206mm²。[二次])。2 コアが 1 つのダイ' };
+  const PRL = { name: 'Presler 2C(Cedar Mill ×2。MCM)', mm2: 162, s: 'sec', nodeId: 'intel-65', note: 'Wikipedia の Pentium D 一覧(Presler 2 × 81mm²。[二次])。81mm² のダイ 2 つを 1 つのパッケージに載せた構成を、面積 162mm² の 1 つのダイとして扱う(Zen の CCD ×2 と同じ書き方)' };
+  const BNS = { name: 'Banias', mm2: 83, s: 'sec', nodeId: 'intel-130', note: 'Wikipedia の Pentium M 一覧(Banias 83mm²。[二次])' };
+  const DTH = { name: 'Dothan', mm2: 87, s: 'sec', nodeId: 'intel-90', note: 'Wikipedia の Pentium M 一覧(Dothan 87mm²。[二次])。Tom\'s Hardware は 83.6mm²・PCPer は 85mm² で食い違う' };
+  const YNH = { name: 'Yonah', mm2: 90.3, s: 'sec', nodeId: 'intel-65', note: 'Tom\'s Hardware の Core Duo の記事(2 コアと L2 2MB で 90.3mm²・1.51 億トランジスタ。[二次])。spec データベースも約 90mm²' };
+  const CNR = { name: 'Conroe 2C', mm2: 143, s: 'sec', nodeId: 'intel-65', note: 'Wikipedia の Core 2 一覧(Conroe 143mm²・2.91 億トランジスタ。[二次])' };
+  const KTS = { name: 'Kentsfield 4C(Conroe ×2。MCM)', mm2: 286, s: 'sec', nodeId: 'intel-65', note: 'Wikipedia の Core 2 一覧(Kentsfield 2 × 143mm²。[二次])。143mm² のダイ 2 つの MCM を、面積 286mm² の 1 つのダイとして扱う' };
   const reuse = (d, why) => Object.assign({}, d, { note: d.note + '。' + why });
 
   // [id, 名前, family, kind, 年, GB7 行, ダイ, TDP(W), TDP 区分, uarch, コア数, スレッド(smt), base GHz, boost GHz, L3 MB, メモリ, 備考]
   const rows = [
+    // ---- 2026-11-18 追加: Pentium III 〜 Core 2(65nm)。ユーザー指示「ペン3まで作ってください。その中でも世代ごとに」(古い世代を先頭に置く)。docs/research/pentium3-to-core2-2026-11-18.md ----
+    ['intel-p3-katmai-600b', 'Pentium III 600B', 'Katmai', 'pc', 1999, null, KTM, 34.5, 'sec', 'Katmai', 1, 1, 0.6, 0.6, 0, '', 'Pentium III(250nm、Katmai。1999-09 発売)。600MHz・FSB 133MT/s・L2 512KB(外付け・CPU の半分のクロック)・Slot 1(カートリッジ)・TDP 34.5W は Wikipedia の Pentium III 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない(gb7 なし)。カートリッジの中のダイはむき出しで、ヒートスプレッダ(蓋)はない。ダイ写真は CPU Graveyard に無く、ブロックの配置は模式図。'],
+    ['intel-p3-cmn-1000', 'Pentium III 1000', 'Coppermine', 'pc', 2000, null, CPM, 29, 'sec', 'Coppermine', 1, 1, 1.0, 1.0, 0, '', 'Pentium III(180nm、Coppermine。2000-03 発売)。1GHz・FSB 100MHz・L2 256KB(オンダイ・フルスピード)・Socket 370・TDP 29W は Wikipedia の Pentium III 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。FC-PGA パッケージはダイがむき出しでヒートスプレッダ(蓋)はない(Tom\'s Hardware の比較表・Wikipedia。866MHz 以上には蓋付きの FC-PGA2 版もある。[二次])ので蓋なしにした。'],
+    ['intel-p3-tlt-1400s', 'Pentium III 1400S', 'Tualatin', 'pc', 2002, null, TLT, 32.2, 'sec', 'Tualatin', 1, 1, 1.4, 1.4, 0, '', 'Pentium III(130nm、Tualatin。2002-01 発売)の S 付き(L2 512KB)。1.4GHz・FSB 133MHz・Socket 370・TDP 32.2W は Wikipedia の Pentium III 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。FC-PGA2 パッケージでヒートスプレッダ(蓋)付き(Tom\'s Hardware の比較表。[二次])。'],
+    ['intel-p4-wlm-1500', 'Pentium 4 1.5GHz', 'Willamette', 'pc', 2000, null, WLM, 54.7, 'sec', 'Willamette', 1, 1, 1.5, 1.5, 0, '', 'Pentium 4(180nm、Willamette。2000-11 発売)。1.5GHz・FSB 400MT/s・L2 256KB・Socket 423・TDP 54.7〜57.8W(幅があり、下限を採用)は Wikipedia の Pentium 4 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。ヒートスプレッダ(蓋)付き(Socket 423・478 の Pentium 4 は蓋付きと記す資料。[二次])。'],
+    ['intel-pm-bns-16', 'Pentium M 1.6GHz', 'Banias', 'mobile-pc', 2003, null, BNS, 24.5, 'sec', 'Banias', 1, 1, 1.6, 1.6, 0, '', 'Pentium M(130nm、Banias。2003-03 発売)。1.6GHz・FSB 400MT/s・L2 1MB・Socket 479・TDP 24.5W は Wikipedia の Pentium M 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。モバイル向けで、ヒートスプレッダ(蓋)はない。'],
+    ['intel-p4-nwd-30c', 'Pentium 4 3.0C', 'Northwood', 'pc', 2003, null, NWD, 81.9, 'sec', 'Northwood', 1, 2, 3.0, 3.0, 0, '', 'Pentium 4(130nm、Northwood。2003-04 発売)の HT 付き 3.0GHz(3.0C)。FSB 800MT/s・L2 512KB・Socket 478・TDP 81.9W は Wikipedia の Pentium 4 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。ヒートスプレッダ(蓋)付き。'],
+    ['intel-pm-dth-755', 'Pentium M 755', 'Dothan', 'mobile-pc', 2004, null, DTH, 21, 'sec', 'Dothan', 1, 1, 2.0, 2.0, 0, '', 'Pentium M(90nm、Dothan。2004-05 発売)。2.0GHz・FSB 400MT/s・L2 2MB・Socket 479・TDP 21W は Wikipedia の Pentium M 一覧([二次])。32bit のみで Geekbench が動かず、公開値はない。モバイル向けで、ヒートスプレッダ(蓋)はない(Pentium M は Socket 478 の Pentium 4 と同じ大きさだが蓋がない、と記す資料。[二次])。ダイ写真は Intel の報道用([公表]。著作権は Intel)。'],
+    ['intel-pd-smf-820', 'Pentium D 820', 'Smithfield', 'pc', 2005, 'P-D 820(2c、Geekbench 6 換算)', SMF, 95, 'sec', 'Prescott', 2, 1, 2.8, 2.8, 0, '', 'Pentium D(90nm、Smithfield。2005-05 発売)。2 コア・2.8GHz・FSB 800MT/s・L2 1MB ×2(コアごと)・LGA775・Intel 64 対応・TDP 95W は Wikipedia の Pentium D 一覧と Presler の項([二次])。Geekbench 6 の CPUID(Model 4・L2 1MB ×2)で選んだ標本 8 件(Linux)の中央値 168 / 280 を GB7 換算した [推定](設計書 §2.4)。ダイは 2 コアが 1 つ。ヒートスプレッダ(蓋)付き。'],
+    ['intel-p4-prs-531', 'Pentium 4 531', 'Prescott', 'pc', 2005, 'P4 531(1c、Geekbench 6 換算)', PRS, 84, 'sec', 'Prescott', 1, 2, 3.0, 3.0, 0, '', 'Pentium 4(90nm、Prescott。2005-06 発売)。3.0GHz・FSB 800MT/s・L2 1MB・LGA775・HT・Intel 64 対応・TDP 84W(Intel の ARK が取得できず、TechPowerUp など第三者の一覧。[二次])。Geekbench 6 の CPUID(Model 4・L2 1MB)で選んだ標本 5 件(Linux)の中央値 184 / 211 を GB7 換算した [推定](設計書 §2.4。標本が少ない)。ヒートスプレッダ(蓋)付き。'],
+    ['intel-p4-cdm-631', 'Pentium 4 631', 'Cedar Mill', 'pc', 2006, 'P4 631(1c、Geekbench 6 換算)', CDM, 65, 'sec', 'Cedar Mill', 1, 2, 3.0, 3.0, 0, '', 'Pentium 4(65nm、Cedar Mill。2006 年)。3.0GHz・FSB 800MT/s・L2 2MB・LGA775・HT・Intel 64 対応・TDP 65W(Wikipedia の Pentium 4 一覧。ステッピング B1 は 86W、C1・D0 は 65W で、後者を採用。[二次])。Geekbench 6 の CPUID(Model 6・L2 2MB ×1。名前は「531/630」に混在)の Windows 標本 7 件の中央値 176 / 202 を GB7 換算した [推定](設計書 §2.4)。ヒートスプレッダ(蓋)付き。'],
+    ['intel-pd-prl-945', 'Pentium D 945', 'Presler', 'pc', 2006, 'P-D 945(2c、Geekbench 6 換算)', PRL, 95, 'sec', 'Cedar Mill', 2, 1, 3.4, 3.4, 0, '', 'Pentium D(65nm、Presler。2006-07 発売)。2 コア・3.4GHz・FSB 800MT/s・L2 2MB ×2(コアごと)・LGA775・Intel 64 対応。TDP 95W は Intel の ARK(検索で得た一覧。ページ本体は取得できず。Wikipedia の Presler の項は 130W と書き食い違い、ARK を採った。[二次])。Geekbench 6 の Windows 標本 17 件の中央値 193 / 341 を GB7 換算した [推定](設計書 §2.4)。Presler は Cedar Mill 2 つの MCM。ヒートスプレッダ(蓋)付き。'],
+    ['intel-cd-yna-t2500', 'Core Duo T2500', 'Yonah', 'mobile-pc', 2006, null, YNH, 31, 'sec', 'Yonah', 2, 1, 2.0, 2.0, 0, '', 'Core Duo(65nm、Yonah。2006-01 発売)。2 コア・2.0GHz・FSB 667MT/s・L2 2MB 共有・Socket M・TDP 31W は小売・データベースの記載と Wikipedia の Yonah の項(ファミリーの TDP。[二次])。Intel の ARK は取得できず。32bit のみ(Intel 64 非対応)で Geekbench が動かず、公開値はない。モバイル向けで、ヒートスプレッダ(蓋)はない。'],
+    ['intel-c2-cnr-e6600', 'Core 2 Duo E6600', 'Conroe', 'pc', 2006, null, CNR, 65, 'sec', 'Conroe', 2, 1, 2.4, 2.4, 0, '', 'Core 2 Duo(65nm、Conroe。2006-07 発売)。2 コア・2.4GHz・FSB 1066MT/s・L2 4MB 共有・LGA775・TDP 65W は Wikipedia の Core 2 一覧([二次])。Geekbench 7 の Windows の標本は 1 件、Geekbench 6 も 1 件しかなく、公開値は入れていない(標本不足)。ヒートスプレッダ(蓋)付き。'],
+    ['intel-c2-kts-q6600', 'Core 2 Quad Q6600', 'Kentsfield', 'pc', 2007, 'Q6600(4c)', KTS, 105, 'sec', 'Conroe', 4, 1, 2.4, 2.4, 0, '', 'Core 2 Quad(65nm、Kentsfield。2007-01 発売)。4 コア(Conroe 2 つの MCM)・2.4GHz・FSB 1066MT/s・L2 4MB ×2(各ダイの 2 コアで共有)・LGA775。TDP はステッピング B3 が 105W・G0 が 95W(Wikipedia の Core 2 一覧。[二次])で、105W を採用。GB7 は Geekbench Browser の Windows 投稿のみの中央値 297 / 760(**n=4 の標本が非常に少ない**。設計書 §2.4)。ヒートスプレッダ(蓋)付き。'],
     ['intel-nhm-860', 'Core i7-860', 'Nehalem', 'pc', 2009, 'i7-860(4c)', LYN4, 95, 'sec', 'Nehalem', 4, 2, 2.8, 3.46, 8, 'DDR3-1333', '第1世代(45nm、Lynnfield)。Intel ARK のページが取得できず、構成・クロック・TDP は Wikipedia と検索の要約([二次])。メモリは 2 チャネル(Wikipedia)。'],
     ['intel-wsm-980x', 'Core i7-980X', 'Westmere', 'pc', 2010, 'i7-980X(6c、参考: Westmere)', GFT6, 130, 'sec', 'Nehalem', 6, 2, 3.33, 3.6, 12, 'DDR3-1066', '第1世代(32nm、Gulftown)。6 コア。Intel ARK のページが取得できず、構成・クロックは Wikipedia、TDP 130W は Intel の製品概要(検索の要約。[二次])。メモリは 3 チャネル(Intel の製品概要・Wikipedia)。'],
     ['intel-wlf-e8400', 'Core 2 Duo E8400', 'Wolfdale', 'pc', 2008, 'E8400(2c)', WLF2, 65, 'sec', 'Penryn', 2, 1, 3.0, 3.0, 0, '', 'Core 2 世代(45nm、Wolfdale。2008-01 発売)。2 コア・ハイパースレッディングなし・ターボなし(クロックは 3.0GHz 固定)・L2 6MB 共有・L3 なし・FSB 1333MT/s・LGA775。構成・クロック・TDP 65W は Intel ARK の記載(検索で得た要約。ページ本体は取得できず [二次]。Intel の Quick Reference Guide の 2008 年版も 3GHz・45nm・6MB・1333MT/s で一致)。Geekbench 7 の Windows の標本のうち 3 件はオーバークロックで、中央値は定格に近い。'],
@@ -80,7 +110,15 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     'intel-cml-10700k': [4.7, 'Hexus・wccftech の全コアターボ 4.7GHz(https://wccftech.com/review/intel-core-i9-10900k-core-i7-10700k-core-i5-10600k-cpu-review-ft-z490-motherboards/2/)'],
   };
   // Core 2 世代: L3 がなく(l3MB 0)、L2 が最終段のキャッシュ。メモリコントローラはチップセット側(FSB 1333MT/s)
+  const NO_LID_PC = new Set(['intel-p3-katmai-600b', 'intel-p3-cmn-1000']);
+  const FSB = (m, l2) => ({ l2, memory: 'FSB ' + m + 'MT/s(メモリはチップセット側。メモリ容量・種別の選択肢は未対応)' });
   const CORE2 = {
+    'intel-p3-katmai-600b': FSB(133, '合計 512KB(外付け。CPU の半分のクロック)'), 'intel-p3-cmn-1000': FSB(100, '合計 256KB(オンダイ)'), 'intel-p3-tlt-1400s': FSB(133, '合計 512KB(オンダイ)'),
+    'intel-p4-wlm-1500': FSB(400, '合計 256KB'), 'intel-p4-nwd-30c': FSB(800, '合計 512KB'), 'intel-p4-prs-531': FSB(800, '合計 1MB'), 'intel-p4-cdm-631': FSB(800, '合計 2MB'),
+    'intel-pd-smf-820': FSB(800, '合計 2MB(1MB ×2。コアごと)'), 'intel-pd-prl-945': FSB(800, '合計 4MB(2MB ×2。コアごと)'),
+    'intel-pm-bns-16': FSB(400, '合計 1MB'), 'intel-pm-dth-755': FSB(400, '合計 2MB'),
+    'intel-cd-yna-t2500': FSB(667, '合計 2MB(2 コアで共有)'),
+    'intel-c2-cnr-e6600': FSB(1066, '合計 4MB(2 コアで共有)'), 'intel-c2-kts-q6600': FSB(1066, '合計 8MB(4MB ×2。各ダイの 2 コアで共有)'),
     'intel-wlf-e8400': { l2: '合計 6MB(2 コアで共有)', memory: 'FSB 1333MT/s(メモリはチップセット側。DDR2・DDR3 の板がある。メモリ容量・種別の選択肢は未対応)' },
     'intel-yfd-q9550': { l2: '合計 12MB(6MB ×2。各ダイの 2 コアで共有)', memory: 'FSB 1333MT/s(メモリはチップセット側。DDR2・DDR3 の板がある。メモリ容量・種別の選択肢は未対応)' },
     'intel-yfd-q9650': { l2: '合計 12MB(6MB ×2。各ダイの 2 コアで共有)', memory: 'FSB 1333MT/s(メモリはチップセット側。DDR2・DDR3 の板がある。メモリ容量・種別の選択肢は未対応)' },
@@ -89,6 +127,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
     const [id, name, family, kind, year, gb7, die, tdp, tdpS, uarch, count, smt, baseGHz, boostGHz, l3MB, memory, note] = r;
     P.push({
       id, name, vendor: 'Intel', family, isa: 'x86', kind, year, addedIn: 'old-intel',
+      // ヒートスプレッダ(蓋)なし: モバイル向け(デスクトップ向け以外)と、ダイがむき出しのデスクトップ向け(Katmai・Coppermine)。2026-11-18。3D 表示で蓋を描かない
+      ...(kind !== 'pc' || NO_LID_PC.has(id) ? { noLid: true } : {}),
       gb7,
       dies: [Object.assign({}, die)],
       // 最大ターボ・パワー(PL2)は ARK に載っていない(設計書 §2.8.2)ので peak は未取得。公表の基本電力だけ

@@ -464,6 +464,71 @@
         ['l2', 'L2 キャッシュ(左のダイ。2 コアで共有 6MB。下半分の大きな領域)', 'u', 256, 402, 409, 400], ['l2-l', `L2 まわりの回路・I/O(左のダイの下段左${UNK})`, 'u', 180, 402, 74, 405], ['l2-r', `L2 まわりの回路・I/O(左のダイの下段右${UNK})`, 'u', 667, 402, 73, 405],
         ['io-t2', `I/O・PLL(右のダイの上辺${UNK})`, 'u', 755, 5, 550, 52], ['io-l2', `FSB・I/O(右のダイの左端${UNK})`, 'u', 750, 60, 33, 338], ['io-r2', `FSB・I/O(右のダイの右端${UNK})`, 'u', 1270, 60, 40, 338],
         ['l2b', 'L2 キャッシュ(右のダイ。2 コアで共有 6MB。下半分の大きな領域)', 'u', 826, 402, 409, 400], ['l2-lb', `L2 まわりの回路・I/O(右のダイの下段左${UNK})`, 'u', 750, 402, 74, 405], ['l2-rb', `L2 まわりの回路・I/O(右のダイの下段右${UNK})`, 'u', 1237, 402, 73, 405]]),
+    // 2026-11-18 追加(Pentium III 〜 Core 2 の 65nm。ユーザー指示「ペン3まで作ってください。ダイショットも取得して」)。L3 はなく(cfg.l3MB 0)、L2 は飾り(deco)で置く。座標は写真の表示ピクセル(スクリーンショット座標)の目測(±5〜10%)
+    // Pentium III Coppermine(Intel_Pentium_3_(Coppermine_180nm).jpg 3140×2636)。左に L2 256KB の大きな領域、右にコア
+    'cmn-1c': tf([262, 0, 1228, 812], { p: 1, e: 0, lp: 0 },
+      [[662, 28, 546, 760]], [], [], null, [
+        ['l2', 'L2 キャッシュ(256KB。左側の大きな領域)', 'u', 288, 158, 345, 625], ['bus-t', `バスインターフェース・I/O(左上${UNK})`, 'u', 290, 25, 348, 130],
+        ['io-t', `I/O(上辺${UNK})`, 'u', 270, 5, 940, 18], ['io-b', `I/O(下辺${UNK})`, 'u', 270, 790, 940, 20]]),
+    // Pentium III Tualatin(Intel_Pentium_3_(Tualatin_130nm).png 1878×1200)。左に L2 の大きな領域、右にコア
+    'tlt-1c': tf([108, 0, 1380, 812], { p: 1, e: 0, lp: 0 },
+      [[818, 35, 528, 740]], [], [], null, [
+        ['l2', 'L2 キャッシュ(左側の大きな領域)', 'u', 145, 160, 640, 615], ['bus-t', `バスインターフェース・I/O(左上${UNK})`, 'u', 145, 35, 655, 122],
+        ['io-t', `I/O(上辺${UNK})`, 'u', 150, 5, 1230, 25], ['io-b', `I/O(下辺${UNK})`, 'u', 150, 780, 1230, 25]]),
+    // Pentium 4 Willamette(Intel_Pentium_4_(Willamette_180nm).jpg 2272×2000)。上にコア(トレースキャッシュなど)、下段に L2 256KB(左右 2 つの配列)とバス
+    'wlm-1c': tf([283, 0, 1206, 812], { p: 1, e: 0, lp: 0 },
+      [[290, 20, 915, 570]], [], [], null, [
+        ['l2a', 'L2 キャッシュ(下段左)', 'u', 316, 607, 190, 172], ['l2c', `L2 の制御(下段中央${UNK})`, 'u', 508, 607, 203, 172], ['l2b', 'L2 キャッシュ(下段右)', 'u', 713, 607, 180, 172],
+        ['bus', `バスインターフェース(下段右端${UNK})`, 'u', 900, 605, 300, 175]]),
+    // Pentium 4 Northwood(Intel_Pentium_4_(Northwood_130nm).png 1792×1784)。上にコア、下段に L2 512KB(左右 2 つの配列)とバス
+    'nwd-1c': tf([336, 0, 1152, 812], { p: 1, e: 0, lp: 0 },
+      [[345, 40, 800, 490]], [], [], null, [
+        ['l2a', 'L2 キャッシュ(下段左)', 'u', 376, 543, 150, 238], ['l2c', `L2 の制御(下段中央${UNK})`, 'u', 528, 543, 196, 238], ['l2b', 'L2 キャッシュ(下段右)', 'u', 725, 543, 150, 238],
+        ['bus', `バスインターフェース(下段右端${UNK})`, 'u', 885, 545, 262, 235]]),
+    // Pentium 4 Prescott 1MB(Intel_Pentium_4_(Prescott-1M_G1_90nm).jpg 2648×2544)。上にコア、下段に L2 1MB の大きな配列、右下にバス
+    'prs-1c': tf([322, 0, 1167, 812], { p: 1, e: 0, lp: 0 },
+      [[330, 47, 830, 510]], [], [], null, [
+        ['io-t', `I/O(上辺${UNK})`, 'u', 330, 8, 830, 36], ['l2', 'L2 キャッシュ(1MB。下段の大きな領域)', 'u', 350, 563, 690, 215], ['bus', `バスインターフェース(右下${UNK})`, 'u', 1042, 565, 118, 215],
+        ['io-b', `I/O(下辺${UNK})`, 'u', 330, 780, 830, 28]]),
+    // Cedar Mill(Prescott-2M の写真。Intel_Pentium_4_(Prescott-2M_N0_90nm).jpg 3170×2649 を代用)。左に L2 2MB の大きな領域、右にコア
+    'cdm-1c': tf([258, 0, 1230, 812], { p: 1, e: 0, lp: 0 },
+      [[695, 10, 495, 785]], [], [], null, [
+        ['l2', 'L2 キャッシュ(2MB。左側の大きな領域)', 'u', 298, 25, 392, 662], ['l2-b', `L2 まわりの回路(下段左${UNK})`, 'u', 298, 692, 392, 100], ['io-l', `I/O(左端${UNK})`, 'u', 262, 8, 34, 790]]),
+    // Presler(Cedar Mill の写真を 2 つ並べた。2 つのダイの MCM)
+    'prl-2c': tf([258, 0, 2202, 812], { p: 2, e: 0, lp: 0 },
+      [[695, 10, 495, 785], [1667, 10, 495, 785]], [], [], null, [
+        ['l2', 'L2 キャッシュ(左のダイ。2MB)', 'u', 298, 25, 392, 662], ['l2-b', `L2 まわりの回路(左のダイの下段${UNK})`, 'u', 298, 692, 392, 100], ['io-l', `I/O(左のダイの左端${UNK})`, 'u', 262, 8, 34, 790],
+        ['l2b', 'L2 キャッシュ(右のダイ。2MB)', 'u', 1270, 25, 392, 662], ['l2-bb', `L2 まわりの回路(右のダイの下段${UNK})`, 'u', 1270, 692, 392, 100], ['io-lb', `I/O(右のダイの左端${UNK})`, 'u', 1234, 8, 34, 790]]),
+    // Pentium D Smithfield(Intel_Pentium_D_(Smithfield_90nm).jpg 2503×1200)。1 つのダイに 2 つのコア(左右)。各コアの下に L2 1MB
+    'smf-2c': tf([0, 49, 1489, 763], { p: 2, e: 0, lp: 0 },
+      [[18, 62, 718, 480], [758, 62, 718, 480]], [], [], null, [
+        ['l2', 'L2 キャッシュ(左のコア。1MB)', 'u', 18, 545, 640, 178], ['l2b', 'L2 キャッシュ(右のコア。1MB)', 'u', 758, 545, 620, 178],
+        ['bus', `バスインターフェース(左のコアの下段右端${UNK})`, 'u', 660, 545, 76, 178], ['busb', `バスインターフェース(右のコアの下段右端${UNK})`, 'u', 1380, 545, 98, 178],
+        ['io-b', `I/O(下辺・左${UNK})`, 'u', 18, 725, 718, 32], ['io-bb', `I/O(下辺・右${UNK})`, 'u', 758, 725, 718, 32]]),
+    // Pentium M Banias(Intel_Pentium_M_(Banias_130nm).jpg 1600×1198)。左に L2 1MB の大きな領域、右にコア
+    'bns-1c': tf([202, 0, 1287, 812], { p: 1, e: 0, lp: 0 },
+      [[650, 38, 622, 740]], [], [], null, [
+        ['l2', 'L2 キャッシュ(1MB。左側の大きな領域)', 'u', 217, 38, 425, 735], ['io-t', `I/O(上辺${UNK})`, 'u', 217, 15, 1050, 22], ['io-b', `I/O(下辺${UNK})`, 'u', 217, 775, 1050, 30]]),
+    // Pentium M Dothan(Intel の報道用写真。Intel-Dothan_(…)-intel-newsroom.jpg 1599×875。左端が切れた拡大の写真)。左に L2 2MB の大きな領域、右にコア
+    'dth-1c': tf([2, 0, 1489, 812], { p: 1, e: 0, lp: 0 },
+      [[838, 38, 615, 740]], [], [], null, [
+        ['l2', 'L2 キャッシュ(2MB。左側の大きな領域)', 'u', 4, 62, 828, 722], ['io-t', `I/O(上辺${UNK})`, 'u', 4, 3, 830, 56], ['io-b', `I/O(下辺${UNK})`, 'u', 4, 786, 1450, 24]]),
+    // Core Duo Yonah(Intel_Core_Duo_(Yonah_65nm).jpg 1110×820)。上段に 2 つのコア(左右対称)、中央に共有のバス、下段に共有 L2 2MB
+    'yna-2c': tf([206, 9, 1282, 802], { p: 2, e: 0, lp: 0 },
+      [[262, 15, 395, 470], [832, 15, 395, 470]], [], [], null, [
+        ['bus-c', `共有のバスインターフェース(中央${UNK})`, 'u', 660, 15, 170, 470], ['l2', 'L2 キャッシュ(2 コアで共有 2MB。下段の大きな領域)', 'u', 268, 492, 892, 298],
+        ['l2-r', `L2 まわりの回路(下段右端${UNK})`, 'u', 1162, 492, 64, 298], ['io-l', `I/O(左端${UNK})`, 'u', 208, 12, 52, 780], ['io-r', `I/O(右端${UNK})`, 'u', 1228, 12, 52, 780]]),
+    // Core 2 Duo Conroe(Intel_Core_2_Duo_(Conroe_G0_65nm).jpg 3574×2722)。左に共有 L2 4MB の大きな領域、右に上下 2 つのコア
+    'cnr-2c': tf([211, 0, 1277, 812], { p: 2, e: 0, lp: 0 },
+      [[695, 48, 578, 350], [695, 415, 578, 345]], [], [], null, [
+        ['l2', 'L2 キャッシュ(2 コアで共有 4MB。左側の大きな領域)', 'u', 215, 62, 475, 698], ['io-t', `バス・I/O(上辺${UNK})`, 'u', 215, 5, 1060, 40], ['io-b', `バス・I/O(下辺${UNK})`, 'u', 215, 762, 1060, 48]]),
+    // Core 2 Quad Kentsfield(Intel_Core_2_Quad_(Kentsfield_65nm).png 1674×1102)。Conroe 2 つの MCM。各ダイの上段に 2 コア、下段に共有 L2 4MB
+    'kts-4c': tf([127, 0, 1362, 812], { p: 4, e: 0, lp: 0 },
+      [[165, 10, 270, 425], [440, 10, 268, 425], [783, 10, 270, 425], [1058, 10, 268, 425]], [], [], null, [
+        ['l2', 'L2 キャッシュ(左のダイ。2 コアで共有 4MB)', 'u', 172, 448, 536, 358], ['l2-l', `L2 まわりの回路(左のダイの下段左${UNK})`, 'u', 130, 628, 42, 180], ['l2-r', `L2 まわりの回路(左のダイの下段右${UNK})`, 'u', 710, 628, 34, 180],
+        ['io-l', `FSB・I/O(左のダイの左端${UNK})`, 'u', 130, 10, 33, 615], ['io-r', `FSB・I/O(左のダイの右端${UNK})`, 'u', 712, 10, 32, 615],
+        ['l2b', 'L2 キャッシュ(右のダイ。2 コアで共有 4MB)', 'u', 790, 448, 536, 358], ['l2-lb', `L2 まわりの回路(右のダイの下段左${UNK})`, 'u', 748, 628, 42, 180], ['l2-rb', `L2 まわりの回路(右のダイの下段右${UNK})`, 'u', 1328, 628, 34, 180],
+        ['io-lb', `FSB・I/O(右のダイの左端${UNK})`, 'u', 748, 10, 33, 615], ['io-rb', `FSB・I/O(右のダイの右端${UNK})`, 'u', 1330, 10, 32, 615]]),
   };
   Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
@@ -673,10 +738,28 @@
     'wlf-2c': 'Core 2 Duo(Wolfdale 6M)のダイ写真(Intel_Core_2_Quad_(Yorkfield_45nm).jpg 4322×3083 の左のダイ 1 つぶん。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Yorkfield_45nm)。ライセンスは不明と表記。Yorkfield は Wolfdale 2 つの MCM なので、1 つぶんを Wolfdale のダイとみなした)。上に I/O、2 コア、下半分に共有 L2 6MB。縦横比 0.70(Penryn-6M の写真 1513×2160 の 0.70 と一致)',
     'yfd-4c': 'Core 2 Quad(Yorkfield)のダイ写真(Intel_Core_2_Quad_(Yorkfield_45nm).jpg 4322×3083。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Yorkfield_45nm)。ライセンスは不明と表記)。Wolfdale 2 つの MCM で、左右のダイにコア 2 つと共有 L2 6MB。2 ダイを 1 つの枠として扱う。縦横比 1.40(実寸の注記なし)',
   });
+  Object.assign(INTEL_OLD_SRC, {
+    'cmn-1c': 'Pentium III Coppermine のダイ写真(Intel_Pentium_3_(Coppermine_180nm).jpg 3140×2636。出典 https://happytrees.org/dieshots/Intel_-_Pentium_3_(Coppermine_180nm)。ライセンスは不明と表記)。左に L2 256KB、右にコア。縦横比 1.19',
+    'tlt-1c': 'Pentium III Tualatin のダイ写真(Intel_Pentium_3_(Tualatin_130nm).png 1878×1200。出典 https://happytrees.org/dieshots/Intel_-_Pentium_3_(Tualatin_130nm)。ライセンスは不明と表記)。左に L2、右にコア。縦横比 1.57',
+    'wlm-1c': 'Pentium 4 Willamette のダイ写真(Intel_Pentium_4_(Willamette_180nm).jpg 2272×2000。出典 https://happytrees.org/dieshots/Intel_-_Pentium_4_(Willamette_180nm)。ライセンスは不明と表記)。上にコア、下段に L2 256KB。縦横比 1.14',
+    'nwd-1c': 'Pentium 4 Northwood のダイ写真(Intel_Pentium_4_(Northwood_130nm).png 1792×1784。出典 https://happytrees.org/dieshots/Intel_-_Pentium_4_(Northwood_130nm)。ライセンスは不明と表記)。上にコア、下段に L2 512KB。縦横比 1.00',
+    'prs-1c': 'Pentium 4 Prescott 1MB のダイ写真(Intel_Pentium_4_(Prescott-1M_G1_90nm).jpg 2648×2544。出典 https://happytrees.org/dieshots/Intel_-_Pentium_4_(Prescott-1M_G1_90nm)。ライセンスは不明と表記)。上にコア、下段に L2 1MB。縦横比 1.04',
+    'cdm-1c': 'Pentium 4 Prescott 2MB のダイ写真(Intel_Pentium_4_(Prescott-2M_N0_90nm).jpg 3170×2649。出典 https://happytrees.org/dieshots/Intel_-_Pentium_4_(Prescott-2M_N0_90nm)。ライセンスは不明と表記)を Cedar Mill(65nm の縮小版)に代用した。Cedar Mill 自体の写真は CPU Graveyard に無く、縮小で配置が同じとみなした([推定])。左に L2 2MB、右にコア。縦横比 1.20',
+    'prl-2c': 'Presler は Cedar Mill 2 つの MCM なので、Cedar Mill(Prescott 2MB の写真 3170×2649。出典 https://happytrees.org/dieshots/Intel_-_Pentium_4_(Prescott-2M_N0_90nm))の枠を左右に 2 つ並べた([推定]。Presler 自体の写真は CPU Graveyard に無い)。縦横比 2.39',
+    'smf-2c': 'Pentium D Smithfield のダイ写真(Intel_Pentium_D_(Smithfield_90nm).jpg 2503×1200。出典 https://happytrees.org/dieshots/Intel_-_Pentium_D_(Smithfield_90nm)。ライセンスは不明と表記)。1 つのダイに 2 コア(左右)、各コアの下に L2 1MB。縦横比 2.09',
+    'bns-1c': 'Pentium M Banias のダイ写真(Intel_Pentium_M_(Banias_130nm).jpg 1600×1198。出典 https://happytrees.org/dieshots/Intel_-_Pentium_M_(Banias_130nm)。ライセンスは不明と表記)。左に L2 1MB、右にコア。縦横比 1.34',
+    'dth-1c': 'Pentium M Dothan の Intel の報道用写真(Intel-Dothan_(…)-intel-newsroom.jpg 1599×875。出典 https://happytrees.org/dieshots/Intel_-_Pentium_M_(Dothan_2M)。Intel 著作と表記)。左端が切れた拡大写真で、ダイの外形は完全ではない。左に L2 2MB、右にコア。縦横比 1.83',
+    'yna-2c': 'Core Duo Yonah のダイ写真(Intel_Core_Duo_(Yonah_65nm).jpg 1110×820。出典 https://happytrees.org/dieshots/Intel_-_Core_Duo_(Yonah_65nm)。ライセンスは不明と表記)。上段に 2 コア(左右対称)、下段に共有 L2 2MB。縦横比 1.35',
+    'cnr-2c': 'Core 2 Duo Conroe のダイ写真(Intel_Core_2_Duo_(Conroe_G0_65nm).jpg 3574×2722。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Duo_(Conroe_G0_65nm)。ライセンスは不明と表記)。左に共有 L2 4MB、右に上下 2 つのコア。縦横比 1.31',
+    'kts-4c': 'Core 2 Quad Kentsfield のダイ写真(Intel_Core_2_Quad_(Kentsfield_65nm).png 1674×1102。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Kentsfield_65nm)。ライセンスは不明と表記)。Conroe 2 つの MCM。各ダイの上段に 2 コア、下段に共有 L2 4MB。縦横比 1.52',
+  });
   const INTEL_OLD_MAP = {
     'intel-nhm-860': { frame: 'nhm-lyn-4c', basis: 'photo' }, 'intel-wsm-980x': { frame: 'wsm-6c', basis: 'photo' },
     'intel-ivb-3770k': { frame: 'ivb-4c', basis: 'photo' }, 'intel-ivb-3570k': { frame: 'ivb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' },
     'intel-bdw-5775c': { frame: 'bdw-4c', basis: 'photo' },
+    'intel-p3-cmn-1000': { frame: 'cmn-1c', basis: 'photo' }, 'intel-p3-tlt-1400s': { frame: 'tlt-1c', basis: 'photo' }, 'intel-p4-wlm-1500': { frame: 'wlm-1c', basis: 'photo' }, 'intel-p4-nwd-30c': { frame: 'nwd-1c', basis: 'photo' },
+    'intel-p4-prs-531': { frame: 'prs-1c', basis: 'photo' }, 'intel-p4-cdm-631': { frame: 'cdm-1c', basis: 'reuse' }, 'intel-pd-smf-820': { frame: 'smf-2c', basis: 'photo' }, 'intel-pd-prl-945': { frame: 'prl-2c', basis: 'reuse' },
+    'intel-pm-bns-16': { frame: 'bns-1c', basis: 'photo' }, 'intel-pm-dth-755': { frame: 'dth-1c', basis: 'photo' }, 'intel-cd-yna-t2500': { frame: 'yna-2c', basis: 'photo' }, 'intel-c2-cnr-e6600': { frame: 'cnr-2c', basis: 'photo' }, 'intel-c2-kts-q6600': { frame: 'kts-4c', basis: 'photo' },
     'intel-wlf-e8400': { frame: 'wlf-2c', basis: 'photo' }, 'intel-yfd-q9550': { frame: 'yfd-4c', basis: 'photo' }, 'intel-yfd-q9650': { frame: 'yfd-4c', basis: 'photo', extra: 'Q9550 と同じ Yorkfield(クロックだけ違う)' },
     'intel-snb-2600k': { frame: 'snb-4c', basis: 'photo' }, 'intel-snb-2500k': { frame: 'snb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 を 6MB に制限)' }, 'intel-snb-2720qm': { frame: 'snb-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
     'intel-hsw-4770k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4790k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4690k': { frame: 'hsw-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-hsw-4700hq': { frame: 'hsw-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU' },

@@ -267,7 +267,7 @@ test('inUCalSet: Golden/Raptor 10 件の ST だけ true(代表ではない学習
   // 2026-11-13(Windows のみ化 第 2 回): Cougar Cove の uCal 98.3(388H・386H・378H・358H・325・320 の 6 件)が加わって 14 → 20 件
   // 2026-11-14: Redwood Cove の uCal 99.5(標本はプリセットの 185H と、プリセットにしていない参考データ 10 件)が加わって 20 → 21 件(プリセットで増えるのは 185H の 1 件だけ)
   // 2026-11-17: 古い Core i の uCal(Sandy Bridge 2・Haswell 3・Skylake 2・Kaby Lake 2・Coffee Lake 3(8400 を外した)・Comet Lake 2 = 14 件。モバイルの 4 件は uRatio の別 uarch で学習内には入れない)が加わって 21 → 35 件(8400 を外した) 2026-11-18: 第1・3・5世代の uCal(Nehalem 2・Ivy Bridge 2・Broadwell 1 = 5 件)が加わって 35 → 40 件
-  assert.strictEqual(ids.length, 43); assert.ok(ids.includes('intel-mtl-185h') && ids.includes('intel-snb-2600k') && !ids.includes('intel-snb-2720qm'));
+  assert.strictEqual(ids.length, 48); assert.ok(ids.includes('intel-mtl-185h') && ids.includes('intel-snb-2600k') && !ids.includes('intel-snb-2720qm'));
   assert.ok(['intel-ptl-x9-388h', 'intel-ptl-x9-386h', 'intel-ptl-x9-378h', 'intel-ptl-x7-358h', 'intel-ptl-u5-325', 'intel-wcl-c5-320'].every((id) => ids.includes(id)));
   assert.ok(['qc-780g', 'qc-6gen1', 'qc-4gen2', 'mt-8200'].every((id) => ids.includes(id)));
   assert.ok(!ids.includes('intel-rpl-14700hx') && ids.includes('intel-adl-12100'));

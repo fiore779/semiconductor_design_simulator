@@ -31,6 +31,8 @@
     // 第1・3・5世代の枠(2026-11-18)
     '内蔵 GT3e': 'integrated GT3e', '下半分の大きな領域': 'large area in the lower half', '中央の縦帯': 'central vertical strip', 'メモリコントローラ・QPI など': 'memory controller / QPI etc.', 'PCIe・DMI・I/O': 'PCIe / DMI / I/O', 'I/O・eDRAM 接続など': 'I/O / eDRAM link etc.', '右上': 'top right', '右下': 'bottom right', '下段左': 'lower left', '下段右': 'lower right',
     // Core 2 世代の枠(2026-11-18)
-    'I/O・PLL': 'I/O / PLL', 'FSB・I/O': 'FSB / I/O', 'L2 まわりの回路・I/O': 'circuits around L2 / I/O', '2 コアで共有 6MB': 'shared by 2 cores, 6MB', '左のダイ': 'left die', '右のダイ': 'right die'
+    'I/O・PLL': 'I/O / PLL', 'FSB・I/O': 'FSB / I/O', 'L2 まわりの回路・I/O': 'circuits around L2 / I/O', '2 コアで共有 6MB': 'shared by 2 cores, 6MB', '左のダイ': 'left die', '右のダイ': 'right die',
+    // Pentium III 〜 Core 2 65nm の枠(2026-11-18)
+    'バスインターフェース': 'bus interface', 'バス・I/O': 'bus / I/O', 'L2 の制御': 'L2 control', 'L2 まわりの回路': 'circuitry around L2', '共有のバスインターフェース': 'shared bus interface', '左のコアの下段右端': 'lower right of the left core', '右のコアの下段右端': 'lower right of the right core', '左のコア': 'left core', '右のコア': 'right core', '下辺・左': 'bottom edge, left', '下辺・右': 'bottom edge, right', '左のダイの': 'of the left die: ', '右のダイの': 'of the right die: ', '下段中央': 'lower center', '下段右端': 'lower right edge', '下段': 'lower row'
   });
 })(typeof window !== 'undefined' ? window : globalThis);

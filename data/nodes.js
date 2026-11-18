@@ -11,6 +11,12 @@ window.SDS_DATA = window.SDS_DATA || {};
   const nodes = [
     // id, 名前, 製造元, 密度 MTr/mm², SRAM µm², CPP nm, Mx nm, 量産開始
     // 2026-11-17: 古い Core i シリーズ(第2〜10世代)のプリセット用。密度・SRAM・CPP・Mx は未取得のまま(推測しない。移植の面積換算はできない)
+    // 2026-11-18: Pentium III 〜 Core 2(65nm)のプリセット用。密度などは未取得のまま(推測しない)
+    { id: 'intel-250', name: 'Intel 250nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 1998 },
+    { id: 'intel-180', name: 'Intel 180nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 1999 },
+    { id: 'intel-130', name: 'Intel 130nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2001 },
+    { id: 'intel-90', name: 'Intel 90nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2003 },
+    { id: 'intel-65', name: 'Intel 65nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2005 },
     { id: 'intel-45', name: 'Intel 45nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2008 },
     { id: 'intel-32', name: 'Intel 32nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2010 },
     { id: 'intel-22', name: 'Intel 22nm', vendor: 'Intel', density: null, sram: null, cpp: null, mx: null, start: 2012 },

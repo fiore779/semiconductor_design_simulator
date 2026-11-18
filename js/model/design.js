@@ -158,7 +158,8 @@
     return { powerLimitW: null, powerLimitSource: null };
   }
   function defaultPackage(preset) {
-    return Object.assign({ coolingId: DEFAULT_COOLING[preset && preset.kind] || 'air-tower', substrateId: 'organic' }, defaultPowerLimit(preset));
+    // lid: false = ヒートスプレッダ(蓋)なし(2026-11-18。プリセットの noLid: true から。ダイがむき出しの製品。3D 表示で蓋を描かない)
+    return Object.assign({ coolingId: DEFAULT_COOLING[preset && preset.kind] || 'air-tower', substrateId: 'organic' }, preset && preset.noLid === true ? { lid: false } : {}, defaultPowerLimit(preset));
   }
   // package が無い古い設計に既定のパッケージを補った新しい設計を返す(あれば複製のみ)
   function ensurePackage(design, preset) {
@@ -776,6 +777,7 @@
       if (typeof k !== 'object' || Array.isArray(k)) return 'package: 形式が違います';
       if (typeof k.coolingId !== 'string') return 'package.coolingId が文字列ではありません';
       if (typeof k.substrateId !== 'string') return 'package.substrateId が文字列ではありません';
+      if (k.lid !== undefined && typeof k.lid !== 'boolean') return 'package.lid は true か false にしてください';
       if (k.powerLimitW === undefined) k.powerLimitW = null; // 欠落は制限なしとして受ける
       if (k.powerLimitSource != null && typeof k.powerLimitSource !== 'string') return 'package.powerLimitSource が文字列ではありません';
       if (k.powerLimitW !== null && !(isNum(k.powerLimitW) && k.powerLimitW >= 1 && k.powerLimitW <= 1000)) return 'package.powerLimitW は null か 1〜1000 の数にしてください';

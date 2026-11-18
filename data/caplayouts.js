@@ -203,7 +203,7 @@ window.SDS_DATA = window.SDS_DATA || {};
   put('lga1851', 'intel-arl-285k intel-arl-265k');
   put('intel-mobile-bga', 'intel-mtl-185h intel-lnl-268v intel-lnl-258v intel-lnl-256v');
   put('intel-arl-h', 'intel-arl-285h');
-  put('intel-old-unconfirmed', 'intel-snb-2600k intel-snb-2500k intel-snb-2720qm intel-hsw-4770k intel-hsw-4790k intel-hsw-4690k intel-hsw-4700hq intel-skl-6700k intel-skl-6600k intel-skl-6700hq intel-kbl-7700k intel-kbl-7600k intel-kbl-7700hq intel-cfl-8700k intel-cfr-9900k intel-cfr-9700k intel-cml-10900k intel-cml-10700k intel-nhm-860 intel-wsm-980x intel-ivb-3770k intel-ivb-3570k intel-bdw-5775c intel-wlf-e8400 intel-yfd-q9550 intel-yfd-q9650');
+  put('intel-old-unconfirmed', 'intel-snb-2600k intel-snb-2500k intel-snb-2720qm intel-hsw-4770k intel-hsw-4790k intel-hsw-4690k intel-hsw-4700hq intel-skl-6700k intel-skl-6600k intel-skl-6700hq intel-kbl-7700k intel-kbl-7600k intel-kbl-7700hq intel-cfl-8700k intel-cfr-9900k intel-cfr-9700k intel-cml-10900k intel-cml-10700k intel-nhm-860 intel-wsm-980x intel-ivb-3770k intel-ivb-3570k intel-bdw-5775c intel-wlf-e8400 intel-yfd-q9550 intel-yfd-q9650 intel-p3-katmai-600b intel-p3-cmn-1000 intel-p3-tlt-1400s intel-p4-wlm-1500 intel-pm-bns-16 intel-p4-nwd-30c intel-pm-dth-755 intel-pd-smf-820 intel-p4-prs-531 intel-p4-cdm-631 intel-pd-prl-945 intel-cd-yna-t2500 intel-c2-cnr-e6600 intel-c2-kts-q6600');
   put('intel-mobile-unconfirmed', 'intel-ptl-x9-388h intel-ptl-x9-386h intel-ptl-x9-378h intel-ptl-x7-358h intel-ptl-u5-325 intel-wcl-c5-320');
   put('intel-hx-bga', 'intel-rpl-13980hx intel-rpl-14900hx intel-rpl-14700hx intel-arl-275hx');
   put('amd-fp-ring', 'amd-kraken-350 amd-zen4-7840hs');

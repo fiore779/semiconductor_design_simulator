@@ -1263,6 +1263,51 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel 第2〜第11世代",
+  "generation": "Pentium D(NetBurst)Presler",
+  "name": "P-D 945(2c、Geekbench 6 換算)",
+  "single": 217,
+  "multi": 382,
+  "kind": "推定",
+  "n": 17
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Pentium 4(NetBurst)Cedar Mill",
+  "name": "P4 631(1c、Geekbench 6 換算)",
+  "single": 198,
+  "multi": 226,
+  "kind": "推定",
+  "n": 7
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Pentium D(NetBurst)Smithfield",
+  "name": "P-D 820(2c、Geekbench 6 換算)",
+  "single": 189,
+  "multi": 313,
+  "kind": "推定",
+  "n": 8
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Pentium 4(NetBurst)Prescott",
+  "name": "P4 531(1c、Geekbench 6 換算)",
+  "single": 207,
+  "multi": 236,
+  "kind": "推定",
+  "n": 5
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Core 2 世代 Kentsfield(65nm)",
+  "name": "Q6600(4c)",
+  "single": 297,
+  "multi": 760,
+  "kind": "実測",
+  "n": 4
+ },
+ {
+  "group": "Intel 第2〜第11世代",
   "generation": "Core 2 世代 Wolfdale(45nm)",
   "name": "E8400(2c)",
   "single": 444,

@@ -292,7 +292,8 @@
       const names = [];
       design.dies.forEach((d) => d.blocks.forEach((b) => { if (selection.indexOf(b.id) >= 0) names.push(b.label || b.id); }));
       const selText = names.length === 0 ? '選択中のブロックはありません' : names.length <= 3 ? `選択中: ${names.join('、')}` : `選択中: ${names.length} 個のブロック`;
-      const ihsText = ihsMode === 'solid' ? '蓋を表示' : ihsMode === 'glass' ? '蓋は半透明' : '蓋は非表示';
+      const noLid = !!(design.package && design.package.lid === false);
+      const ihsText = noLid ? 'このチップは蓋なし(ダイがむき出し)' : ihsMode === 'solid' ? '蓋を表示' : ihsMode === 'glass' ? '蓋は半透明' : '蓋は非表示';
       const mode = heatActive() ? `${KIND_NAMES[heat.kind]}のヒートマップ。` : viewMode !== 'place' ? '' : (originOn() ? `出所で色分け(${originInfo().list.length} 種類)。` : '');
       glCanvas.setAttribute('aria-label', `パッケージの 3D 表示(模式図): ダイ ${design.dies.length} 個${G.decorOf(design).length ? `(ほかに見た目だけの飾りのダイ ${G.decorOf(design).length} 個)` : ''}、ブロック ${nBlocks} 個。${mode}${ihsText}。${selText}。矢印キーで選択の枠を移動、Shift と矢印キーで回転、プラスとマイナスで拡大縮小、Esc で選択解除。編集は 2D 表示で行います。`);
     }

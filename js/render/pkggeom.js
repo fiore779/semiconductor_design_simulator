@@ -260,7 +260,8 @@
     const rd = (real.dies || []); const realAll = rd.concat(decorOf(real), stackOf(real), footprintOf(real)); // 縮める前(基板・蓋・コンデンサ用) // 基板・蓋・厚みは飾りのダイも含めて決める
     const sel = new Set(o.selection || []);
     const heatIds = new Set(o.heatDieIds || []);
-    const ihsMode = IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass';
+    // package.lid が false(蓋なしの製品。ダイがむき出し)のときは、表示設定にかかわらず蓋を描かない
+    const ihsMode = real.package && real.package.lid === false ? 'off' : (IHS_MODES.indexOf(o.ihsMode) >= 0 ? o.ihsMode : 'glass');
     const substrateId = design && design.package && design.package.substrateId;
     const sub = substrateSize(realAll, substrateId, substrateMinOf(real));
     const dieT = dieThickness(realAll); const bh = blockHeight(dieT);

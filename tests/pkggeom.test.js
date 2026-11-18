@@ -254,3 +254,14 @@ test('AMD チップレットは CCD・IOD を基板の中心に向けて 0.8 倍
   const x = DSn.fromPreset(D.presets.find((p) => p.id === 'intel-arl-285k')); assert.strictEqual(Gn.displayDesign(x), x);
   const { x0, x1, z0, z1 } = sc.sub; dd.dies.forEach((q) => assert.ok(q.x > x0 && q.x + q.widthMm < x1 && q.y > z0 && q.y + q.heightMm < z1));
 });
+
+test('buildScene: package.lid が false(蓋なしの製品。ダイがむき出し)なら、表示設定にかかわらず蓋を描かない(2026-11-18)', () => {
+  const d = preset();
+  const noLid = Object.assign({}, d, { package: Object.assign({}, d.package || {}, { lid: false }) });
+  ['glass', 'solid', 'off'].forEach((ihsMode) => {
+    const s = G.buildScene(noLid, { ihsMode });
+    assert.strictEqual(s.glass.length, 0, `${ihsMode}: 半透明の蓋が無い`);
+    assert.strictEqual(vcount(s.opaque), vcount(G.buildScene(d, { ihsMode: 'off' }).opaque), `${ihsMode}: 不透明の蓋も無い(蓋なしの表示と同じ)`);
+  });
+  assert.ok(G.buildScene(d, { ihsMode: 'glass' }).glass.length > 0, '蓋ありの既定は半透明の蓋を描く');
+});
