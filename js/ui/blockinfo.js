@@ -49,13 +49,34 @@
     'LP-E': 'LP-E コアは、さらに電力を絞った低消費電力のコアです。軽い作業のときに使います。',
     P2: 'P2 は 2 つめの CCD(小さなダイ)にある高性能コアです。CCD ごとに L3 を持ちます。',
   };
+  // Zen c コア(Zen 4c・Zen 5c)の説明(2026-11-18。ユーザー指示「zenc コアの説明を増やしてください。IPC は通常と同じで、クロックが落とされているのと 1 コア当たりの L3 キャッシュが少なくなっていること」)。
+  // 出典: uarch.js の Zen 4c・Zen 5c の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕。[二次])と、設計書 §2・§5.3.3 の HX 370 の L3 内訳(Zen 5 側 16MB・Zen 5c 側 8MB。[二次])
+  const ZENC_L3 = { 'amd-strix-hx370': { normal: { mb: 16, cores: 4 }, c: { mb: 8, cores: 8 } } };
+  function zencRows(block, info) {
+    const u = String(block.uarch || ''); if (!/^Zen [45]c$/.test(u)) return null;
+    const rows = [];
+    rows.push(row('Zen c コアとは', `Zen c は、通常の Zen コア(${u.replace(/c$/, '')})と同じ設計を、コンパクトに作った省面積版のコアです。命令の実行の仕組み(幅・先読みの窓・L1・L2 など)は通常コアと同じなので、IPC(1 クロックあたりの仕事)は同じです。違いは主に 2 つあります。① 最大クロックが低く抑えられている。② コアあたりの L3 キャッシュが少ない。その分だけ面積が小さくなり(AMD は「同じ機能を約半分のコア面積で」と説明)、同じ面積により多くのコアを置いて MT を伸ばせます。Intel の E コアは別設計の小さなコアですが、Zen c は通常コアの縮小版という点が違います。`, '二次', 'uarch の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕)。Zen c 自体の IPC の実測は未取得で、「同じ」は設計が同じことによる扱い'));
+    const p = info.preset0; const cores = (p && p.cfg && p.cfg.cores) || [];
+    const mine = cores.find((c) => c.uarch === u); const normal = cores.find((c) => c.uarch === u.replace(/c$/, ''));
+    const top = (c) => (c ? (c.boostGHz != null ? c.boostGHz : c.maxGHz) : null);
+    if (mine && normal && num(top(mine)) && num(top(normal))) {
+      rows.push(row('クロックの違い(このチップ)', `${u} ${nf(top(mine), 2, 'GHz')}(最大) / ${u.replace(/c$/, '')} ${nf(top(normal), 2, 'GHz')}(最大)= 約 ${rd(top(mine) / top(normal) * 100, 0)}%`, null, 'プリセットの値。クロックを下げると、同じ電圧でも消費電力が下がる(動的な電力は電圧² × クロックにほぼ比例)'));
+    }
+    const l3 = p && ZENC_L3[p.id];
+    if (l3) rows.push(row('1 コアあたりの L3(このチップ)', `${u} 約 ${rd(l3.c.mb / l3.c.cores, 1)}MB(${l3.c.mb}MB ÷ ${l3.c.cores} コア) / ${u.replace(/c$/, '')} 約 ${rd(l3.normal.mb / l3.normal.cores, 1)}MB(${l3.normal.mb}MB ÷ ${l3.normal.cores} コア)`, '二次', 'Zen 5 側と Zen 5c 側は別のクラスタ(CCX)で、それぞれ別の L3 を持つ(設計書 §5.3.3)。L3 が少ないと、キャッシュに入りきらない処理でメモリ待ちが増え、実際の速さは IPC が同じでも少し下がることがある'));
+    else if (p && num(p.cfg && p.cfg.l3MB)) rows.push(row('1 コアあたりの L3(このチップ)', `L3 合計 ${p.cfg.l3MB}MB(Zen c 側と通常側の内訳は未取得)`, null, '一般に Zen c 側のクラスタは、通常側より 1 コアあたりの L3 が少ない'));
+    rows.push(row('このシミュレーターでの扱い', 'ST の補正 u は通常コアの値を借用(IPC が同じという扱い)。クロックはプリセットの値を使う。L3 は全体を均等に使う近似で、クラスタごとの違いは表せない', null, '設計書 §5.3.3。クラスタ別の L3 は未実装のため、L3 の少なさが性能に与える影響は計算に入っていない'));
+    return rows;
+  }
   function historyRows(block, info) {
     const PLm = dep('ui', 'presetlist', './presetlist.js');
     const rows = [];
     const kind = block.kind; let text = KIND_EXPLAIN[kind] || null;
     if (kind === 'core') { const multiType = !!(info.preset0 && info.preset0.cfg && Array.isArray(info.preset0.cfg.cores) && info.preset0.cfg.cores.length > 1); const te = multiType ? TYPE_EXPLAIN[block.coreType] : null; if (te) text = te + ' ' + text; } // P・E などの種類があるチップだけ、種類の説明を足す
     else { const le = LABEL_EXPLAIN.find((x) => x[0].test(String(block.label || ''))); if (le) text = le[1]; }
-    if (text) rows.push(row('はたらき', text, null, '一般的な説明(出典のある数値ではありません)'));
+    const zc = kind === 'core' ? zencRows(block, info) : null;
+    if (text && !zc) rows.push(row('はたらき', text, null, '一般的な説明(出典のある数値ではありません)'));
+    if (zc) zc.forEach((r) => rows.push(r));
     const p = info.preset0;
     const hi = PLm && PLm.historyOf && p ? PLm.historyOf(p.vendor, p.family) : null;
     if (hi) {

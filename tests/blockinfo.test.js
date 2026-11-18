@@ -240,3 +240,17 @@ test('ブロック詳細: 「しくみと歴史」(はたらき・世代の歴�
   const l3 = desc('amd-zen5-9950x', (x) => x.kind === 'l3'); assert.ok(/L3 キャッシュ/.test(sec(l3, 'しくみと歴史').rows[0].value));
   const hy = desc('intel-rpl-14900k', (x) => x.kind === 'core' && x.coreType === 'E'); assert.ok(/E コア/.test(sec(hy, 'しくみと歴史').rows[0].value));
 });
+
+test('ブロック詳細: Zen c コアの説明(IPC は通常と同じ・クロックが低い・1 コアあたりの L3 が少ない。HX 370 は内訳つき)。通常の Zen コアには出ない(2026-11-18)', () => {
+  const { D } = require('./helpers.js');
+  const E = require('../js/model/evaluate.js'); const DS = require('../js/model/design.js');
+  const ctx = { presets: D.presets, nodes: D.nodes, uarch: D.uarch };
+  const rows = (id, pick) => { const p = D.presets.find((x) => x.id === id); const d = DS.fromPreset(p, { mode: 'reproduce' }); const ev = E.evaluate(d, E.makeContext()); const b = d.dies.flatMap((x) => x.blocks).find(pick); return BI.describe(d, ev, b.id, ctx).sections.find((s) => s.heading === 'しくみと歴史').rows; };
+  const c = rows('amd-strix-hx370', (x) => x.kind === 'core' && x.uarch === 'Zen 5c');
+  assert.ok(/IPC.*同じ/.test(c[0].value) && /クロックが低く/.test(c[0].value.replace(/最大/g, '')) || /最大クロックが低く/.test(c[0].value));
+  assert.ok(c.some((r) => /クロックの違い/.test(r.label) && /3\.3 GHz/.test(r.value) && /5\.1 GHz/.test(r.value)));
+  assert.ok(c.some((r) => /L3/.test(r.label) && /約 1MB/.test(r.value) && /約 4MB/.test(r.value)));
+  assert.ok(c.some((r) => r.label === 'このシミュレーターでの扱い'));
+  const k = rows('amd-zen4-8500g', (x) => x.kind === 'core' && x.uarch === 'Zen 4c'); assert.ok(k.some((r) => /内訳は未取得/.test(r.value)));
+  const n = rows('amd-zen5-9950x', (x) => x.kind === 'core'); assert.ok(!n.some((r) => /Zen c/.test(r.label)));
+});
