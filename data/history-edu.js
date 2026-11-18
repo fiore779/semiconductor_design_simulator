@@ -35,7 +35,7 @@ window.SDS_DATA.historyEdu = (function () {
       ] },
     { id: 'hybrid', title: 'ハイブリッドとチップレットの時代', years: '2021 年〜', families: ['Alder Lake', 'Raptor Lake', 'Raptor Lake-HX', 'Raptor Lake Refresh', 'Meteor Lake', 'Raptor Lake-HX Refresh', 'Lunar Lake', 'Arrow Lake-S', 'Arrow Lake-HX', 'Arrow Lake-H', 'Panther Lake', 'Panther Lake-H', 'Wildcat Lake', 'Zen 4 (Raphael)', 'Zen 3+ (Rembrandt-R)', 'Zen 4 (Dragon Range)', 'Zen 4 (Phoenix)', 'Zen 4 (Phoenix 2)', 'Zen 5 (Strix Point)', 'Zen 5 (Granite Ridge)', 'Zen 5 (Kraken Point)', 'Zen 5 (Strix Halo)', 'Zen 3 (Cezanne)'], kw: ['ハイブリッド', 'MCM・チップレット', 'NPU', 'プロセスノード'],
       paras: [
-        'Alder Lake(2021)は、速いコア(P コア)と、小さくて面積・電力あたりの性能が高いコア(E コア)を 1 つのチップに混ぜました。大きな P コア 1 つの面積に、E コアを複数置けるので、MT を面積と電力の効率よく伸ばせます。AMD も Zen 4c・Zen 5c という小さなコアを用意しています。Intel の E コアが別設計の小さなコアなのに対し、Zen c は通常の Zen と同じ設計で、クロックを下げ、共有する L3 を小さくして(1 コアあたりの L3 を減らして)面積を小さくしたものです(IPC もコアごとの L1・L2 も通常と同じ)。',
+        'Alder Lake(2021)は、速いコア(P コア)と、小さくて面積・電力あたりの性能が高いコア(E コア)を 1 つのチップに混ぜました。大きな P コア 1 つの面積に、E コアを複数置けるので、MT を面積と電力の効率よく伸ばせます。AMD も Zen 4c・Zen 5c という小さなコアを用意しています。Intel の E コアが別設計の小さなコアなのに対し、Zen c は通常の Zen と同じ設計で、クロックを下げて面積を小さくしたものです(IPC もコアごとの L1・L2 も通常と同じ)。チップによっては L3 の割り当ても小さくなります(Strix Point の Zen 5c は 1 コアあたりの L3 が少ない)。',
         'ダイを分ける動きも進みました。AMD は Zen 2 からチップレット(小さなダイを組み合わせる構成)を採り、Intel も Meteor Lake(2023)から、機能ごとに作ったタイルを重ねる構成になりました。小さなダイは歩留まりが高く、機能ごとに別の製造プロセスを使えます(例: Lunar Lake・Arrow Lake の計算タイルは TSMC N3B)。2026 年の Panther Lake は Intel 18A で、Intel の公表では Intel 3 に対して同一電圧で周波数 +25%、同クロックで電力 -36% です(このプロジェクトのノード表)。',
         'AI 処理のための NPU も、CPU のチップに載る部品になりました。',
       ] },
@@ -55,7 +55,7 @@ window.SDS_DATA.historyEdu = (function () {
     ['TDP', '冷却設計の目安になる電力(W)。実際の消費電力そのものではない。ノート PC では TDP の枠が小さいため、同じ設計でもクロックが下がる。'],
     ['SIMD', '1 つの命令で複数のデータをまとめて処理する仕組み(SSE・AVX など)。幅(128・256・512bit)が広いほど、画像や科学計算で速い。'],
     ['ハイブリッド', '速いコア(P)と小さく省電力なコア(E)を 1 つのチップに混ぜる設計。大きなコア 1 つの面積に E コアを複数置け、MT を効率よく伸ばせる。'],
-    ['Zen c コア', 'AMD の Zen 4c・Zen 5c。通常の Zen コアと同じ設計(IPC は同じ。コアごとの L1・L2 キャッシュも同じ)で、最大クロックを低く抑え、共有する L3 を小さくして(1 コアあたりの L3 を少なくして)、面積を小さくした省面積版。Intel の E コアと違って、命令の実行の仕組みは通常コアと同じ。同じ面積により多くのコアを置いて MT を伸ばす。'],
+    ['Zen c コア', 'AMD の Zen 4c・Zen 5c。通常の Zen コアと同じ設計(IPC は同じ。コアごとの L1・L2 キャッシュも同じ)で、最大クロックを低く抑え、チップによっては L3 の割り当てを小さくして(Strix Point では 1 コアあたりの L3 が少ない)、面積を小さくした省面積版。Intel の E コアと違って、命令の実行の仕組みは通常コアと同じ。同じ面積により多くのコアを置いて MT を伸ばす。'],
     ['NPU', 'AI(ニューラルネットワーク)の計算に特化した回路。CPU や GPU より少ない電力で AI 処理を行う。'],
     ['ST と MT', 'ST はシングルコア(1 スレッド)の性能、MT はマルチコア(全コア)の性能。このシミュレーターでは Geekbench 7 のスコアで比べる。'],
   ];
@@ -112,10 +112,10 @@ window.SDS_DATA.historyEdu = (function () {
     L('AMD/Zen 3+ (Rembrandt-R)', '6nm のモバイル向け。電力効率の改善。', ['プロセスノード', 'TDP']),
     L('AMD/Zen 4 (Dragon Range)', 'デスクトップ級のダイをノートに載せる。電力の枠が大きいので、MT が高い。', ['TDP', 'マルチコア']),
     L('AMD/Zen 4 (Phoenix)', 'ノート向けの APU(4nm)。CPU・GPU・NPU を 1 つのダイに。', ['NPU']),
-    L('AMD/Zen 4 (Phoenix 2)', '大きな Zen 4 と省面積版の Zen 4c を混ぜた、AMD 版のハイブリッド。Zen 4c は IPC もコアごとの L1・L2 も通常と同じで、クロックが低く(8500G は 3.3〜3.7GHz。Zen 4 は 4.1〜5.0GHz)、1 コアあたりの L3 だけが少ない。', ['ハイブリッド', 'Zen c コア']),
+    L('AMD/Zen 4 (Phoenix 2)', '大きな Zen 4 と省面積版の Zen 4c を混ぜた、AMD 版のハイブリッド。Zen 4c は IPC もコアごとの L1・L2 も通常と同じで、クロックが低い(8500G は 3.3〜3.7GHz。Zen 4 は 4.1〜5.0GHz)。L3 は Zen 4 と Zen 4c の全 6 コアで 16MB を共有する(Strix Point と違い、c 側だけ少ないわけではない)。', ['ハイブリッド', 'Zen c コア']),
     L('AMD/Zen 5 (Strix Point)', 'Zen 5(4 コア)と省面積版の Zen 5c(8 コア)を組み合わせたノート向け。Zen 5c は IPC もコアごとの L1・L2 も通常と同じで、最大クロックが低く(HX 370 で 3.3GHz。Zen 5 は 5.1GHz)、1 コアあたりの L3 が少ない(Zen 5 側は 16MB ÷ 4 コア = 1 コア 4MB、Zen 5c 側は 8MB ÷ 8 コア = 1 コア 1MB)。AI 用の NPU も載る。', ['ハイブリッド', 'Zen c コア', 'NPU']),
     L('AMD/Zen 5 (Granite Ridge)', 'Zen 5 は AVX-512 を 512bit 幅で実行する。SIMD の幅を広げる流れ。', ['SIMD']),
-    L('AMD/Zen 5 (Kraken Point)', 'Strix Point を小さくしたエントリー向け(Zen 5 ×4 + Zen 5c ×4)。Zen 5c は通常の Zen 5 と IPC もコアごとの L1・L2 も同じで、クロックが低く、1 コアあたりの L3 が少ない。面積と性能のバランス。', ['Zen c コア', 'ダイ面積と歩留まり']),
+    L('AMD/Zen 5 (Kraken Point)', 'Strix Point を小さくしたエントリー向け(Zen 5 ×4 + Zen 5c ×4)。Zen 5c は通常の Zen 5 と IPC もコアごとの L1・L2 も同じで、クロックが低い。L3 は Zen 5 と Zen 5c の全 8 コアで 16MB を共有する(Strix Point と違い、c 側だけ少ないわけではない)。面積と性能のバランス。', ['Zen c コア', 'ダイ面積と歩留まり']),
     L('AMD/Zen 5 (Strix Halo)', '大きな GPU と広いメモリ帯域を持つ APU。メモリがボトルネックになる処理の例。', ['メモリコントローラ']),
   ]);
   // 試してみよう: シミュレーターで確かめる課題。数値はこのプロジェクトのデータ(設計書 §2.4・プリセット)から

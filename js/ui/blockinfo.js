@@ -52,10 +52,12 @@
   // Zen c コア(Zen 4c・Zen 5c)の説明(2026-11-18。ユーザー指示「zenc コアの説明を増やしてください。IPC は通常と同じで、クロックが落とされているのと 1 コア当たりの L3 キャッシュが少なくなっていること」)。
   // 出典: uarch.js の Zen 4c・Zen 5c の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕。[二次])と、設計書 §2・§5.3.3 の HX 370 の L3 内訳(Zen 5 側 16MB・Zen 5c 側 8MB。[二次])
   const ZENC_L3 = { 'amd-strix-hx370': { normal: { mb: 16, cores: 4 }, c: { mb: 8, cores: 8 } } };
+  // Zen と Zen c の全コアが 1 つの L3 を共有するチップ(2026-11-18。Phoenix 2 は TechPowerUp の 8500G のレビュー「1 つの CCX の 1 つの L3 を全 6 コアで共有」。[二次]。Kraken Point はユーザーの情報「16MB を共有」)
+  const ZENC_SHARED = { 'amd-zen4-8500g': { mb: 16, src: 'TechPowerUp の Ryzen 5 8500G のレビュー(Zen 4 と Zen 4c の全 6 コアが 1 つの CCX の 1 つの L3 を共有。AMD 公式の L3 は 16MB)[二次]' }, 'amd-kraken-350': { mb: 16, src: 'ユーザーの情報(2026-11-18「両方とも 16MB のキャッシュを共有で使っている」)と、L3 合計 16MB(Wikipedia・Notebookcheck・AMD)。内訳を書いた出典は見つかっていない' } };
   function zencRows(block, info) {
     const u = String(block.uarch || ''); if (!/^Zen [45]c$/.test(u)) return null;
     const rows = [];
-    rows.push(row('Zen c コアとは', `Zen c は、通常の Zen コア(${u.replace(/c$/, '')})と同じ設計を、コンパクトに作った省面積版のコアです。命令の実行の仕組み(幅・先読みの窓・L1・L2 など)は通常コアと同じなので、IPC(1 クロックあたりの仕事)は同じです。コアごとのキャッシュ(L1・L2)も通常コアと同じ容量・同じ構成です。違いは主に 2 つあります。① 最大クロックが低く抑えられている。② 複数のコアで共有する L3 キャッシュの割り当てが小さく、1 コアあたりの L3 が少ない。その分だけ面積が小さくなり(AMD は「同じ機能を約半分のコア面積で」と説明)、同じ面積により多くのコアを置いて MT を伸ばせます。Intel の E コアは別設計の小さなコアですが、Zen c は通常コアの縮小版という点が違います。`, '二次', 'uarch の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕)。Zen c 自体の IPC の実測は未取得で、「同じ」は設計が同じことによる扱い'));
+    rows.push(row('Zen c コアとは', `Zen c は、通常の Zen コア(${u.replace(/c$/, '')})と同じ設計を、コンパクトに作った省面積版のコアです。命令の実行の仕組み(幅・先読みの窓・L1・L2 など)は通常コアと同じなので、IPC(1 クロックあたりの仕事)は同じです。コアごとのキャッシュ(L1・L2)も通常コアと同じ容量・同じ構成です。違いは主に 2 つあります。① 最大クロックが低く抑えられている。② チップによっては、L3 キャッシュの割り当てが小さい(Strix Point では Zen 5c 側が別の小さな L3 で、1 コアあたりの L3 が少ない。Phoenix 2・Kraken Point は通常コアと同じ 16MB を全コアで共有する)。その分だけ面積が小さくなり(AMD は「同じ機能を約半分のコア面積で」と説明)、同じ面積により多くのコアを置いて MT を伸ばせます。Intel の E コアは別設計の小さなコアですが、Zen c は通常コアの縮小版という点が違います。`, '二次', 'uarch の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕)。Zen c 自体の IPC の実測は未取得で、「同じ」は設計が同じことによる扱い'));
     // コアごとのキャッシュ(L1・L2)は通常コアと同じ(uarch の記録で確かめて出す。違う項目があればそのまま書く)
     const UA = (root.SDS_DATA && root.SDS_DATA.uarch) || {}; const rc = UA[u]; const rn = UA[u.replace(/c$/, '')];
     if (rc && rn) {
@@ -69,10 +71,11 @@
     if (mine && normal && num(top(mine)) && num(top(normal))) {
       rows.push(row('クロックの違い(このチップ)', `${u} ${nf(top(mine), 2, 'GHz')}(最大) / ${u.replace(/c$/, '')} ${nf(top(normal), 2, 'GHz')}(最大)= 約 ${rd(top(mine) / top(normal) * 100, 0)}%`, null, 'プリセットの値。クロックを下げると、同じ電圧でも消費電力が下がる(動的な電力は電圧² × クロックにほぼ比例)'));
     }
-    const l3 = p && ZENC_L3[p.id];
-    if (l3) rows.push(row('1 コアあたりの L3(このチップ)', `${u} 約 ${rd(l3.c.mb / l3.c.cores, 1)}MB(${l3.c.mb}MB ÷ ${l3.c.cores} コア) / ${u.replace(/c$/, '')} 約 ${rd(l3.normal.mb / l3.normal.cores, 1)}MB(${l3.normal.mb}MB ÷ ${l3.normal.cores} コア)`, '二次', 'Zen 5 側と Zen 5c 側は別のクラスタ(CCX)で、それぞれ別の L3 を持つ(設計書 §5.3.3)。L3 が少ないと、キャッシュに入りきらない処理でメモリ待ちが増え、実際の速さは IPC が同じでも少し下がることがある'));
+    const l3 = p && ZENC_L3[p.id]; const sh = p && ZENC_SHARED[p.id];
+    if (sh) rows.push(row('1 コアあたりの L3(このチップ)', `${u.replace(/c$/, '')} と ${u} の全コアで L3 ${sh.mb}MB を共有(クラスタごとの内訳なし。1 コアあたりの L3 の少なさはこのチップにはない)`, '二次', sh.src));
+    else if (l3) rows.push(row('1 コアあたりの L3(このチップ)', `${u} 約 ${rd(l3.c.mb / l3.c.cores, 1)}MB(${l3.c.mb}MB ÷ ${l3.c.cores} コア) / ${u.replace(/c$/, '')} 約 ${rd(l3.normal.mb / l3.normal.cores, 1)}MB(${l3.normal.mb}MB ÷ ${l3.normal.cores} コア)`, '二次', 'Zen 5 側と Zen 5c 側は別のクラスタ(CCX)で、それぞれ別の L3 を持つ(設計書 §5.3.3)。L3 が少ないと、キャッシュに入りきらない処理でメモリ待ちが増え、実際の速さは IPC が同じでも少し下がることがある'));
     else if (p && num(p.cfg && p.cfg.l3MB)) rows.push(row('1 コアあたりの L3(このチップ)', `L3 合計 ${p.cfg.l3MB}MB(Zen c 側と通常側の内訳は未取得)`, null, '一般に Zen c 側のクラスタは、通常側より 1 コアあたりの L3 が少ない'));
-    rows.push(row('このシミュレーターでの扱い', 'ST の補正 u は通常コアの値を借用(IPC が同じという扱い)。クロックはプリセットの値を使う。L3 は全体を均等に使う近似で、クラスタごとの違いは表せない', null, '設計書 §5.3.3。クラスタ別の L3 は未実装のため、L3 の少なさが性能に与える影響は計算に入っていない'));
+    rows.push(row('このシミュレーターでの扱い', sh ? 'ST の補正 u は通常コアの値を借用(IPC が同じという扱い)。クロックはプリセットの値を使う。L3 は全コアで共有する 1 つとして計算(実物と同じ扱い)' : 'ST の補正 u は通常コアの値を借用(IPC が同じという扱い)。クロックはプリセットの値を使う。L3 は全体を均等に使う近似で、クラスタごとの違いは表せない', null, sh ? '設計書 §5.3.3' : '設計書 §5.3.3。クラスタ別の L3 は未実装のため、L3 の少なさが性能に与える影響は計算に入っていない'));
     return rows;
   }
   function historyRows(block, info) {

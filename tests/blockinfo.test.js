@@ -241,7 +241,7 @@ test('ブロック詳細: 「しくみと歴史」(はたらき・世代の歴�
   const hy = desc('intel-rpl-14900k', (x) => x.kind === 'core' && x.coreType === 'E'); assert.ok(/E コア/.test(sec(hy, 'しくみと歴史').rows[0].value));
 });
 
-test('ブロック詳細: Zen c コアの説明(IPC は通常と同じ・クロックが低い・1 コアあたりの L3 が少ない。HX 370 は内訳つき)。通常の Zen コアには出ない(2026-11-18)', () => {
+test('ブロック詳細: Zen c コアの説明(IPC は通常と同じ・クロックが低い。L3 は Strix Point だけ c 側が少なく、Phoenix 2・Kraken Point は 16MB を全コアで共有)。通常の Zen コアには出ない(2026-11-18)', () => {
   const { D } = require('./helpers.js');
   const E = require('../js/model/evaluate.js'); const DS = require('../js/model/design.js');
   const ctx = { presets: D.presets, nodes: D.nodes, uarch: D.uarch };
@@ -253,6 +253,6 @@ test('ブロック詳細: Zen c コアの説明(IPC は通常と同じ・クロ�
   assert.ok(c.some((r) => r.label === 'このシミュレーターでの扱い'));
   assert.ok(c.some((r) => r.label === 'コアごとのキャッシュ(L1・L2)' && /通常コアと同じ/.test(r.value) && /L2 1024KB/.test(r.value)), 'コアごとのキャッシュ(L1・L2)は通常コアと同じ(2026-11-18 ユーザー指摘)');
   assert.ok(/L1・L2/.test(c[0].value));
-  const k = rows('amd-zen4-8500g', (x) => x.kind === 'core' && x.uarch === 'Zen 4c'); assert.ok(k.some((r) => /内訳は未取得/.test(r.value)));
+  for (const [id, u] of [['amd-zen4-8500g', 'Zen 4c'], ['amd-kraken-350', 'Zen 5c']]) { const k = rows(id, (x) => x.kind === 'core' && x.uarch === u); assert.ok(k.some((r) => /L3/.test(r.label) && /16MB を共有/.test(r.value) && !/約 1MB/.test(r.value)), `${id}: 16MB を共有`); }
   const n = rows('amd-zen5-9950x', (x) => x.kind === 'core'); assert.ok(!n.some((r) => /Zen c/.test(r.label)));
 });

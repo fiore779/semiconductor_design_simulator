@@ -71,10 +71,10 @@ window.SDS_DATA.history = (function () {
     f('AMD/Zen 3+ (Rembrandt-R)', 'amd', '2022〜2023 年の Zen 3+(6nm)。Ryzen 6000 モバイルと同じ系統で、Zen 3 の改良版。'),
     f('AMD/Zen 4 (Dragon Range)', 'amd', '2023 年の高性能ノート向け Ryzen 7045HX(5nm)。デスクトップ向けの Zen 4 のダイを使った HX 系。'),
     f('AMD/Zen 4 (Phoenix)', 'amd', '2023 年のノート向け Ryzen 7040(Zen 4。4nm)の APU。'),
-    f('AMD/Zen 4 (Phoenix 2)', 'amd', '2024 年の Zen 4 と Zen 4c(省面積版のコア)を組み合わせたノート向け APU(Phoenix の小型版)。Zen 4c は Zen 4 と同じ設計(コアごとの L1・L2 も同じ)で、クロックを低くし、1 コアあたりの L3 を減らして面積を小さくしたもの。'),
+    f('AMD/Zen 4 (Phoenix 2)', 'amd', '2024 年の Zen 4 と Zen 4c(省面積版のコア)を組み合わせたノート向け APU(Phoenix の小型版)。Zen 4c は Zen 4 と同じ設計(コアごとの L1・L2 も同じ)で、クロックを低くして面積を小さくしたもの。L3(16MB)は全 6 コアで共有する。'),
     f('AMD/Zen 5 (Strix Point)', 'amd', '2024 年の Ryzen AI 300(Zen 5 と省面積版の Zen 5c。4nm)のノート向け APU。Zen 5c は Zen 5 と同じ設計(IPC もコアごとの L1・L2 も同じ)で、クロックが低く、1 コアあたりの L3 が少ない。'),
     f('AMD/Zen 5 (Granite Ridge)', 'amd', '2024 年 8 月の Ryzen 9000(Zen 5。4nm)。256bit ではなく 512bit 幅の AVX-512 パイプラインを持つ。'),
-    f('AMD/Zen 5 (Kraken Point)', 'amd', '2025 年の Zen 5 と Zen 5c のエントリー向けノート APU(Strix Point の小型版)。Zen 5c は Zen 5 と同じ設計(コアごとの L1・L2 も同じ)で、クロックが低く、1 コアあたりの L3 が少ない。'),
+    f('AMD/Zen 5 (Kraken Point)', 'amd', '2025 年の Zen 5 と Zen 5c のエントリー向けノート APU(Strix Point の小型版)。Zen 5c は Zen 5 と同じ設計(コアごとの L1・L2 も同じ)で、クロックが低い。L3(16MB)は全コアで共有する。'),
     f('AMD/Zen 5 (Strix Halo)', 'amd', '2025 年の Ryzen AI Max(Zen 5。大きな GPU を内蔵したノート・小型 PC 向け APU)。'),
   ]);
   // 全体の歴史(年表)。年は初出のもの。出典は sources のキー
