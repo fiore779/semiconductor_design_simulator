@@ -251,6 +251,8 @@ test('ブロック詳細: Zen c コアの説明(IPC は通常と同じ・クロ�
   assert.ok(c.some((r) => /クロックの違い/.test(r.label) && /3\.3 GHz/.test(r.value) && /5\.1 GHz/.test(r.value)));
   assert.ok(c.some((r) => /L3/.test(r.label) && /約 1MB/.test(r.value) && /約 4MB/.test(r.value)));
   assert.ok(c.some((r) => r.label === 'このシミュレーターでの扱い'));
+  assert.ok(c.some((r) => r.label === 'コアごとのキャッシュ(L1・L2)' && /通常コアと同じ/.test(r.value) && /L2 1024KB/.test(r.value)), 'コアごとのキャッシュ(L1・L2)は通常コアと同じ(2026-11-18 ユーザー指摘)');
+  assert.ok(/L1・L2/.test(c[0].value));
   const k = rows('amd-zen4-8500g', (x) => x.kind === 'core' && x.uarch === 'Zen 4c'); assert.ok(k.some((r) => /内訳は未取得/.test(r.value)));
   const n = rows('amd-zen5-9950x', (x) => x.kind === 'core'); assert.ok(!n.some((r) => /Zen c/.test(r.label)));
 });

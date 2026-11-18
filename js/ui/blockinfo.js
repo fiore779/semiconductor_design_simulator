@@ -55,7 +55,14 @@
   function zencRows(block, info) {
     const u = String(block.uarch || ''); if (!/^Zen [45]c$/.test(u)) return null;
     const rows = [];
-    rows.push(row('Zen c コアとは', `Zen c は、通常の Zen コア(${u.replace(/c$/, '')})と同じ設計を、コンパクトに作った省面積版のコアです。命令の実行の仕組み(幅・先読みの窓・L1・L2 など)は通常コアと同じなので、IPC(1 クロックあたりの仕事)は同じです。違いは主に 2 つあります。① 最大クロックが低く抑えられている。② コアあたりの L3 キャッシュが少ない。その分だけ面積が小さくなり(AMD は「同じ機能を約半分のコア面積で」と説明)、同じ面積により多くのコアを置いて MT を伸ばせます。Intel の E コアは別設計の小さなコアですが、Zen c は通常コアの縮小版という点が違います。`, '二次', 'uarch の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕)。Zen c 自体の IPC の実測は未取得で、「同じ」は設計が同じことによる扱い'));
+    rows.push(row('Zen c コアとは', `Zen c は、通常の Zen コア(${u.replace(/c$/, '')})と同じ設計を、コンパクトに作った省面積版のコアです。命令の実行の仕組み(幅・先読みの窓・L1・L2 など)は通常コアと同じなので、IPC(1 クロックあたりの仕事)は同じです。コアごとのキャッシュ(L1・L2)も通常コアと同じ容量・同じ構成です。違いは主に 2 つあります。① 最大クロックが低く抑えられている。② 複数のコアで共有する L3 キャッシュの割り当てが小さく、1 コアあたりの L3 が少ない。その分だけ面積が小さくなり(AMD は「同じ機能を約半分のコア面積で」と説明)、同じ面積により多くのコアを置いて MT を伸ばせます。Intel の E コアは別設計の小さなコアですが、Zen c は通常コアの縮小版という点が違います。`, '二次', 'uarch の記録(Wikipedia・AMD CTO の発言〔SemiAnalysis 経由〕)。Zen c 自体の IPC の実測は未取得で、「同じ」は設計が同じことによる扱い'));
+    // コアごとのキャッシュ(L1・L2)は通常コアと同じ(uarch の記録で確かめて出す。違う項目があればそのまま書く)
+    const UA = (root.SDS_DATA && root.SDS_DATA.uarch) || {}; const rc = UA[u]; const rn = UA[u.replace(/c$/, '')];
+    if (rc && rn) {
+      const items = [['L1D', 'l1dKB', 'KB'], ['L2', 'l2KB', 'KB'], ['L2 遅延', 'l2Lat', 'サイクル']].filter(([, k]) => num(rc[k]) || num(rn[k]));
+      const diff = items.filter(([, k]) => rc[k] !== rn[k]);
+      if (items.length) rows.push(row('コアごとのキャッシュ(L1・L2)', items.map(([n, k, un]) => `${n} ${num(rc[k]) ? rc[k] : '未取得'}${un}`).join(' / ') + (diff.length ? `(通常コアと違う項目: ${diff.map(([n]) => n).join('・')})` : '(通常コアと同じ)'), sTag(rc.s), 'コアごとのキャッシュは通常コアと同じ設計。L3 だけが、共有するコア数と容量の割り当てで 1 コアあたり少なくなる'));
+    }
     const p = info.preset0; const cores = (p && p.cfg && p.cfg.cores) || [];
     const mine = cores.find((c) => c.uarch === u); const normal = cores.find((c) => c.uarch === u.replace(/c$/, ''));
     const top = (c) => (c ? (c.boostGHz != null ? c.boostGHz : c.maxGHz) : null);
