@@ -222,3 +222,21 @@ test('全プリセット(再現・改良)の全ブロックで、例外になら
   assert.deepStrictEqual(errs.slice(0, 5), []);
   assert.ok(n > 3000, `ブロック数が少なすぎる ${n}`);
 });
+
+test('ブロック詳細: 「しくみと歴史」(はたらき・世代の歴史・学べること)と、マイクロアーキの項目の説明・待ち時間の時間換算(2026-11-18)', () => {
+  const { D } = require('./helpers.js');
+  const E = require('../js/model/evaluate.js'); const DS = require('../js/model/design.js');
+  const ctx = { presets: D.presets, nodes: D.nodes, uarch: D.uarch };
+  const desc = (id, pick) => { const p = D.presets.find((x) => x.id === id); const d = DS.fromPreset(p, { mode: 'reproduce' }); const ev = E.evaluate(d, E.makeContext()); const b = d.dies.flatMap((x) => x.blocks).find(pick); return BI.describe(d, ev, b.id, ctx); };
+  const sec = (r, h) => r.sections.find((s) => s.heading === h);
+  const core = desc('intel-c2-kts-q6600', (x) => x.kind === 'core');
+  const hs = sec(core, 'しくみと歴史'); assert.ok(hs && hs.rows.some((r) => r.label === 'はたらき') && hs.rows.some((r) => /歴史/.test(r.label)) && hs.rows.some((r) => r.label === 'この世代で学べること'));
+  assert.ok(!/P コア\(高性能コア\)/.test(hs.rows[0].value), '種類が 1 つのチップでは P コアの説明を足さない');
+  const mu = sec(core, 'マイクロアーキテクチャ(uarch の記録)');
+  mu.rows.filter((r) => r.value !== '未取得' && !/時間換算|DRAM/.test(r.label)).forEach((r) => assert.ok(r.note && r.note.length > 5, `${r.label} に説明`));
+  assert.ok(mu.rows.some((r) => r.label === '待ち時間の時間換算' && /ns/.test(r.value)) && mu.rows.some((r) => /DRAM/.test(r.label) && /サイクル/.test(r.value)));
+  const fsb = desc('intel-c2-kts-q6600', (x) => /FSB/.test(x.label)); assert.ok(/FSB/.test(sec(fsb, 'しくみと歴史').rows[0].value));
+  const l2 = desc('intel-c2-kts-q6600', (x) => /L2 キャッシュ/.test(x.label)); assert.ok(/L3 を持たず/.test(sec(l2, 'しくみと歴史').rows[0].value));
+  const l3 = desc('amd-zen5-9950x', (x) => x.kind === 'l3'); assert.ok(/L3 キャッシュ/.test(sec(l3, 'しくみと歴史').rows[0].value));
+  const hy = desc('intel-rpl-14900k', (x) => x.kind === 'core' && x.coreType === 'E'); assert.ok(/E コア/.test(sec(hy, 'しくみと歴史').rows[0].value));
+});

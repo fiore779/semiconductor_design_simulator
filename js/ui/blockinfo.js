@@ -25,6 +25,63 @@
     return { label, value: miss ? NA : String(value), tag: miss ? '未取得' : (tag || null), note: note ? String(note) : null };
   }
 
+  // ---- しくみと歴史(2026-11-18。一般的な説明。数値は書かず、数値の根拠は下の各セクションにある) ----
+  const KIND_EXPLAIN = {
+    core: 'コアは、プログラムの命令を取り出して実行する CPU の中心の回路です。コアが多いほど同時に進められる処理が増え(MT)、1 つのコアが速いほど 1 つの処理が速く終わります(ST)。',
+    l3: 'L3 キャッシュは、全コアで共有する大きく速い記憶領域です。メインメモリ(DRAM)よりはるかに速いので、容量が大きいほどメモリ待ちが減ります。ただし面積を使うので、容量はダイ面積とのトレードオフです。',
+    gpu: '内蔵 GPU は、画面の表示と、画像などの並列計算を受け持つ回路です。このシミュレーターは GPU の性能を計算せず、図の上の見た目だけの飾りです。',
+    uncore: 'Uncore(SoC・I/O)は、コア以外の周辺回路(メモリコントローラ・バス・PCIe・画面出力など)をまとめた呼び名です。コアに命令とデータを届ける通り道で、性能・電力に効きますが、このシミュレーターでは見た目だけの飾りです。',
+    npu: 'NPU は、AI(ニューラルネットワーク)の計算専用の回路です。CPU や GPU より少ない電力で AI の処理を行えます。このシミュレーターでは性能を計算せず、見た目だけの飾りです。',
+  };
+  // 飾りの uncore ブロックのラベルに含まれる語から、もう少し具体的な説明を選ぶ(先に一致したものを使う)
+  const LABEL_EXPLAIN = [
+    [/L2 キャッシュ/, 'L2 キャッシュは、コア(または 2 コア)ごとの 2 段目のキャッシュです。L1 より大きく少し遅い。Core 2 以前のチップは L3 を持たず、L2 が最後のキャッシュで、ここにないデータはメインメモリまで取りに行きます。写真では規則正しい細かい格子の大きな領域として見えます。'],
+    [/L2 まわり|L2 の制御/, 'L2 キャッシュの制御回路(どのデータを置くか・追い出すかの管理)などです。内訳は写真から判別できていません。'],
+    [/FSB|バスインターフェース|バス・I\/O/, 'FSB(フロントサイドバス)は、CPU とチップセット(メモリコントローラを持つ別チップ)をつなぐ共有の通り道です。Core 2 以前のメモリは、ここを通ってアクセスします。全コアが共有するので、コアが増えると混み合います。Nehalem 以降はメモリコントローラが CPU に入り、FSB はなくなりました。'],
+    [/メモリコントローラ|Uncore|System Agent/, 'メモリコントローラなど、コアの外側の共通の回路です。メインメモリへの読み書きや、PCIe・画面出力などの I/O を受け持ちます。'],
+    [/PCIe|DMI/, 'PCIe・DMI は、グラフィックスカードやチップセットとつなぐ高速の入出力です。'],
+    [/PLL|PHY|I\/O/, 'I/O・PHY・PLL は、チップの外(メモリ・ほかのチップ)と電気信号をやり取りする回路や、クロックを作る回路です。チップの外周に並ぶことが多いです。'],
+    [/eDRAM/, 'eDRAM は、大容量の L4 キャッシュ(別ダイ)につなぐ回路です。'],
+  ];
+  const TYPE_EXPLAIN = {
+    P: 'P コア(高性能コア)は、1 つの処理を速く終えることを重視した大きなコアです。幅が広く、先読みの窓(ROB)が大きく、クロックが高い。',
+    E: 'E コア(高効率コア)は、面積と電力あたりの性能を重視した小さなコアです。P コア 1 つの面積に複数個置けるので、MT を効率よく伸ばせます。',
+    'LP-E': 'LP-E コアは、さらに電力を絞った低消費電力のコアです。軽い作業のときに使います。',
+    P2: 'P2 は 2 つめの CCD(小さなダイ)にある高性能コアです。CCD ごとに L3 を持ちます。',
+  };
+  function historyRows(block, info) {
+    const PLm = dep('ui', 'presetlist', './presetlist.js');
+    const rows = [];
+    const kind = block.kind; let text = KIND_EXPLAIN[kind] || null;
+    if (kind === 'core') { const multiType = !!(info.preset0 && info.preset0.cfg && Array.isArray(info.preset0.cfg.cores) && info.preset0.cfg.cores.length > 1); const te = multiType ? TYPE_EXPLAIN[block.coreType] : null; if (te) text = te + ' ' + text; } // P・E などの種類があるチップだけ、種類の説明を足す
+    else { const le = LABEL_EXPLAIN.find((x) => x[0].test(String(block.label || ''))); if (le) text = le[1]; }
+    if (text) rows.push(row('はたらき', text, null, '一般的な説明(出典のある数値ではありません)'));
+    const p = info.preset0;
+    const hi = PLm && PLm.historyOf && p ? PLm.historyOf(p.vendor, p.family) : null;
+    if (hi) {
+      rows.push(row(`この世代(${p.family})の歴史`, hi.text, '二次', hi.source));
+      if (hi.learn) rows.push(row('この世代で学べること', hi.learn, null, hi.kw.length ? `キーワード: ${hi.kw.join('・')}(「歴史」ボタンの用語集)` : null));
+    }
+    return rows;
+  }
+  // 待ち時間のサイクル数を時間(ns)に直す: ns = サイクル ÷ GHz。DRAM の待ちは時間が固定で、クロックが高いほどサイクル数が増える
+  function latencyRows(rec, g, ev, info) {
+    if (!rec) return [];
+    const dm = ev && ev.mt && ev.mt.ok && g ? (ev.mt.detail || []).find((x) => x.type === g.type) : null;
+    const f = (dm && num(dm.fGHz) && dm.fGHz > 0 && dm.fGHz) || (ev && ev.st && ev.st.ok && num(ev.st.fGHz) && ev.st.fGHz > 0 && ev.st.fGHz) || null;
+    if (!f) return [];
+    const parts = []; const ns = (c) => rd(c / f, 1);
+    if (num(rec.l1dLat)) parts.push(`L1D ${ns(rec.l1dLat)} ns`);
+    if (num(rec.l2Lat)) parts.push(`L2 ${ns(rec.l2Lat)} ns`);
+    if (num(rec.l3Lat)) parts.push(`L3 ${ns(rec.l3Lat)} ns`);
+    const rows = [];
+    if (parts.length) rows.push(row('待ち時間の時間換算', `${parts.join(' / ')}(${rd(f, 2)}GHz のとき)`, sTag(rec.s), 'サイクル数 ÷ クロック。クロックが高いほど、同じサイクル数でも待ち時間は短い(時間で見ると)'));
+    const P = PFm(); const dram = (ev && ev.st && ev.st.dramLat && num(ev.st.dramLat.ns) && ev.st.dramLat.ns) || (P && P.DEFAULT_PARAMS && P.DEFAULT_PARAMS.dramNs) || null;
+    if (dram) rows.push(row('メインメモリ(DRAM)の待ち', `約 ${rd(dram, 0)} ns = 約 ${rd(dram * f, 0)} サイクル(${rd(f, 2)}GHz のとき)`, '推定', 'モデルが使う DRAM 遅延(プラットフォームで決まる値。出典のない既定値のこともある)。キャッシュに無いデータを取りに行くと、この間コアは待つ。クロックを上げても ns は変わらず、サイクル数だけが増える'));
+    void info;
+    return rows;
+  }
+
   // ---- 依存モジュール(実行時に引く。読み込み順を問わない) ----
   const S = () => root.SDS || {};
   const dep = (ns, name, file) => (S()[ns] && S()[ns][name]) || (typeof require === 'function' ? (() => { try { return require(file); } catch (e) { return null; } })() : null);
@@ -133,24 +190,25 @@
     return rows;
   }
 
-  function microRows(rec, g) {
+  function microRows(rec, g, ev, info) {
     if (!rec) return [row('マイクロアーキの記録', null, null, 'uarch の記録がありません')];
     const t = sTag(rec.s);
     const rows = [];
     const add = (label, v, unit, note) => rows.push(row(label, nf(v, 0, unit), t, note));
-    add('発行幅(rename)', rec.width, '');
-    add('デコード幅', rec.decodeWidth, '');
-    add('ROB(リオーダー窓)', rec.rob, 'エントリ');
-    add('L1D 容量', rec.l1dKB, 'KB');
-    add('L1D 遅延', rec.l1dLat, 'サイクル');
-    add('L2 容量(コアあたり)', rec.l2KB, 'KB', rec.l2KB == null ? null : '共有 L2 は共有コア数で割った値');
-    add('L2 遅延', rec.l2Lat, 'サイクル');
-    add('L3 遅延', rec.l3Lat, 'サイクル');
-    add('MSHR(同時ミス処理数)', rec.mshr, '');
-    add('分岐ミスペナルティ', rec.brPenalty, 'サイクル');
-    add('ベクトル幅', rec.vecBits, 'bit');
+    // 2026-11-18: 各項目の意味(一般的な説明)を note に付けた
+    add('発行幅(rename)', rec.width, '', '1 クロックに処理を始められる命令数の上限。大きいほど IPC の上限が高い');
+    add('デコード幅', rec.decodeWidth, '', '1 クロックに読み解ける命令数。発行幅と同じくらいないと、前段が詰まる');
+    add('ROB(リオーダー窓)', rec.rob, 'エントリ', '先読みして、順序を入れ替えながら実行できる命令の窓。大きいほど、メモリ待ちの間にも別の命令を進められる');
+    add('L1D 容量', rec.l1dKB, 'KB', '最も速く最も小さい 1 段目のデータキャッシュ');
+    add('L1D 遅延', rec.l1dLat, 'サイクル', 'L1D にあるデータが届くまでのクロック数。小さいほど速い');
+    add('L2 容量(コアあたり)', rec.l2KB, 'KB', rec.l2KB == null ? null : '共有 L2 は共有コア数で割った値。2 段目のキャッシュで、L1D より大きく遅い');
+    add('L2 遅延', rec.l2Lat, 'サイクル', 'L2 にあるデータが届くまでのクロック数');
+    add('L3 遅延', rec.l3Lat, 'サイクル', '共有 L3 の待ち時間。L2 より長い。L3 の無いチップ(Core 2 以前など)では空欄');
+    add('MSHR(同時ミス処理数)', rec.mshr, '', 'キャッシュに無かったデータの取得を、同時にいくつまで追いかけられるか。多いほど、メモリ待ちを重ね合わせて隠せる');
+    add('分岐ミスペナルティ', rec.brPenalty, 'サイクル', 'if 文の分かれ道の予想が外れたとき、やり直しに失われるクロック数。パイプラインが長いほど大きい');
+    add('ベクトル幅', rec.vecBits, 'bit', '1 命令で同時に処理できるデータの幅(SIMD。SSE・AVX など)。広いほど画像や科学計算で速い');
     if (rec.inOrder) rows.push(row('実行方式', 'in-order(順序実行)', null, 'ST の IPC は根拠のない仮の値(0.8)'));
-    void g;
+    latencyRows(rec, g, ev, info).forEach((r) => rows.push(r));
     return rows;
   }
 
@@ -389,10 +447,11 @@
     } else title = block.label || KIND_NAME[block.kind] || 'ブロック';
 
     add('基本', basicRows(design, evalResult, info));
+    add('しくみと歴史', historyRows(block, info)); // 2026-11-18
     if (block.kind === 'core') {
       add('クロック', clockRows(g, info, evalResult));
       if (block.coreDefId) add('自作コア(確度:低)', customCoreRows(design, block, g, evalResult));
-      add('マイクロアーキテクチャ(uarch の記録)', microRows(rec, g));
+      add('マイクロアーキテクチャ(uarch の記録)', microRows(rec, g, evalResult, info));
       const dMt = evalResult && evalResult.mt && evalResult.mt.ok && g ? (evalResult.mt.detail || []).find((x) => x.type === g.type) : null;
       const isStCore = !!g && !!evalResult && !!evalResult.st && evalResult.st.ok && stTypeOf(design, evalResult, preset0, mix) === g.type;
       const d = dMt || (isStCore ? evalResult.st : null);
