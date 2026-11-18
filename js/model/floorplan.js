@@ -451,6 +451,19 @@
       [[270, 55, 145, 135], [420, 55, 158, 135], [595, 55, 145, 135], [748, 55, 157, 135]], [
         ['io-t', `I/O・PHY(上辺${UNK})`, 'u', 145, 8, 935, 42], ['sa-l', `System Agent・I/O(左側${UNK})`, 'u', 8, 55, 258, 445], ['sa-r', `System Agent・I/O(右側${UNK})`, 'u', 915, 55, 235, 445],
         ['gpu', 'GPU(内蔵 GT3e。下半分の大きな領域)', 'g', 8, 505, 970, 515], ['io-br', `I/O・eDRAM 接続など(右下${UNK})`, 'u', 982, 505, 168, 515]]),
+    // 2026-11-18 追加(Core 2 世代。ユーザー指示「core2も追加してください」)。L3 はなく(cfg.l3MB 0)、共有 L2 は飾り(deco)で置く。座標は写真の表示ピクセル(スクリーンショット座標)の目測(±5〜10%)
+    // Wolfdale 2 コア(Intel_Core_2_Quad_(Yorkfield_45nm).jpg 4322×3083 の左のダイ。写真は 2 ダイの横並びで、box は左のダイだけ)。上辺に I/O・PLL、2 つのコア(上段)、下半分に共有 L2 6MB、左右に FSB・I/O
+    'wlf-2c': tf([175, 0, 745, 812], { p: 2, e: 0, lp: 0 },
+      [[215, 60, 238, 338], [459, 60, 238, 338]], [], [], null, [
+        ['io-t', `I/O・PLL(上辺${UNK})`, 'u', 185, 5, 550, 52], ['io-l', `FSB・I/O(左端${UNK})`, 'u', 180, 60, 33, 338], ['io-r', `FSB・I/O(右端${UNK})`, 'u', 700, 60, 40, 338],
+        ['l2', 'L2 キャッシュ(2 コアで共有 6MB。下半分の大きな領域)', 'u', 256, 402, 409, 400], ['l2-l', `L2 まわりの回路・I/O(下段左${UNK})`, 'u', 180, 402, 74, 405], ['l2-r', `L2 まわりの回路・I/O(下段右${UNK})`, 'u', 667, 402, 73, 405]]),
+    // Yorkfield 4 コア(同じ写真の全体。Wolfdale 2 つの MCM を 1 つの枠として扱う)。左のダイのコア 2 + 右のダイのコア 2、各ダイの下半分に共有 L2 6MB
+    'yfd-4c': tf([175, 0, 1314, 812], { p: 4, e: 0, lp: 0 },
+      [[215, 60, 238, 338], [459, 60, 238, 338], [785, 60, 238, 338], [1029, 60, 238, 338]], [], [], null, [
+        ['io-t', `I/O・PLL(左のダイの上辺${UNK})`, 'u', 185, 5, 550, 52], ['io-l', `FSB・I/O(左のダイの左端${UNK})`, 'u', 180, 60, 33, 338], ['io-r', `FSB・I/O(左のダイの右端${UNK})`, 'u', 700, 60, 40, 338],
+        ['l2', 'L2 キャッシュ(左のダイ。2 コアで共有 6MB。下半分の大きな領域)', 'u', 256, 402, 409, 400], ['l2-l', `L2 まわりの回路・I/O(左のダイの下段左${UNK})`, 'u', 180, 402, 74, 405], ['l2-r', `L2 まわりの回路・I/O(左のダイの下段右${UNK})`, 'u', 667, 402, 73, 405],
+        ['io-t2', `I/O・PLL(右のダイの上辺${UNK})`, 'u', 755, 5, 550, 52], ['io-l2', `FSB・I/O(右のダイの左端${UNK})`, 'u', 750, 60, 33, 338], ['io-r2', `FSB・I/O(右のダイの右端${UNK})`, 'u', 1270, 60, 40, 338],
+        ['l2b', 'L2 キャッシュ(右のダイ。2 コアで共有 6MB。下半分の大きな領域)', 'u', 826, 402, 409, 400], ['l2-lb', `L2 まわりの回路・I/O(右のダイの下段左${UNK})`, 'u', 750, 402, 74, 405], ['l2-rb', `L2 まわりの回路・I/O(右のダイの下段右${UNK})`, 'u', 1237, 402, 73, 405]]),
   };
   Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
@@ -656,10 +669,15 @@
     'ivb-4c': 'Ivy Bridge 4 コアのダイ写真(Ivy_bridge_die_(quad-core).jpg 800×336。Intel 著作と表記。出典 https://happytrees.org/dieshots/Intel_-_Ivy_Bridge_(4-core))。左に GPU、4 コアと各コア下の L3 スライス、右に System Agent。縦横比 2.38(実寸の注記なし)',
     'bdw-4c': 'Broadwell-H 4 コア GT3e のダイ写真(Intel_Core_i7_Gen5_(Broadwell-H_QC_GT3e_14nm).jpg 1097×976。出典 https://happytrees.org/dieshots/Intel_-_Core_i7_Gen5_(Broadwell-H_QC_GT3e_14nm))。上に「L3 スライス + コア」、下半分に GPU(GT3e)。128MB の eDRAM は別ダイで写真に含まれない。縦横比 1.12(実寸の注記なし)',
   });
+  Object.assign(INTEL_OLD_SRC, {
+    'wlf-2c': 'Core 2 Duo(Wolfdale 6M)のダイ写真(Intel_Core_2_Quad_(Yorkfield_45nm).jpg 4322×3083 の左のダイ 1 つぶん。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Yorkfield_45nm)。ライセンスは不明と表記。Yorkfield は Wolfdale 2 つの MCM なので、1 つぶんを Wolfdale のダイとみなした)。上に I/O、2 コア、下半分に共有 L2 6MB。縦横比 0.70(Penryn-6M の写真 1513×2160 の 0.70 と一致)',
+    'yfd-4c': 'Core 2 Quad(Yorkfield)のダイ写真(Intel_Core_2_Quad_(Yorkfield_45nm).jpg 4322×3083。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Yorkfield_45nm)。ライセンスは不明と表記)。Wolfdale 2 つの MCM で、左右のダイにコア 2 つと共有 L2 6MB。2 ダイを 1 つの枠として扱う。縦横比 1.40(実寸の注記なし)',
+  });
   const INTEL_OLD_MAP = {
     'intel-nhm-860': { frame: 'nhm-lyn-4c', basis: 'photo' }, 'intel-wsm-980x': { frame: 'wsm-6c', basis: 'photo' },
     'intel-ivb-3770k': { frame: 'ivb-4c', basis: 'photo' }, 'intel-ivb-3570k': { frame: 'ivb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' },
     'intel-bdw-5775c': { frame: 'bdw-4c', basis: 'photo' },
+    'intel-wlf-e8400': { frame: 'wlf-2c', basis: 'photo' }, 'intel-yfd-q9550': { frame: 'yfd-4c', basis: 'photo' }, 'intel-yfd-q9650': { frame: 'yfd-4c', basis: 'photo', extra: 'Q9550 と同じ Yorkfield(クロックだけ違う)' },
     'intel-snb-2600k': { frame: 'snb-4c', basis: 'photo' }, 'intel-snb-2500k': { frame: 'snb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 を 6MB に制限)' }, 'intel-snb-2720qm': { frame: 'snb-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },
     'intel-hsw-4770k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4790k': { frame: 'hsw-4c', basis: 'photo' }, 'intel-hsw-4690k': { frame: 'hsw-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-hsw-4700hq': { frame: 'hsw-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU' },
     'intel-skl-6700k': { frame: 'skl-4c', basis: 'photo' }, 'intel-skl-6600k': { frame: 'skl-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' }, 'intel-skl-6700hq': { frame: 'skl-4c', basis: 'photo', extra: '同じ 4 コアのダイのモバイル SKU(L3 6MB)' },

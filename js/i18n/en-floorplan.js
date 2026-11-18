@@ -29,6 +29,8 @@
     'コア間のリング・L2 まわり': 'inter-core ring / around L2', 'コア間のリング': 'inter-core ring', 'メモリ・I/O の PHY': 'memory / I/O PHY', 'I/O・PHY': 'I/O / PHY', 'ディスプレイ・I/O': 'display / I/O', 'System Agent・メディア': 'System Agent / media', 'System Agent・I/O': 'System Agent / I/O',
     '内蔵 GT2': 'integrated GT2', '左側の大きな領域': 'large area on the left', '右側の大きな領域': 'large area on the right', 'GPU と L3 の間': 'between the GPU and L3', 'コアと GPU の間': 'between the cores and the GPU', 'GPU の左': 'left of the GPU', '左上の帯': 'top-left band', '左下': 'bottom left', '中段': 'middle row', '下辺': 'bottom edge', '上辺': 'top edge', '左端': 'left edge', '右端': 'right edge', '左辺': 'left side', '右側': 'right side',
     // 第1・3・5世代の枠(2026-11-18)
-    '内蔵 GT3e': 'integrated GT3e', '下半分の大きな領域': 'large area in the lower half', '中央の縦帯': 'central vertical strip', 'メモリコントローラ・QPI など': 'memory controller / QPI etc.', 'PCIe・DMI・I/O': 'PCIe / DMI / I/O', 'I/O・eDRAM 接続など': 'I/O / eDRAM link etc.', '右上': 'top right', '右下': 'bottom right', '下段左': 'lower left', '下段右': 'lower right'
+    '内蔵 GT3e': 'integrated GT3e', '下半分の大きな領域': 'large area in the lower half', '中央の縦帯': 'central vertical strip', 'メモリコントローラ・QPI など': 'memory controller / QPI etc.', 'PCIe・DMI・I/O': 'PCIe / DMI / I/O', 'I/O・eDRAM 接続など': 'I/O / eDRAM link etc.', '右上': 'top right', '右下': 'bottom right', '下段左': 'lower left', '下段右': 'lower right',
+    // Core 2 世代の枠(2026-11-18)
+    'I/O・PLL': 'I/O / PLL', 'FSB・I/O': 'FSB / I/O', 'L2 まわりの回路・I/O': 'circuits around L2 / I/O', '2 コアで共有 6MB': 'shared by 2 cores, 6MB', '左のダイ': 'left die', '右のダイ': 'right die'
   });
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1263,6 +1263,33 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel 第2〜第11世代",
+  "generation": "Core 2 世代 Wolfdale(45nm)",
+  "name": "E8400(2c)",
+  "single": 444,
+  "multi": 743,
+  "kind": "実測",
+  "n": 13
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Core 2 世代 Yorkfield(45nm)",
+  "name": "Q9550(4c)",
+  "single": 425,
+  "multi": 1255,
+  "kind": "実測",
+  "n": 14
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "Core 2 世代 Yorkfield(45nm)",
+  "name": "Q9650(4c)",
+  "single": 455,
+  "multi": 1334,
+  "kind": "実測",
+  "n": 13
+ },
+ {
+  "group": "Intel 第2〜第11世代",
   "generation": "第1世代 Nehalem(Lynnfield)",
   "name": "i7-860(4c)",
   "single": 544,
