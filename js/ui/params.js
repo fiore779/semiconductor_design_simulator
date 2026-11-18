@@ -104,9 +104,9 @@
     const ro = !mode.editable;
     if (mode.locked) {
       el.appendChild(h('div', { class: 'lockbox' },
-        h('p', { text: '■ 再現モードではロック中です(読み取り専用)。' }),
+        h('p', { text: '■ 再現モードではコア数・L3 がロック中です(クロックとメモリは変えられます。変えると「編集済み」になり、公開値との比較は出ません)。' }),
         h('button', { type: 'button', class: 'btn', onclick: cb.onUnlock }, 'ロックを解除して改良モードにする')));
-    } else if (!mode.editable) {
+    } else if (!mode.editable && !mode.clockEditable) {
       el.appendChild(h('p', { class: 'note', text: '読み取り専用です。' }));
     }
     rows.cores.forEach((g) => {
@@ -114,7 +114,7 @@
       const box = h('fieldset', { class: 'pgroup' }, h('legend', { text: `${g.type} コア${g.uarch ? `(${g.uarch})` : ''}` }));
       box.appendChild(field(`pf-count-${key}`, 'コア数', String(g.count), { readonly: ro, int: true, unit: '個', msg: m[`count:${g.type}`], onCommit: (v, i) => cb.onCount(g.type, v, i) }));
       box.appendChild(field(`pf-clock-${key}`, 'クロック', g.clock == null ? '' : PF.trimNum(g.clock), {
-        readonly: ro, unit: 'GHz', placeholder: g.clock == null ? '未取得' : null, msg: m[`clock:${g.type}`], onCommit: (v, i) => cb.onClock(g.type, v, i),
+        readonly: !mode.clockEditable, unit: 'GHz', placeholder: g.clock == null ? '未取得' : null, msg: m[`clock:${g.type}`], onCommit: (v, i) => cb.onClock(g.type, v, i),
         extra: g.clock == null ? h('p', { class: 'small warn-note', text: 'クロックは未取得です。入力するとブースト値として新設します。' }) : null,
       }));
       el.appendChild(box);

@@ -149,11 +149,11 @@ test('setL3: 正常系と異常系。帯の高さが変わるときだけ再配�
   [-1, 513, NaN, Infinity].forEach((x) => { const e = design.setL3(d, x); assert.strictEqual(e.ok, false); assert.ok(e.reason.includes('L3')); });
 });
 
-test('ロック: 再現モードでは編集できず、unlock で改良モードになる', () => {
+test('ロック: 再現モードではコア数・L3 は編集できず(クロックは可。2026-11-18)、unlock で改良モードになる', () => {
   const a = design.fromPreset(preset('amd-zen5-9950x')); const t = a.cfg.cores[0].type;
   const msg = '再現モードではパラメータはロックされています';
   assert.deepStrictEqual(design.setCoreCount(a, t, 4), { ok: false, reason: msg });
-  assert.deepStrictEqual(design.setClock(a, t, 4), { ok: false, reason: msg });
+  assert.ok(design.setClock(a, t, 4).ok, '再現モードでもクロックは変えられる(2026-11-18)');
   assert.deepStrictEqual(design.setL3(a, 8), { ok: false, reason: msg });
   const b = design.unlock(a);
   assert.strictEqual(b.origin.mode, 'improve'); assert.strictEqual(b.origin.unlockedFrom, 'reproduce'); assert.strictEqual(b.locks.params, false);

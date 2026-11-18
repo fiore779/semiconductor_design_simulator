@@ -49,9 +49,10 @@
     const hasCfg = !!(design.cfg && Array.isArray(design.cfg.cores));
     if (design.presetId == null && design.origin && design.origin.mode === 'mix' && design.origin.entry === 'new') return { code: 'D', symbol: '◆', text: 'D 新規', locked: false, editable: false, hasCfg };
     if (design.presetId == null && design.origin && design.origin.mode === 'mix') return { code: 'C', symbol: '◇', text: 'C 混合', locked: false, editable: false, hasCfg };
+    // clockEditable: クロック・メモリは再現モード(A)でも変えられる(2026-11-18)。editable(コア数・L3)はロック中は不可
     return improve
-      ? { code: 'B', symbol: '✎', text: 'B 改良', locked, editable: hasCfg && !locked, hasCfg }
-      : { code: 'A', symbol: '■', text: 'A 再現', locked, editable: hasCfg && !locked, hasCfg };
+      ? { code: 'B', symbol: '✎', text: 'B 改良', locked, editable: hasCfg && !locked, clockEditable: hasCfg, hasCfg }
+      : { code: 'A', symbol: '■', text: 'A 再現', locked, editable: hasCfg && !locked, clockEditable: hasCfg, hasCfg };
   }
 
   // 編集済みか(cfg が baseCfg と違う)
@@ -109,7 +110,7 @@
         const mode = modeInfo(design);
         const gb = M.gbOrDefault(design.presetId, design.memGb);
         return {
-          kind: 'fixed', fixedMemory: f, gb, gbChoices: f.gbChoices.slice(), defaultGb: f.defaultGb, gbSelectable: true, selectable: !!(mode && mode.editable), locked: !!(mode && mode.locked),
+          kind: 'fixed', fixedMemory: f, gb, gbChoices: f.gbChoices.slice(), defaultGb: f.defaultGb, gbSelectable: true, selectable: !!(mode && mode.clockEditable), locked: false,
           srcText: `オンパッケージ [${SRC_TEXT[f.s] || f.s}] / 種別・速度 [${SRC_TEXT[f.typeS] || f.typeS}] / 容量の構成 [${SRC_TEXT[f.gbS] || f.gbS}]。${f.src}`,
           note: '容量は性能(ST/MT)・電力・温度の計算には使いません(表示と保存だけ)。既定は公式構成のうち最小(プリセットは容量を持たないため)。',
         };
@@ -123,7 +124,7 @@
     const ocAvailable = opts.options.some((x) => x.ocSpeeds.length > 0);
     const showOc = !!(ocOn || m.oc) && !!o && o.ocSpeeds.length > 0;
     return {
-      kind: 'select', selectable: !!(mode && mode.editable), locked: !!(mode && mode.locked), single: opts.options.length === 1,
+      kind: 'select', selectable: !!(mode && mode.clockEditable), locked: false, single: opts.options.length === 1,
       types: opts.options.map((x) => ({ type: x.type, srcText: `${SRC_TEXT[x.s] || x.s}: ${x.src}`, max: x.max, ocCapable: x.ocSpeeds.length > 0 })),
       speeds: o ? o.speeds.slice() : [], ocSpeeds: showOc ? o.ocSpeeds.slice() : [], ocAvailable, ocOn: !!(ocOn || m.oc), oc: m.oc, extrapolated: m.extrapolated, sel: m.selection, ref: m.ref, isRef: m.isRef, label: m.label, refLabel: m.refLabel, bwGBs: m.bwGBs, refBwGBs: m.refBwGBs, bits: m.bits,
       mtPct: (m.mtFactor - 1) * 100, srcText: o ? `${SRC_TEXT[o.s] || o.s}: ${o.src}` : '',

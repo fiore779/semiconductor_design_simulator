@@ -289,8 +289,9 @@
     return { ok: true, design: relayoutCompute(d), relaid: true };
   }
 
+  // 再現モード(A)でもクロック・メモリは変えられる(2026-11-18 ユーザー指示「再現モードでもメモリの切り替えやクロックは変えられるように」)。コア数・L3 はロックのまま。
+  // 変えると「編集済み」になり、公開値との比較(再現度)は出ない(paramform.showRepro)
   function setClock(design, type, ghz) {
-    if (design.locks && design.locks.params) return fail(LOCKED);
     if (!design.cfg) return fail('編集用のパラメータがありません');
     if (typeof ghz !== 'number' || !isFinite(ghz) || ghz < 0.5 || ghz > 8) return fail('クロックは 0.5〜8.0 GHz の数にしてください');
     if (!design.cfg.cores.some((c) => c.type === type)) return fail(`コア種別「${type}」はこの設計にありません`);
@@ -304,10 +305,9 @@
     return { ok: true, design: d, relaid: false };
   }
 
-  // メモリ構成(種別と速度 MT/s)。そのチップの選択肢(SDS_DATA.memory)にあるものだけ。メモリ固定・混合は不可。ロック中(再現モード)は不可
+  // メモリ構成(種別と速度 MT/s)。そのチップの選択肢(SDS_DATA.memory)にあるものだけ。メモリ固定・混合は不可。再現モードでも可(2026-11-18)
   // oc=true は対応最大を超えるメモリ OC(DDR4 / DDR5 のみ。選択に oc:true の印を付ける)
   function setMemory(design, type, mts, oc) {
-    if (design.locks && design.locks.params) return fail(LOCKED);
     if (!design.cfg) return fail('編集用のパラメータがありません');
     const M = memoryApi();
     const sel = oc === true ? { type, mts, oc: true } : { type, mts };
@@ -323,7 +323,6 @@
   // メモリ容量(GB)の選択。メモリ固定で容量が複数の公式構成から選べるチップ(Apple M)だけ。選択肢に無い値・ロック中(再現モード)は不可。
   // 容量は評価に使わないので cfg ではなく design.memGb に持つ(編集済み判定・差分に入れない)
   function setMemoryGb(design, gb) {
-    if (design.locks && design.locks.params) return fail(LOCKED);
     const M = memoryApi(); const f = M ? M.fixedOf(design.presetId) : null;
     if (!f || !f.gbSelectable) return fail('このチップはメモリ容量を選べません');
     if (!f.gbChoices.includes(gb)) return fail(`メモリ容量 ${gb} GB は選択肢にありません(${f.gbChoices.join(' / ')} GB)`);

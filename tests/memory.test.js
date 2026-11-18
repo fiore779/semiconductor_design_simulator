@@ -149,8 +149,9 @@ test('設定の検証: 対応外の選択・不正な形式・再現モード(�
   assert.ok(!DS.setMemory(d, '__proto__', 5600).ok);
   assert.ok(!DS.setMemory(d, 'DDR5', NaN).ok);
   const locked = DS.fromPreset(preset('amd-strix-hx370'), { mode: 'reproduce' });
-  const r = DS.setMemory(locked, 'LPDDR5X', 8000);
-  assert.ok(!r.ok); assert.ok(/ロック/.test(r.reason));
+  const r = DS.setMemory(locked, 'LPDDR5X', 8000); // 再現モードでもメモリは変えられる(2026-11-18)
+  assert.ok(r.ok); assert.deepStrictEqual(r.design.cfg.mem, { type: 'LPDDR5X', mts: 8000 });
+  assert.ok(!DS.setMemory(locked, 'DDR5', 99999).ok, '選択肢にない構成は再現モードでも断る');
   // 元の設計は壊れない
   assert.deepStrictEqual(d.cfg.mem, { type: 'DDR5', mts: 5600 });
 });
@@ -216,9 +217,9 @@ test('評価結果: メモリ構成と係数が出て、基準と違うときは
   assert.ok(a.st.memory && a.st.memory.dramScale > 1); // 遅延 90 → 120 ns
 });
 
-test('UI の純ロジック: 再現は表示のみ、改良は select、単一種別は速度のみ、種別変更時の速度', () => {
+test('UI の純ロジック: 再現でも select(2026-11-18)、改良は select、単一種別は速度のみ、種別変更時の速度', () => {
   const rep = PF.memoryView(DS.fromPreset(preset('amd-strix-hx370'), { mode: 'reproduce' }));
-  assert.strictEqual(rep.kind, 'select'); assert.strictEqual(rep.selectable, false); assert.strictEqual(rep.locked, true); assert.strictEqual(rep.label, 'DDR5-5600');
+  assert.strictEqual(rep.kind, 'select'); assert.strictEqual(rep.selectable, true); assert.strictEqual(rep.locked, false); assert.strictEqual(rep.label, 'DDR5-5600');
   const imp = PF.memoryView(impr('amd-strix-hx370'));
   assert.strictEqual(imp.selectable, true); assert.strictEqual(imp.single, false);
   assert.deepStrictEqual(imp.types.map((t) => t.type), ['DDR5', 'LPDDR5X']);
@@ -332,7 +333,7 @@ test('メモリ OC: DDR4 / DDR5 だけ、対応最大を超える離散値。LPD
   assert.ok(!DS.setMemory(impr('amd-strix-hx370'), 'LPDDR5X', 9000, true).ok);
   assert.ok(!DS.setMemory(impr('amd-strix-hx370'), 'LPDDR5X', 8000, true).ok);
   assert.ok(!DS.setMemory(impr('apple-m4'), 'DDR5', 8000, true).ok);
-  assert.ok(!DS.setMemory(DS.fromPreset(preset('amd-zen5-9950x'), { mode: 'reproduce' }), 'DDR5', 8000, true).ok); // ロック中
+  assert.ok(DS.setMemory(DS.fromPreset(preset('amd-zen5-9950x'), { mode: 'reproduce' }), 'DDR5', 8000, true).ok); // 再現モードでも可(2026-11-18)
   assert.notStrictEqual(M.check('amd-zen5-9950x', { type: 'DDR5', mts: 8000, oc: false }), null);
   assert.notStrictEqual(M.check('amd-zen5-9950x', { type: 'DDR4', mts: 3600, oc: true }), null); // 9950X は DDR4 非対応
 });
@@ -384,8 +385,8 @@ test('メモリ OC の UI ロジック(params.js の select / トグルの出し
   assert.deepStrictEqual(PF.memoryView(impr('intel-ptl-x9-388h'), true).ocSpeeds, []);
   assert.deepStrictEqual(PF.memoryView(impr('amd-strix-hx370'), true).ocSpeeds, [6000, 6400, 6800, 7200, 7600, 8000]); // 基準の DDR5(対応最大 5600)
   assert.deepStrictEqual(PF.memoryView(withMem('amd-strix-hx370', 'LPDDR5X', 8000), true).ocSpeeds, []);
-  // 再現モードは select を出さない(selectable:false)
-  assert.strictEqual(PF.memoryView(DS.fromPreset(preset('intel-rpl-14900k'), { mode: 'reproduce' }), true).selectable, false);
+  // 再現モードでも select を出す(2026-11-18)
+  assert.strictEqual(PF.memoryView(DS.fromPreset(preset('intel-rpl-14900k'), { mode: 'reproduce' }), true).selectable, true);
 });
 
 // ---- Lunar Lake のオンパッケージ固定メモリ(2026-11-12。Intel ARK の原ページ) ----
@@ -478,9 +479,9 @@ test('Apple M: 容量選択(既定・変更・選択肢外・再現モードの�
     assert.deepStrictEqual(JSON.parse(JSON.stringify(snap(ev(r.design)))), baseline[id], id);
     assert.strictEqual(E.isEdited(r.design), false, id); assert.strictEqual(DF.paramDiff(r.design).length, 0, id);
     assert.strictEqual(ev(r.design).memory, null, id);
-    // 再現モード: ロックされ、選べない
+    // 再現モードでも容量は選べる(2026-11-18。クロック・メモリは再現モードでも変えられる)
     const rep = DS.fromPreset(preset(id), { mode: 'reproduce' });
-    assert.strictEqual(PF.memoryView(rep).selectable, false); assert.ok(!DS.setMemoryGb(rep, last).ok);
+    assert.strictEqual(PF.memoryView(rep).selectable, true); assert.ok(DS.setMemoryGb(rep, last).ok);
     // 保存往復で残る
     assert.strictEqual(DS.parse(DS.serialize(r.design)).design.memGb, last, id);
   });
