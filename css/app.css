@@ -171,6 +171,13 @@ li.w-error { color: var(--ng); } li.w-warn { color: var(--warn); }
 .group-head { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; width: 100%; text-align: left; padding: 4px 8px; margin: 4px 0 2px; cursor: pointer; display: block; }
 .history { margin: 2px 0 4px 8px; }
 .history-all { margin: 4px 0 8px; }
+.history-dialog { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; padding: 0 14px 10px; }
+.history-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.history-body { overflow-y: auto; min-height: 0; flex: 1 1 auto; padding-right: 6px; max-height: calc(92vh - 150px); }
+.history-body section { margin-bottom: 14px; }
+.history-body .era { margin: 8px 0 12px; padding: 6px 10px; border-left: 3px solid var(--accent); }
+.history-body h4 { margin: 4px 0; }
+.history-body .learn { margin: 4px 0 2px; }
 .history-dialog h3 { margin: 10px 0 4px; }
 .history-gens { margin: 0; }
 .history-gens dt { font-weight: bold; margin-top: 6px; }

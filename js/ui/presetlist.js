@@ -142,7 +142,7 @@
   }
 
   // 世代の歴史(data/history.js の families。「メーカー/family」で引く)。無ければ null
-  function historyOf(vendor, family) { const H = root.SDS_DATA && root.SDS_DATA.history; const e = H && H.families && H.families[vendor + '/' + family]; return e ? { text: e.text, source: (H.sources && H.sources[e.src]) || '' } : null; }
+  function historyOf(vendor, family) { const H = root.SDS_DATA && root.SDS_DATA.history; const E = root.SDS_DATA && root.SDS_DATA.historyEdu; const k = vendor + '/' + family; const e = H && H.families && H.families[k]; const l = E && E.learn && E.learn[k]; return e ? { text: e.text, source: (H.sources && H.sources[e.src]) || '', learn: l ? l.learn : null, kw: l ? l.kw.slice() : [] } : null; }
   const api = { historyOf, gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets, gbText, subtitle, viewCaption };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.presetlist = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

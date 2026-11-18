@@ -118,7 +118,7 @@
         focusEls['grp:' + key] = head;
         const hi = open ? PL.historyOf(grp.vendor, grp.family) : null; // 世代の歴史(2026-11-18。data/history.js)
         listEl.appendChild(h('div', { class: 'preset-group' }, head,
-          hi ? h('p', { class: 'note history' }, hi.text, ' ', h('span', { class: 'small', text: `(出典: ${hi.source})` })) : null,
+          hi ? h('div', { class: 'note history' }, h('p', {}, hi.text, ' ', h('span', { class: 'small', text: `(出典: ${hi.source})` })), hi.learn ? h('p', {}, h('b', { text: '学べること: ' }), hi.learn) : null) : null,
           h('ul', { id: bodyId, class: 'preset-items', role: 'listbox', 'aria-label': `${grp.vendor} / ${grp.family}`, hidden: !open }, grp.items.map(rowEl))));
       });
     }
@@ -186,16 +186,35 @@
 
   // ---- 歴史(2026-11-18。ツールバーの「歴史」。data/history.js): 全体の歴史(年表)と、メーカーごとの世代の歴史(古い → 新しい) ----
   function openHistory() {
-    const HI = root.SDS_DATA && root.SDS_DATA.history;
+    const HI = root.SDS_DATA && root.SDS_DATA.history; const ED = root.SDS_DATA && root.SDS_DATA.historyEdu;
     if (!HI) { open('歴史', h('p', { class: 'note', text: '歴史のデータを読み込めませんでした。' })); return; }
     const usedSrc = [...new Set(HI.overall.map((e) => e.src).concat(Object.values(HI.families).map((x) => x.src)))];
-    const overall = h('section', { 'aria-label': '全体の歴史(年表)' }, h('h3', { text: '全体の歴史(年表)' }),
-      h('ol', { class: 'history-list' }, HI.overall.map((e) => h('li', {}, h('b', { text: `${e.year} 年 ` }), e.text))));
-    const gens = Object.keys(HI.order).map((v) => h('section', { 'aria-label': `${v} の世代ごとの歴史` }, h('h3', { text: `${v} の世代ごとの歴史(古い順)` }),
-      h('dl', { class: 'history-gens' }, HI.order[v].map((fam) => { const e = HI.families[v + '/' + fam]; return e ? [h('dt', { text: fam }), h('dd', { text: e.text })] : null; }))));
-    open('歴史', h('div', { class: 'history-dialog' }, overall, gens,
-      h('p', { class: 'small', text: `出典(すべて [二次]): ${usedSrc.map((k) => HI.sources[k]).join(' / ')}` }),
-      h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn', onclick: close }, '閉じる'))));
+    const kwText = (kw) => (kw && kw.length ? h('p', { class: 'small', text: `キーワード: ${kw.join('・')}(用語集)` }) : null);
+    const secs = []; // [id, 見出し, 要素]
+    if (ED) {
+      secs.push(['hs-intro', 'はじめに', h('section', { id: 'hs-intro', 'aria-label': ED.intro.title }, h('h3', { text: ED.intro.title }), ED.intro.paras.map((p) => h('p', { text: p })))]);
+      secs.push(['hs-eras', '時代区分', h('section', { id: 'hs-eras', 'aria-label': '時代区分' }, h('h3', { text: '時代区分(大きな流れ)' }),
+        ED.eras.map((e) => h('article', { class: 'era' }, h('h4', { text: `${e.title}(${e.years})` }), e.paras.map((p) => h('p', { text: p })), kwText(e.kw),
+          h('p', { class: 'small', text: `この時代の世代: ${e.families.join('・')}` }))))]);
+    }
+    secs.push(['hs-time', '年表', h('section', { id: 'hs-time', 'aria-label': '全体の歴史(年表)' }, h('h3', { text: '全体の歴史(年表)' }),
+      h('ol', { class: 'history-list' }, HI.overall.map((e) => h('li', {}, h('b', { text: `${e.year} 年 ` }), e.text))))]);
+    secs.push(['hs-gens', '世代ごと', h('section', { id: 'hs-gens', 'aria-label': '世代ごとの歴史' }, Object.keys(HI.order).map((v) => h('div', {}, h('h3', { text: `${v} の世代ごとの歴史(古い順)` }),
+      h('dl', { class: 'history-gens' }, HI.order[v].map((fam) => {
+        const e = HI.families[v + '/' + fam]; const l = ED && ED.learn[v + '/' + fam];
+        return e ? [h('dt', { text: fam }), h('dd', {}, e.text, l ? [h('p', { class: 'learn' }, h('b', { text: '学べること: ' }), l.learn), kwText(l.kw)] : null)] : null;
+      })))))]);
+    if (ED) {
+      secs.push(['hs-gloss', '用語集', h('section', { id: 'hs-gloss', 'aria-label': '用語集' }, h('h3', { text: '用語集' }),
+        h('dl', { class: 'history-gens' }, ED.glossary.map(([k, d]) => [h('dt', { text: k }), h('dd', { text: d })])))]);
+      secs.push(['hs-try', '試してみよう', h('section', { id: 'hs-try', 'aria-label': '試してみよう' }, h('h3', { text: '試してみよう(このシミュレーターで確かめる課題)' }),
+        h('ol', { class: 'history-list' }, ED.exercises.map((x) => h('li', {}, h('b', { text: x.title }), h('p', { text: `やること: ${x.steps}` }), kwText(x.kw),
+          h('details', {}, h('summary', { text: 'ヒント・考え方' }), h('p', { text: x.hint }))))))]);
+    }
+    const body = h('div', { class: 'history-body' }, secs.map((s) => s[2]),
+      h('p', { class: 'small', text: `出典(すべて [二次]): ${usedSrc.map((k) => HI.sources[k]).join(' / ')}。解説・用語集・「学べること」は一般的な説明で、数値はこのプロジェクトのデータ(設計書 §2)か上の出典によります。Geekbench 6 から換算した値は [推定] です。` }));
+    const nav = h('nav', { class: 'history-nav', 'aria-label': '歴史の目次' }, secs.map(([id, label]) => h('button', { type: 'button', class: 'btn', onclick: () => { const el = body.querySelector('#' + id); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' }); } }, label)));
+    open('歴史', h('div', { class: 'history-dialog' }, nav, body));
   }
 
   // 設定ダイアログに出す製作者・版・リポジトリ。版はリリースのタグ名(新しい版を出すときに更新する)
