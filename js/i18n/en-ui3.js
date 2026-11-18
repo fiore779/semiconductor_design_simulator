@@ -57,7 +57,7 @@
     '▼ 電力・温度の制限で持続クロックが下がる見込み(性能の数値には反映していません)': '▼ The sustained clock is expected to drop due to power/thermal limits (not reflected in the performance numbers)', '温度(推定)': 'Temperature (estimate)',
     '混合による性能低下は反映していません(今回の評価は CPU ベンチのみ)': 'Performance loss from mixing is not reflected (this evaluation covers CPU benchmarks only)', '混合設計は校正した範囲の外です': 'A mixed design is outside the calibrated range',
     '全コアが最大クロックで動く前提です。電力・熱・メモリ帯域の制限は見ていません。L2 を共有するクラスタも見ていません(大きなコアを大量に置くといくらでも伸びます)。': 'This assumes all cores run at the max clock. Power, thermal and memory-bandwidth limits are not considered. Clusters sharing an L2 are not considered either (placing many large cores makes the score grow without bound).',
-    '専用の補正が無く、命令セット平均で代用(確度低)': 'No dedicated correction; the ISA average is used (low confidence)', ' pt(混合設計・予測)': ' pts (mixed design, predicted)',
+    '専用の補正が無く、命令セット平均で代用(確度:低)': 'No dedicated correction; the ISA average is used (low confidence)', ' pt(混合設計・予測)': ' pts (mixed design, predicted)',
     '混合設計の予測値で、公開値はありません。公開値との差・再現度は出しません。': 'This is a mixed-design prediction and has no published value. The difference from published values and the reproduction fidelity are not shown.',
     ' 使用率(ブロック合計 ÷ ダイ面積)': ' Utilization (blocks total ÷ die area)', '面積の出所: ': 'Area source: ', ' / 移植の換算: ': ' / Porting scale: ', '移植 ${1}': 'Ported ${1}',
     '移植は面積の換算値(目安)です。密度に幅があるため、面積が大きくなる側を採用しています。L2(SRAM)を含む値にロジックの密度比を掛けているので、縮み方が過大になりうる。': 'A ported area is a scaled value (approximate). The density has a range, so the side with the larger area is used. Because the logic density ratio is applied to a value that includes L2 (SRAM), the shrink can be overestimated.',

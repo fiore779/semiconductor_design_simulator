@@ -116,7 +116,9 @@
           onclick: () => { openGroups.set(key, !open); refresh('grp:' + key); },
         }, h('span', { 'aria-hidden': 'true', text: open ? '▼ ' : '▶ ' }), h('b', { text: `${grp.vendor} / ${grp.family}` }), h('span', { class: 'small', text: ` (${grp.items.length} 件)` }));
         focusEls['grp:' + key] = head;
+        const hi = open ? PL.historyOf(grp.vendor, grp.family) : null; // 世代の歴史(2026-11-18。data/history.js)
         listEl.appendChild(h('div', { class: 'preset-group' }, head,
+          hi ? h('p', { class: 'note history' }, hi.text, ' ', h('span', { class: 'small', text: `(出典: ${hi.source})` })) : null,
           h('ul', { id: bodyId, class: 'preset-items', role: 'listbox', 'aria-label': `${grp.vendor} / ${grp.family}`, hidden: !open }, grp.items.map(rowEl))));
       });
     }
@@ -137,7 +139,12 @@
         [['name:1', '名前'], ['year:-1', '新しい順'], ['year:1', '古い順'], ['area:-1', '面積が大きい順'], ['gb7:-1', 'GB7 ST が高い順']].map(([v, t]) => h('option', { value: v, text: t, selected: v === sortKey + ':' + sortDir })))));
 
     refresh(); detail(selected);
-    const listCol = h('div', { class: 'list-col' }, countEl, listEl); const detailCol = h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn));
+    const HI = root.SDS_DATA && root.SDS_DATA.history; // 全体の歴史(年表。2026-11-18)
+    const usedSrc = HI ? [...new Set(HI.overall.map((e) => e.src))] : [];
+    const historyEl = HI ? h('details', { class: 'history-all' }, h('summary', { text: '全体の歴史(年表)' }),
+      h('ol', { class: 'history-list' }, HI.overall.map((e) => h('li', {}, h('b', { text: `${e.year} 年 ` }), e.text))),
+      h('p', { class: 'small', text: `出典(すべて [二次]): ${usedSrc.map((k) => HI.sources[k]).join(' / ')}。一覧は世代の新しい順(同じ年でも発売月で並べています)。` })) : null;
+    const listCol = h('div', { class: 'list-col' }, countEl, historyEl, listEl); const detailCol = h('div', { class: 'detail-col' }, detailEl, h('div', { class: 'actions' }, goBtn, impBtn));
     listCol.addEventListener('scroll', () => { S.scroll.col = listCol.scrollTop; }); detailCol.addEventListener('scroll', () => { S.scroll.detail = detailCol.scrollTop; });
     open('プリセットを選ぶ(A 再現 / B 改良)', h('div', { class: 'preset-dialog' }, filters, listCol, detailCol));
     listCol.scrollTop = S.scroll.col; detailCol.scrollTop = S.scroll.detail; // 前に開いていたスクロール位置へ(選んだ行が見えない場合は行へ)

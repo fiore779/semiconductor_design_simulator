@@ -108,7 +108,9 @@
     const old = (g) => g.items.every((p) => p.addedIn === 'old-intel'); // 古い Core i は発売年が同じ世代があるので、追加順(古い順に並べてある)で新しい方を上にする
     const groups = Array.from(map.values());
     groups.forEach((g) => g.items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja')));
-    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (yearOf(b) - yearOf(a) || 0) || (old(a) && old(b) ? b.last - a.last : 0) || b.family.localeCompare(a.family, 'ja', { numeric: true }));
+    // 世代順(2026-11-18。data/history.js の order = 古い → 新しい。新しい世代を上に)。表にある family 同士はこの順を最優先にし、表にない(Apple・Qualcomm など)ものは従来どおり発売年の新しい順
+    const H = root.SDS_DATA && root.SDS_DATA.history; const rankOf = (g) => { const l = H && H.order && H.order[g.vendor]; return l ? l.indexOf(g.family) : -1; };
+    groups.sort((a, b) => a.vendor.localeCompare(b.vendor, 'ja') || (rankOf(a) >= 0 && rankOf(b) >= 0 ? rankOf(b) - rankOf(a) : 0) || (yearOf(b) - yearOf(a) || 0) || (old(a) && old(b) ? b.last - a.last : 0) || b.family.localeCompare(a.family, 'ja', { numeric: true }));
     return groups;
   }
 
@@ -139,7 +141,9 @@
     return { name: String(design.name == null ? '' : design.name), text: text ? ' ' + text : '', title: null };
   }
 
-  const api = { gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets, gbText, subtitle, viewCaption };
+  // 世代の歴史(data/history.js の families。「メーカー/family」で引く)。無ければ null
+  function historyOf(vendor, family) { const H = root.SDS_DATA && root.SDS_DATA.history; const e = H && H.families && H.families[vendor + '/' + family]; return e ? { text: e.text, source: (H.sources && H.sources[e.src]) || '' } : null; }
+  const api = { historyOf, gb7Basis, lowReason, groupByFamily, sourceLabel, kindLabel, completeness, areaSummary, filterPresets, sortPresets, gbText, subtitle, viewCaption };
   root.SDS = root.SDS || {}; root.SDS.ui = root.SDS.ui || {}; root.SDS.ui.presetlist = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

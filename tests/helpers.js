@@ -6,6 +6,7 @@ const root = path.join(__dirname, '..');
 [
   'data/benchmarks/gb7-scores.js', 'data/nodes.js', 'data/substrates.js', 'data/cooling.js', 'data/uarch.js',
   'data/presets/chips-pc.js', 'data/presets/chips-soc.js', 'data/presets/chips-old.js', 'data/memory.js',
+  'data/history.js', // 2026-11-18: 世代の歴史・全体の歴史・一覧の世代順
   'data/caplayouts.js', // 2026-11-16: 3D のコンデンサ配置(index.html と同じ条件にする)
   'data/blocklib.js', // 2026-11-09: ブラウザ(index.html)と同じ条件にする(読まないと D.blocklibAreas が undefined になり、表に当たるコアも全部「不明」になる)
 ].forEach((f) => require(path.join(root, f)));

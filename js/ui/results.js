@@ -105,7 +105,7 @@
   const MIX_NO_PENALTY = '混合による性能低下は反映していません(今回の評価は CPU ベンチのみ)';
   const MIX_OUT_OF_CALIB = '混合設計は校正した範囲の外です';
   const MIX_PERF_PREMISE = '全コアが最大クロックで動く前提です。電力・熱・メモリ帯域の制限は見ていません。L2 を共有するクラスタも見ていません(大きなコアを大量に置くといくらでも伸びます)。';
-  const NO_OWN_CORR = '専用の補正が無く、命令セット平均で代用(確度低)';
+  const NO_OWN_CORR = '専用の補正が無く、命令セット平均で代用(確度:低)';
   const ghz = (x) => (typeof x === 'number' ? `${Math.round(x * 100) / 100} GHz` : '—');
   function mixPerfCard(title, r, extra, key) {
     const body = [];
@@ -208,7 +208,7 @@
     if (edited) el.appendChild(h('p', { class: 'low-banner' }, '予測(編集後): 下の性能は編集したパラメータでの予測です。公開値ではありません。'));
     // ST
     const stExtra = [];
-    if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度低)', 'warn-note'));
+    if (ev.st.ok && ev.st.corrSource === 'isa') stExtra.push(note('専用の補正が無く、命令セット平均で代用(確度:低)', 'warn-note'));
     if (ev.st.ok && ev.st.corrSource === 'ratio') stExtra.push(note(root.SDS.model.evaluate.ratioInfo(ev.st.corrUFrom, ev.st.corrUarch), 'warn-note'));
     if (ev.st.ok && ev.st.dramLat) stExtra.push(note(root.SDS.model.evaluate.dramLatInfo(ev.st.dramLat), ev.st.dramLat.s === '推定' ? 'warn-note' : undefined));
     if (ev.st.ok && ev.st.fallback) stExtra.push(note('in-order コアの IPC は根拠のない仮の値です', 'warn-note always'));

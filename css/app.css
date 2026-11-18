@@ -169,6 +169,10 @@ li.w-error { color: var(--ng); } li.w-warn { color: var(--warn); }
 .preset-items.flat { margin-left: 0; }
 .preset-items[hidden] { display: none; }
 .group-head { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; width: 100%; text-align: left; padding: 4px 8px; margin: 4px 0 2px; cursor: pointer; display: block; }
+.history { margin: 2px 0 4px 8px; }
+.history-all { margin: 4px 0 8px; }
+.history-all summary { cursor: pointer; font-weight: bold; }
+.history-list { margin: 4px 0 4px 1.4em; padding: 0; }
 .group-head:focus-visible, .preset-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .detail-col .actions { position: sticky; bottom: 0; background: var(--panel); padding: 8px 0; display: flex; gap: 8px; }
 
