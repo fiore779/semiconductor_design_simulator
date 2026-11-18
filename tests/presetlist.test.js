@@ -3,15 +3,15 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-test('一覧の初期の並び: Intel・AMD は世代順(新しい世代が上)。Meteor Lake は Raptor Lake Refresh の上、Raptor Lake-HX Refresh は Meteor Lake の上(2026-11-18)', () => {
+test('一覧の初期の並び: Intel・AMD は世代順(新しい世代が上)。Meteor Lake は Raptor Lake-HX Refresh の上、Raptor Lake-HX Refresh は Raptor Lake Refresh の上(2026-11-19 に HX Refresh を Meteor Lake の下へ直した)', () => {
   const { D } = require('./helpers.js');
   const PL = require('../js/ui/presetlist.js');
   const g = PL.groupByFamily(D.presets);
   const names = (v) => g.filter((x) => x.vendor === v).map((x) => x.family);
   const intel = names('Intel');
   const before = (a, b) => assert.ok(intel.indexOf(a) < intel.indexOf(b), `${a} は ${b} より上`);
-  before('Raptor Lake-HX Refresh', 'Meteor Lake'); before('Meteor Lake', 'Raptor Lake Refresh'); before('Raptor Lake Refresh', 'Raptor Lake-HX'); before('Raptor Lake-HX', 'Raptor Lake');
-  before('Lunar Lake', 'Raptor Lake-HX Refresh'); before('Arrow Lake-S', 'Lunar Lake'); before('Nehalem', 'Wolfdale'); before('Wolfdale', 'Yorkfield'); before('Yorkfield', 'Kentsfield');
+  before('Meteor Lake', 'Raptor Lake-HX Refresh'); before('Raptor Lake-HX Refresh', 'Raptor Lake Refresh'); before('Raptor Lake Refresh', 'Raptor Lake-HX'); before('Raptor Lake-HX', 'Raptor Lake');
+  before('Lunar Lake', 'Meteor Lake'); before('Arrow Lake-S', 'Lunar Lake'); before('Nehalem', 'Wolfdale'); before('Wolfdale', 'Yorkfield'); before('Yorkfield', 'Kentsfield');
   assert.strictEqual(intel[intel.length - 1], 'Katmai'); assert.strictEqual(intel[0], 'Wildcat Lake');
   const amd = names('AMD'); assert.strictEqual(amd[amd.length - 1], 'Zen 1 (Summit Ridge)'); assert.ok(amd.indexOf('Zen 4 (Raphael)') > amd.indexOf('Zen 3+ (Rembrandt-R)'), 'Raphael(2022-09)は Rembrandt-R(2023)の下');
 });

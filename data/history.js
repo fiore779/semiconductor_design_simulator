@@ -15,7 +15,7 @@ window.SDS_DATA.history = (function () {
   const order = {
     Intel: ['Katmai', 'Coppermine', 'Willamette', 'Tualatin', 'Northwood', 'Banias', 'Prescott', 'Dothan', 'Smithfield', 'Presler', 'Yonah', 'Cedar Mill', 'Conroe', 'Kentsfield', 'Yorkfield', 'Wolfdale',
       'Nehalem', 'Westmere', 'Sandy Bridge', 'Ivy Bridge', 'Haswell', 'Broadwell', 'Skylake', 'Kaby Lake', 'Coffee Lake', 'Coffee Lake Refresh', 'Comet Lake', 'Alder Lake', 'Raptor Lake', 'Raptor Lake-HX',
-      'Raptor Lake Refresh', 'Meteor Lake', 'Raptor Lake-HX Refresh', 'Lunar Lake', 'Arrow Lake-S', 'Arrow Lake-HX', 'Arrow Lake-H', 'Panther Lake', 'Panther Lake-H', 'Wildcat Lake'],
+      'Raptor Lake Refresh', 'Raptor Lake-HX Refresh', 'Meteor Lake', 'Lunar Lake', 'Arrow Lake-S', 'Arrow Lake-HX', 'Arrow Lake-H', 'Panther Lake', 'Panther Lake-H', 'Wildcat Lake'],
     AMD: ['Zen 1 (Summit Ridge)', 'Zen 1 (Naples)', 'Zen 1 (Raven Ridge)', 'Zen+ (Pinnacle Ridge)', 'Zen 3 (Vermeer)', 'Zen 3 (Cezanne)', 'Zen 4 (Raphael)', 'Zen 3+ (Rembrandt-R)', 'Zen 4 (Dragon Range)',
       'Zen 4 (Phoenix)', 'Zen 4 (Phoenix 2)', 'Zen 5 (Strix Point)', 'Zen 5 (Granite Ridge)', 'Zen 5 (Kraken Point)', 'Zen 5 (Strix Halo)'],
   };
