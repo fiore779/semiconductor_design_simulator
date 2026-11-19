@@ -52,7 +52,7 @@ test('インライン版のスクリプトを、ブラウザと同じ条件(1 �
   }
   const { evaluate, makeContext } = ctx.SDS.model.evaluate;
   const c = makeContext();
-  assert.strictEqual(c.presets.length, 153);
+  assert.strictEqual(c.presets.length, 166);
   const d = ctx.SDS.model.design.fromPreset(c.presets[0], { mode: 'reproduce' });
   const ev = evaluate(d, c);
   assert.ok(ev && typeof ev === 'object');

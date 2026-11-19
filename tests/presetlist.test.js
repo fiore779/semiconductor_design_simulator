@@ -13,7 +13,7 @@ test('一覧の初期の並び: Intel・AMD は世代順(新しい世代が上)�
   before('Meteor Lake', 'Raptor Lake-HX Refresh'); before('Raptor Lake-HX Refresh', 'Raptor Lake Refresh'); before('Raptor Lake Refresh', 'Raptor Lake-HX'); before('Raptor Lake-HX', 'Raptor Lake');
   before('Lunar Lake', 'Meteor Lake'); before('Arrow Lake-S', 'Lunar Lake'); before('Nehalem', 'Wolfdale'); before('Wolfdale', 'Yorkfield'); before('Yorkfield', 'Kentsfield');
   assert.strictEqual(intel[intel.length - 1], 'Katmai'); assert.strictEqual(intel[0], 'Wildcat Lake');
-  const amd = names('AMD'); assert.strictEqual(amd[amd.length - 1], 'Zen 1 (Summit Ridge)'); assert.ok(amd.indexOf('Zen 4 (Raphael)') > amd.indexOf('Zen 3+ (Rembrandt-R)'), 'Raphael(2022-09)は Rembrandt-R(2023)の下');
+  const amd = names('AMD'); assert.strictEqual(amd[amd.length - 1], 'K7 (Thunderbird)'); assert.ok(amd.indexOf('Zen 1 (Summit Ridge)') < amd.indexOf('Piledriver (Vishera)') && amd.indexOf('Piledriver (Vishera)') < amd.indexOf('Bulldozer (Zambezi)') && amd.indexOf('Bulldozer (Zambezi)') < amd.indexOf('K10 (Agena)'), 'Ryzen は FX の上'); assert.ok(amd.indexOf('Zen 4 (Raphael)') > amd.indexOf('Zen 3+ (Rembrandt-R)'), 'Raphael(2022-09)は Rembrandt-R(2023)の下');
 });
 
 test('世代の歴史: Intel・AMD のすべての family に概説と出典があり、順序表にもある。historyOf は無い family で null(2026-11-18)', () => {

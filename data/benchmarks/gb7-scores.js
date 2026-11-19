@@ -1308,6 +1308,69 @@ window.SDS_DATA.gb7Scores = [
  },
  {
   "group": "Intel 第2〜第11世代",
+  "generation": "AMD Piledriver(32nm)Vishera",
+  "name": "FX-8350(8c)",
+  "single": 577,
+  "multi": 2617,
+  "kind": "実測",
+  "n": 32
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD Piledriver(32nm)Vishera",
+  "name": "FX-6300(6c)",
+  "single": 549,
+  "multi": 1848,
+  "kind": "実測",
+  "n": 23
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD Piledriver(32nm)Trinity",
+  "name": "A10-5800K(4c)",
+  "single": 517,
+  "multi": 1359,
+  "kind": "実測",
+  "n": 3
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD Bulldozer(32nm)Zambezi",
+  "name": "FX-8150(8c)",
+  "single": 596,
+  "multi": 2574,
+  "kind": "実測",
+  "n": 2
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD K10 Thuban(45nm)",
+  "name": "Phenom II X6 1090T(6c)",
+  "single": 438,
+  "multi": 1665,
+  "kind": "実測",
+  "n": 3
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD K10 Deneb(45nm)",
+  "name": "Phenom II X4 955(4c)",
+  "single": 396,
+  "multi": 1172,
+  "kind": "実測",
+  "n": 10
+ },
+ {
+  "group": "Intel 第2〜第11世代",
+  "generation": "AMD K10 Agena(65nm)",
+  "name": "Phenom X4 9950(4c)",
+  "single": 318,
+  "multi": 955,
+  "kind": "実測",
+  "n": 3
+ },
+ {
+  "group": "Intel 第2〜第11世代",
   "generation": "Core 2 世代 Wolfdale(45nm)",
   "name": "E8400(2c)",
   "single": 444,

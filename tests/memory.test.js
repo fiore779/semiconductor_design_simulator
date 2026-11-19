@@ -29,7 +29,7 @@ const snap = (r) => ({
 });
 
 test('既定の選択(基準構成)では、全プリセットの ST/MT/電力/温度が変更前と完全一致(再現・改良の両方)', () => {
-  const olds = D.presets.filter((p) => p.addedIn !== 'old-intel'); // 2026-11-17: 古い Core i 19 件(chips-old.js。メモリの選択肢なし)は変更前に無いので対象外
+  const olds = D.presets.filter((p) => !/^old-/.test(p.addedIn)); // 2026-11-17: 古い Core i 19 件(chips-old.js。メモリの選択肢なし)は変更前に無いので対象外
   assert.strictEqual(Object.keys(baseline).length, olds.length);
   olds.forEach((p) => {
     ['reproduce', 'improve'].forEach((mode) => {

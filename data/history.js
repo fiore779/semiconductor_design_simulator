@@ -9,6 +9,7 @@ window.SDS_DATA.history = (function () {
     p4: 'Wikipedia「List of Intel Pentium 4 processors」「List of Intel Pentium D processors」「List of Intel Pentium M processors」(取得 2026-11-18。[二次])',
     c2: 'Wikipedia「List of Intel Core 2 processors」「Yonah (microprocessor)」(取得 2026-11-18。[二次])',
     amd: 'Wikipedia「List of AMD CPU microarchitectures」の表(取得 2026-11-18。[二次])。製品名の対応は一般に公開された情報で、個別の出典ページは未確認',
+    amdold: 'Wikipedia「Athlon」「Athlon 64」「Athlon 64 X2」「Phenom II」「Bulldozer (microarchitecture)」の各ページと「List of AMD Athlon / Athlon XP / Athlon 64 / Phenom / FX / APU processors」、Agner Fog の microarchitecture.pdf 第 20・21・26 章、AnandTech・Tom\'s Hardware・HotHardware の各記事(取得 2026-11-19。[二次])',
     repo: 'このプロジェクトのプリセット・設計書(§2)の値',
   };
   // 一覧の世代順(古い → 新しい)。表にない family は発売年の新しい順に並べる
@@ -16,7 +17,8 @@ window.SDS_DATA.history = (function () {
     Intel: ['Katmai', 'Coppermine', 'Willamette', 'Tualatin', 'Northwood', 'Banias', 'Prescott', 'Dothan', 'Smithfield', 'Presler', 'Yonah', 'Cedar Mill', 'Conroe', 'Kentsfield', 'Yorkfield', 'Wolfdale',
       'Nehalem', 'Westmere', 'Sandy Bridge', 'Ivy Bridge', 'Haswell', 'Broadwell', 'Skylake', 'Kaby Lake', 'Coffee Lake', 'Coffee Lake Refresh', 'Comet Lake', 'Alder Lake', 'Raptor Lake', 'Raptor Lake-HX',
       'Raptor Lake Refresh', 'Raptor Lake-HX Refresh', 'Meteor Lake', 'Lunar Lake', 'Arrow Lake-S', 'Arrow Lake-HX', 'Arrow Lake-H', 'Panther Lake', 'Panther Lake-H', 'Wildcat Lake'],
-    AMD: ['Zen 1 (Summit Ridge)', 'Zen 1 (Naples)', 'Zen 1 (Raven Ridge)', 'Zen+ (Pinnacle Ridge)', 'Zen 3 (Vermeer)', 'Zen 3 (Cezanne)', 'Zen 4 (Raphael)', 'Zen 3+ (Rembrandt-R)', 'Zen 4 (Dragon Range)',
+    AMD: ['K7 (Thunderbird)', 'K7 (Barton)', 'K8 (Venice)', 'K8 (Brisbane)', 'K10 (Agena)', 'K10 (Deneb)', 'K10 (Thuban)', 'K10 (Propus)', 'Bobcat (Zacate)', 'Bulldozer (Zambezi)', 'Piledriver (Trinity)', 'Piledriver (Vishera)',
+      'Zen 1 (Summit Ridge)', 'Zen 1 (Naples)', 'Zen 1 (Raven Ridge)', 'Zen+ (Pinnacle Ridge)', 'Zen 3 (Vermeer)', 'Zen 3 (Cezanne)', 'Zen 4 (Raphael)', 'Zen 3+ (Rembrandt-R)', 'Zen 4 (Dragon Range)',
       'Zen 4 (Phoenix)', 'Zen 4 (Phoenix 2)', 'Zen 5 (Strix Point)', 'Zen 5 (Granite Ridge)', 'Zen 5 (Kraken Point)', 'Zen 5 (Strix Halo)'],
   };
   const f = (key, src, text) => [key, { src, text }];
@@ -61,6 +63,18 @@ window.SDS_DATA.history = (function () {
     f('Intel/Panther Lake', 'intel', '2026 年 1 月の Core Ultra シリーズ 3(Intel 18A)。Intel 18A を初めて量産に使うハイブリッドのモバイル向け。'),
     f('Intel/Panther Lake-H', 'intel', '2026 年 1 月の Core Ultra シリーズ 3 の H 系(Intel 18A)。Panther Lake の高性能ノート向け。'),
     f('Intel/Wildcat Lake', 'intel', '2026 年の Core Series 3(ハイブリッド。Wikipedia の一覧)。Panther Lake と同じ世代の名称。'),
+    f('AMD/K7 (Thunderbird)', 'amdold', '2000 年 6 月に登場した Athlon の Thunderbird(180nm。Socket A)。L2 キャッシュ(256KB。約 1500 万トランジスタ)を同じダイに内蔵し、コアと同じクロックで動かした。'),
+    f('AMD/K7 (Barton)', 'amdold', '2003 年 2 月の Athlon XP の最終世代(130nm、Barton)。L2 を 512KB に増やした。K7 系は 32bit のみ。'),
+    f('AMD/K8 (Venice)', 'amdold', '2005 年 4 月の Athlon 64(K8。90nm、Venice)。K8 はメモリコントローラを CPU に内蔵し(チップセット経由をやめた)、x86-64(64bit)に対応した。'),
+    f('AMD/K8 (Brisbane)', 'amdold', '2006 年 12 月の Athlon 64 X2(K8 のデュアルコア。65nm、Brisbane)。L2 はコアごとに 512KB。'),
+    f('AMD/K10 (Agena)', 'amdold', '2008 年の Phenom X4(K10。65nm、Agena)。4 コアを 1 つのダイに載せ、全コアで共有する L3(2MB)を持つ 3 段のキャッシュ構成にした。'),
+    f('AMD/K10 (Deneb)', 'amdold', '2009 年 4 月の Phenom II X4(K10 の 45nm 版、Deneb)。L3 を 6MB に増やし、クロックを上げた。'),
+    f('AMD/K10 (Thuban)', 'amdold', '2010 年 4 月の Phenom II X6(K10 の 6 コア版、Thuban)。Turbo CORE で最大 3.6GHz。'),
+    f('AMD/K10 (Propus)', 'amdold', '2010 年 5 月の Athlon II X4(Propus)。Deneb から L3 を省いたコスト重視の 4 コア(L2 が最後のキャッシュ)。'),
+    f('AMD/Bobcat (Zacate)', 'amdold', '2011 年 1 月の Brazos プラットフォームの APU(E-350。Bobcat。TSMC 40nm)。1 クロック 2 命令の小型・低電力(18W)のコアに GPU を内蔵した。'),
+    f('AMD/Bulldozer (Zambezi)', 'amdold', '2011 年 10 月の FX(Bulldozer。32nm、Zambezi)。「モジュール」という新しい構成で、2 つの整数コアが先読み・命令デコード・浮動小数点・L2 を共有する。パイプラインは 20 段で、クロックを高くする設計。'),
+    f('AMD/Piledriver (Trinity)', 'amdold', '2012 年 10 月の APU(Trinity。32nm)。Piledriver のモジュール 2 つ(整数コア 4 つ)と GPU を 1 つのダイに載せ、L3 を持たない。'),
+    f('AMD/Piledriver (Vishera)', 'amdold', '2012 年 10 月の FX(Piledriver。32nm、Vishera)。Bulldozer の改良版で、L2 の性能が Bulldozer よりずっと良くなった(Agner Fog)。ダイ面積・構成は Bulldozer と同じ(約 315mm²)。'),
     f('AMD/Zen 1 (Summit Ridge)', 'amd', '2017 年 3 月の Ryzen 1000(14nm)。AMD が SMT(1 コア 2 スレッド)と、チップ内の接続に Infinity Fabric を初めて取り入れた Zen の最初のデスクトップ向け。'),
     f('AMD/Zen 1 (Naples)', 'amd', '2017 年の第 1 世代 EPYC(14nm)。Zen のサーバー向けで、複数のダイを 1 つのパッケージに載せた。'),
     f('AMD/Zen 1 (Raven Ridge)', 'amd', '2018 年の Zen 1 の APU(CPU に Radeon Vega を内蔵。14nm)。'),
@@ -79,14 +93,17 @@ window.SDS_DATA.history = (function () {
   ]);
   // 全体の歴史(年表)。年は初出のもの。出典は sources のキー
   const overall = [
+    { year: 1999, text: 'AMD の Athlon(K7。Argon。250nm。6 月)。Pentium III と競う x86 のプロセッサ。', src: 'amdold' },
     { year: 1999, text: 'Pentium III(Katmai)。P6 系に SIMD 命令(SSE)を追加。', src: 'p3' },
     { year: 2000, text: 'Pentium 4(Willamette)。パイプラインを非常に長くして高クロックを狙う NetBurst の始まり。', src: 'p4' },
     { year: 2003, text: 'Pentium M(Banias)。省電力のモバイル向けに P6 系を元にして設計し、高クロック路線とは別の道を示した。', src: 'p4' },
+    { year: 2003, text: 'AMD の Athlon 64(K8。9 月)。メモリコントローラの内蔵と 64bit(x86-64)への対応。', src: 'amdold' },
     { year: 2004, text: 'Prescott。NetBurst の後期で、一部のモデルが x86-64(Intel 64)に対応。発熱が課題になる。', src: 'p4' },
     { year: 2005, text: 'Pentium D(Smithfield)。Intel 初のデュアルコアのデスクトップ向け。', src: 'p4' },
     { year: 2006, text: 'Core Duo(Yonah。1 月)でノートがデュアルコアに。Core 2(Conroe。7 月)で NetBurst をやめ、P6 系を作り直した設計に移る。年末にクアッドコア(Kentsfield。2 ダイの MCM)。', src: 'c2' },
     { year: 2008, text: 'Nehalem。メモリコントローラをダイに内蔵(FSB の廃止)。Core i シリーズの第 1 世代。', src: 'intel' },
     { year: 2011, text: 'Sandy Bridge。256bit の AVX とリングバス、GPU の統合。', src: 'intel' },
+    { year: 2011, text: 'AMD の FX(Bulldozer。10 月)。2 つの整数コアが共有部分を持つ「モジュール」構成。', src: 'amdold' },
     { year: 2013, text: 'Haswell。AVX2・FMA を追加。', src: 'intel' },
     { year: 2015, text: 'Skylake。メインストリームのデスクトップに DDR4。', src: 'intel' },
     { year: 2017, text: 'AMD の Zen(Ryzen 1000)。SMT と Infinity Fabric を取り入れ、デスクトップ・サーバーの競争が再び動く。Intel は 14nm のまま Coffee Lake(6 コア)へ。', src: 'amd' },

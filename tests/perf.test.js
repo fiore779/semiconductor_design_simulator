@@ -292,7 +292,7 @@ test('uCal: Golden/Raptor 10 件(14700HX を除く)の SKU 別 u の中央値か
 test('uCal: rep 校正で Golden/Raptor に u が入り、calib・n・usedPresets・uIsa には影響しない', () => {
   const c = cal();
   assert.strictEqual(c.u['Golden Cove'], 116.4); assert.strictEqual(c.u['Raptor Cove'], 116.4); // 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた。uCal・x86 の u・σ 0.03183 → 0.03151 が動き、連続式の c を 0.412 → 0.405 に再校正): uCal 116.5 → 116.4(同じ 10 件の SKU 別 u の中央値 116.358)。以前: // 2026-11-13: uCal を 10 件の中央値 116.538(丸め 116.5)に再計算(旧 114.1)。以前: 2026-11-06: 112.7 → 114.1(13900K・13700K の P boost を ARK の P コア最大ターボに揃えた再計算)
-  assert.deepStrictEqual(Object.keys(c.uFixed).sort(), ['Broadwell', 'Cedar Mill', 'Coffee Lake', 'Comet Lake', 'Conroe', 'Cortex-A78', 'Cougar Cove', 'Golden Cove', 'Haswell', 'Ivy Bridge', 'Kaby Lake', 'Nehalem', 'Penryn', 'Prescott', 'Raptor Cove', 'Redwood Cove', 'Sandy Bridge', 'Skylake']); // 2026-11-18: 第1・3・5世代の uCal 3 件(Nehalem・Ivy Bridge・Broadwell)が加わった。2026-11-17: 古い Core i の uCal 6 件(Sandy Bridge・Haswell・Skylake・Kaby Lake・Coffee Lake・Comet Lake。標本は各 uarch のデスクトップ SKU)が加わった
+  assert.deepStrictEqual(Object.keys(c.uFixed).sort(), ['Broadwell', 'Bulldozer', 'Cedar Mill', 'Coffee Lake', 'Comet Lake', 'Conroe', 'Cortex-A78', 'Cougar Cove', 'Golden Cove', 'Haswell', 'Ivy Bridge', 'K10', 'Kaby Lake', 'Nehalem', 'Penryn', 'Piledriver', 'Prescott', 'Raptor Cove', 'Redwood Cove', 'Sandy Bridge', 'Skylake']); // 2026-11-18: 第1・3・5世代の uCal 3 件(Nehalem・Ivy Bridge・Broadwell)が加わった。2026-11-17: 古い Core i の uCal 6 件(Sandy Bridge・Haswell・Skylake・Kaby Lake・Coffee Lake・Comet Lake。標本は各 uarch のデスクトップ SKU)が加わった
    assert.strictEqual(c.u['Redwood Cove'], 102.8); /* 2026-11-15(プラットフォームの DRAM 遅延 dramLat を ST に入れた): Redwood Cove の uCal 99.5 → 102.8 */ /* 2026-11-14: Redwood Cove の uCal(99.5。185H と参考データ 10 件の 11 件)を追加 */ assert.strictEqual(c.u['Cougar Cove'], 102.1); /* 2026-11-15(DRAM 遅延): 98.3 → 102.1 */ // 2026-11-13(Windows のみ化 第 2 回): Cougar Cove の uCal(98.3。388H・386H・378H・358H・325・320 の 6 件)を追加。以前: // 2026-11-07: Cortex-A78 の uCal(117.4。780G・6 Gen 1・4 Gen 2・8200 の 4 件)を追加
   assert.strictEqual(c.u['Cortex-A78'], 122.5); // 2026-11-14: 117.4 → 122.5(Android の公開値を通常の群の中央値に取り直した 4 件の SKU 別 u の中央値 122.45)
   assert.strictEqual(c.n['Golden Cove'], undefined); assert.strictEqual(c.usedPresets['Golden Cove'], undefined);
@@ -379,7 +379,7 @@ test('連続式の c: 標本 11 件の k_i ÷ W_i^0.15 の中央値(小数 3 桁
     // 参考: 5 件を含めた 16 件の中央値は帯 0 が 0.6943、帯 1 が 0.7556 で、丸めると 0.69 / 0.76 のまま不変。標本外での MT の誤差は設計書 §2.7.7)
     if (['intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v', 'intel-ptl-x9-388h', 'intel-arl-275hx'].includes(p.id)) return;
     // 2026-11-11: HX 系の標本として追加した 4 件(13980HX・14900HX・285H・7945HX。calib:false)は連続式の標本に入れない(係数は動かさない。検証用。設計書 §13.4 項目⑦)
-    if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id) || p.addedIn === 'old-intel') return; // 2026-11-17: 古い Core i(chips-old.js)も標本に入れない
+    if (['intel-rpl-13980hx', 'intel-rpl-14900hx', 'intel-arl-285h', 'amd-zen4-7945hx'].includes(p.id) || /^old-/.test(p.addedIn)) return; // 2026-11-17: 古い Core i(chips-old.js)も標本に入れない
     if (p.id === 'amd-kraken-350' || p.id === 'amd-zen4-7840hs' || p.kind !== 'mobile-pc' || !g || !g.multi || !w || !F.mtScore(p, c, D.uarch, null).ok) return;
     let lo = 0.2; let hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mtAt(p, m) < g.multi) lo = m; else hi = m; }
     S.push({ p, pub: g.multi, k: (lo + hi) / 2, W: w.w, r: (lo + hi) / 2 / Math.pow(w.w, F.MT_CLOCK_POWER.exp) });
@@ -662,7 +662,7 @@ test('allCoreGHz: あれば MT のクロックにそれを使い(係数は掛け
     assert.ok(F.mtScore(lowW(q8, 35), c, D.uarch, null).score < r80.score);
   }
   // 2026-11-17: 古い Core i 19 件(chips-old.js)のうち 13 件が allCoreGHz を持つ([二次]。出典は各プリセットの notes。テストは下で別に確かめる)ので、ここでは対象外
-  D.presets.filter((x) => x.addedIn !== 'old-intel').forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
+  D.presets.filter((x) => !/^old-/.test(x.addedIn)).forEach((x) => (x.cfg.cores || []).forEach((g) => assert.strictEqual(g.allCoreGHz, (WITH[x.id] || {})[g.type], x.id + ':' + g.type)));
   assert.deepStrictEqual(D.presets.filter((x) => x.addedIn === 'old-intel' && x.cfg.cores[0].allCoreGHz != null).map((x) => x.id).sort(), ['intel-hsw-4690k', 'intel-hsw-4700hq', 'intel-skl-6600k', 'intel-skl-6700hq', 'intel-skl-6700k', 'intel-kbl-7600k', 'intel-kbl-7700hq', 'intel-kbl-7700k', 'intel-cfr-9900k', 'intel-cfr-9700k', 'intel-cml-10900k', 'intel-cml-10700k', 'intel-nhm-860', 'intel-ivb-3770k', 'intel-bdw-5775c'].sort());
   // 285K・265K は MT の P クロックが全コアの実測になる(5.5 → 5.4、5.4 → 5.2)。MT +14.9 → +14.2%、+13.1 → +11.5%(ST は不変)
   const a = F.mtScore(preset('intel-arl-285k'), c, D.uarch, null); assert.strictEqual(a.detail[0].fGHz, 5.4); assert.strictEqual(a.detail[0].clockSource, 'allcore'); assert.strictEqual(a.detail[1].clockSource, 'boost');
