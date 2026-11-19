@@ -51,20 +51,20 @@ test('AMD 旧世代: 構成の整合(コア数 × クロック。FX は整数コ
   olds.forEach((p) => { const g = p.cfg.cores[0]; assert.ok(g.baseGHz > 0 && g.boostGHz >= g.baseGHz && D.uarch[g.uarch], p.id); assert.ok(p.dies[0].mm2 > 50 && D.nodes.some((n) => n.id === p.dies[0].nodeId), p.id); });
 });
 
-test('AMD 旧世代のダイ写真の枠(2026-11-19): 9 枠・縦横比は写真の自然な縦横比と 1% 以内・コア枠の数・L3 の有無・ブロックはダイの内側で重ならない', () => {
+test('AMD 旧世代のダイ写真の枠(2026-11-19): 10 枠・縦横比は写真の自然な縦横比と 1% 以内・コア枠の数・L3 の有無・ブロックはダイの内側で重ならない', () => {
   const FP = require('../js/model/floorplan.js'); const design = require('../js/model/design.js');
-  const want = { 'brt-1c': [1, 1024 / 561, false], 'vnc-1c': [1, 2048 / 1815, false], 'agn-4c': [4, 2048 / 1939, true], 'dnb-4c': [4, 2078 / 1612, true], 'thb-6c': [6, 3128 / 2272, true], 'zmb-8c': [8, 2705 / 2199, true], 'vsh-8c': [8, 3475 / 2795, true], 'trn-4c': [4, 2695 / 1973, false], 'zct-2c': [2, 2051 / 1821, false] };
+  const want = { 'tbd-1c': [1, 11376 / 7866, false], 'brt-1c': [1, 1024 / 561, false], 'vnc-1c': [1, 2048 / 1815, false], 'agn-4c': [4, 2048 / 1939, true], 'dnb-4c': [4, 2078 / 1612, true], 'thb-6c': [6, 3128 / 2272, true], 'zmb-8c': [8, 2705 / 2199, true], 'vsh-8c': [8, 3475 / 2795, true], 'trn-4c': [4, 2695 / 1973, false], 'zct-2c': [2, 2051 / 1821, false] };
   Object.entries(want).forEach(([k, [n, asp, l3]]) => {
     const t = FP.TILE_FRAMES[k]; assert.ok(t, k); assert.strictEqual(t.big.length, n, k); assert.deepStrictEqual(t.tpl, ['x86-mono'], k);
     assert.ok(Math.abs(t.aspect / asp - 1) < 0.01, `${k}: 縦横比 ${t.aspect.toFixed(3)} / ${asp.toFixed(3)}`);
     assert.strictEqual(Array.isArray(t.l3), l3, `${k}: L3`);
   });
-  const NO_FRAME = ['amd-k7-athlon-1400', 'amd-k8-brisbane-5000', 'amd-k10-propus-x4-640']; // 写真が CPU Graveyard に無い(Thunderbird・Brisbane・Propus)
+  const NO_FRAME = ['amd-k8-brisbane-5000', 'amd-k10-propus-x4-640']; // 写真が見つからない(Brisbane・Propus)
   olds.forEach((p) => {
     const die = design.fromPreset(p, { mode: 'reproduce' }).dies[0]; const l = die.layout;
     if (NO_FRAME.includes(p.id)) { assert.ok(l && !l.frame && l.scaleBasis === 'schematic', p.id); return; }
     assert.ok(l && want[l.frame] && l.template === 'x86-mono' && l.scaleBasis === 'photo', `${p.id}: 枠`);
-    assert.ok(l.scaleNote.length <= 600 && /happytrees\.org/.test(l.scaleNote), `${p.id}: scaleNote ${l.scaleNote.length}`);
+    assert.ok(l.scaleNote.length <= 600 && /(happytrees|wikimedia)\.org/.test(l.scaleNote), `${p.id}: scaleNote ${l.scaleNote.length}`);
     assert.strictEqual(FP.checkLayout(l), null, p.id);
     const bl = die.blocks;
     assert.strictEqual(bl.filter((b) => b.kind === 'core').length, p.cfg.cores.reduce((s, c) => s + c.count, 0), `${p.id}: コア数`);

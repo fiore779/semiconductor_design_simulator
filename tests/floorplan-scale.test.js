@@ -38,7 +38,7 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   ['amd-zenplus-2700x', 'amd-zenplus-2600x'].forEach((id) => assert.strictEqual(basis(id), 'reuse', id));
   assert.strictEqual(basis('amd-strixhalo-395'), 'photo'); assert.strictEqual(basis('amd-epyc-7401'), null);
   assert.strictEqual(basis('amd-kraken-350'), 'reuse');
-  assert.strictEqual(basis('intel-adl-12100'), 'schematic'); assert.strictEqual(basis('intel-arl-285k'), 'photo');
+  assert.strictEqual(basis('intel-adl-12100'), 'photo'); /* 2026-11-19: Fritzchens Fritz の ADL-S 6P の写真で枠を作った */ assert.strictEqual(basis('intel-arl-285k'), 'photo');
   assert.strictEqual(basis('apple-m1'), 'photo'); assert.strictEqual(basis('apple-m1ultra'), 'reuse'); assert.strictEqual(basis('apple-m4pro'), null); assert.strictEqual(basis('qc-8elite'), 'photo'); assert.strictEqual(basis('qc-7gen4'), null); assert.strictEqual(basis('mt-9400'), 'photo'); assert.strictEqual(basis('mt-8200'), 'schematic'); assert.strictEqual(basis('qc-6gen1'), 'schematic'); /* 2026-11-04: 縦横比だけ写真に合わせた 4 件(6 Gen 1・4 Gen 2・7 Gen 3・Dimensity 8200)は schematic */ assert.strictEqual(basis('nv-t239'), 'photo'); assert.strictEqual(basis('nv-orin-agx'), null); // 2026-11-03: Snapdragon は写真のある 14 件が photo(qc-8elite は旧 null)。画像なし・注釈なしで判別できない 7 件は従来の配置(null)
   assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('写真・測定なし')); assert.ok(FP.scaleText({ scaleBasis: 'reuse' }).includes('流用'));
   assert.ok(FP.scaleText({ scaleBasis: 'photo' }).includes('目測'));
@@ -47,7 +47,7 @@ test('縮尺の根拠(scaleBasis)と画面の注記', () => {
   // 2026-11-04: 縦横比だけ採った 4 件(layout.aspect を持つ schematic)は専用の注記。2D(dieview)も 3D(pkgview3d)も scaleText(die.layout) を使う。ほかの schematic(12100 など)・従来の配置は不変
   const ASPECT4 = ['qc-6gen1', 'qc-4gen2', 'qc-7gen3', 'mt-8200'];
   ASPECT4.forEach((id) => { const t = FP.scaleText(layoutDie(mk(id)).layout); assert.ok(t.includes('縦横比だけ写真(ファイル名の寸法)に合わせた') && t.includes('模式で根拠なし') && !t.includes('配置も実チップのものではありません'), id); });
-  assert.strictEqual(FP.scaleText(layoutDie(mk('intel-adl-12100')).layout), FP.SCALE_TEXT.schematic);
+  assert.strictEqual(FP.scaleText(layoutDie(mk('amd-k8-brisbane-5000')).layout), FP.SCALE_TEXT.schematic);
   assert.strictEqual(FP.scaleText({ scaleBasis: 'schematic' }), FP.SCALE_TEXT.schematic);
   presets.filter((p) => !ASPECT4.includes(p.id)).forEach((p) => { const x = layoutDie(mk(p)); if (x) assert.strictEqual(FP.scaleText(x.layout), FP.SCALE_TEXT[x.layout.scaleBasis], p.id); });
   const n = {};

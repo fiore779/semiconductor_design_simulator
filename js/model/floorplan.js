@@ -529,6 +529,17 @@
         ['io-l', `FSB・I/O(左のダイの左端${UNK})`, 'u', 130, 10, 33, 615], ['io-r', `FSB・I/O(左のダイの右端${UNK})`, 'u', 712, 10, 32, 615],
         ['l2b', 'L2 キャッシュ(右のダイ。2 コアで共有 4MB)', 'u', 790, 448, 536, 358], ['l2-lb', `L2 まわりの回路(右のダイの下段左${UNK})`, 'u', 748, 628, 42, 180], ['l2-rb', `L2 まわりの回路(右のダイの下段右${UNK})`, 'u', 1328, 628, 34, 180],
         ['io-lb', `FSB・I/O(右のダイの左端${UNK})`, 'u', 748, 10, 33, 615], ['io-rb', `FSB・I/O(右のダイの右端${UNK})`, 'u', 1330, 10, 32, 615]]),
+    // Pentium III Katmai(Intel@250nm@P6@Katmai@Pentium III@SL35D DSCx1 polysilicon microscope stitched@5x.jpg 5736×6817。Fritzchens Fritz。CC0)。コアのロジックと L1 だけ(L2 は別チップ)
+    'ktm-1c': tf([200, 0, 837, 757], { p: 1, e: 0, lp: 0 },
+      [[232, 30, 573, 695]], [], [], null, [
+        ['io-l', `I/O(左端${UNK})`, 'u', 203, 5, 27, 745], ['io-r', `I/O(右端${UNK})`, 'u', 808, 5, 28, 745], ['io-t', `I/O(上辺${UNK})`, 'u', 232, 4, 573, 24], ['io-b', `I/O(下辺${UNK})`, 'u', 232, 728, 573, 26]]),
+    // Alder Lake-S H0(6P。i5-12400F の写真。Intel@intel7(10nmESF)@AlderLake@ADL-S(6P+0E)@i5-12400F@SRL5Z DSCx10 poly@5xExt.jpg 13419×8843。Fritzchens Fritz。CC0)。右に GPU、3 列 × 上下 2 段の P コア、列ごとの L2 と中段の L3
+    'adl-6p': tf([4, 41, 1033, 718], { p: 6, e: 0, lp: 0 },
+      [[318, 88, 144, 220], [468, 88, 144, 220], [618, 88, 145, 220], [318, 492, 144, 216], [468, 492, 144, 216], [618, 492, 145, 216]], [], [],
+      [[318, 365, 144, 72, 1], [468, 365, 144, 72, 1], [618, 365, 145, 72, 1]], [
+        ['l2a', 'L2 キャッシュ(上段。コアごと 1.25MB)', 'u', 318, 310, 445, 52], ['l2b', 'L2 キャッシュ(下段。コアごと 1.25MB)', 'u', 318, 440, 445, 50],
+        ['sa', `System Agent・メモリコントローラ・I/O(左側の大きな領域${UNK})`, 'u', 8, 88, 305, 620], ['io-t', `I/O(上辺${UNK})`, 'u', 8, 45, 860, 40], ['io-tr', `I/O(右上${UNK})`, 'u', 872, 45, 158, 43],
+        ['gpu', 'GPU(内蔵。右側の大きな領域)', 'g', 792, 90, 238, 615]]),
   };
 
   // ---- AMD の Ryzen より前(2026-11-19。happytrees.org/dieshots の写真。座標は写真をブラウザで開いた画面の座標) ----
@@ -591,6 +602,10 @@
       [[103, 172, 192, 205], [103, 380, 192, 205]], [], [], null, [
         ['l2a', 'L2 キャッシュ(上のコア。512KB)', 'u', 103, 20, 192, 148], ['l2b', 'L2 キャッシュ(下のコア。512KB)', 'u', 103, 590, 192, 148],
         ['gpu', 'GPU(内蔵。中央の大きな領域)', 'g', 300, 60, 535, 545], ['io-r', `DDR3 の PHY・I/O(右端${UNK})`, 'u', 838, 15, 98, 725], ['io-b', `ディスプレイ・UVD・I/O(下段${UNK})`, 'u', 300, 610, 535, 135]]),
+    // Athlon Thunderbird(AMD@180nm@K7@Thunderbird(Model4 CPUID642)@AMD Athlon A0800MPR24B A DSCx07 poly@5xBF.jpg 11376×7866。Fritzchens Fritz。CC0)。左に L2 256KB、右にコア
+    'tbd-1c': tf([0, 21, 1036, 737], { p: 1, e: 0, lp: 0 },
+      [[232, 68, 795, 622]], [], [], null, [
+        ['l2', 'L2 キャッシュ(256KB。左側の大きな領域)', 'u', 14, 65, 213, 628], ['io-t', `I/O(上辺${UNK})`, 'u', 14, 26, 1010, 38], ['io-b', `I/O(下辺${UNK})`, 'u', 14, 695, 1010, 38]]),
   };
   Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES, AMD_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
@@ -783,6 +798,8 @@
   // Qualcomm Snapdragon の写真の枠(arm-soc)。出典の URL は C:\LocalAI\画像\必要な画像リスト.md の Kurnal Insights のページ(チップ名・SM 型番で対応づけた候補。ページ本文は未取得)
   // 古い Intel Core i(2026-11-17)。写真は WikiChip 由来の画像(Intel 著作)の転載サイト happytrees.org(CPU Graveyard)で表示して目測した。ライセンス表記の確認は 9900K のページだけ(Intel 著作)。写真は注釈なし。縦横比は写真のもの(実寸の注記なし)
   const INTEL_OLD_SRC = {
+    'ktm-1c': 'Pentium III Katmai のダイ写真(Intel@250nm@P6@Katmai@Pentium III@SL35D DSCx1 polysilicon microscope stitched@5x.jpg 5736×6817。Fritzchens Fritz。CC0。出典 https://commons.wikimedia.org/wiki/File:Intel@250nm@P6@Katmai@Pentium_III@SL35D_DSCx1_polysilicon_microscope_stitched@5x_(38241648116).jpg)。コアのロジックと L1 のみで、L2 は別チップなので写っていない。縦横比 0.84',
+    'adl-6p': 'Alder Lake-S H0(P コア 6 つ)のダイ写真(i5-12400F の poly@5xExt.jpg 13419×8843。Fritzchens Fritz。CC0。出典 https://commons.wikimedia.org/wiki/File:Intel@intel7(10nmESF)@AlderLake@ADL-S(6P+0E)@i5-12400F@SRL5Z_DSCx10_poly@5xExt.jpg)。右に GPU、3 列 × 上下 2 段の P コア、中段に L3。縦横比 1.52。ブロックの境界は目測。i3-12100 は P コア 2 つを無効にして使う',
     'snb-4c': 'Sandy Bridge 4 コアのダイ写真(Intel-sandy_bridge-4-core-Intel_in_Deutschland.jpg 4465×2160。出典 https://happytrees.org/dieshots/Intel_-_Sandy_Bridge_(4-core))。コア ×4 + 各コア下の L3 スライス ×4、左に GPU、右に System Agent。縦横比 2.07(実寸の注記なし)',
     'hsw-4c': 'Haswell 4 コア GT2 のダイ写真(Intel-4th_Generation_Intel_Core_Processor_Die-Intel_in_Deutschland.jpg 5863×2160。出典 https://happytrees.org/dieshots/Intel_-_Haswell_(quad_core))。左に I/O、4 つの「L3 スライス + コア」、右に GPU。縦横比 2.71(Intel の配布画像で、実寸と一致するかは未確認)',
     'skl-4c': 'Skylake 4 コア GT2 のダイ写真(Skylake_(quad-core).png 3158×2160。出典 https://happytrees.org/dieshots/Intel_-_Skylake_(quad-core))。左に GPU、2×2 のコアと L3 の縦帯、右に System Agent・I/O。縦横比 1.46(実寸の注記なし)',
@@ -817,6 +834,7 @@
     'kts-4c': 'Core 2 Quad Kentsfield のダイ写真(Intel_Core_2_Quad_(Kentsfield_65nm).png 1674×1102。出典 https://happytrees.org/dieshots/Intel_-_Core_2_Quad_(Kentsfield_65nm)。ライセンスは不明と表記)。Conroe 2 つの MCM。各ダイの上段に 2 コア、下段に共有 L2 4MB。縦横比 1.52',
   });
   const INTEL_OLD_MAP = {
+    'intel-p3-katmai-600b': { frame: 'ktm-1c', basis: 'photo' }, 'intel-adl-12100': { frame: 'adl-6p', basis: 'photo', extra: 'H0 の 6P のダイから P コア 2 つを無効にした SKU(空き枠を残す)' },
     'intel-nhm-860': { frame: 'nhm-lyn-4c', basis: 'photo' }, 'intel-wsm-980x': { frame: 'wsm-6c', basis: 'photo' },
     'intel-ivb-3770k': { frame: 'ivb-4c', basis: 'photo' }, 'intel-ivb-3570k': { frame: 'ivb-4c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 6MB)' },
     'intel-bdw-5775c': { frame: 'bdw-4c', basis: 'photo' },
@@ -833,6 +851,7 @@
     'intel-cml-10900k': { frame: 'cml-10c', basis: 'photo' }, 'intel-cml-10700k': { frame: 'cml-10c', basis: 'photo', extra: '同じダイの SKU(コア 2 つ無効。空き枠を残す)' },
   };
   const AMD_OLD_SRC = {
+    'tbd-1c': 'Athlon Thunderbird のダイ写真(AMD@180nm@K7@Thunderbird(Model4 CPUID642)@AMD Athlon A0800MPR24B A DSCx07 poly@5xBF.jpg 11376×7866。Fritzchens Fritz。CC0。出典 https://commons.wikimedia.org/wiki/File:AMD@180nm@K7@Thunderbird(Model4_CPUID642)@AMD_Athlon_A0800MPR24B_A_DSCx07_poly@5xBF.jpg)。左に L2 256KB、右にコア。縦横比 1.45',
     'brt-1c': 'Athlon XP Barton のダイ写真(Athlon XP (Barton core)。Martijn Boer。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_Athlon_XP_(Barton_core))。左にコア、右に L2 512KB。縦横比 1.82',
     'vnc-1c': 'Athlon 64 Venice のダイ写真(AMD_Athlon64_Venice_ADA3400DAA4BY.jpg 2048×1815。Fritzchens Fritz。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_ADA3400DAA4BY)。左にコア、右に L2 512KB(赤)。縦横比 1.13',
     'agn-4c': 'Phenom X4 Agena のダイ写真(AMD_Phenom_Agena_HD9750WCJ4BGH.jpg 2048×1939。Fritzchens Fritz。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_HD9750WCJ4BGH_(Phenom_X4_9750))。2×2 のコア、中央に各コアの L2 と L3・クロスバー。L3 の位置は目測の推定。縦横比 1.06',
@@ -844,6 +863,7 @@
     'zct-2c': 'E-450 Zacate のダイ写真(AMD_E-450_APU_(Zacate,_Ontario_40nm).jpg 2051×1821。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_E-450_APU_(Zacate,_Ontario_40nm))。E-350 と同じダイ。左の列に 2 コアと L2、中央は GPU。コアの位置は目測の推定で、確度は低い。縦横比 1.13',
   };
   const AMD_OLD_MAP = {
+    'amd-k7-athlon-1400': { frame: 'tbd-1c', basis: 'photo', extra: '写真は Athlon 800(A0800MPR24B)の同じ Thunderbird ダイ' },
     'amd-k7-xp-3200': { frame: 'brt-1c', basis: 'photo' }, 'amd-k8-venice-3200': { frame: 'vnc-1c', basis: 'photo' }, 'amd-k10-agena-9950': { frame: 'agn-4c', basis: 'photo' }, 'amd-k10-deneb-955': { frame: 'dnb-4c', basis: 'photo' },
     'amd-k10-thuban-1090t': { frame: 'thb-6c', basis: 'photo' }, 'amd-bd-fx8150': { frame: 'zmb-8c', basis: 'photo' }, 'amd-pd-fx8350': { frame: 'vsh-8c', basis: 'photo' },
     'amd-pd-fx6300': { frame: 'vsh-8c', basis: 'photo', extra: 'FX-8350 と同じダイの SKU(モジュール 1 つ無効。空き枠を残す)' }, 'amd-pd-a10-5800k': { frame: 'trn-4c', basis: 'photo' }, 'amd-bobcat-e350': { frame: 'zct-2c', basis: 'photo', extra: 'E-450 と同じダイ(E-350 は E-450 の低クロック版)' },

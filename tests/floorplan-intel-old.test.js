@@ -7,13 +7,13 @@ const FP = require('../js/model/floorplan.js');
 const design = require('../js/model/design.js');
 
 const olds = D.presets.filter((p) => p.addedIn === 'old-intel');
-const FRAMES = ['snb-4c', 'hsw-4c', 'skl-4c', 'kbl-4c', 'cfl-6c', 'cfl-8c', 'cml-10c', 'nhm-lyn-4c', 'wsm-6c', 'ivb-4c', 'bdw-4c', 'wlf-2c', 'yfd-4c', 'cmn-1c', 'tlt-1c', 'wlm-1c', 'nwd-1c', 'prs-1c', 'cdm-1c', 'prl-2c', 'smf-2c', 'bns-1c', 'dth-1c', 'yna-2c', 'cnr-2c', 'kts-4c'];
+const FRAMES = ['snb-4c', 'hsw-4c', 'skl-4c', 'kbl-4c', 'cfl-6c', 'cfl-8c', 'cml-10c', 'nhm-lyn-4c', 'wsm-6c', 'ivb-4c', 'bdw-4c', 'wlf-2c', 'yfd-4c', 'cmn-1c', 'tlt-1c', 'wlm-1c', 'nwd-1c', 'prs-1c', 'cdm-1c', 'prl-2c', 'smf-2c', 'bns-1c', 'dth-1c', 'yna-2c', 'cnr-2c', 'kts-4c', 'ktm-1c'];
 const NO_L3 = FRAMES.filter((k) => !['snb-4c', 'hsw-4c', 'skl-4c', 'kbl-4c', 'cfl-6c', 'cfl-8c', 'cml-10c', 'nhm-lyn-4c', 'wsm-6c', 'ivb-4c', 'bdw-4c'].includes(k)); // Core 2 以前(L3 なし。共有 L2 は飾り)
-const NO_FRAME = ['intel-p3-katmai-600b']; // Katmai は CPU Graveyard に写真がなく、枠なし(模式図)
+const NO_FRAME = []; // 2026-11-19: Katmai も Fritzchens Fritz の写真で枠ができた(旧: 写真なしで模式図)
 const mk = (p) => design.fromPreset(p, { mode: 'reproduce' });
 
 test('古い Intel の枠: 26 枠で、コア枠の数・縦横比・テンプレートが決めたとおり', () => {
-  const want = { 'snb-4c': [4, 4465 / 2160], 'hsw-4c': [4, 5863 / 2160], 'skl-4c': [4, 3158 / 2160], 'kbl-4c': [4, 3254 / 2160], 'cfl-6c': [6, 3213 / 1758], 'cfl-8c': [8, 1935 / 906], 'cml-10c': [10, 4880 / 2040], 'nhm-lyn-4c': [4, 2196 / 1351], 'wsm-6c': [6, 3226 / 1724], 'ivb-4c': [4, 800 / 336], 'bdw-4c': [4, 1097 / 976], 'wlf-2c': [2, 570 / 812], 'yfd-4c': [4, 4322 / 3083], 'cmn-1c': [1, 3140 / 2636], 'tlt-1c': [1, 1878 / 1200], 'wlm-1c': [1, 2272 / 2000], 'nwd-1c': [1, 1792 / 1784], 'prs-1c': [1, 2648 / 2544], 'cdm-1c': [1, 3170 / 2649], 'prl-2c': [2, 2 * 3170 / 2649], 'smf-2c': [2, 2503 / 1200], 'bns-1c': [1, 1600 / 1198], 'dth-1c': [1, 1599 / 875], 'yna-2c': [2, 1110 / 820], 'cnr-2c': [2, 3574 / 2722], 'kts-4c': [4, 1674 / 1102] };
+  const want = { 'snb-4c': [4, 4465 / 2160], 'hsw-4c': [4, 5863 / 2160], 'skl-4c': [4, 3158 / 2160], 'kbl-4c': [4, 3254 / 2160], 'cfl-6c': [6, 3213 / 1758], 'cfl-8c': [8, 1935 / 906], 'cml-10c': [10, 4880 / 2040], 'nhm-lyn-4c': [4, 2196 / 1351], 'wsm-6c': [6, 3226 / 1724], 'ivb-4c': [4, 800 / 336], 'bdw-4c': [4, 1097 / 976], 'wlf-2c': [2, 570 / 812], 'yfd-4c': [4, 4322 / 3083], 'cmn-1c': [1, 3140 / 2636], 'tlt-1c': [1, 1878 / 1200], 'wlm-1c': [1, 2272 / 2000], 'nwd-1c': [1, 1792 / 1784], 'prs-1c': [1, 2648 / 2544], 'cdm-1c': [1, 3170 / 2649], 'prl-2c': [2, 2 * 3170 / 2649], 'smf-2c': [2, 2503 / 1200], 'bns-1c': [1, 1600 / 1198], 'dth-1c': [1, 1599 / 875], 'yna-2c': [2, 1110 / 820], 'cnr-2c': [2, 3574 / 2722], 'ktm-1c': [1, 5736 / 6817], 'kts-4c': [4, 1674 / 1102] };
   FRAMES.forEach((k) => {
     const t = FP.TILE_FRAMES[k];
     assert.ok(t, k);
@@ -33,7 +33,7 @@ test('古い Intel の 40 プリセット: 全部が photo の枠を持ち、コ
       assert.ok(l && FRAMES.includes(l.frame), `${p.id}: frame`);
       assert.strictEqual(l.template, 'x86-mono');
       assert.strictEqual(l.scaleBasis, ['cdm-1c', 'prl-2c'].includes(l.frame) ? 'reuse' : 'photo', `${p.id}: scaleBasis(Cedar Mill・Presler は写真の代用 = reuse)`);
-      assert.ok(l.scaleNote.length <= 600 && /happytrees\.org/.test(l.scaleNote), `${p.id}: scaleNote(600 文字以内・出典あり) ${l.scaleNote.length}`);
+      assert.ok(l.scaleNote.length <= 600 && /(happytrees|wikimedia)\.org/.test(l.scaleNote), `${p.id}: scaleNote(600 文字以内・出典あり) ${l.scaleNote.length}`);
     }
     assert.strictEqual(FP.checkLayout(l), null, `${p.id}: checkLayout`);
     const bl = die.blocks;
