@@ -42,5 +42,5 @@ browser.geekbench.com/v7/cpu/search?q=SKU名 を検索し(取得 2026-11-19)、W
 - 補正 u: K10 79.3(n=3)・Bulldozer 85.6(n=1)・Piledriver 81.8(n=3)。学習内で検証ではない。K7・K8・Bobcat は補正 u がなく ISA 平均で計算する(参考にならない)。
 - **FX の数え方**: 整数コア 1 つを 1 コアと数える(販売名どおり)と MT が +18〜30% 高く出る。1 モジュールを 1 コア・2 スレッドと数えると −12〜−20% 低く出る。どちらも合わず、Bulldozer の共有部分(デコード・浮動小数点・L2)を表せないこのモデルの限界。特別な係数は入れていない。
 - Trinity(L3 なし)は ST の u が 96.7 と高い(DRAM 遅延の見積もりが大きすぎる可能性。原因は未調査)。
-- ダイ写真の枠は作っていない(模式の配置)。caplayouts は写真未確認の unknown。
+- **ダイ写真の枠**(2026-11-19 の追加分): CPU Graveyard(happytrees.org/dieshots)の写真で 9 枠を作った(Barton・Venice・Agena・Deneb・Thuban・Zambezi・Vishera・Trinity・Zacate)。Fritzchens Fritz の Venice・Agena はパブリックドメイン、Barton は Martijn Boer のパブリックドメイン、Deneb は AMD 著作と表記、ほかはライセンス不明の表記。**写真が CPU Graveyard に無い Athlon(Thunderbird)・Athlon 64 X2(Brisbane)・Athlon II X4(Propus)は模式の配置のまま**(Windsor・Toledo の写真はあるが別のダイ)。Zambezi・Vishera・Trinity は整数コア 2 つの境界を写真から判別できず、ロジックの塊を 2 等分した推定。Zacate のコアの位置は目測の推定で確度が低い。FX-6300 は FX-8350 の枠(空き枠 2 つ)、E-350 は E-450 の写真を使う。caplayouts(コンデンサ)は写真未確認の unknown のまま。
 - 蓋なし: K7(Socket A のダイむき出し)と Bobcat(BGA)。

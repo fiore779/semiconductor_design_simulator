@@ -50,3 +50,29 @@ test('AMD 旧世代: 構成の整合(コア数 × クロック。FX は整数コ
   assert.strictEqual(c('amd-k10-thuban-1090t').boostGHz, 3.6);
   olds.forEach((p) => { const g = p.cfg.cores[0]; assert.ok(g.baseGHz > 0 && g.boostGHz >= g.baseGHz && D.uarch[g.uarch], p.id); assert.ok(p.dies[0].mm2 > 50 && D.nodes.some((n) => n.id === p.dies[0].nodeId), p.id); });
 });
+
+test('AMD 旧世代のダイ写真の枠(2026-11-19): 9 枠・縦横比は写真の自然な縦横比と 1% 以内・コア枠の数・L3 の有無・ブロックはダイの内側で重ならない', () => {
+  const FP = require('../js/model/floorplan.js'); const design = require('../js/model/design.js');
+  const want = { 'brt-1c': [1, 1024 / 561, false], 'vnc-1c': [1, 2048 / 1815, false], 'agn-4c': [4, 2048 / 1939, true], 'dnb-4c': [4, 2078 / 1612, true], 'thb-6c': [6, 3128 / 2272, true], 'zmb-8c': [8, 2705 / 2199, true], 'vsh-8c': [8, 3475 / 2795, true], 'trn-4c': [4, 2695 / 1973, false], 'zct-2c': [2, 2051 / 1821, false] };
+  Object.entries(want).forEach(([k, [n, asp, l3]]) => {
+    const t = FP.TILE_FRAMES[k]; assert.ok(t, k); assert.strictEqual(t.big.length, n, k); assert.deepStrictEqual(t.tpl, ['x86-mono'], k);
+    assert.ok(Math.abs(t.aspect / asp - 1) < 0.01, `${k}: 縦横比 ${t.aspect.toFixed(3)} / ${asp.toFixed(3)}`);
+    assert.strictEqual(Array.isArray(t.l3), l3, `${k}: L3`);
+  });
+  const NO_FRAME = ['amd-k7-athlon-1400', 'amd-k8-brisbane-5000', 'amd-k10-propus-x4-640']; // 写真が CPU Graveyard に無い(Thunderbird・Brisbane・Propus)
+  olds.forEach((p) => {
+    const die = design.fromPreset(p, { mode: 'reproduce' }).dies[0]; const l = die.layout;
+    if (NO_FRAME.includes(p.id)) { assert.ok(l && !l.frame && l.scaleBasis === 'schematic', p.id); return; }
+    assert.ok(l && want[l.frame] && l.template === 'x86-mono' && l.scaleBasis === 'photo', `${p.id}: 枠`);
+    assert.ok(l.scaleNote.length <= 600 && /happytrees\.org/.test(l.scaleNote), `${p.id}: scaleNote ${l.scaleNote.length}`);
+    assert.strictEqual(FP.checkLayout(l), null, p.id);
+    const bl = die.blocks;
+    assert.strictEqual(bl.filter((b) => b.kind === 'core').length, p.cfg.cores.reduce((s, c) => s + c.count, 0), `${p.id}: コア数`);
+    if (p.cfg.l3MB > 0) assert.ok(Math.abs(bl.filter((b) => b.kind === 'l3').reduce((s, b) => s + parseFloat(/L3 ([\d.]+)MB/.exec(b.label)[1]), 0) - p.cfg.l3MB) < 0.05, `${p.id}: L3 の合計`);
+    bl.forEach((b) => assert.ok(b.x >= -1e-6 && b.y >= -1e-6 && b.x + b.w <= die.widthMm + 1e-6 && b.y + b.h <= die.heightMm + 1e-6, `${p.id}: ${b.id} がダイの外`));
+    for (let i = 0; i < bl.length; i++) for (let j = i + 1; j < bl.length; j++) {
+      const a = bl[i]; const b = bl[j];
+      assert.ok(!(Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 0.02 && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 0.02), `${p.id}: ${a.id} と ${b.id} が重なる`);
+    }
+  });
+});

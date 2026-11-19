@@ -530,7 +530,69 @@
         ['l2b', 'L2 キャッシュ(右のダイ。2 コアで共有 4MB)', 'u', 790, 448, 536, 358], ['l2-lb', `L2 まわりの回路(右のダイの下段左${UNK})`, 'u', 748, 628, 42, 180], ['l2-rb', `L2 まわりの回路(右のダイの下段右${UNK})`, 'u', 1328, 628, 34, 180],
         ['io-lb', `FSB・I/O(右のダイの左端${UNK})`, 'u', 748, 10, 33, 615], ['io-rb', `FSB・I/O(右のダイの右端${UNK})`, 'u', 1330, 10, 32, 615]]),
   };
-  Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES);
+
+  // ---- AMD の Ryzen より前(2026-11-19。happytrees.org/dieshots の写真。座標は写真をブラウザで開いた画面の座標) ----
+  const AMD_OLD_FRAMES = {
+    // Athlon XP Barton(写真 1024×561。Martijn Boer。パブリックドメイン)。左にコア、右に L2 512KB
+    'brt-1c': tf([8, 98, 1030, 660], { p: 1, e: 0, lp: 0 },
+      [[47, 135, 603, 487]], [], [], null, [
+        ['l2', 'L2 キャッシュ(512KB。右側の大きな領域)', 'u', 656, 135, 334, 490], ['io-t', `I/O(上辺${UNK})`, 'u', 50, 100, 940, 33], ['io-b', `I/O(下辺${UNK})`, 'u', 50, 626, 940, 32],
+        ['io-l', `I/O(左端${UNK})`, 'u', 10, 100, 36, 558], ['io-r', `I/O(右端${UNK})`, 'u', 992, 100, 38, 558]]),
+    // Athlon 64 Venice(AMD_Athlon64_Venice_ADA3400DAA4BY.jpg 2048×1815。Fritzchens Fritz。パブリックドメイン)。左にコア、右に L2 512KB(赤)、下段にメモリコントローラ・HyperTransport
+    'vnc-1c': tf([91, 0, 945, 757], { p: 1, e: 0, lp: 0 },
+      [[140, 64, 445, 532]], [], [], null, [
+        ['l2', 'L2 キャッシュ(512KB。右側の赤い大きな領域)', 'u', 592, 68, 268, 614], ['mc', `メモリコントローラ・HyperTransport(下段${UNK})`, 'u', 185, 600, 400, 85],
+        ['io-t', `I/O(上辺${UNK})`, 'u', 135, 15, 725, 45], ['io-b', `I/O(下辺${UNK})`, 'u', 185, 688, 675, 56], ['io-r', `I/O(右端${UNK})`, 'u', 864, 15, 64, 730], ['io-l', `I/O(左端${UNK})`, 'u', 104, 15, 31, 730]]),
+    // Phenom X4 Agena(AMD_Phenom_Agena_HD9750WCJ4BGH.jpg 2048×1939。Fritzchens Fritz。パブリックドメイン)。2×2 のコア、中央の列に各コアの L2、中央の帯に L3 2MB・クロスバー
+    'agn-4c': tf([118, 0, 918, 757], { p: 4, e: 0, lp: 0 },
+      [[262, 55, 205, 278], [630, 55, 220, 278], [262, 428, 205, 275], [630, 428, 220, 275]], [], [],
+      [[290, 342, 260, 70, 1], [556, 342, 265, 70, 1]], [
+        ['l2a', 'L2 キャッシュ(左上のコア。512KB)', 'u', 472, 68, 72, 262], ['l2b', 'L2 キャッシュ(右上のコア。512KB)', 'u', 556, 68, 72, 262], ['l2c', 'L2 キャッシュ(左下のコア。512KB)', 'u', 472, 432, 72, 258], ['l2d', 'L2 キャッシュ(右下のコア。512KB)', 'u', 556, 432, 72, 258],
+        ['io-l', `メモリ・I/O の PHY(左端${UNK})`, 'u', 122, 5, 135, 745], ['io-r', `I/O(右端${UNK})`, 'u', 855, 5, 62, 745], ['io-t', `I/O(上辺${UNK})`, 'u', 260, 5, 590, 45], ['io-b', `I/O(下辺${UNK})`, 'u', 260, 705, 590, 45]]),
+    // Phenom II X4 Deneb(AMD_Phenom_II_X4_(Deneb_45nm).jpg 2078×1612。AMD 著作と表記)。左に 2×2 のコアと各コアの L2、右に L3 6MB、中央の帯にクロスバー
+    'dnb-4c': tf([30, 0, 1006, 757], { p: 4, e: 0, lp: 0 },
+      [[120, 82, 185, 243], [455, 82, 185, 243], [120, 432, 185, 250], [455, 432, 185, 250]], [], [],
+      [[648, 85, 280, 250, 2], [648, 430, 280, 250, 2], [715, 22, 278, 60, 1], [715, 682, 278, 60, 1]], [
+        ['l2a', 'L2 キャッシュ(左上のコア。512KB)', 'u', 308, 82, 66, 235], ['l2b', 'L2 キャッシュ(右上のコア。512KB)', 'u', 386, 82, 66, 235], ['l2c', 'L2 キャッシュ(左下のコア。512KB)', 'u', 308, 452, 66, 230], ['l2d', 'L2 キャッシュ(右下のコア。512KB)', 'u', 386, 452, 66, 230],
+        ['xbar', `クロスバー・メモリコントローラ(中央の帯${UNK})`, 'u', 120, 336, 808, 92], ['io-l', `I/O(左端${UNK})`, 'u', 45, 20, 60, 725], ['io-t', `I/O(上辺${UNK})`, 'u', 110, 22, 535, 55], ['io-b', `I/O(下辺${UNK})`, 'u', 110, 688, 530, 60],
+        ['io-r', `I/O(右側の帯${UNK})`, 'u', 932, 160, 62, 440]]),
+    // Phenom II X6 Thuban(AMD_Phenom_II_X6_(Thuban_45nm).jpg 3128×2272)。上下 3 コアずつ、各コアの L2、右に L3 6MB、中央の帯にクロスバー
+    'thb-6c': tf([0, 3, 1036, 755], { p: 6, e: 0, lp: 0 },
+      [[68, 110, 172, 225], [308, 92, 166, 230], [598, 92, 148, 230], [68, 432, 172, 225], [308, 452, 166, 230], [598, 452, 148, 230]], [], [],
+      [[748, 12, 272, 240, 2], [772, 252, 195, 85, 1], [772, 425, 195, 92, 1], [748, 518, 272, 235, 2]], [
+        ['l2a', 'L2 キャッシュ(左上のコア。512KB)', 'u', 243, 112, 57, 205], ['l2b', 'L2 キャッシュ(中上のコア。512KB)', 'u', 476, 92, 58, 205], ['l2c', 'L2 キャッシュ(右上のコア。512KB)', 'u', 536, 92, 58, 205],
+        ['l2d', 'L2 キャッシュ(左下のコア。512KB)', 'u', 243, 445, 57, 205], ['l2e', 'L2 キャッシュ(中下のコア。512KB)', 'u', 476, 468, 58, 210], ['l2f', 'L2 キャッシュ(右下のコア。512KB)', 'u', 536, 468, 58, 210],
+        ['xbar', `クロスバー・メモリコントローラ(中央の帯${UNK})`, 'u', 70, 338, 690, 88], ['io-l', `I/O(左端${UNK})`, 'u', 12, 55, 52, 650], ['io-t', `I/O(上辺${UNK})`, 'u', 205, 18, 535, 60], ['io-b', `I/O(下辺${UNK})`, 'u', 210, 690, 535, 55],
+        ['io-r', `I/O(右側の帯${UNK})`, 'u', 970, 255, 50, 262]]),
+    // FX-8150 Zambezi(AMD_FX-8150_(Bulldozer,_Zambezi_32nm).jpg 2705×2199)。四隅に 4 つのモジュール(左に整数コアのロジック、横に L2 2MB)、中段に L3 の帯 4 本
+    'zmb-8c': tf([52, 0, 984, 757], { p: 8, e: 0, lp: 0 },
+      [[105, 54, 223, 88], [105, 142, 223, 90], [672, 50, 222, 90], [672, 140, 222, 88], [105, 532, 223, 85], [105, 617, 223, 87], [672, 518, 222, 92], [672, 610, 222, 93]], [], [],
+      [[105, 270, 360, 62, 1], [105, 428, 360, 62, 1], [533, 264, 360, 60, 1], [533, 435, 360, 60, 1]], [
+        ['l2a', 'L2 キャッシュ(左上のモジュール。2MB。2 コアで共有)', 'u', 332, 52, 158, 172], ['l2b', 'L2 キャッシュ(右上のモジュール。2MB。2 コアで共有)', 'u', 510, 48, 157, 170],
+        ['l2c', 'L2 キャッシュ(左下のモジュール。2MB。2 コアで共有)', 'u', 332, 538, 158, 166], ['l2d', 'L2 キャッシュ(右下のモジュール。2MB。2 コアで共有)', 'u', 510, 542, 157, 166],
+        ['nb-l', `クロスバー・メモリコントローラ(中央左${UNK})`, 'u', 103, 335, 394, 92], ['nb-r', `クロスバー・メモリコントローラ(中央右${UNK})`, 'u', 505, 326, 392, 106],
+        ['io-r', `I/O(右端の帯${UNK})`, 'u', 918, 10, 64, 735], ['io-l', `I/O(左端${UNK})`, 'u', 56, 10, 45, 735], ['io-t', `I/O(上辺${UNK})`, 'u', 105, 2, 790, 45], ['io-b', `I/O(下辺${UNK})`, 'u', 105, 712, 790, 40]]),
+    // FX-8350 Vishera(AMD_FX-8350_(Vishera_32nm).jpg 3475×2795)。Zambezi と同じ 4 モジュールの配置(写真は注釈用の着色)
+    'vsh-8c': tf([48, 0, 989, 757], { p: 8, e: 0, lp: 0 },
+      [[138, 45, 230, 100], [138, 145, 230, 100], [712, 50, 225, 98], [712, 148, 225, 97], [138, 515, 230, 99], [138, 614, 230, 99], [712, 510, 225, 100], [712, 610, 225, 100]], [], [],
+      [[138, 262, 360, 62, 1], [138, 435, 360, 62, 1], [640, 270, 295, 62, 1], [640, 430, 295, 62, 1]], [
+        ['l2a', 'L2 キャッシュ(左上のモジュール。2MB。2 コアで共有)', 'u', 368, 45, 160, 170], ['l2b', 'L2 キャッシュ(右上のモジュール。2MB。2 コアで共有)', 'u', 548, 50, 160, 165],
+        ['l2c', 'L2 キャッシュ(左下のモジュール。2MB。2 コアで共有)', 'u', 368, 545, 160, 165], ['l2d', 'L2 キャッシュ(右下のモジュール。2MB。2 コアで共有)', 'u', 548, 540, 160, 170],
+        ['nb-l', `クロスバー・メモリコントローラ(中央左${UNK})`, 'u', 148, 350, 375, 60], ['nb-r', `クロスバー・メモリコントローラ(中央右${UNK})`, 'u', 540, 336, 395, 92],
+        ['io-l', `I/O(左端の帯${UNK})`, 'u', 52, 10, 78, 740], ['io-r', `I/O(右端${UNK})`, 'u', 958, 10, 28, 740], ['io-t', `I/O(上辺${UNK})`, 'u', 138, 2, 820, 40], ['io-b', `I/O(下辺${UNK})`, 'u', 138, 716, 820, 40]]),
+    // A10 Trinity(AMD_A10_APU_(Trinity_32nm).jpg 2695×1973)。左に GPU の大きな領域、右に 2 モジュール(各モジュールは 2 コアのロジック + 下に L2 2MB)。写真は注釈用の着色
+    'trn-4c': tf([1, 0, 1035, 757], { p: 4, e: 0, lp: 0 },
+      [[505, 112, 118, 265], [623, 112, 118, 265], [787, 112, 110, 265], [897, 112, 108, 265]], [], [], null, [
+        ['gpu', 'GPU(内蔵。左側の大きな領域)', 'g', 5, 5, 490, 660], ['l2a', 'L2 キャッシュ(左のモジュール。2MB。2 コアで共有)', 'u', 505, 385, 235, 185], ['l2b', 'L2 キャッシュ(右のモジュール。2MB。2 コアで共有)', 'u', 820, 385, 185, 185],
+        ['mid', `モジュール間の通路・クロスバー(中央${UNK})`, 'u', 745, 100, 40, 360], ['nb', `メモリコントローラ・ノースブリッジ(中央下${UNK})`, 'u', 742, 465, 52, 125],
+        ['io-t', `I/O(上辺${UNK})`, 'u', 500, 5, 530, 95], ['io-b', `I/O(下辺${UNK})`, 'u', 245, 670, 785, 82], ['io-r', `ディスプレイ・I/O(右下${UNK})`, 'u', 800, 575, 235, 95]]),
+    // E-450 Zacate(AMD_E-450_APU_(Zacate,_Ontario_40nm).jpg 2051×1821)。E-350 と同じ 2 コアのダイ。左の列に 2 つのコアと各コアの L2、中央は GPU、右端に DDR3 の PHY。コアの位置は目測の推定
+    'zct-2c': tf([92, 0, 945, 757], { p: 2, e: 0, lp: 0 },
+      [[103, 172, 192, 205], [103, 380, 192, 205]], [], [], null, [
+        ['l2a', 'L2 キャッシュ(上のコア。512KB)', 'u', 103, 20, 192, 148], ['l2b', 'L2 キャッシュ(下のコア。512KB)', 'u', 103, 590, 192, 148],
+        ['gpu', 'GPU(内蔵。中央の大きな領域)', 'g', 300, 60, 535, 545], ['io-r', `DDR3 の PHY・I/O(右端${UNK})`, 'u', 838, 15, 98, 725], ['io-b', `ディスプレイ・UVD・I/O(下段${UNK})`, 'u', 300, 610, 535, 135]]),
+  };
+  Object.assign(TILE_FRAMES, INTEL_OLD_FRAMES, AMD_OLD_FRAMES);
   // ---- Qualcomm Snapdragon(Kurnal 等の注釈つきダイ写真。2026-11-03 追加)。template は arm-soc。TILE_FRAMES と同じ形(写真の表示ピクセル座標。box がダイの外形)----
   // big = プライム → 中間コアの順(cfg の P → M → M2 の順に埋める)、small = 小コア(cfg の E)。cfg に L3 が無い(l3MB なし)ので frame の l3 は null で、写真の L3 は飾り(deco)で置く。座標は表示ピクセルからの目測(±5〜10%)。
   const qf = (box, big, small, deco) => tf(box, { p: big.length, e: small.length, lp: 0 }, big, small, [], null, deco);
@@ -697,7 +759,8 @@
   Object.assign(TILE_FRAMES, MT_FRAMES, NV_FRAMES);
   // 枠ごとに使えるテンプレート(checkLayout が検査。Intel の枠は x86-tile だけ、Snapdragon・Dimensity・T239 の枠は arm-soc だけ、AMD の単体ダイの枠は amd-apu / x86-mono、Strix Halo の SoC は amd-apu だけ)
   Object.keys(TILE_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = AMD_FRAMES[k] ? (k === 'strix-halo-soc' ? ['amd-apu'] : ['amd-apu', 'x86-mono']) : (QC_FRAMES[k] || MT_FRAMES[k] || NV_FRAMES[k]) ? ['arm-soc'] : ['x86-tile']; });
-  Object.keys(INTEL_OLD_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = ['x86-mono']; }); // 古い Intel のモノリシックダイ(x86-mono だけ)
+  Object.keys(INTEL_OLD_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = ['x86-mono']; });
+  Object.keys(AMD_OLD_FRAMES).forEach((k) => { TILE_FRAMES[k].tpl = ['x86-mono']; }); // AMD の旧世代(2026-11-19) // 古い Intel のモノリシックダイ(x86-mono だけ)
   TILE_FRAMES['strix-halo-soc'].live = true; // 評価に影響しない点は同じだが、SoC ダイは従来どおり電力按分に参加する(従来の「GPU」1 ブロックは飾りではなかった)
   TILE_FRAMES.gb10.l3Frac = 0.6; // 2026-11-07: GB10 の cfg.l3MB は L3 24 + SLC 16 = 40MB(SLC 全体を L3 相当)。写真の L3 枠(16 + 8MB)が表すのは 24/40
   TILE_FRAMES['gb10-gpu'].live = true; // GB10 の G-die も同じ(従来の「GPU」1 ブロックは飾りではなかった。'deco' を付けた「未判別」だけ飾り)
@@ -768,6 +831,22 @@
     'intel-cfl-8700k': { frame: 'cfl-6c', basis: 'photo' },
     'intel-cfr-9900k': { frame: 'cfl-8c', basis: 'photo' }, 'intel-cfr-9700k': { frame: 'cfl-8c', basis: 'photo', extra: '同じダイの SKU(HT 無効・L3 12MB)' },
     'intel-cml-10900k': { frame: 'cml-10c', basis: 'photo' }, 'intel-cml-10700k': { frame: 'cml-10c', basis: 'photo', extra: '同じダイの SKU(コア 2 つ無効。空き枠を残す)' },
+  };
+  const AMD_OLD_SRC = {
+    'brt-1c': 'Athlon XP Barton のダイ写真(Athlon XP (Barton core)。Martijn Boer。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_Athlon_XP_(Barton_core))。左にコア、右に L2 512KB。縦横比 1.82',
+    'vnc-1c': 'Athlon 64 Venice のダイ写真(AMD_Athlon64_Venice_ADA3400DAA4BY.jpg 2048×1815。Fritzchens Fritz。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_ADA3400DAA4BY)。左にコア、右に L2 512KB(赤)。縦横比 1.13',
+    'agn-4c': 'Phenom X4 Agena のダイ写真(AMD_Phenom_Agena_HD9750WCJ4BGH.jpg 2048×1939。Fritzchens Fritz。パブリックドメイン。出典 https://happytrees.org/dieshots/AMD_-_HD9750WCJ4BGH_(Phenom_X4_9750))。2×2 のコア、中央に各コアの L2 と L3・クロスバー。L3 の位置は目測の推定。縦横比 1.06',
+    'dnb-4c': 'Phenom II X4 Deneb のダイ写真(AMD_Phenom_II_X4_(Deneb_45nm).jpg 2078×1612。AMD 著作と表記。出典 https://happytrees.org/dieshots/AMD_-_Phenom_II_X4_(Deneb_45nm))。左に 2×2 のコアと各コアの L2、右に L3 6MB。縦横比 1.29',
+    'thb-6c': 'Phenom II X6 Thuban のダイ写真(AMD_Phenom_II_X6_(Thuban_45nm).jpg 3128×2272。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_Phenom_II_X6_(Thuban_45nm))。上下 3 コアずつ、右に L3 6MB。縦横比 1.38',
+    'zmb-8c': 'FX-8150 Zambezi のダイ写真(AMD_FX-8150_(Bulldozer,_Zambezi_32nm).jpg 2705×2199。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_FX-8150_(Bulldozer,_Zambezi_32nm))。四隅に 4 つのモジュール、中段に L3 の帯 4 本。各モジュールの整数コア 2 つの境界は写真から判別できず、ロジックの塊を上下に 2 等分した推定。縦横比 1.23',
+    'vsh-8c': 'FX-8350 Vishera のダイ写真(AMD_FX-8350_(Vishera_32nm).jpg 3475×2795。着色された写真。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_FX-8350_(Vishera_32nm))。Zambezi と同じ 4 モジュールの配置で、整数コア 2 つの境界は上下 2 等分の推定。縦横比 1.24',
+    'trn-4c': 'A10 Trinity のダイ写真(AMD_A10_APU_(Trinity_32nm).jpg 2695×1973。着色された写真。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_A10_APU_(Trinity_32nm))。左に GPU、右に 2 モジュール(各モジュールは 2 コア + 下に L2 2MB)。整数コア 2 つの境界は左右 2 等分の推定。縦横比 1.37',
+    'zct-2c': 'E-450 Zacate のダイ写真(AMD_E-450_APU_(Zacate,_Ontario_40nm).jpg 2051×1821。ライセンスは不明と表記。出典 https://happytrees.org/dieshots/AMD_-_E-450_APU_(Zacate,_Ontario_40nm))。E-350 と同じダイ。左の列に 2 コアと L2、中央は GPU。コアの位置は目測の推定で、確度は低い。縦横比 1.13',
+  };
+  const AMD_OLD_MAP = {
+    'amd-k7-xp-3200': { frame: 'brt-1c', basis: 'photo' }, 'amd-k8-venice-3200': { frame: 'vnc-1c', basis: 'photo' }, 'amd-k10-agena-9950': { frame: 'agn-4c', basis: 'photo' }, 'amd-k10-deneb-955': { frame: 'dnb-4c', basis: 'photo' },
+    'amd-k10-thuban-1090t': { frame: 'thb-6c', basis: 'photo' }, 'amd-bd-fx8150': { frame: 'zmb-8c', basis: 'photo' }, 'amd-pd-fx8350': { frame: 'vsh-8c', basis: 'photo' },
+    'amd-pd-fx6300': { frame: 'vsh-8c', basis: 'photo', extra: 'FX-8350 と同じダイの SKU(モジュール 1 つ無効。空き枠を残す)' }, 'amd-pd-a10-5800k': { frame: 'trn-4c', basis: 'photo' }, 'amd-bobcat-e350': { frame: 'zct-2c', basis: 'photo', extra: 'E-450 と同じダイ(E-350 は E-450 の低クロック版)' },
   };
   const QC_SRC = {
     'sd-855': '855 sm8150.jpg(Kurnal の注釈。5670×5925。SM8150。URL 候補: https://kurnal-insights.com/en/dieshot/dieshotqualcomm-snapdragon-855sm8150/)',
@@ -1080,6 +1159,11 @@
       return Object.assign(base, { template: 'x86-mono', uncore: true, igpu: !!facts.igpu, dieIndex: ci });
     }
     if (preset.vendor === 'AMD') {
+      const ao = AMD_OLD_MAP[preset.id]; // Ryzen より前(2026-11-19)
+      if (ao && TILE_FRAMES[ao.frame]) {
+        const note = `${AMD_OLD_SRC[ao.frame]}${ao.extra ? `。${ao.extra}` : ''}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま`;
+        return Object.assign(base, { template: 'x86-mono', uncore: true, igpu: false, dieIndex: ci, frame: ao.frame, scaleBasis: ao.basis, scaleNote: note });
+      }
       const am = AMD_MAP[preset.id];
       if (am && TILE_FRAMES[am.frame]) {
         const note = `${AMD_SRC[am.frame]}${am.extra ? `。${am.extra}` : ''}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま`;

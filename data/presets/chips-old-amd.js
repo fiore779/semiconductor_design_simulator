@@ -20,8 +20,8 @@ window.SDS_DATA.presets = window.SDS_DATA.presets || [];
   const PRP = die('Propus 4C', 169, 'amd-45', 'TechPowerUp の CPU DB・sysrqmts の Athlon II X4 640(3 億トランジスタ・169mm²。[二次])。L3 のない Deneb 系(L2 512KB ×4)');
   const ZMB = die('Zambezi 8C(4 モジュール)', 315, 'gf-32', 'AnandTech の Vishera の記事の比較表(Vishera・Zambezi とも 315mm²・約 12 億トランジスタ。[二次])。PC Watch のスライドも約 315mm²、Tom\'s Hardware は 316mm²、Wikipedia の FX 一覧は 319mm² で食い違う。1 モジュール(2 コアと L2 2MB)は 30.9mm²(Wikipedia の Bulldozer のページ)');
   const VSH = die('Vishera 8C(4 モジュール)', 315, 'gf-32', 'AnandTech の Vishera の記事・TechPowerUp の CPU DB・AMD の説明(SemiAccurate 経由)の 315mm²・約 12 億トランジスタ。[二次]。Zambezi と同じ面積');
-  const TRN = die('Trinity 2M+GPU', 246, 'gf-32', 'AnandTech の Trinity の比較表・TechPowerUp の CPU DB・Wikipedia(246mm²・13.03 億トランジスタ。[二次])。2 モジュール(4 コア)と GPU(6 CU)。L3 はなく L2(2 モジュール × 2MB)が最後のキャッシュ');
-  const ZCT = die('Zacate 2C+GPU', 75, 'tsmc-40', 'PC Watch のスライド(Ontario/Zacate の 2 コア Bobcat + GPU は 75mm²。[二次])');
+  const TRN = die('Trinity APU', 246, 'gf-32', 'AnandTech の Trinity の比較表・TechPowerUp の CPU DB・Wikipedia(246mm²・13.03 億トランジスタ。[二次])。2 モジュール(4 コア)と GPU(6 CU)。L3 はなく L2(2 モジュール × 2MB)が最後のキャッシュ');
+  const ZCT = die('Zacate APU', 75, 'tsmc-40', 'PC Watch のスライド(Ontario/Zacate の 2 コア Bobcat + GPU は 75mm²。[二次])');
   const reuse = (d, why) => Object.assign({}, d, { note: d.note + '。' + why });
 
   // [id, 名前, family, kind, 年, GB7 行, ダイ, TDP(W), TDP 備考, uarch, コア数, base GHz, boost GHz, 全コア GHz|null, L3 MB, L2 表示, メモリ, 蓋なし, 備考]
