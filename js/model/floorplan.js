@@ -6,7 +6,7 @@
 //   - 「飾りブロック」(Uncore・Platform I/O・Infinity Fabric・SMU・iGPU・NPU)は見た目だけで `decorative: true`。性能・電力・面積・温度の計算に一切影響しない
 //     (電力の按分では重みゼロ、評価はプリセットの値から出すのでブロックを見ない)。内蔵 GPU・NPU があるかは DECOR_FACTS の表にある SKU だけを描く。
 //   - ダイの面積は公表値のまま。ダイの幅×高さだけを、テンプレートごとの縦横比で決める(面積は変えない)。
-//   - 縮尺の根拠は die.layout.scaleBasis に持つ: 'photo'(ダイ写真の目測+面積調査)/ 'survey'(面積調査の測定値)/ 'reuse'(他の世代・SKU の値や写真の流用。このチップの写真・測定なし)/ 'schematic'(根拠なし。従来の模式)。
+//   - 縮尺の根拠は die.layout.scaleBasis に持つ: 'photo'(ダイ写真の目測+面積調査)/ 'survey'(面積調査の測定値)/ 'reuse'(他の世代・SKU の値や写真の流用。このチップの写真・測定なし)/ 'estimate'(このチップの写真だが注釈なし。大きな領域だけを目で見分けた推定)/ 'schematic'(根拠なし。従来の模式)。
 (function (root) {
   'use strict';
 
@@ -21,13 +21,14 @@
   };
   const TEMPLATE_IDS = Object.keys(TEMPLATES);
   const MAX_UNITS = 4;
-  const SCALE_BASES = ['photo', 'survey', 'reuse', 'schematic'];
+  const SCALE_BASES = ['photo', 'survey', 'reuse', 'estimate', 'schematic'];
 
   // 縮尺の根拠の説明(画面の注記)
   const SCALE_TEXT = {
     photo: 'ブロックの大きさは、このチップ(同じダイ)のダイ写真の目測に基づく目安。実チップのフロアプランではない',
     survey: 'ブロックの大きさは、面積調査(二次資料の測定値)に基づく目安。実チップのフロアプランではない',
     reuse: 'ブロックの配置と大きさの比は、他の世代・SKU の写真や値の流用による目安(このチップの写真・測定なし)。実チップのフロアプランではない',
+    estimate: '写真はこのチップ(同じダイ)だが注釈がなく、大きな領域(CPU クラスタ・GPU・I/O の帯)だけを目で見分けた推定。コア個々の位置・小さなブロックは判別できず、実チップのフロアプランではない',
     schematic: '模式図(ブロックの大きさは根拠なし。配置も実チップのものではありません)',
   };
   // 縦横比だけ写真のファイル名の寸法に合わせた模式図(layout.aspect を持つ schematic。ASPECT_ONLY の 4 件)の注記
@@ -694,6 +695,12 @@
       ['modem', 'Baseband M80 5G・LTE', 'u', 120, 75, 520, 440], ['axi', 'AXI 64/128bit Interconnect', 'u', 362, 520, 320, 250], ['disp', 'MiraVision 790 Disp', 'u', 72, 557, 275, 215], ['isp', 'Imagiq 790 ISP', 'u', 58, 780, 310, 260], ['media', 'Media Engine(Encode・VP-9・AV1)', 'u', 115, 1055, 245, 420],
       ['phy-lt', '16bit LPDDR5 メモリチャネル', 'u', 18, 85, 72, 375], ['phy-rt', '16bit LPDDR5 メモリチャネル', 'u', 1388, 85, 72, 370], ['phy-lb', '16bit LPDDR5 メモリチャネル', 'u', 18, 1068, 75, 380], ['phy-rb', '16bit LPDDR5 メモリチャネル', 'u', 1388, 1125, 75, 335],
       ['usb-b', 'USB Buffer・UFS', 'u', 1035, 1385, 310, 200], ['csi-b', 'CSI ×6', 'u', 165, 1545, 520, 48]]),
+    // Dimensity 8200(D8200-mt6896z-10.27x8.27x0.09mm.jpg 7667×6161 の表示 2156×1732。注釈なし)。推定の枠(scaleBasis estimate): 上段中央の塊 = CPU クラスタ、左下 = GPU、左右の縦帯 = PHY。A78 ×4 + A55 ×4 の個々の位置は判別できず、クラスタ内に並べた仮置き
+    'mt-8200': qf([0, 0, 2156, 1732], [[745, 335, 170, 120], [920, 335, 170, 120], [745, 460, 170, 120], [920, 460, 170, 120]], [[525, 110, 100, 150], [630, 110, 100, 150], [525, 300, 100, 150], [630, 300, 100, 150]], [
+      ['l3', 'L3 キャッシュらしき格子(推定。cfg に L3 なし)', 'u', 840, 85, 150, 165], ['gpu', 'GPU(Mali-G610 と推定。左下の大きな繰り返し構造)', 'g', 200, 1170, 910, 430],
+      ['phy-l1', `メモリ・I/O の PHY(左上の縦帯${UNK})`, 'u', 35, 65, 100, 580], ['phy-l2', `メモリ・I/O の PHY(左下の縦帯${UNK})`, 'u', 35, 1075, 100, 590],
+      ['phy-r1', `メモリ・I/O の PHY(右上の縦帯${UNK})`, 'u', 2015, 65, 100, 580], ['phy-r2', `メモリ・I/O の PHY(右下の縦帯${UNK})`, 'u', 2015, 1075, 100, 590],
+      ['io-t', `I/O(上辺${UNK})`, 'u', 1150, 10, 660, 100]]),
     // Dimensity 9200(D9200-mt6985.jpg 10199×9504 の表示 1600×1491)。X3 ×1(右上。表記なしで L2 1MiB・L1 64KiB の構造から推定)、A715 ×3(@2.85GHz。左下・右下・左上)、A510 ×4(@1.8GHz。注釈の「2Core Cluster」〔左〕と右の A510 を 2 コアずつに分けた推定)。L3 4×2MiB、SLC 3+3M、Mali G715 MC11、APU 690
     'mt-9200': qf([0, 0, 1600, 1491], [[1013, 933, 180, 194], [603, 1280, 144, 153], [1047, 1280, 153, 157], [590, 980, 153, 160]], [[599, 1140, 70, 135], [669, 1140, 71, 135], [1053, 1140, 72, 135], [1125, 1140, 72, 135]], [
       ['l3a', 'L3 2MiB(4 つで 8MiB。cfg に L3 なし)', 'u', 753, 1137, 137, 136], ['l3b', 'L3 2MiB', 'u', 905, 1137, 135, 136], ['l3c', 'L3 2MiB', 'u', 757, 1290, 133, 140], ['l3d', 'L3 2MiB', 'u', 905, 1290, 135, 140],
@@ -893,6 +900,7 @@
   };
   // MediaTek Dimensity と Switch 2 の T239 の写真の枠(arm-soc)。出典の URL は必要な画像リスト.md の Kurnal Insights のページ(チップ名・MT 型番で対応づけた候補。ページ本文は未取得)。画像内の透かしは @Kurnal
   const MT_SRC = {
+    'mt-8200': 'D8200-mt6896z-10.27x8.27x0.09mm.jpg(注釈なし。7667×6161。MT6896Z。透かしあり)。推定: 上段中央の規則的な塊を CPU クラスタ(A78 ×4 + A55 ×4)、左下の大きな繰り返し構造を GPU(Mali-G610)、左右の縦帯を I/O の PHY と見た。コア 8 つの個々の位置は判別できず、クラスタ内に並べた仮置き。それ以外は内訳未判別',
     'mt-9000': 'D9000-mt6983.jpg(Kurnal の注釈。6787×7296。MT6983。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9000-mt6983/)。A510 4 つは「Dual A510 Cluster」を左右・各 2 コアに分けた推定。左下のコア枠は A710 の表記なし(注釈なし。L2 256KiB の容量と構造から A710 と推定)',
     'mt-9200': 'D9200-mt6985.jpg(Kurnal の注釈。10199×9504。MT6985。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9200-mt6985/)。A510 4 つは注釈の 2 コアクラスタ(左)と右の A510 を 2 コアずつに分けた推定。注釈なし〔推定〕: 左上の A715 は構造から、右上の X3 は表記なしで L2 1MiB・L1 64KiB の構造から X3 と推定',
     'mt-9300': 'D9300-mt6989.jpg(Kurnal の注釈。6414×7602。MT6989。URL 候補: https://kurnal-insights.com/en/dieshot/mediatek-dimensity-9300-mt6989/)。X4 @3.25GHz ×1・X4 @2.85GHz ×3・A720 @2.0GHz ×4 は注釈どおり',
@@ -907,6 +915,7 @@
   const ARM_MAP = {
     'mt-9000': { frame: 'mt-9000', basis: 'photo', src: MT_SRC['mt-9000'] }, 'mt-9200': { frame: 'mt-9200', basis: 'photo', src: MT_SRC['mt-9200'] }, 'mt-9300': { frame: 'mt-9300', basis: 'photo', src: MT_SRC['mt-9300'] },
     'mt-9400': { frame: 'mt-9400', basis: 'photo', src: MT_SRC['mt-9400'] }, 'mt-9500': { frame: 'mt-9500', basis: 'photo', src: MT_SRC['mt-9500'] }, 'mt-9600pro': { frame: 'mt-9600pro', basis: 'photo', src: MT_SRC['mt-9600pro'] },
+    'mt-8200': { frame: 'mt-8200', basis: 'estimate', src: MT_SRC['mt-8200'] },
     'nv-t239': { frame: 't239', basis: 'photo', src: NV_SRC['t239'] },
     'nv-gb10': { frame: 'gb10', basis: 'photo', src: NV_SRC['gb10'] },
   };
@@ -1119,7 +1128,7 @@
     if (preset && (preset.vendor === 'MediaTek' || preset.vendor === 'NVIDIA') && ARM_MAP[preset.id]) {
       const m = ARM_MAP[preset.id]; const dies = preset.dies || [];
       if (!dies.length || !TILE_FRAMES[m.frame]) return null;
-      const res = { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
+      const res = { uncore: false, igpu: false, npu: false, template: 'arm-soc', units: 1, frame: m.frame, dieIndex: 0, scaleBasis: m.basis, scaleNote: m.basis === 'estimate' ? `${m.src}。ダイ面積はプリセットのまま。ブロックの境界は目測(±10% 以上)の推定` : `${m.src}。ブロックの大きさは写真の目測(±5〜10%)で、実チップのフロアプランではない。ダイ面積はプリセットのまま。出典 URL はリストの候補(ページ未取得・要ユーザー確認)`, iodGpu: false, decorIod: false };
       // GB10: コアを持たない G-die(別ダイ)にも写真の枠を当てる(design.fromPreset が socLayout で layout とブロックを作る)
       const sd = SOC_DIE[preset.id];
       if (sd) { const gi = dies.findIndex((d, i) => i !== 0 && sd.match && sd.match.test(d.name || '')); if (gi >= 0) res.socDie = { dieIndex: gi, frame: sd.frame }; }
@@ -1281,7 +1290,7 @@
     if (TEMPLATE_IDS.indexOf(l.template) < 0) return `layout.template「${l.template}」は未知のテンプレートです`;
     for (const k of ['uncore', 'igpu', 'npu']) if (l[k] != null && typeof l[k] !== 'boolean') return `layout.${k} は true か false にしてください`;
     if (l.units != null && !(Number.isInteger(l.units) && l.units >= 1 && l.units <= MAX_UNITS)) return `layout.units は 1〜${MAX_UNITS} の整数にしてください`;
-    if (l.scaleBasis != null && SCALE_BASES.indexOf(l.scaleBasis) < 0) return 'layout.scaleBasis は photo / survey / reuse / schematic のどれかにしてください';
+    if (l.scaleBasis != null && SCALE_BASES.indexOf(l.scaleBasis) < 0) return 'layout.scaleBasis は photo / survey / reuse / estimate / schematic のどれかにしてください';
     if (l.scaleNote != null && !(typeof l.scaleNote === 'string' && l.scaleNote.length <= 600)) return 'layout.scaleNote は 600 文字以内の文字列にしてください';
     if (l.frame != null) {
       if (typeof l.frame !== 'string') return 'layout.frame が文字列ではありません';

@@ -19,10 +19,13 @@ const NONE = ['nv-orin-agx', 'nv-thor', 'amd-epyc-7401'];
 
 test('MediaTek・T239: 写真のある 7 件は arm-soc の photo。Dimensity 8200 は縦横比だけ写真に合わせた schematic。Orin・Thor と EPYC 7401 は従来の配置(layout なし)', () => {
   // 2026-11-04: Dimensity 8200(D8200-mt6896z-10.27x8.27x0.09mm.jpg。注釈なし)は縦横比 10.27/8.27 = 1.2418(画像 7667×6161 px = 1.2444 と 1% 以内)だけ採る。ブロックの配置は従来どおり
+  // 2026-11-19: 8200 は注釈なしだが、大きな領域(CPU クラスタ・GPU・PHY)を目で見分けた推定の枠 mt-8200(scaleBasis estimate)を持つ
   const l8 = lay('mt-8200'); const d8 = mk('mt-8200').dies[0];
-  assert.strictEqual(l8.template, 'arm-soc'); assert.strictEqual(l8.scaleBasis, 'schematic'); assert.strictEqual(l8.frame, undefined); assert.strictEqual(l8.aspect, 1.2418);
-  assert.ok(l8.scaleNote.includes('縦横比のみ') && l8.scaleNote.includes('出典 URL 未確認') && l8.scaleNote.includes('模式で根拠なし') && l8.scaleNote.length <= 600);
-  assert.ok(Math.abs(d8.widthMm / d8.heightMm - 1.2418) < 1e-9); assert.ok(Math.abs(1.2418 / (7667 / 6161) - 1) < 0.01);
+  assert.strictEqual(l8.template, 'arm-soc'); assert.strictEqual(l8.scaleBasis, 'estimate'); assert.strictEqual(l8.frame, 'mt-8200');
+  assert.ok(l8.scaleNote.includes('注釈なし') && l8.scaleNote.includes('判別できず') && l8.scaleNote.length <= 600);
+  assert.strictEqual(FP.TILE_FRAMES['mt-8200'].big.length + FP.TILE_FRAMES['mt-8200'].small.length, 8);
+  assert.ok(Math.abs(FP.TILE_FRAMES['mt-8200'].aspect / (7667 / 6161) - 1) < 0.01);
+  assert.ok(Math.abs(d8.widthMm / d8.heightMm - FP.TILE_FRAMES['mt-8200'].aspect) < 0.01); assert.ok(Math.abs(1.2418 / (7667 / 6161) - 1) < 0.01);
   assert.ok(Math.abs(d8.widthMm * d8.heightMm - byId('mt-8200').dies[0].mm2) < 1e-6); assert.strictEqual(FP.checkLayout(l8), null);
   assert.strictEqual(design.parse(JSON.stringify(mk('mt-8200'))).ok, true);
   Object.keys(FRAME_OF).forEach((id) => {
@@ -119,8 +122,9 @@ test('MediaTek・T239: 枠ごとに使えるテンプレート(checkLayout の t
     assert.deepStrictEqual(FP.TILE_FRAMES[f].tpl, ['arm-soc'], f);
     ok('arm-soc', f); ng('x86-tile', f); ng('x86-mono', f); ng('amd-apu', f); ng('apple-soc', f); ng('amd-chiplet', f);
   });
-  // Orin・Thor・Dimensity 8200 の枠は無い(反映していない)
-  ['mt-8200', 'orin', 'thor', 'nv-orin', 'nv-thor'].forEach((f) => { assert.ok(!FP.TILE_FRAMES[f], f); ng('arm-soc', f); });
+  assert.deepStrictEqual(FP.TILE_FRAMES['mt-8200'].tpl, ['arm-soc']); ok('arm-soc', 'mt-8200'); ng('x86-tile', 'mt-8200');
+  // Orin・Thor の枠は無い(反映していない)
+  ['orin', 'thor', 'nv-orin', 'nv-thor'].forEach((f) => { assert.ok(!FP.TILE_FRAMES[f], f); ng('arm-soc', f); });
   // design.parse も拒否する(arm-soc の枠を x86-tile・amd-apu にした)
   const a = JSON.parse(JSON.stringify(mk('mt-9400'))); a.dies[0].layout.template = 'x86-tile';
   assert.strictEqual(design.parse(JSON.stringify(a)).ok, false);
@@ -128,7 +132,7 @@ test('MediaTek・T239: 枠ごとに使えるテンプレート(checkLayout の t
   assert.strictEqual(design.parse(JSON.stringify(b)).ok, false);
   const c = JSON.parse(JSON.stringify(mk('mt-9400'))); assert.strictEqual(design.parse(JSON.stringify(c)).ok, true);
   const d2 = JSON.parse(JSON.stringify(mk('nv-t239'))); assert.strictEqual(design.parse(JSON.stringify(d2)).ok, true);
-  assert.strictEqual(Object.keys(FP.TILE_FRAMES).filter((k) => /^mt-/.test(k)).length, 6);
+  assert.strictEqual(Object.keys(FP.TILE_FRAMES).filter((k) => /^mt-/.test(k)).length, 7);
 });
 
 test('MediaTek・T239: 全枠で、コアが枠一杯でもブロックはダイ内に収まり重ならない', () => {
