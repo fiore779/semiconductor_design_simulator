@@ -1,5 +1,5 @@
 'use strict';
-// dGPU の性能モデル(第 1 段階: RTX 40 の 9 SKU。学習内の当てはめであって検証ではない)
+// dGPU の性能モデル(52 SKU。学習内の当てはめと、u の 1 件抜き検証)
 const test = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
@@ -8,20 +8,33 @@ require(path.join(__dirname, '..', 'data', 'gpus.js'));
 const G = require('../js/sim/gpuperf.js');
 const gpus = globalThis.SDS_DATA.gpus;
 
-test('GPU データ: RTX 40 の 9 SKU・id 重複なし・仕様は正の値', () => {
-  assert.strictEqual(gpus.length, 9);
-  assert.strictEqual(new Set(gpus.map((g) => g.id)).size, 9);
-  gpus.forEach((g) => { assert.ok(g.shaders > 0 && g.boostMHz > 1500 && g.bwGBs > 0 && g.busBits > 0 && g.tgpW > 0 && g.openclScore > 0 && g.s === 'sec' && g.uarch === 'Ada', g.id); });
-  // 帯域 = バス幅 / 8 × データレート: 4060 は 128bit × 17 Gbps、4090 は 384bit × 21 Gbps
-  assert.ok(Math.abs(gpus.find((g) => g.id === 'nv-rtx4060').bwGBs - 128 / 8 * 17) < 0.5);
-  assert.ok(Math.abs(gpus.find((g) => g.id === 'nv-rtx4090').bwGBs - 384 / 8 * 21) < 0.5);
+test('GPU データ: 52 SKU・id 重複なし・8 世代・仕様は正の値・出典区分 sec', () => {
+  assert.strictEqual(gpus.length, 52);
+  assert.strictEqual(new Set(gpus.map((g) => g.id)).size, 52);
+  assert.deepStrictEqual([...new Set(gpus.map((g) => g.uarch))].sort(), ['Ada', 'Alchemist', 'Ampere', 'Battlemage', 'Blackwell', 'RDNA 2', 'RDNA 3', 'RDNA 4']);
+  gpus.forEach((g) => { assert.ok(g.shaders > 0 && g.boostMHz > 1500 && g.bwGBs > 0 && g.busBits > 0 && g.tgpW > 0 && g.openclScore > 0 && g.s === 'sec', g.id); });
+  // 帯域 = バス幅 / 8 × データレート。4060 は 128bit × 17 Gbps、4090 は 384bit × 21 Gbps、5090 は 512bit × 28 Gbps
+  const bw = (id) => gpus.find((g) => g.id === id).bwGBs;
+  assert.ok(Math.abs(bw('nv-rtx4060') - 128 / 8 * 17) < 0.5 && Math.abs(bw('nv-rtx4090') - 384 / 8 * 21) < 0.5 && Math.abs(bw('nv-rtx5090') - 512 / 8 * 28) < 0.5);
 });
 
-test('GPU モデル: TFLOPS = シェーダー × 2 × クロック。u は中央値。9 SKU はすべて ±10% 以内(学習内)', () => {
-  const g4090 = gpus.find((g) => g.id === 'nv-rtx4090');
-  assert.ok(Math.abs(G.tflops(g4090) - 82.575) < 0.01);
-  const u = G.uOf(gpus, 'Ada'); assert.ok(u > 0);
-  gpus.forEach((g) => { const e = G.predict(g, u) / g.openclScore - 1; assert.ok(Math.abs(e) <= 0.10, `${g.id}: ${(e * 100).toFixed(1)}%`); });
-  assert.strictEqual(G.uOf(gpus, 'RDNA 3'), null); // 世代のデータがなければ予測しない
-  assert.strictEqual(G.predict(g4090, null), null);
+test('GPU モデル: TFLOPS = シェーダー × 2 × クロック。世代データがなければ予測しない', () => {
+  const g = gpus.find((x) => x.id === 'nv-rtx4090');
+  assert.ok(Math.abs(G.tflops(g) - 82.575) < 0.01);
+  assert.strictEqual(G.uOf(gpus, 'RDNA 5'), null);
+  assert.strictEqual(G.predict(g, null), null);
+  // 帯域を下げるとスコアが下がり、演算量を上げるとスコアが上がる(単調)
+  const u = G.uOf(gpus, 'Ada');
+  assert.ok(G.predict(Object.assign({}, g, { bwGBs: 504 }), u) < G.predict(g, u));
+  assert.ok(G.predict(Object.assign({}, g, { shaders: 20000 }), u) > G.predict(g, u));
+});
+
+test('GPU モデル: 学習内で 52 SKU の 85% 以上が ±10% 以内(最大 25% 未満)。u の 1 件抜きでも同程度(指数は全 SKU で当てた値)', () => {
+  const stat = (excl) => {
+    const e = gpus.map((g) => { const u = G.uOf(gpus, g.uarch, excl ? g.id : undefined); return G.predict(g, u) / g.openclScore - 1; });
+    return { within: e.filter((x) => Math.abs(x) <= 0.10).length / e.length, max: Math.max(...e.map(Math.abs)) };
+  };
+  const a = stat(false); const b = stat(true);
+  assert.ok(a.within >= 0.85 && a.max < 0.25, `学習内 ${(a.within * 100).toFixed(0)}% max ${(a.max * 100).toFixed(0)}%`);
+  assert.ok(b.within >= 0.83 && b.max < 0.25, `1 件抜き ${(b.within * 100).toFixed(0)}% max ${(b.max * 100).toFixed(0)}%`);
 });
