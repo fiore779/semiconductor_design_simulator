@@ -29,12 +29,12 @@ test('GPU モデル: TFLOPS = シェーダー × 2 × クロック。世代デ�
   assert.ok(G.predict(Object.assign({}, g, { shaders: 20000 }), u) > G.predict(g, u));
 });
 
-test('GPU モデル: 学習内で 52 SKU の 85% 以上が ±10% 以内(最大 25% 未満)。u の 1 件抜きでも同程度(指数は全 SKU で当てた値)', () => {
+test('GPU モデル: 学習内で 52 SKU の 95% 以上が ±10% 以内(最大 15% 未満)。u の 1 件抜きでも同程度(係数は全 SKU で当てた値)', () => {
   const stat = (excl) => {
     const e = gpus.map((g) => { const u = G.uOf(gpus, g.uarch, excl ? g.id : undefined); return G.predict(g, u) / g.openclScore - 1; });
     return { within: e.filter((x) => Math.abs(x) <= 0.10).length / e.length, max: Math.max(...e.map(Math.abs)) };
   };
   const a = stat(false); const b = stat(true);
-  assert.ok(a.within >= 0.85 && a.max < 0.25, `学習内 ${(a.within * 100).toFixed(0)}% max ${(a.max * 100).toFixed(0)}%`);
-  assert.ok(b.within >= 0.83 && b.max < 0.25, `1 件抜き ${(b.within * 100).toFixed(0)}% max ${(b.max * 100).toFixed(0)}%`);
+  assert.ok(a.within >= 0.95 && a.max < 0.15, `学習内 ${(a.within * 100).toFixed(0)}% max ${(a.max * 100).toFixed(0)}%`);
+  assert.ok(b.within >= 0.95 && b.max < 0.15, `1 件抜き ${(b.within * 100).toFixed(0)}% max ${(b.max * 100).toFixed(0)}%`);
 });
