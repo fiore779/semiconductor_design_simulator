@@ -11,7 +11,9 @@
   const base = (g) => { const l = Math.min(Math.log(tflops(g)), LNMAX); return Math.exp(A * l + D * l * l) * Math.pow(g.bwGBs, C); };
   const median = (a) => { const s = a.slice().sort((x, y) => x - y); const n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
   // 世代ごとの u。openclScore のある SKU の中央値(exclude で 1 件を除ける = 1 件抜き検証用)。1 つもない世代は null(予測できない)
-  function uOf(gpus, uarch, exclude) { return median(gpus.filter((g) => g.uarch === uarch && g.openclScore > 0 && g.id !== exclude).map((g) => g.openclScore / base(g))); }
+  // class: 'igpu' なら iGPU の行だけ、省略なら dGPU(kind のない行)だけ。iGPU は電力・共有メモリの制約で同じ世代の dGPU より低い(dGPU の u で予測すると 15〜40% 高く出る。設計書 2026-11-25)
+  const isI = (g) => g.kind === 'igpu';
+  function uOf(gpus, uarch, exclude, cls) { return median(gpus.filter((g) => g.uarch === uarch && g.openclScore > 0 && g.id !== exclude && (cls === 'igpu') === isI(g)).map((g) => g.openclScore / base(g))); }
   function predict(g, u) { return u == null ? null : u * base(g); }
   const api = { A, D, C, tflops, uOf, predict };
   if (typeof window !== 'undefined') { window.SDS = window.SDS || {}; window.SDS.gpuperf = api; }

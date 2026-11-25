@@ -22,6 +22,7 @@
     <span class="sep" aria-hidden="true"></span>
     <button type="button" class="btn" id="m-compare" title="現在の設計を、元のプリセット・別のプリセット・履歴の最初の状態(最大 2 つ)と並べる">比較</button>
     <button type="button" class="btn" id="m-export" title="設計(JSON)・結果(CSV)・要約テキストを書き出す">書き出し</button>
+    <button type="button" class="btn" id="m-gpu" aria-haspopup="dialog" title="GPU(dGPU・iGPU)の Geekbench 7 OpenCL スコアの推定">GPU</button>
     <button type="button" class="btn" id="m-history" aria-haspopup="dialog" title="世代ごとの歴史と、全体の歴史(年表)">歴史</button>
     <button type="button" class="btn" id="m-settings" aria-haspopup="dialog" title="設定(元に戻す/やり直す、プリセットの呼び出し、表示言語)">設定</button>
     <span class="sep" aria-hidden="true"></span>
@@ -106,6 +107,7 @@
 <script src="js/i18n/en-render.js"></script>
 <script src="js/i18n/en-model.js"></script>
 <script src="js/i18n/en-floorplan.js"></script>
+<script src="js/i18n/en-gpu.js"></script>
 <script src="data/benchmarks/gb7-scores.js"></script>
 <script src="data/nodes.js"></script>
 <script src="data/substrates.js"></script>
@@ -115,6 +117,8 @@
 <script src="data/presets/chips-soc.js"></script>
 <script src="data/presets/chips-old.js"></script>
 <script src="data/presets/chips-old-amd.js"></script>
+<script src="data/gpus.js"></script>
+<script src="data/igpus.js"></script>
 <script src="data/memory.js"></script>
 <script src="data/blocklib.js"></script>
 <script src="data/caplayouts.js"></script>
@@ -123,6 +127,7 @@
 <!-- 計算 -->
 <script src="js/sim/area.js"></script>
 <script src="js/sim/memory.js"></script>
+<script src="js/sim/gpuperf.js"></script>
 <script src="js/sim/perf.js"></script>
 <script src="js/sim/power.js"></script>
 <script src="js/sim/thermal.js"></script>
@@ -158,6 +163,7 @@
 <script src="js/ui/heatdata.js"></script>
 <script src="js/ui/results.js"></script>
 <script src="js/ui/presetdialog.js"></script>
+<script src="js/ui/gpupanel.js"></script>
 <script src="js/ui/params.js"></script>
 <script src="js/ui/packagepanel.js"></script>
 <script src="js/ui/diffpanel.js"></script>

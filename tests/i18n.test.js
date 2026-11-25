@@ -9,7 +9,7 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 function load() {
   const ctx = vm.createContext({}); ctx.window = ctx;
-  ['i18n', 'en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8'), ctx, { filename: f }));
+  ['i18n', 'en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan', 'en-gpu'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8'), ctx, { filename: f }));
   return ctx.I18N;
 }
 
@@ -34,11 +34,11 @@ test('辞書: V-Cache ダイは「ベースダイ」と書かない', () => {
   assert.ok(!/label: 'ベースダイ/.test(src));
 });
 test('辞書の ${n} は日本語側と英語側で同じ番号の組', () => {
-  const src = ['en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan'].map((f) => fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8')).join('\n');
+  const src = ['en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan', 'en-gpu'].map((f) => fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8')).join('\n');
   const I = load(); void I;
   const ctx = vm.createContext({}); ctx.window = ctx; const seen = {};
   ctx.I18N = { add: (o) => Object.assign(seen, o) };
-  ['en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8'), ctx));
+  ['en-shell', 'en-ui1', 'en-ui2', 'en-ui3', 'en-render', 'en-model', 'en-floorplan', 'en-gpu'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, 'js/i18n', f + '.js'), 'utf8'), ctx));
   const bad = Object.keys(seen).filter((ja) => { const a = new Set((ja.match(/\$\{\d+\}/g) || [])); const b = (seen[ja].match(/\$\{\d+\}/g) || []); return b.some((x) => !a.has(x)); });
   assert.deepStrictEqual(bad, []);
   assert.ok(src.length > 1000);

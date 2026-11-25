@@ -554,6 +554,7 @@
   $('m-save').addEventListener('click', save);
   $('m-compare').addEventListener('click', openCompare);
   $('m-export').addEventListener('click', openExport);
+  $('m-gpu').addEventListener('click', () => { if (S.ui.gpupanel) S.ui.gpupanel.openGpuPanel(); });
   $('m-undo').addEventListener('click', undo);
   $('m-redo').addEventListener('click', redo);
   $('v-fit').addEventListener('click', () => { if (view && view.fit) view.fit(); });

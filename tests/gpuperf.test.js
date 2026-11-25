@@ -38,3 +38,42 @@ test('GPU モデル: 学習内で 52 SKU の 95% 以上が ±10% 以内(最大 1
   assert.ok(a.within >= 0.95 && a.max < 0.15, `学習内 ${(a.within * 100).toFixed(0)}% max ${(a.max * 100).toFixed(0)}%`);
   assert.ok(b.within >= 0.95 && b.max < 0.15, `1 件抜き ${(b.within * 100).toFixed(0)}% max ${(b.max * 100).toFixed(0)}%`);
 });
+
+// ---- iGPU(data/igpus.js)と GPU 評価ダイアログの純関数 ----
+require(path.join(__dirname, '..', 'data', 'igpus.js'));
+const igpus = globalThis.SDS_DATA.igpus;
+globalThis.SDS = globalThis.SDS || {}; globalThis.SDS.gpuperf = G;
+const P = (() => { global.window = globalThis; const m = {}; const src = require('fs').readFileSync(path.join(__dirname, '..', 'js', 'ui', 'gpupanel.js'), 'utf8'); new Function('window', src.replace(/root\.SDS\.ui\.gpupanel = /, 'window.__gp = ')).call(null, Object.assign(globalThis, { SDS: Object.assign(globalThis.SDS, { ui: {} }) })); return globalThis.__gp; })();
+
+test('iGPU データ: 10 SKU・id 重複なし・kind igpu・メモリ帯域は [推定]・公開値あり', () => {
+  assert.strictEqual(igpus.length, 10);
+  assert.strictEqual(new Set(igpus.map((g) => g.id)).size, 10);
+  igpus.forEach((g) => assert.ok(g.kind === 'igpu' && g.bwS === 'est' && g.shaders > 0 && g.boostMHz > 0 && g.bwGBs > 0 && g.openclScore > 0 && g.s === 'sec' && g.memNote, g.id));
+  assert.ok(!gpus.some((g) => g.kind), 'dGPU の行に kind は付けない');
+});
+
+test('iGPU モデル: iGPU の u は同じ世代の dGPU より低い(電力・共有メモリ)。dGPU と iGPU は別の区分', () => {
+  const ud = G.uOf(gpus, 'RDNA 3'); const ui = G.uOf(igpus, 'RDNA 3', undefined, 'igpu');
+  assert.ok(ui < ud && ui / ud > 0.7 && ui / ud < 0.95, `${ui} / ${ud}`);
+  assert.strictEqual(G.uOf(igpus, 'RDNA 3'), null, 'iGPU の行だけを渡して dGPU の u は出ない');
+  assert.strictEqual(G.uOf(igpus, 'Ada', undefined, 'igpu'), null);
+});
+
+test('GPU 評価の一覧: 62 行・dGPU は 95% 以上が ±10%・iGPU は 1 件世代を校正のみと表示・差は予測 / 公開値 − 1', () => {
+  const rows = P.buildRows(gpus, igpus);
+  assert.strictEqual(rows.length, 62);
+  const d = rows.filter((r) => r.cls === 'dgpu'); assert.ok(d.filter((r) => r.ok).length / d.length >= 0.95);
+  const i = rows.filter((r) => r.cls === 'igpu');
+  assert.ok(i.find((r) => r.id === 'amd-680m').selfOnly && i.find((r) => r.id === 'intel-arc140v').selfOnly);
+  assert.ok(!i.find((r) => r.id === 'amd-680m').ok, '校正のみの行は ok にしない');
+  const r = rows.find((x) => x.id === 'nv-rtx4090'); assert.ok(Math.abs(r.err - (r.predicted / r.published - 1)) < 1e-12);
+  // 外れ値は隠さない(890M はチャートの標本が 1.9 倍開いている)
+  assert.ok(Math.abs(i.find((x) => x.id === 'amd-890m').err) > 0.3);
+});
+
+test('GPU 評価の計算機: 仕様を上書きすると推定が変わる(帯域・シェーダーで単調)・存在しない id は null', () => {
+  const all = gpus.concat(igpus);
+  const e0 = P.estimate(all, 'amd-780m'); const e1 = P.estimate(all, 'amd-780m', { bwGBs: 120 }); const e2 = P.estimate(all, 'amd-780m', { shaders: 1024 });
+  assert.ok(e1.predicted > e0.predicted && e2.predicted > e0.predicted);
+  assert.strictEqual(P.estimate(all, 'nope'), null);
+});
