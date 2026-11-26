@@ -32,11 +32,22 @@
   const slots = { dgpu: null, igpu: null };
   const allData = () => { const D = root.SDS_DATA || {}; return (D.gpus || []).concat(D.igpus || []); };
   function getSelection() { const k = slots.dgpu ? 'dgpu' : slots.igpu ? 'igpu' : null; return k ? Object.assign({ slot: k }, slots[k]) : null; }
+  // CPU プリセットに内蔵の iGPU(data/igpus.js の presetIgpu)。クロックはその SKU の値で上書きする。無ければ null
+  function autoIgpu(presetId) {
+    const m = presetId && ((root.SDS_DATA || {}).presetIgpu || {})[presetId]; if (!m) return null;
+    return { id: m.igpuId, over: { boostMHz: m.boostMHz }, auto: true };
+  }
+  // 総合スコアに使う GPU: dGPU の選択 > iGPU の手動選択 > CPU 内蔵の iGPU(自動)。どれもなければ null
+  function activeSelection(presetId) {
+    if (slots.dgpu) return Object.assign({ slot: 'dgpu' }, slots.dgpu);
+    if (slots.igpu) return Object.assign({ slot: 'igpu' }, slots.igpu);
+    const a = autoIgpu(presetId); return a ? Object.assign({ slot: 'igpu' }, a) : null;
+  }
   const slotLabel = (k) => (k === 'igpu' ? 'iGPU 搭載時' : 'dGPU 搭載時');
   function selectionInfo(sel) {
     const all = allData(); const g0 = all.find((x) => x.id === sel.id); if (!g0) return null;
     const e = estimate(all, sel.id, sel.over);
-    return { id: g0.id, name: g0.name + (sel.over ? '(仕様を変更)' : ''), pred: e ? e.predicted : null, pub: g0.openclScore, kind: g0.kind || 'dgpu' };
+    return { id: g0.id, name: g0.name + (sel.auto ? '(この CPU 内蔵。クロックはこの SKU の値)' : sel.over ? '(仕様を変更)' : ''), pred: e ? e.predicted : null, pub: g0.openclScore, kind: g0.kind || 'dgpu' };
   }
   function openGpuPanel() {
     const { h } = root.SDS.ui.dom; const DG = root.SDS.ui.dialogs;
@@ -86,5 +97,5 @@
       tbl('dgpu'), h('div', { style: 'height:10px' }), tbl('igpu')));
   }
 
-  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, getSelection, selectionInfo, slotLabel, TOL };
+  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, getSelection, activeSelection, autoIgpu, selectionInfo, slotLabel, TOL };
 })(window);

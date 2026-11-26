@@ -24,7 +24,7 @@
     const { h } = root.SDS.ui.dom; const DG = root.SDS.ui.dialogs; const GP = root.SDS.ui.gpupanel;
     const fmt = (v, d) => (v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: d == null ? 0 : d }));
     const base = opts.cpuScores(null);
-    const sel = GP.getSelection();
+    const sel = GP.activeSelection(base && base.presetId);
     const gpuInfo = sel ? GP.selectionInfo(sel) : null;
     const wI = h('input', { type: 'range', min: '0', max: '100', step: '5', value: '50', id: 'cb-w', 'aria-label': 'CPU の重み(%)' });
     const wL = h('span', { id: 'cb-wl', text: 'CPU 50% / GPU 50%' });

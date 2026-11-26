@@ -21,6 +21,7 @@
     '選択中: dGPU 1 / iGPU 2。総合スコアに使うのは 3(dGPU 優先。片方だけ表示)': 'Selected: dGPU 1 / iGPU 2. Used for the combined score: 3 (dGPU takes priority; only one is shown)',
     'dGPU の選択を解除': 'Clear the dGPU selection', 'iGPU の選択を解除': 'Clear the iGPU selection', 'なし': 'none',
     '(既定 = CPU の L3。iGPU のときだけ使えます)': '(default = the CPU L3; available only for an iGPU)',
+    '(この CPU 内蔵。クロックはこの SKU の値)': '(built into this CPU; the clock is this SKU value)',
     'GPU': 'GPU', 'GPU(dGPU・iGPU)の Geekbench 7 OpenCL スコアの推定': 'Estimate of Geekbench 7 OpenCL scores for GPUs (dGPU and iGPU)',
     'GPU 評価': 'GPU evaluation', 'GPU を選ぶ': 'Choose a GPU', '計算機': 'Calculator',
     'iGPU(確度:低。メモリ帯域は典型構成の [推定]・標本の幅が大きい)': 'iGPU (confidence: low. Memory bandwidth is an [estimate] for a typical configuration; the samples spread widely)',

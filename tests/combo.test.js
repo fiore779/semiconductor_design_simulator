@@ -75,3 +75,17 @@ test('iGPU / dGPU: 共有キャッシュは iGPU のときだけ効く。dGPU �
   assert.ok(d.est > i.est, 'dGPU は共有の減点がない');
   assert.strictEqual(d.cpuUsed, cpu);
 });
+
+test('CPU 内蔵の iGPU: 対応表の id が実在し、クロックは SKU の値で上書きされる。選択の優先は dGPU > iGPU 手動 > 内蔵(自動)', () => {
+  const map = globalThis.SDS_DATA.presetIgpu; const igpus = globalThis.SDS_DATA.igpus;
+  Object.keys(map).forEach((pid) => { assert.ok(D.presets.some((p) => p.id === pid), pid); assert.ok(igpus.some((g) => g.id === map[pid].igpuId), pid); });
+  assert.strictEqual(map['intel-lnl-268v'].boostMHz, 2000); assert.strictEqual(map['intel-lnl-258v'].boostMHz, 1950);
+  assert.strictEqual(Object.keys(map).length, 10);
+  const GP = (() => { globalThis.window = globalThis; require('../js/sim/gpuperf.js'); require('../js/ui/gpupanel.js'); return globalThis.SDS.ui.gpupanel; })();
+  assert.strictEqual(GP.activeSelection('intel-rpl-14700hx'), null, '対応のない CPU は自動では入らない');
+  const a = GP.activeSelection('amd-zen4-7840hs'); assert.strictEqual(a.slot, 'igpu'); assert.strictEqual(a.id, 'amd-780m'); assert.ok(a.auto);
+  const i1 = GP.selectionInfo(a);
+  // 同じ 780M でも 8700G(2900MHz)のほうが 7840HS(2700MHz)より高い(クロックの差)
+  const i2 = GP.selectionInfo(GP.activeSelection('amd-zen4-8700g')); assert.ok(i2.pred > i1.pred);
+  assert.ok(/内蔵/.test(i1.name));
+});

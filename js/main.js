@@ -565,7 +565,7 @@
     const st = ev.st; const mt = ev.mt;
     if (!st || !st.ok || !mt || !mt.ok) return { ok: false, reason: 'この設計は ST・MT を計算できません(' + ((st && !st.ok && st.reason) || (mt && mt.reason) || '理由不明') + ')' };
     const cfg = design.cfg || null; const b = lastEval;
-    return { ok: true, name: design.name, st: st.score, mt: mt.score, stPub: b.st && typeof b.st.published === 'number' ? b.st.published : null, mtPub: b.mt && typeof b.mt.published === 'number' ? b.mt.published : null, l3MB: cfg && typeof cfg.l3MB === 'number' ? cfg.l3MB : null };
+    return { ok: true, presetId: design.presetId || null, name: design.name, st: st.score, mt: mt.score, stPub: b.st && typeof b.st.published === 'number' ? b.st.published : null, mtPub: b.mt && typeof b.mt.published === 'number' ? b.mt.published : null, l3MB: cfg && typeof cfg.l3MB === 'number' ? cfg.l3MB : null };
   }
   $('m-combo').addEventListener('click', () => { if (S.ui.combopanel) S.ui.combopanel.openCombo({ cpuScores }); });
   $('m-undo').addEventListener('click', undo);

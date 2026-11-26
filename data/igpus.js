@@ -21,7 +21,21 @@
     g('amd-8060s', 'Radeon 8060S(Strix Halo)', 'RDNA 3', 2560, 2900, 256, 'LPDDR5X-8000 256bit', 86817, 'チャートの 4 行(91,472 / 86,109 / 86,061 / 83,625)の平均。40 CU'),
     g('intel-arc140v', 'Arc 140V(Lunar Lake)', 'Battlemage', 1024, 1950, 136.5, 'LPDDR5X-8533 128bit(オンパッケージ)', 27220, '標本 1 行(16GB 表記)。8 Xe2 コア'),
   ];
-  const data = { igpus };
-  if (typeof window !== 'undefined') { window.SDS_DATA = window.SDS_DATA || {}; window.SDS_DATA.igpus = igpus; }
+  // CPU プリセット → 内蔵 iGPU(2026-11-26)。boostMHz はその SKU のクロック(Wikipedia の List of AMD Ryzen processors・Lunar Lake の各 SKU の行。2026-11-26 取得。[二次])。
+  // iGPU の行(上)のクロックは同じ iGPU を載せた SKU の最大値なので、SKU のクロックが低いときはこちらで上書きする。**載っていないプリセットは未対応**(7945HX は Wikipedia の表に iGPU の記載がなく、Radeon 610M はこのデータにない)。
+  const presetIgpu = {
+    'amd-zen3p-7735hs': { igpuId: 'amd-680m', boostMHz: 2200 },
+    'amd-zen4-7840hs': { igpuId: 'amd-780m', boostMHz: 2700 },
+    'amd-zen4-8700g': { igpuId: 'amd-780m', boostMHz: 2900 },
+    'amd-zen4-8500g': { igpuId: 'amd-740m', boostMHz: 2800 },
+    'amd-strix-hx370': { igpuId: 'amd-890m', boostMHz: 2900 },
+    'amd-kraken-350': { igpuId: 'amd-860m', boostMHz: 3000 },
+    'amd-strixhalo-395': { igpuId: 'amd-8060s', boostMHz: 2900 },
+    'intel-lnl-268v': { igpuId: 'intel-arc140v', boostMHz: 2000 },
+    'intel-lnl-258v': { igpuId: 'intel-arc140v', boostMHz: 1950 },
+    'intel-lnl-256v': { igpuId: 'intel-arc140v', boostMHz: 1950 },
+  };
+  const data = { igpus, presetIgpu };
+  if (typeof window !== 'undefined') { window.SDS_DATA = window.SDS_DATA || {}; window.SDS_DATA.igpus = igpus; window.SDS_DATA.presetIgpu = presetIgpu; }
   if (typeof module !== 'undefined' && module.exports) module.exports = data;
 })(typeof window !== 'undefined' ? window : globalThis);
