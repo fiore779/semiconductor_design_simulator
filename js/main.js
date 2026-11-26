@@ -555,6 +555,19 @@
   $('m-compare').addEventListener('click', openCompare);
   $('m-export').addEventListener('click', openExport);
   $('m-gpu').addEventListener('click', () => { if (S.ui.gpupanel) S.ui.gpupanel.openGpuPanel(); });
+  // 総合スコア用: 今の設計の ST・MT。sharedL3MB が数なら、L3 をその容量にして再評価(CPU と GPU でキャッシュを共有するときは半分の容量を渡す)
+  function cpuScores(sharedL3MB) {
+    if (!design || !lastEval) return { ok: false, reason: 'CPU の設計を先に読み込んでください(「CPU プリセット」)' };
+    let ev = lastEval;
+    if (typeof sharedL3MB === 'number') {
+      try { const d2 = JSON.parse(JSON.stringify(design)); if (!d2.cfg) return { ok: false, reason: 'この設計は L3 を変えて再評価できません' }; d2.cfg.l3MB = sharedL3MB; ev = EV.evaluate(d2, ctx); } catch (e) { return { ok: false, reason: '再評価できませんでした: ' + e.message }; }
+    }
+    const st = ev.st; const mt = ev.mt;
+    if (!st || !st.ok || !mt || !mt.ok) return { ok: false, reason: 'この設計は ST・MT を計算できません(' + ((st && !st.ok && st.reason) || (mt && mt.reason) || '理由不明') + ')' };
+    const cfg = design.cfg || null; const b = lastEval;
+    return { ok: true, name: design.name, st: st.score, mt: mt.score, stPub: b.st && typeof b.st.published === 'number' ? b.st.published : null, mtPub: b.mt && typeof b.mt.published === 'number' ? b.mt.published : null, l3MB: cfg && typeof cfg.l3MB === 'number' ? cfg.l3MB : null };
+  }
+  $('m-combo').addEventListener('click', () => { if (S.ui.combopanel) S.ui.combopanel.openCombo({ cpuScores }); });
   $('m-undo').addEventListener('click', undo);
   $('m-redo').addEventListener('click', redo);
   $('v-fit').addEventListener('click', () => { if (view && view.fit) view.fit(); });

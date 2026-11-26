@@ -15,14 +15,15 @@
     <button type="button" class="btn" id="m-new" title="新規(4 つの始め方)">新規</button>
     <button type="button" class="btn" id="m-open" title="保存した設計 (JSON) を開く (Ctrl+O)">開く</button>
     <button type="button" class="btn" id="m-save" title="設計を JSON でダウンロード (Ctrl+S)">保存</button>
-    <button type="button" class="btn" id="m-preset" title="実在チップのプリセットを選ぶ">プリセット</button>
+    <button type="button" class="btn" id="m-preset" title="実在チップ(CPU・SoC)のプリセットを選ぶ">CPU プリセット</button>
+    <button type="button" class="btn" id="m-gpu" aria-haspopup="dialog" title="GPU(dGPU・iGPU)のプリセットを選ぶ。Geekbench 7 OpenCL スコアの推定">GPU プリセット</button>
+    <button type="button" class="btn" id="m-combo" aria-haspopup="dialog" title="今の CPU と選んだ GPU を合わせた総合スコア(キャッシュ共有は半分ずつ)">総合スコア</button>
     <span class="sep" aria-hidden="true"></span>
     <button type="button" class="btn" id="m-undo" title="元に戻す (Ctrl+Z)">↶ 元に戻す</button>
     <button type="button" class="btn" id="m-redo" title="やり直す (Ctrl+Y)">↷ やり直す</button>
     <span class="sep" aria-hidden="true"></span>
     <button type="button" class="btn" id="m-compare" title="現在の設計を、元のプリセット・別のプリセット・履歴の最初の状態(最大 2 つ)と並べる">比較</button>
     <button type="button" class="btn" id="m-export" title="設計(JSON)・結果(CSV)・要約テキストを書き出す">書き出し</button>
-    <button type="button" class="btn" id="m-gpu" aria-haspopup="dialog" title="GPU(dGPU・iGPU)の Geekbench 7 OpenCL スコアの推定">GPU</button>
     <button type="button" class="btn" id="m-history" aria-haspopup="dialog" title="世代ごとの歴史と、全体の歴史(年表)">歴史</button>
     <button type="button" class="btn" id="m-settings" aria-haspopup="dialog" title="設定(元に戻す/やり直す、プリセットの呼び出し、表示言語)">設定</button>
     <span class="sep" aria-hidden="true"></span>
@@ -128,6 +129,7 @@
 <script src="js/sim/area.js"></script>
 <script src="js/sim/memory.js"></script>
 <script src="js/sim/gpuperf.js"></script>
+<script src="js/sim/combo.js"></script>
 <script src="js/sim/perf.js"></script>
 <script src="js/sim/power.js"></script>
 <script src="js/sim/thermal.js"></script>
@@ -164,6 +166,7 @@
 <script src="js/ui/results.js"></script>
 <script src="js/ui/presetdialog.js"></script>
 <script src="js/ui/gpupanel.js"></script>
+<script src="js/ui/combopanel.js"></script>
 <script src="js/ui/params.js"></script>
 <script src="js/ui/packagepanel.js"></script>
 <script src="js/ui/diffpanel.js"></script>

@@ -3,6 +3,20 @@
   'use strict';
   if (!root.I18N) return;
   root.I18N.add({
+    'CPU プリセット': 'CPU presets', '実在チップ(CPU・SoC)のプリセットを選ぶ': 'Choose a preset of a real chip (CPU / SoC)',
+    'GPU プリセット': 'GPU presets', 'GPU(dGPU・iGPU)のプリセットを選ぶ。Geekbench 7 OpenCL スコアの推定': 'Choose a GPU (dGPU / iGPU) preset. Estimates the Geekbench 7 OpenCL score',
+    '総合スコア': 'Combined score', '今の CPU と選んだ GPU を合わせた総合スコア(キャッシュ共有は半分ずつ)': 'Combined score of the current CPU and the chosen GPU (a shared cache is split in half)',
+    'GPU を選ぶ・仕様を変えて推定': 'Choose a GPU / change its specs and estimate', 'この GPU を選ぶ': 'Choose this GPU', '選択中: なし': 'Selected: none',
+    '選択中: 1': 'Selected: 1', '選択中: 1(「総合スコア」で CPU と合わせます)': 'Selected: 1 (combine it with the CPU in "Combined score")', '(仕様を変更)': '(specs changed)',
+    'CPU + GPU 総合スコア': 'CPU + GPU combined score', 'CPU の重み(%)': 'CPU weight (%)', 'CPU の重み ': 'CPU weight ',
+    'CPU と GPU でキャッシュを共有する(半分ずつ)': 'CPU and GPU share the cache (split in half)', '共有容量 MB ': 'Shared capacity MB ', '(既定 = CPU の L3)': '(default = the CPU L3)',
+    'CPU の設計を先に読み込んでください(「CPU プリセット」)': 'Load a CPU design first ("CPU presets")', 'GPU を選んでください(「GPU プリセット」)': 'Choose a GPU first ("GPU presets")',
+    'CPU 1% / GPU 2%': 'CPU 1% / GPU 2%', '公開値': 'Published', 'CPU ST(Geekbench 7)': 'CPU ST (Geekbench 7)', 'CPU MT(Geekbench 7)': 'CPU MT (Geekbench 7)', 'GPU(1。OpenCL)': 'GPU (1; OpenCL)',
+    '公開値ベースの総合は、CPU の公開値と GPU の公開値がそろわないので出せません。': 'The published-value combined score cannot be shown because the CPU and GPU published values are not both available.',
+    '公開値ベースの総合との差: 1': 'Difference from the published-value combined score: 1',
+    'キャッシュ共有: 共有容量 1 MB を半分ずつ。CPU は L3 2 MB で再評価(共有なしの CPU: ST 3・MT 4)。GPU 側は 5 MB だが、GPU のモデルにキャッシュ容量の項がなく、GPU スコアには反映していない。': 'Shared cache: the shared 1 MB is split in half. The CPU is re-evaluated with 2 MB of L3 (without sharing: ST 3, MT 4). The GPU side gets 5 MB, but the GPU model has no cache-capacity term, so it is not reflected in the GPU score.',
+    '基準と重みは本ツールの取り決めで、Geekbench の公式の総合点ではありません。': 'The reference and the weight are conventions of this tool, not an official Geekbench combined score.',
+    'この設計は L3 を変えて再評価できません': 'This design cannot be re-evaluated with a different L3',
     'GPU': 'GPU', 'GPU(dGPU・iGPU)の Geekbench 7 OpenCL スコアの推定': 'Estimate of Geekbench 7 OpenCL scores for GPUs (dGPU and iGPU)',
     'GPU 評価': 'GPU evaluation', 'GPU を選ぶ': 'Choose a GPU', '計算機': 'Calculator',
     'iGPU(確度:低。メモリ帯域は典型構成の [推定]・標本の幅が大きい)': 'iGPU (confidence: low. Memory bandwidth is an [estimate] for a typical configuration; the samples spread widely)',

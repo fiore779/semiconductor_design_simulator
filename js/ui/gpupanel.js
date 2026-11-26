@@ -27,6 +27,15 @@
     return { tflops: GP.tflops(g), predicted: GP.predict(g, u), published: g0.openclScore };
   }
 
+  // 選んだ GPU(総合スコア用)。id と、計算機で上書きした仕様(あれば)。画面を閉じても残る(保存はしない)
+  let selection = null;
+  const allData = () => { const D = root.SDS_DATA || {}; return (D.gpus || []).concat(D.igpus || []); };
+  function getSelection() { return selection; }
+  function selectionInfo(sel) {
+    const all = allData(); const g0 = all.find((x) => x.id === sel.id); if (!g0) return null;
+    const e = estimate(all, sel.id, sel.over);
+    return { id: g0.id, name: g0.name + (sel.over ? '(仕様を変更)' : ''), pred: e ? e.predicted : null, pub: g0.openclScore, kind: g0.kind || 'dgpu' };
+  }
   function openGpuPanel() {
     const { h } = root.SDS.ui.dom; const DG = root.SDS.ui.dialogs;
     const D = root.SDS_DATA || {};
@@ -60,13 +69,15 @@
     const load = () => { const g = base(); sh.i.value = g.shaders; mh.i.value = g.boostMHz; bw.i.value = g.bwGBs; update(); };
     sel.addEventListener('change', load); [sh.i, mh.i, bw.i].forEach((i) => i.addEventListener('input', update));
     load();
-    DG.open('GPU 評価', h('div', { class: 'gpu-dialog', style: 'padding:10px 14px;overflow:auto' },
+    const cur = h('p', { id: 'gpu-cur', role: 'status', 'aria-live': 'polite', text: selection ? '選択中: ' + selectionInfo(selection).name : '選択中: なし' });
+    const pick = h('button', { type: 'button', class: 'btn primary', id: 'gpu-pick', onclick: () => { const o = read(); const g0 = base(); const same = o.shaders === g0.shaders && o.boostMHz === g0.boostMHz && o.bwGBs === g0.bwGBs; selection = { id: g0.id, over: same ? null : o }; cur.textContent = '選択中: ' + selectionInfo(selection).name + '(「総合スコア」で CPU と合わせます)'; } }, 'この GPU を選ぶ');
+    DG.open('GPU プリセット', h('div', { class: 'gpu-dialog', style: 'padding:10px 14px;overflow:auto' },
       h('p', { class: 'note', text: 'Geekbench 7 GPU(OpenCL)のスコアを、シェーダー数・クロック・メモリ帯域から推定します。公開値はチャートの平均([公表])、仕様は Wikipedia([二次]。公式との照合は未了)。SKU 別の特別な係数はありません。' }),
       h('p', { class: 'small', text: `±10% 以内: dGPU ${within('dgpu')}・iGPU ${within('igpu')}(係数は同じデータで当てた学習内の値。iGPU は同じ世代の iGPU の中央値で校正し、1 件だけの世代は検証できません)。` }),
-      h('h3', { text: '計算機' }), h('div', { class: 'gpurow' }, h('label', null, 'GPU ', sel), ' ', sh.wrap, mh.wrap, bw.wrap), out,
+      h('h3', { text: 'GPU を選ぶ・仕様を変えて推定' }), h('div', { class: 'gpurow' }, h('label', null, 'GPU ', sel), ' ', sh.wrap, mh.wrap, bw.wrap, pick), out, cur,
       h('p', { class: 'small', text: 'iGPU のメモリ帯域は CPU と共有です。ここでは理論値で、GPU が実際に使える分は小さくなります(その差は iGPU の u に含まれます)。' }),
       tbl('dgpu'), h('div', { style: 'height:10px' }), tbl('igpu')));
   }
 
-  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, TOL };
+  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, getSelection, selectionInfo, TOL };
 })(window);
