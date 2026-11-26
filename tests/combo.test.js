@@ -95,10 +95,10 @@ test('内蔵 iGPU のメモリ帯域: CPU のメモリ構成から渡すと帯�
   const GP = globalThis.SDS.ui.gpupanel; const M = globalThis.SDS.sim && globalThis.SDS.sim.memory || require('../js/sim/memory.js');
   // 8700G の既定のメモリ(DDR5-5200・128bit)= 83.2 GB/s
   const m = M.evaluate({ id: 'amd-zen4-8700g', cfg: {} }); assert.ok(m.active && Math.abs(m.bwGBs - 83.2) < 1e-6, String(m.bwGBs));
-  const a0 = GP.activeSelection('amd-zen4-8700g'); const a1 = GP.activeSelection('amd-zen4-8700g', m.bwGBs);
-  assert.strictEqual(a0.over.bwGBs, undefined); assert.ok(Math.abs(a1.over.bwGBs - 83.2) < 1e-6);
-  assert.ok(GP.selectionInfo(a1).pred < GP.selectionInfo(a0).pred, '帯域 89.6 → 83.2 で下がる');
-  assert.ok(/83\.2 GB\/s/.test(GP.selectionInfo(a1).name));
+  const a0 = GP.activeSelection('amd-zen4-7840hs'); const a1 = GP.activeSelection('amd-zen4-7840hs', 76.8);
+  assert.strictEqual(a0.over.bwGBs, undefined); assert.ok(Math.abs(a1.over.bwGBs - 76.8) < 1e-6);
+  assert.ok(GP.selectionInfo(a1).pred < GP.selectionInfo(a0).pred, '帯域 89.6 → 76.8 で下がる');
+  assert.ok(/76\.8 GB\/s/.test(GP.selectionInfo(a1).name));
   // 無効な帯域(null・0・負)は渡さなかったのと同じ
   assert.strictEqual(GP.activeSelection('amd-zen4-8700g', 0).over.bwGBs, undefined);
   // メモリ固定の CPU(Lunar Lake)は評価が inactive = 帯域なし
@@ -124,7 +124,7 @@ test('SoC 内蔵 GPU: 対応表の id が実在し、モデルのない行(Apple
 test('ブランド別: 全 GPU が既知のブランドに入る', () => {
   const SD = globalThis.SDS_DATA; const GP = globalThis.SDS.ui.gpupanel;
   const rows = GP.buildRows(SD.gpus, SD.igpus.concat(SD.socgpus));
-  assert.strictEqual(rows.length, 52 + 10 + SD.socgpus.length);
+  assert.strictEqual(rows.length, 52 + 15 + SD.socgpus.length);
   rows.forEach((r) => assert.ok(GP.BRANDS.includes(r.brand), r.id + ' ' + r.brand));
   assert.strictEqual(rows.find((r) => r.id === 'amd-780m').brand, 'AMD'); assert.strictEqual(rows.find((r) => r.id === 'intel-arc140v').brand, 'Intel'); assert.strictEqual(rows.find((r) => r.id === 'apple-m1-gpu').brand, 'Apple');
   assert.ok(rows.find((r) => r.id === 'apple-m1-gpu').noSpec);

@@ -46,8 +46,8 @@ globalThis.SDS = globalThis.SDS || {}; globalThis.SDS.gpuperf = G;
 const P = (() => { global.window = globalThis; const m = {}; const src = require('fs').readFileSync(path.join(__dirname, '..', 'js', 'ui', 'gpupanel.js'), 'utf8'); new Function('window', src.replace(/root\.SDS\.ui\.gpupanel = /, 'window.__gp = ')).call(null, Object.assign(globalThis, { SDS: Object.assign(globalThis.SDS, { ui: {} }) })); return globalThis.__gp; })();
 
 test('iGPU データ: 10 SKU・id 重複なし・kind igpu・メモリ帯域は [推定]・公開値あり', () => {
-  assert.strictEqual(igpus.length, 10);
-  assert.strictEqual(new Set(igpus.map((g) => g.id)).size, 10);
+  assert.strictEqual(igpus.length, 15);
+  assert.strictEqual(new Set(igpus.map((g) => g.id)).size, 15);
   igpus.forEach((g) => assert.ok(g.kind === 'igpu' && g.bwS === 'est' && g.shaders > 0 && g.boostMHz > 0 && g.bwGBs > 0 && g.openclScore > 0 && g.s === 'sec' && g.memNote, g.id));
   assert.ok(!gpus.some((g) => g.kind), 'dGPU の行に kind は付けない');
 });
@@ -59,16 +59,16 @@ test('iGPU モデル: iGPU の u は同じ世代の dGPU より低い(電力・�
   assert.strictEqual(G.uOf(igpus, 'Ada', undefined, 'igpu'), null);
 });
 
-test('GPU 評価の一覧: 62 行・dGPU は 95% 以上が ±10%・iGPU は 1 件世代を校正のみと表示・差は予測 / 公開値 − 1', () => {
+test('GPU 評価の一覧: 67 行・dGPU は 95% 以上が ±10%・iGPU は 1 件世代を校正のみと表示・差は予測 / 公開値 − 1', () => {
   const rows = P.buildRows(gpus, igpus);
-  assert.strictEqual(rows.length, 62);
+  assert.strictEqual(rows.length, 67);
   const d = rows.filter((r) => r.cls === 'dgpu'); assert.ok(d.filter((r) => r.ok).length / d.length >= 0.95);
   const i = rows.filter((r) => r.cls === 'igpu');
-  assert.ok(i.find((r) => r.id === 'amd-680m').selfOnly && i.find((r) => r.id === 'intel-arc140v').selfOnly);
+  assert.ok(i.find((r) => r.id === 'amd-680m').selfOnly && !i.find((r) => r.id === 'intel-arc140v').selfOnly, '140V は 3 行あるので校正のみではない');
   assert.ok(!i.find((r) => r.id === 'amd-680m').ok, '校正のみの行は ok にしない');
   const r = rows.find((x) => x.id === 'nv-rtx4090'); assert.ok(Math.abs(r.err - (r.predicted / r.published - 1)) < 1e-12);
-  // 外れ値は隠さない(890M はチャートの標本が 1.9 倍開いている)
-  assert.ok(Math.abs(i.find((x) => x.id === 'amd-890m').err) > 0.3);
+  // 外れ値は隠さない(890M は再集計後も +28%。LPDDR5X 機と DDR5 機で帯域が違う影響とみられる)
+  assert.ok(Math.abs(i.find((x) => x.id === 'amd-890m').err) > 0.2);
 });
 
 test('GPU 評価の計算機: 仕様を上書きすると推定が変わる(帯域・シェーダーで単調)・存在しない id は null', () => {

@@ -49,7 +49,7 @@
     s('mt-g925mc12', 'Immortalis-G925 MC12(Dimensity 9400)', 'MediaTek', 'Mali', 12022),
     s('mt-g1ultramc12', 'Mali-G1-Ultra MC12(Dimensity 9500)', 'MediaTek', 'Mali', 14005),
     s('mt-g610mc6', 'Mali-G610 MC6(Dimensity 8200)', 'MediaTek', 'Mali', 3881),
-    s('intel-arc-b390', 'Intel Arc B390(Panther Lake)', 'Intel', 'Xe3', 52095, '行が割れる: "Arc B390 GPU" 52,095 と "Arc(tm) B390 (PTL)" 16,903。大きい方を使用'),
+    s('intel-arc-b390', 'Intel Arc B390(Panther Lake。Core Ultra X9 388H)', 'Intel', 'Xe3', 54081, '388H の結果 n=85 の中央値(四分位 52,769〜55,556。機種別ページの再集計。2026-11-26。Windows のみ)。Xe3 12 コア(GB7 の Compute Units 96)・最大 2500MHz は GB7 のデバイス情報。メモリ帯域 153.6 GB/s(LPDDR5X-9600 128bit)は典型構成の [推定]', Object.assign(spec(1536, 2500, 153.6, 'LPDDR5X-9600 128bit(典型。[推定])'), { bwS: 'est' })),
   ];
   const presetIgpu = {
     'nv-gb10': { igpuId: 'nv-gb10-gpu' }, 'nv-thor': { igpuId: 'nv-thor-gpu' },
