@@ -77,10 +77,10 @@ test('iGPU / dGPU: 共有キャッシュは iGPU のときだけ効く。dGPU �
 });
 
 test('CPU 内蔵の iGPU: 対応表の id が実在し、クロックは SKU の値で上書きされる。選択の優先は dGPU > iGPU 手動 > 内蔵(自動)', () => {
-  const map = globalThis.SDS_DATA.presetIgpu; const igpus = globalThis.SDS_DATA.igpus;
+  const map = globalThis.SDS_DATA.presetIgpu; const igpus = globalThis.SDS_DATA.igpus.concat(globalThis.SDS_DATA.socgpus || []);
   Object.keys(map).forEach((pid) => { assert.ok(D.presets.some((p) => p.id === pid), pid); assert.ok(igpus.some((g) => g.id === map[pid].igpuId), pid); });
   assert.strictEqual(map['intel-lnl-268v'].boostMHz, 2000); assert.strictEqual(map['intel-lnl-258v'].boostMHz, 1950);
-  assert.strictEqual(Object.keys(map).length, 10);
+  assert.ok(['amd-zen3p-7735hs', 'amd-zen4-7840hs', 'amd-zen4-8700g', 'amd-zen4-8500g', 'amd-strix-hx370', 'amd-kraken-350', 'amd-strixhalo-395', 'intel-lnl-268v', 'intel-lnl-258v', 'intel-lnl-256v'].every((k) => map[k]));
   const GP = (() => { globalThis.window = globalThis; require('../js/sim/gpuperf.js'); require('../js/ui/gpupanel.js'); return globalThis.SDS.ui.gpupanel; })();
   assert.strictEqual(GP.activeSelection('intel-rpl-14700hx'), null, '対応のない CPU は自動では入らない');
   const a = GP.activeSelection('amd-zen4-7840hs'); assert.strictEqual(a.slot, 'igpu'); assert.strictEqual(a.id, 'amd-780m'); assert.ok(a.auto);
@@ -103,4 +103,29 @@ test('内蔵 iGPU のメモリ帯域: CPU のメモリ構成から渡すと帯�
   assert.strictEqual(GP.activeSelection('amd-zen4-8700g', 0).over.bwGBs, undefined);
   // メモリ固定の CPU(Lunar Lake)は評価が inactive = 帯域なし
   assert.strictEqual(M.evaluate({ id: 'intel-lnl-268v', cfg: {} }).active, false);
+});
+
+// ---- SoC 内蔵 GPU(data/socgpus.js)とブランド別表示 ----
+globalThis.window = globalThis; require('../data/socgpus.js');
+test('SoC 内蔵 GPU: 対応表の id が実在し、モデルのない行(Apple・Adreno・Mali)は公開値を使う。GB10 は仕様がそろう', () => {
+  const SD = globalThis.SDS_DATA; const GPm = globalThis.SDS.gpuperf; const GP = globalThis.SDS.ui.gpupanel;
+  const ids = new Set(SD.socgpus.map((g) => g.id)); assert.strictEqual(ids.size, SD.socgpus.length);
+  Object.keys(SD.presetIgpu).forEach((pid) => { assert.ok(D.presets.some((p) => p.id === pid), pid); assert.ok(SD.igpus.concat(SD.socgpus).some((g) => g.id === SD.presetIgpu[pid].igpuId), pid); });
+  ['nv-gb10', 'nv-thor', 'apple-m4', 'qc-8elite', 'mt-9400', 'intel-ptl-x9-388h'].forEach((pid) => assert.ok(SD.presetIgpu[pid], pid));
+  assert.ok(GPm.hasSpec(SD.socgpus.find((g) => g.id === 'nv-gb10-gpu'))); assert.ok(!GPm.hasSpec(SD.socgpus.find((g) => g.id === 'apple-m4-gpu')));
+  // Apple: 推定なし → 公開値を使う(総合は公開値で出る)
+  const a = GP.selectionInfo(GP.activeSelection('apple-m4')); assert.ok(a.usePub); assert.strictEqual(a.pred, 32145);
+  // GB10: モデルの推定(自分の校正なので公開値と一致)。Thor は GB10 の校正から推定(公開値なし)
+  const g = GP.selectionInfo(GP.activeSelection('nv-gb10')); assert.ok(!g.usePub && Math.abs(g.pred / 115190 - 1) < 1e-9);
+  const t = GP.selectionInfo(GP.activeSelection('nv-thor')); assert.ok(t.pred > 0 && t.pred < g.pred && t.pub == null);
+  // dGPU の u は SoC 行に影響されない(SoC 行は igpu 区分)
+  assert.strictEqual(GPm.uOf(SD.gpus.concat(SD.igpus, SD.socgpus), 'Blackwell', undefined, 'dgpu'), GPm.uOf(SD.gpus, 'Blackwell', undefined, 'dgpu'));
+});
+test('ブランド別: 全 GPU が既知のブランドに入る', () => {
+  const SD = globalThis.SDS_DATA; const GP = globalThis.SDS.ui.gpupanel;
+  const rows = GP.buildRows(SD.gpus, SD.igpus.concat(SD.socgpus));
+  assert.strictEqual(rows.length, 52 + 10 + SD.socgpus.length);
+  rows.forEach((r) => assert.ok(GP.BRANDS.includes(r.brand), r.id + ' ' + r.brand));
+  assert.strictEqual(rows.find((r) => r.id === 'amd-780m').brand, 'AMD'); assert.strictEqual(rows.find((r) => r.id === 'intel-arc140v').brand, 'Intel'); assert.strictEqual(rows.find((r) => r.id === 'apple-m1-gpu').brand, 'Apple');
+  assert.ok(rows.find((r) => r.id === 'apple-m1-gpu').noSpec);
 });

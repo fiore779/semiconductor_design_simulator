@@ -45,7 +45,7 @@
         h('tr', null, h('th', { text: '' }), h('th', { text: '推定' }), h('th', { text: '公開値' })),
         h('tr', null, h('td', { text: 'CPU ST(Geekbench 7)' }), h('td', { text: fmt(c.st) }), h('td', { text: fmt(base.stPub) })),
         h('tr', null, h('td', { text: 'CPU MT(Geekbench 7)' }), h('td', { text: fmt(c.mt) }), h('td', { text: fmt(base.mtPub) })),
-        h('tr', null, h('td', { text: `GPU(${gpuInfo.name}。OpenCL)` }), h('td', { text: fmt(gpuInfo.pred) }), h('td', { text: fmt(gpuInfo.pub) })),
+        h('tr', null, h('td', { text: `GPU(${gpuInfo.name}。OpenCL)` }), h('td', { text: gpuInfo.usePub ? '(公開値を使用)' : fmt(gpuInfo.pred) }), h('td', { text: fmt(gpuInfo.pub) })),
         h('tr', null, h('th', { text: `総合スコア(${GP.slotLabel(r.slot)})` }), h('th', { text: fmt(r.est) }), h('th', { text: fmt(r.pub) }))));
       out.appendChild(h('p', { text: r.diffPct == null ? '公開値ベースの総合は、CPU の公開値と GPU の公開値がそろわないので出せません。' : `公開値ベースの総合との差: ${r.diffPct >= 0 ? '+' : ''}${r.diffPct.toFixed(1)}%` }));
       if (r.shared && r.split) out.appendChild(h('p', { class: 'small', text: `キャッシュ共有: 共有容量 ${fmt(mb, 1)} MB を半分ずつ。CPU は L3 ${fmt(r.split.cpuMB, 1)} MB で再評価(共有なしの CPU: ST ${fmt(base.st)}・MT ${fmt(base.mt)})。GPU 側は ${fmt(r.split.gpuMB, 1)} MB だが、GPU のモデルにキャッシュ容量の項がなく、GPU スコアには反映していない。` }));
