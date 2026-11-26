@@ -52,7 +52,7 @@ test('共有キャッシュ: L3 を半分にして再評価すると、CPU の M
 
 test('buildCombo: CPU 未選択・GPU 未選択の理由を返し、そろえば総合と公開値ベースの差を返す。共有時は共有側の CPU を使う', () => {
   const cpu = { ok: true, st: 3000, mt: 20000, stPub: 3100, mtPub: 21000 };
-  const gpu = { pred: 100000, pub: 98000 };
+  const gpu = { pred: 100000, pub: 98000, kind: 'igpu' };
   assert.ok(CP.buildCombo({ cpu: { ok: false, reason: 'x' }, gpu, w: 0.5 }).reason === 'x');
   assert.ok(/GPU を選んで/.test(CP.buildCombo({ cpu, gpu: null, w: 0.5 }).reason));
   const r = CP.buildCombo({ cpu, gpu, w: 0.5, shared: false, sharedMB: 32 });
@@ -63,4 +63,15 @@ test('buildCombo: CPU 未選択・GPU 未選択の理由を返し、そろえば
   assert.strictEqual(sh.pub, r.pub, '公開値ベースは共有の影響を受けない');
   // 公開値がそろわないとき
   assert.strictEqual(CP.buildCombo({ cpu: { ok: true, st: 3000, mt: 20000, stPub: null, mtPub: null }, gpu, w: 0.5 }).diffPct, null);
+});
+
+test('iGPU / dGPU: 共有キャッシュは iGPU のときだけ効く。dGPU なら共有を選んでも CPU は共有なしの値。slot が付く', () => {
+  const cpu = { ok: true, st: 3000, mt: 20000, stPub: 3100, mtPub: 21000 };
+  const sharedCpu = { ok: true, st: 2900, mt: 18000 };
+  const i = CP.buildCombo({ cpu, cpuShared: sharedCpu, gpu: { pred: 100000, pub: 98000, kind: 'igpu' }, w: 0.5, shared: true, sharedMB: 32 });
+  const d = CP.buildCombo({ cpu, cpuShared: sharedCpu, gpu: { pred: 100000, pub: 98000, kind: 'dgpu' }, w: 0.5, shared: true, sharedMB: 32 });
+  assert.strictEqual(i.slot, 'igpu'); assert.strictEqual(d.slot, 'dgpu');
+  assert.strictEqual(i.shared, true); assert.strictEqual(d.shared, false); assert.strictEqual(d.split, null);
+  assert.ok(d.est > i.est, 'dGPU は共有の減点がない');
+  assert.strictEqual(d.cpuUsed, cpu);
 });

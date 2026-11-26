@@ -28,9 +28,11 @@
   }
 
   // 選んだ GPU(総合スコア用)。id と、計算機で上書きした仕様(あれば)。画面を閉じても残る(保存はしない)
-  let selection = null;
+  // 2 枠(dgpu・igpu)。総合スコアに使うのは dGPU 優先(dGPU が選ばれていればそれ、なければ iGPU)
+  const slots = { dgpu: null, igpu: null };
   const allData = () => { const D = root.SDS_DATA || {}; return (D.gpus || []).concat(D.igpus || []); };
-  function getSelection() { return selection; }
+  function getSelection() { const k = slots.dgpu ? 'dgpu' : slots.igpu ? 'igpu' : null; return k ? Object.assign({ slot: k }, slots[k]) : null; }
+  const slotLabel = (k) => (k === 'igpu' ? 'iGPU 搭載時' : 'dGPU 搭載時');
   function selectionInfo(sel) {
     const all = allData(); const g0 = all.find((x) => x.id === sel.id); if (!g0) return null;
     const e = estimate(all, sel.id, sel.over);
@@ -69,15 +71,20 @@
     const load = () => { const g = base(); sh.i.value = g.shaders; mh.i.value = g.boostMHz; bw.i.value = g.bwGBs; update(); };
     sel.addEventListener('change', load); [sh.i, mh.i, bw.i].forEach((i) => i.addEventListener('input', update));
     load();
-    const cur = h('p', { id: 'gpu-cur', role: 'status', 'aria-live': 'polite', text: selection ? '選択中: ' + selectionInfo(selection).name : '選択中: なし' });
-    const pick = h('button', { type: 'button', class: 'btn primary', id: 'gpu-pick', onclick: () => { const o = read(); const g0 = base(); const same = o.shaders === g0.shaders && o.boostMHz === g0.boostMHz && o.bwGBs === g0.bwGBs; selection = { id: g0.id, over: same ? null : o }; cur.textContent = '選択中: ' + selectionInfo(selection).name + '(「総合スコア」で CPU と合わせます)'; } }, 'この GPU を選ぶ');
+    const curText = () => {
+      const act = getSelection(); const nm = (k) => (slots[k] ? selectionInfo(slots[k]).name : 'なし');
+      return `選択中: dGPU ${nm('dgpu')} / iGPU ${nm('igpu')}。総合スコアに使うのは ${act ? slotLabel(act.slot) + '(' + selectionInfo(act).name + ')' : 'なし'}(dGPU 優先。片方だけ表示)`;
+    };
+    const cur = h('p', { id: 'gpu-cur', role: 'status', 'aria-live': 'polite', text: curText() });
+    const clear = (k) => h('button', { type: 'button', class: 'btn', id: 'gpu-clr-' + k, onclick: () => { slots[k] = null; cur.textContent = curText(); } }, k === 'igpu' ? 'iGPU の選択を解除' : 'dGPU の選択を解除');
+    const pick = h('button', { type: 'button', class: 'btn primary', id: 'gpu-pick', onclick: () => { const o = read(); const g0 = base(); const same = o.shaders === g0.shaders && o.boostMHz === g0.boostMHz && o.bwGBs === g0.bwGBs; slots[g0.kind === 'igpu' ? 'igpu' : 'dgpu'] = { id: g0.id, over: same ? null : o }; cur.textContent = curText(); } }, 'この GPU を選ぶ');
     DG.open('GPU プリセット', h('div', { class: 'gpu-dialog', style: 'padding:10px 14px;overflow:auto' },
       h('p', { class: 'note', text: 'Geekbench 7 GPU(OpenCL)のスコアを、シェーダー数・クロック・メモリ帯域から推定します。公開値はチャートの平均([公表])、仕様は Wikipedia([二次]。公式との照合は未了)。SKU 別の特別な係数はありません。' }),
       h('p', { class: 'small', text: `±10% 以内: dGPU ${within('dgpu')}・iGPU ${within('igpu')}(係数は同じデータで当てた学習内の値。iGPU は同じ世代の iGPU の中央値で校正し、1 件だけの世代は検証できません)。` }),
-      h('h3', { text: 'GPU を選ぶ・仕様を変えて推定' }), h('div', { class: 'gpurow' }, h('label', null, 'GPU ', sel), ' ', sh.wrap, mh.wrap, bw.wrap, pick), out, cur,
+      h('h3', { text: 'GPU を選ぶ・仕様を変えて推定' }), h('div', { class: 'gpurow' }, h('label', null, 'GPU ', sel), ' ', sh.wrap, mh.wrap, bw.wrap, pick), out, cur, h('div', null, clear('dgpu'), ' ', clear('igpu')),
       h('p', { class: 'small', text: 'iGPU のメモリ帯域は CPU と共有です。ここでは理論値で、GPU が実際に使える分は小さくなります(その差は iGPU の u に含まれます)。' }),
       tbl('dgpu'), h('div', { style: 'height:10px' }), tbl('igpu')));
   }
 
-  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, getSelection, selectionInfo, TOL };
+  root.SDS.ui.gpupanel = { openGpuPanel, buildRows, estimate, getSelection, selectionInfo, slotLabel, TOL };
 })(window);
