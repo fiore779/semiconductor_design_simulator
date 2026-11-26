@@ -89,3 +89,18 @@ test('CPU 内蔵の iGPU: 対応表の id が実在し、クロックは SKU の
   const i2 = GP.selectionInfo(GP.activeSelection('amd-zen4-8700g')); assert.ok(i2.pred > i1.pred);
   assert.ok(/内蔵/.test(i1.name));
 });
+
+test('内蔵 iGPU のメモリ帯域: CPU のメモリ構成から渡すと帯域が上書きされ、低いほど推定も下がる。渡さなければ iGPU 行の値', () => {
+  require('../js/sim/memory.js');
+  const GP = globalThis.SDS.ui.gpupanel; const M = globalThis.SDS.sim && globalThis.SDS.sim.memory || require('../js/sim/memory.js');
+  // 8700G の既定のメモリ(DDR5-5200・128bit)= 83.2 GB/s
+  const m = M.evaluate({ id: 'amd-zen4-8700g', cfg: {} }); assert.ok(m.active && Math.abs(m.bwGBs - 83.2) < 1e-6, String(m.bwGBs));
+  const a0 = GP.activeSelection('amd-zen4-8700g'); const a1 = GP.activeSelection('amd-zen4-8700g', m.bwGBs);
+  assert.strictEqual(a0.over.bwGBs, undefined); assert.ok(Math.abs(a1.over.bwGBs - 83.2) < 1e-6);
+  assert.ok(GP.selectionInfo(a1).pred < GP.selectionInfo(a0).pred, '帯域 89.6 → 83.2 で下がる');
+  assert.ok(/83\.2 GB\/s/.test(GP.selectionInfo(a1).name));
+  // 無効な帯域(null・0・負)は渡さなかったのと同じ
+  assert.strictEqual(GP.activeSelection('amd-zen4-8700g', 0).over.bwGBs, undefined);
+  // メモリ固定の CPU(Lunar Lake)は評価が inactive = 帯域なし
+  assert.strictEqual(M.evaluate({ id: 'intel-lnl-268v', cfg: {} }).active, false);
+});

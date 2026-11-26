@@ -33,21 +33,23 @@
   const allData = () => { const D = root.SDS_DATA || {}; return (D.gpus || []).concat(D.igpus || []); };
   function getSelection() { const k = slots.dgpu ? 'dgpu' : slots.igpu ? 'igpu' : null; return k ? Object.assign({ slot: k }, slots[k]) : null; }
   // CPU プリセットに内蔵の iGPU(data/igpus.js の presetIgpu)。クロックはその SKU の値で上書きする。無ければ null
-  function autoIgpu(presetId) {
+  // memBwGBs: その CPU のメモリ構成の理論帯域(メモリを選べる CPU だけ。js/sim/memory.js)。あれば iGPU の帯域をそれにする(iGPU は CPU とメモリを共有)。固定構成・不明なら iGPU 行の典型値のまま
+  function autoIgpu(presetId, memBwGBs) {
     const m = presetId && ((root.SDS_DATA || {}).presetIgpu || {})[presetId]; if (!m) return null;
-    return { id: m.igpuId, over: { boostMHz: m.boostMHz }, auto: true };
+    const bw = typeof memBwGBs === 'number' && memBwGBs > 0 ? memBwGBs : null;
+    return { id: m.igpuId, over: Object.assign({ boostMHz: m.boostMHz }, bw ? { bwGBs: bw } : {}), auto: true };
   }
   // 総合スコアに使う GPU: dGPU の選択 > iGPU の手動選択 > CPU 内蔵の iGPU(自動)。どれもなければ null
-  function activeSelection(presetId) {
+  function activeSelection(presetId, memBwGBs) {
     if (slots.dgpu) return Object.assign({ slot: 'dgpu' }, slots.dgpu);
     if (slots.igpu) return Object.assign({ slot: 'igpu' }, slots.igpu);
-    const a = autoIgpu(presetId); return a ? Object.assign({ slot: 'igpu' }, a) : null;
+    const a = autoIgpu(presetId, memBwGBs); return a ? Object.assign({ slot: 'igpu' }, a) : null;
   }
   const slotLabel = (k) => (k === 'igpu' ? 'iGPU 搭載時' : 'dGPU 搭載時');
   function selectionInfo(sel) {
     const all = allData(); const g0 = all.find((x) => x.id === sel.id); if (!g0) return null;
     const e = estimate(all, sel.id, sel.over);
-    return { id: g0.id, name: g0.name + (sel.auto ? '(この CPU 内蔵。クロックはこの SKU の値)' : sel.over ? '(仕様を変更)' : ''), pred: e ? e.predicted : null, pub: g0.openclScore, kind: g0.kind || 'dgpu' };
+    return { id: g0.id, name: g0.name + (sel.auto ? '(この CPU 内蔵。クロックはこの SKU の値' + (sel.over && sel.over.bwGBs ? '・メモリ帯域はこの CPU のメモリ構成の ' + sel.over.bwGBs.toFixed(1) + ' GB/s' : '') + ')' : sel.over ? '(仕様を変更)' : ''), pred: e ? e.predicted : null, pub: g0.openclScore, kind: g0.kind || 'dgpu' };
   }
   function openGpuPanel() {
     const { h } = root.SDS.ui.dom; const DG = root.SDS.ui.dialogs;
